@@ -1,0 +1,77 @@
+/* Base theme for MegaCess Web (no framework other than Bootstrap via CDN) */
+:root{
+  --brand-dark:#0b4f3a;
+  --brand:#0f6b4f;
+  --brand-contrast:#e6f7ec;
+  --sidebar-bg:#f3f3f3;
+  --text:#222;
+}
+
+html,body{height:100%;}
+body{
+  background: #fff;
+  color: var(--text);
+}
+
+/* Layout */
+.app{min-height:100vh;}
+.sidebar{
+  width: 270px;
+  background: #f7f9f8;
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid #e6eee9;
+  box-shadow: 0 0 0 rgba(0,0,0,0);
+}
+.topbar{
+  background: var(--brand-dark);
+  color:#fff;
+}
+.content{min-height:100vh;background:var(--brand-contrast);} 
+
+/* Sidebar */
+.sidebar .brand{
+  font-weight:600;
+  font-size:1.25rem;
+}
+.sidebar .user-badge{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.5rem 0 1rem 0;
+}
+.sidebar .user-badge .avatar{
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:#fff;border:1px solid #e0e0e0;
+}
+.sidebar .nav-link{
+  color:#2c3e36;
+  border-radius:.55rem;
+  padding:.6rem .75rem;
+  display:flex;align-items:center;gap:.5rem;
+  border:1px solid transparent;
+}
+.sidebar .nav-link .bi{opacity:.75;}
+.sidebar .nav-link:hover{
+  background:#ecf4f0;
+  border-color:#e1efe7;
+}
+.sidebar .nav-link.active{
+  background:#dff2e7;
+  color:var(--brand-dark);
+  font-weight:600;
+  border-color:#cfe4d6;
+}
+.sidebar .nav-link.active .bi{opacity:1;color:var(--brand-dark);} 
+.sidebar .logout{
+  position:sticky;bottom:0;display:block;margin-top:auto;
+}
+
+/* Content helpers */
+.page-title{margin:0;font-weight:600;}
+.placeholder-card{border:2px dashed #cfe4d6;background:#fff;border-radius:.75rem;padding:2rem;}
+
+/* Small screens */
+@media (max-width: 991.98px){
+  .sidebar{position:fixed;z-index:1040;height:100%;transform:translateX(-100%);transition:transform .2s ease-in-out;}
+  .sidebar.open{transform:translateX(0)}
+  .content{min-height:100vh;margin-left:0;}
+}
