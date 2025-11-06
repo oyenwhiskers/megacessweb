@@ -11,7 +11,7 @@ megacessweb/
 │  ├─ css/style.css          # Theme + layout (sidebar/topbar)
 │  └─ js/main.js             # Active nav + mobile sidebar toggle
 └─ pages/
-	├─ manageResourcesPage
+	└─ manageResourcesPage/
 		├─ manage-resources-vehicle.html
 		├─ manage-resources-tools.html
 		├─ manage-resources-fuel.html
