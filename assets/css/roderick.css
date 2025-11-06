@@ -1,69 +1,65 @@
-/* 
-  This is the CSS file for manage-resources.html
-  Created by Roderick 
-*/
+/* ============================================================
+   manage-resources.html Custom Styles
+   Created by Roderick
+   ============================================================ */
 
-/* 
-  manage-resources.html custom styles
-*/
-/* === Custom hover effects for resource buttons === */
-  .resource-btn {
-    width: 160px;
-    height: 160px;
-    border-radius: 20px;
-    background-color: #fff;
-    transition: all 0.3s ease;
-  }
+/* === Resource Buttons (Vehicle / Tools / Fuels) === */
+.resource-btn {
+  width: 160px;
+  height: 160px;
+  border-radius: 20px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+}
 
-  /* Vehicle (Primary - Blue) */
-  .btn-vehicle {
-    border: 2px solid #0d6efd;
-    color: #0d6efd;
-  }
-  .btn-vehicle:hover {
-    background-color: #0d6efd;
-    color: #fff;
-  }
+/* --- Vehicle Button (Primary - Blue) --- */
+.btn-vehicle {
+  border: 2px solid #0d6efd;
+  color: #0d6efd;
+}
+.btn-vehicle:hover {
+  background-color: #0d6efd;
+  color: #fff;
+}
 
-  /* Tools (Success - Green) */
-  .btn-tools {
-    border: 2px solid #198754;
-    color: #198754;
-  }
-  .btn-tools:hover {
-    background-color: #198754;
-    color: #fff;
-  }
+/* --- Tools Button (Success - Green) --- */
+.btn-tools {
+  border: 2px solid #198754;
+  color: #198754;
+}
+.btn-tools:hover {
+  background-color: #198754;
+  color: #fff;
+}
 
-  /* Fuels (Warning - Yellow) */
-  .btn-fuels {
-    border: 2px solid #ffc107;
-    color: #ffc107;
-  }
-  .btn-fuels:hover {
-    background-color: #ffc107;
-    color: #fff;
-  }
+/* --- Fuels Button (Warning - Yellow) --- */
+.btn-fuels {
+  border: 2px solid #ffc107;
+  color: #ffc107;
+}
+.btn-fuels:hover {
+  background-color: #ffc107;
+  color: #fff;
+}
 
+/* ============================================================
+   manage-resources-vehicle.html Custom Styles
+   ============================================================ */
 
-/* 
-manage-resources-vehicle.html custom styles
-*/
+/* === Back Button === */
+.back-btn {
+  background-color: #dc3545; /* Bootstrap danger red */
+  color: #fff;
+  border: none;
+}
+.back-btn:hover {
+  background-color: #bb2d3b; /* darker red */
+  color: #fff;
+}
 
-   /* back buttobn */
-  .back-btn {
-    background-color: #dc3545; /* Bootstrap 'danger' red */
-    color: white;
-    border: none;
-  }
+/* === Selection Tabs === */
 
-  /* Hover effects back button (slightly darker shades) */
-  .back-btn:hover {
-    background-color: #bb2d3b; /* darker red */
-    color: white;
-  }
-
- /* Base (inactive) tab style */
+/* Base (inactive) tab style */
 .tab-btn {
   background-color: #f8f9fa;
   color: #6c757d;
@@ -71,7 +67,7 @@ manage-resources-vehicle.html custom styles
   border-radius: 0.375rem;
   padding: 0.6rem 1.2rem;
   font-weight: 500;
-  text-decoration: none !important; /* remove underline */
+  text-decoration: none !important;
   position: relative;
   overflow: hidden;
   transition: all 0.25s ease-in-out;
@@ -82,7 +78,7 @@ manage-resources-vehicle.html custom styles
   background-color: #e9ecef;
   color: #495057;
   text-decoration: none !important;
-  transform: translateY(-1px); /* subtle lift effect */
+  transform: translateY(-1px); /* subtle lift */
 }
 
 /* Active tab style */
@@ -91,7 +87,7 @@ manage-resources-vehicle.html custom styles
   color: #fff;
   border-color: #198754;
   text-decoration: none !important;
-  transform: scale(1.02); /* small scale to highlight active tab */
+  transform: scale(1.02);
   box-shadow: 0 4px 10px rgba(25, 135, 84, 0.25); /* soft glow */
 }
 
@@ -103,7 +99,7 @@ manage-resources-vehicle.html custom styles
   transform: scale(1.03);
 }
 
-/* Optional: subtle highlight bar animation */
+/* Tab highlight animation */
 .tab-btn::after {
   content: "";
   position: absolute;
@@ -121,13 +117,16 @@ manage-resources-vehicle.html custom styles
   background-color: #198754;
 }
 
-  /* Reset icons/text alignment */
-  .btn i {
-    font-size: 1rem;
-  }
+/* Reset icons/text alignment inside buttons */
+.btn i {
+  font-size: 1rem;
+}
 
-   /* table style */
-  .vehicle-table {
+/* ============================================================
+   Vehicle Table Styles
+   ============================================================ */
+
+.vehicle-table {
   background-color: #fff;
   border: 1px solid #f1f3f5;
   border-radius: 0.5rem;
@@ -142,4 +141,9 @@ manage-resources-vehicle.html custom styles
 .vehicle-row:hover {
   background-color: #f1f3f5;
   transition: background-color 0.2s ease;
+}
+
+/* Padding for first column text only */
+.vehicle-row > div:first-child {
+  padding-left: 12px;
 }
