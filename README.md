@@ -15,7 +15,7 @@ megacessweb/
 	├─ assign-worker.html
 	├─ manage-account.html
 	├─ manage-attendance.html
-		├─ manage-resources.html
+	├─ manage-resources.html
 	├─ manage-advance.html
 	├─ manage-payroll.html
 	└─ manage-payment-rate.html
