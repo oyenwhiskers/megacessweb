@@ -21,8 +21,8 @@
       </div>
       <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
         <!-- Back Button -->
-        <a href="/megacessweb/pages/manage-resources.html" class="btn btn-danger d-flex align-items-center">
-          <i class="bi bi-arrow-left me-2"></i> Back
+        <a href="/megacessweb/pages/manage-resources.html" class="btn back-btn d-flex align-items-center">
+          <i class="bi bi-arrow-left me-2"></i> Back to Manage Resources
         </a>
 
         <!-- Tab Selection -->
@@ -50,7 +50,7 @@
           <!-- Filter Dropdown -->
           <div>
             <select class="form-select">
-              <option selected>Filter by...</option>
+              <option selected>All Status</option>
               <option value="available">Available</option>
               <option value="inuse">In Use</option>
               <option value="maintenance">Under Maintenance</option>
@@ -96,7 +96,20 @@
             <div class="col-3">Nissan Navara</div>
             <div class="col-3">SAB 5678 A</div>
             <div class="col-3">
-              <span class="badge bg-secondary">Booked</span>
+              <span class="badge bg-secondary">In Use</span>
+            </div>
+            <div class="col-3 text-center">
+              <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </div>
+          </div>
+
+          <!-- Table Row 3 -->
+          <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+            <div class="col-3">Ford Ranger</div>
+            <div class="col-3">SAC 9988 T</div>
+            <div class="col-3">
+              <span class="badge badge-maintenance">Under Maintenance</span>
             </div>
             <div class="col-3 text-center">
               <button class="btn btn-sm btn-outline-primary me-2">Edit</button>

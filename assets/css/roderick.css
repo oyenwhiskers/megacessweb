@@ -48,12 +48,12 @@
 
 /* === Back Button === */
 .back-btn {
-  background-color: #dc3545; /* Bootstrap danger red */
+  background-color: #0d6efd; /* Bootstrap danger red */
   color: #fff;
   border: none;
 }
 .back-btn:hover {
-  background-color: #bb2d3b; /* darker red */
+  background-color: #0b5ed7; /* darker red */
   color: #fff;
 }
 
@@ -146,4 +146,9 @@
 /* Padding for first column text only */
 .vehicle-row > div:first-child {
   padding-left: 12px;
+}
+
+.badge-maintenance {
+  background-color: #fd7e14; /* bright orange tone */
+  color: #fff;
 }
