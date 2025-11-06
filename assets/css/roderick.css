@@ -3,6 +3,9 @@
   Created by Roderick 
 */
 
+/* 
+  manage-resources.html custom styles
+*/
 /* === Custom hover effects for resource buttons === */
   .resource-btn {
     width: 160px;
@@ -41,3 +44,102 @@
     background-color: #ffc107;
     color: #fff;
   }
+
+
+/* 
+manage-resources-vehicle.html custom styles
+*/
+
+   /* back buttobn */
+  .back-btn {
+    background-color: #dc3545; /* Bootstrap 'danger' red */
+    color: white;
+    border: none;
+  }
+
+  /* Hover effects back button (slightly darker shades) */
+  .back-btn:hover {
+    background-color: #bb2d3b; /* darker red */
+    color: white;
+  }
+
+ /* Base (inactive) tab style */
+.tab-btn {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  text-decoration: none !important; /* remove underline */
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease-in-out;
+}
+
+/* Hover on inactive tab */
+.tab-btn:hover {
+  background-color: #e9ecef;
+  color: #495057;
+  text-decoration: none !important;
+  transform: translateY(-1px); /* subtle lift effect */
+}
+
+/* Active tab style */
+.tab-btn.active {
+  background-color: #198754; /* Bootstrap success green */
+  color: #fff;
+  border-color: #198754;
+  text-decoration: none !important;
+  transform: scale(1.02); /* small scale to highlight active tab */
+  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.25); /* soft glow */
+}
+
+/* Active tab hover (slightly darker green) */
+.tab-btn.active:hover {
+  background-color: #157347;
+  color: #fff;
+  text-decoration: none !important;
+  transform: scale(1.03);
+}
+
+/* Optional: subtle highlight bar animation */
+.tab-btn::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background-color: #198754;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.tab-btn.active::after {
+  width: 100%;
+  background-color: #198754;
+}
+
+  /* Reset icons/text alignment */
+  .btn i {
+    font-size: 1rem;
+  }
+
+   /* table style */
+  .vehicle-table {
+  background-color: #fff;
+  border: 1px solid #f1f3f5;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.vehicle-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+.vehicle-row:hover {
+  background-color: #f1f3f5;
+  transition: background-color 0.2s ease;
+}
