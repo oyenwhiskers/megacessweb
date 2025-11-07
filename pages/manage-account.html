@@ -36,6 +36,16 @@
               <button class="btn btn-outline-secondary" type="button" id="clearAccountSearch" title="Clear"><i class="bi bi-x-lg"></i></button>
             </div>
           </div>
+          <!-- Role filter buttons -->
+          <div class="mt-2">
+            <div id="roleFilterGroup" class="btn-group" role="group" aria-label="Role filter">
+              <button type="button" class="btn btn-outline-secondary active" data-role="all">All</button>
+              <button type="button" class="btn btn-outline-secondary" data-role="manager">Manager</button>
+              <button type="button" class="btn btn-outline-secondary" data-role="mandor">Mandor</button>
+              <button type="button" class="btn btn-outline-secondary" data-role="checker">Checker</button>
+              <button type="button" class="btn btn-outline-secondary" data-role="admin">Admin</button>
+            </div>
+          </div>
         </div>
 
         <!-- content views -->
@@ -158,6 +168,8 @@
         staff: document.getElementById('staffView')
       };
       const registerStaffBtn = document.getElementById('registerStaffBtn');
+      const roleFilterGroup = document.getElementById('roleFilterGroup');
+      let currentRoleFilter = 'all';
 
       function show(type){
         // toggle active class on buttons
@@ -177,8 +189,25 @@
         // when staff view is shown, trigger staff list load (uses staff_list.js exposed function)
         if (type === 'staff' && window.fetchStaffList) {
           const searchEl = document.getElementById('accountSearch');
-          window.fetchStaffList(searchEl ? searchEl.value : '');
+          window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
         }
+      }
+
+      // Role filter logic
+      if (roleFilterGroup) {
+        roleFilterGroup.addEventListener('click', function(e) {
+          if (e.target && e.target.matches('button[data-role]')) {
+            // Set active class
+            roleFilterGroup.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            currentRoleFilter = e.target.getAttribute('data-role');
+            // Reload staff list with new filter
+            if (document.querySelector('#staffView') && !document.querySelector('#staffView').classList.contains('d-none') && window.fetchStaffList) {
+              const searchEl = document.getElementById('accountSearch');
+              window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
+            }
+          }
+        });
       }
 
       buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.type)));

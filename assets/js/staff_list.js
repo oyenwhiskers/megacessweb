@@ -1,6 +1,7 @@
 (function () {
   const searchInput = document.getElementById('accountSearch');
   const staffView = document.getElementById('staffView');
+  let currentRoleFilter = 'all';
 
   if (!staffView) return;
 
@@ -17,7 +18,8 @@
   }
 
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
-  async function fetchStaffList(search = '') {
+  async function fetchStaffList(search = '', role = 'all') {
+    currentRoleFilter = role || 'all';
     // retrieve token from localStorage / session or replace with secure retrieval
     const token = localStorage.getItem('authToken') || '{YOUR_TOKEN}';
     if (!token || token === '{YOUR_TOKEN}') {
@@ -27,7 +29,7 @@
 
     const url = new URL("https://mwms.megacess.com/api/v1/users");
     const params = {
-      role: "",
+      role: (role && role !== 'all') ? role : '',
       search: search || "",
       per_page: "20",
     };
@@ -55,15 +57,14 @@
       }
 
       const data = await res.json();
-      renderStaff(data);
+      renderStaff(data, role);
     } catch (err) {
-      console.error('Failed to load staff list', err);
       showStatus('Network or server error while loading staff list.', 'danger');
       renderStaff({ data: [] });
     }
   }
 
-  function renderStaff(payload) {
+  function renderStaff(payload, roleFilter) {
     // remove any previous status nodes
     const prevStatus = staffView.querySelector('.js-status');
     if (prevStatus) prevStatus.remove();
@@ -71,7 +72,11 @@
     const list = document.createElement('div');
     list.className = 'list-group text-start';
 
-    const users = Array.isArray(payload.data) ? payload.data : (payload.users || payload || []);
+    let users = Array.isArray(payload.data) ? payload.data : (payload.users || payload || []);
+    // Client-side filter fallback (if API doesn't filter)
+    if (roleFilter && roleFilter !== 'all') {
+      users = users.filter(u => (u.user_role || '').toLowerCase() === roleFilter.toLowerCase());
+    }
     if (!users || users.length === 0) {
       list.innerHTML = '<div class="text-muted">No staff found.</div>';
     } else {
@@ -118,18 +123,7 @@
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       if (searchInput) searchInput.value = '';
-      if (!staffView.classList.contains('d-none')) fetchStaffList('');
-    });
-  }
-
-  // optional: auto-refresh when user types and stops (debounce)
-  let debounceTimer = null;
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        if (!staffView.classList.contains('d-none')) fetchStaffList(searchInput.value);
-      }, 400);
+      if (!staffView.classList.contains('d-none')) fetchStaffList('', currentRoleFilter);
     });
   }
 })();
