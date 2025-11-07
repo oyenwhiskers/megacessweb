@@ -399,17 +399,23 @@
     <script src="/megacessweb/assets/js/roderick.js"></script>
     <script>
       $(document).ready(function () {
+        // Show the first tab content by default
+        $(".tab-pane").first().show();
+
+        // Tab Button Click Handler
         $(".tab-btn").click(function () {
-          const target = $(this).data("target");
+          const target = $(this).data("target"); // Get target tab name
 
-          // Remove active class from all tab panes and buttons
-          $(".tab-btn").removeClass("active");
-          $(".tab-pane").removeClass("active");
+           // Hide all panes
+            $(".tab-pane").hide();
 
-          // Add active class to selected tab and pane
-          $(this).addClass("active");
-          $(`.tab-pane[data-name="${target}"]`).addClass("active");
-        });
+            // Show the selected one
+            $(`.tab-pane[data-name="${target}"]`).show();
+
+            // Update active button
+            $(".tab-btn").removeClass("active");
+            $(this).addClass("active");
+          });
       });
     </script>
   </body>
