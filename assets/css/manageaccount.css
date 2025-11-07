@@ -1,0 +1,40 @@
+/* ...existing code... */
+
+.placeholder-card {
+  padding: 2rem;
+  border-radius: .5rem;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 3px rgba(0,0,0,.03);
+}
+
+#accountTypeToggle .btn.active {
+  background-color: #0d6efd;
+  color: #fff;
+  border-color: #0d6efd;
+}
+
+.view.d-none {
+  display: none !important;
+}
+
+/* small spacing for the action buttons inside views */
+.placeholder-card .btn {
+  min-width: 120px;
+}
+
+.search-group {
+  max-width: 520px;
+  width: 100%;
+}
+
+/* small tweak to avoid double border look on clear button */
+.search-group .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* spacing between toggle and views is already handled; keep search responsive */
+@media (min-width: 768px) {
+  .search-group { margin-left: 0; }
+}

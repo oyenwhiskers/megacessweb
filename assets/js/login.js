@@ -53,8 +53,12 @@
       try { data = await res.json(); } catch(e){}
 
       if(res.ok){
-        if(data && data.token){
-          try{ localStorage.setItem('mc_token', data.token); }catch(e){}
+        // store token from common response shapes
+        const token = (data && (data.token || data.access_token)) || (data && data.data && (data.data.token || data.data.access_token));
+        if(token){
+          try{ localStorage.setItem('authToken', token); console.log('authToken set', token); }catch(e){}
+        } else {
+          console.warn('Login succeeded but no token found in response', data);
         }
         var redirectTo = (data && data.redirect) ? data.redirect : '/megacessweb/index.html';
         window.location.href = redirectTo;
