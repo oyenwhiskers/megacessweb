@@ -24,6 +24,7 @@
   </head>
 
   <body data-page="manage-resources">
+    <!-- Main Content -->
     <div class="app d-flex">
       <!-- Sidebar -->
       <aside class="sidebar p-3" id="sidebar-root"></aside>
@@ -67,7 +68,7 @@
           </div>
         </div>
 
-        <!-- Tab Content -->
+        <!-- Tab Content for Vehicle and Booking-->
         <div class="tab-content">
           <!-- Vehicle Tab -->
           <div class="tab-pane" data-name="vehicle">
@@ -406,16 +407,16 @@
         $(".tab-btn").click(function () {
           const target = $(this).data("target"); // Get target tab name
 
-           // Hide all panes
-            $(".tab-pane").hide();
+          // Hide all panes
+          $(".tab-pane").hide();
 
-            // Show the selected one
-            $(`.tab-pane[data-name="${target}"]`).show();
+          // Show the selected one
+          $(`.tab-pane[data-name="${target}"]`).show();
 
-            // Update active button
-            $(".tab-btn").removeClass("active");
-            $(this).addClass("active");
-          });
+          // Update active button
+          $(".tab-btn").removeClass("active");
+          $(this).addClass("active");
+        });
       });
     </script>
   </body>
