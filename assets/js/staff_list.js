@@ -7,14 +7,40 @@
 
   // helper to show status/error in the view
   function showStatus(message, type = 'muted') {
-    const status = document.createElement('div');
-    status.className = `text-${type} small mt-3`;
-    status.textContent = message;
+    // Create consistent list format for status messages
+    const statusContainer = document.createElement('div');
+    statusContainer.className = 'list-group text-start js-status';
+    
+    const statusItem = document.createElement('div');
+    statusItem.className = 'list-group-item text-center py-4';
+    
+    if (type === 'danger') {
+      statusItem.innerHTML = `
+        <div class="alert alert-danger mb-0" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Error:</strong> ${message}
+          <button class="btn btn-outline-danger btn-sm ms-3" onclick="fetchStaffList('', '${currentRoleFilter}')">
+            <i class="bi bi-arrow-clockwise me-1"></i>Retry
+          </button>
+        </div>
+      `;
+    } else {
+      statusItem.innerHTML = `<div class="text-${type}">${message}</div>`;
+    }
+    
+    statusContainer.appendChild(statusItem);
+    
     // remove any previous status nodes with .js-status
     const prev = staffView.querySelector('.js-status');
     if (prev) prev.remove();
-    status.classList.add('js-status');
-    staffView.appendChild(status);
+    
+    // keep heading and note, replace content
+    const heading = staffView.querySelector('h2');
+    const note = staffView.querySelector('p');
+    staffView.innerHTML = '';
+    if (heading) staffView.appendChild(heading);
+    if (note) staffView.appendChild(note);
+    staffView.appendChild(statusContainer);
   }
 
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
@@ -78,27 +104,74 @@
       users = users.filter(u => (u.user_role || '').toLowerCase() === roleFilter.toLowerCase());
     }
     if (!users || users.length === 0) {
-      list.innerHTML = '<div class="text-muted">No staff found.</div>';
+      list.innerHTML = '<div class="list-group-item text-center py-5"><div class="text-muted">No staff found.</div></div>';
     } else {
       users.forEach(u => {
         const name = u.user_fullname || u.name || u.full_name || u.username || 'Unknown';
-        const nick = u.user_nickname ? `<small class="text-muted"> ${u.user_nickname}</small>` : '';
+        const nick = u.user_nickname ? ` (${u.user_nickname})` : '';
         const role = u.user_role || u.role || '—';
-        const staffCount = (typeof u.staff_count !== 'undefined') ? `<span class="ms-2 text-muted small">Staff: ${u.staff_count}</span>` : '';
+        const staffCount = (typeof u.staff_count !== 'undefined') ? u.staff_count : 0;
+        
+        // Get role badge color
+        const getRoleBadgeColor = (role) => {
+          switch(role.toLowerCase()) {
+            case 'admin': return 'bg-danger';
+            case 'manager': return 'bg-primary';
+            case 'mandor': return 'bg-success';
+            case 'checker': return 'bg-warning text-dark';
+            default: return 'bg-secondary';
+          }
+        };
+        
         // image (may be relative path from API)
         let imgSrc = u.user_img || u.user_image || '';
-        // create item
+        
+        // create item with similar structure to workers
         const item = document.createElement('div');
-        item.className = 'list-group-item';
+        item.className = 'list-group-item staff-list-item';
         item.innerHTML = `
           <div class="d-flex align-items-center">
             <div style="width:48px;height:48px;flex:0 0 48px;">
-              ${imgSrc ? `<img src="${imgSrc}" alt="${name}" class="rounded-circle" style="width:48px;height:48px;object-fit:cover" onerror="this.onerror=null;this.src='https://via.placeholder.com/48?text=User'">`
-                       : `<img src="https://via.placeholder.com/48?text=User" alt="avatar" class="rounded-circle" style="width:48px;height:48px;object-fit:cover">`}
+              <img src="${imgSrc || 'https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png'}" 
+                   alt="${name}" 
+                   class="rounded-circle" 
+                   style="width:48px;height:48px;object-fit:cover" 
+                   onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png'">
             </div>
             <div class="flex-grow-1 ms-3">
-              <div class="fw-semibold">${name}${nick}</div>
-              <div class="small text-muted">Role: <span class="badge bg-secondary">${role}</span>${staffCount}</div>
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-semibold">${name}${nick}</div>
+                  <div class="small text-muted mb-1">
+                    <i class="bi bi-person-badge me-1"></i>Role: <span class="badge ${getRoleBadgeColor(role)}">${role}</span>
+                    ${staffCount > 0 ? `<span class="ms-3"><i class="bi bi-people me-1"></i>Staff: ${staffCount}</span>` : ''}
+                  </div>
+                  ${u.user_email ? `
+                    <div class="small text-muted">
+                      <i class="bi bi-envelope me-1"></i>${u.user_email}
+                    </div>
+                  ` : ''}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-outline-primary" 
+                            onclick="viewStaffDetails(${u.id || u.user_id})"
+                            title="View Details">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" 
+                            onclick="editStaff(${u.id || u.user_id})"
+                            title="Edit Staff">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" 
+                            onclick="deleteStaff(${u.id || u.user_id})"
+                            title="Delete Staff">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         `;
@@ -117,6 +190,21 @@
 
   // expose function globally so page script can call when staff tab is selected
   window.fetchStaffList = fetchStaffList;
+
+  // Staff action functions (similar to workers)
+  window.viewStaffDetails = function(staffId) {
+    alert(`View staff details for ID: ${staffId}\nThis functionality will be implemented soon.`);
+  };
+
+  window.editStaff = function(staffId) {
+    alert(`Edit staff for ID: ${staffId}\nThis functionality will be implemented soon.`);
+  };
+
+  window.deleteStaff = function(staffId) {
+    if (confirm('Are you sure you want to delete this staff member?')) {
+      alert(`Delete staff for ID: ${staffId}\nThis functionality will be implemented soon.`);
+    }
+  };
 
   // wire clear button to clear search and refresh if staff view visible
   const clearBtn = document.getElementById('clearAccountSearch');
