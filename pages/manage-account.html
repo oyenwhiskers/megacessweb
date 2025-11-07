@@ -186,6 +186,11 @@
           if (type === 'staff') registerStaffBtn.classList.remove('d-none');
           else registerStaffBtn.classList.add('d-none');
         }
+        // show/hide role filter group
+        if (roleFilterGroup) {
+          if (type === 'staff') roleFilterGroup.parentElement.classList.remove('d-none');
+          else roleFilterGroup.parentElement.classList.add('d-none');
+        }
         // when staff view is shown, trigger staff list load (uses staff_list.js exposed function)
         if (type === 'staff' && window.fetchStaffList) {
           const searchEl = document.getElementById('accountSearch');
