@@ -215,6 +215,33 @@
         });
       }
 
+      // Search bar logic
+      const searchInput = document.getElementById('accountSearch');
+      if (searchInput) {
+        // On input (debounced)
+        let debounceTimer = null;
+        searchInput.addEventListener('input', function() {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+              window.fetchStaffList(searchInput.value, currentRoleFilter);
+            } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
+              window.fetchWorkersList(searchInput.value);
+            }
+          }, 300);
+        });
+        // On Enter key
+        searchInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+              window.fetchStaffList(searchInput.value, currentRoleFilter);
+            } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
+              window.fetchWorkersList(searchInput.value);
+            }
+          }
+        });
+      }
+
       buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.type)));
 
       // initial state
