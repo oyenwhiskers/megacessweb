@@ -1,106 +1,386 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MegaCess Web • Manage Resources</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MegaCess Web • Manage Resources</title>
 
-  <link rel="stylesheet" href="/megacessweb/assets/css/roderick.css"> <!-- Links to Roderick's css style -->
-</head>
-<body data-page="manage-resources">
-  <div class="app d-flex">
-    <aside class="sidebar p-3" id="sidebar-root"></aside>
+    <!-- Bootstrap & Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+      rel="stylesheet"
+    >
 
-    <main class="content flex-grow-1">
-      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
-        <h1 class="page-title h5 mb-0">Manage Resources (Vehicle)</h1>
-        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
-        <!-- Back Button -->
-        <a href="/megacessweb/pages/manage-resources.html" class="btn back-btn d-flex align-items-center">
-          <i class="bi bi-arrow-left me-2"></i> Back to Manage Resources
-        </a>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+    <link rel="stylesheet" href="/megacessweb/assets/css/roderick.css">
+    <!-- Links to Roderick's CSS style -->
 
-        <!-- Tab Selection -->
-        <div class="btn-group" role="group">
-          <a href="#" class="tab-btn active d-flex align-items-center">
-            <i class="bi bi-truck me-2"></i> Vehicle
-          </a>
-          <a href="/megacessweb/pages/manageResourcesPages/manage-resources-vehicle-booking.html" class="tab-btn d-flex align-items-center">
-            <i class="bi bi-calendar-check me-2"></i> Booking
-          </a>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+
+  <body data-page="manage-resources">
+    <div class="app d-flex">
+      <!-- Sidebar -->
+      <aside class="sidebar p-3" id="sidebar-root"></aside>
+
+      <!-- Main Content -->
+      <main class="content flex-grow-1">
+        <!-- Topbar -->
+        <div
+          class="topbar py-3 px-3 d-flex align-items-center justify-content-between"
+        >
+          <h1 class="page-title h5 mb-0">Manage Resources (Vehicle)</h1>
+          <button
+            class="btn btn-outline-light d-lg-none"
+            id="sidebarToggle"
+          >
+            <i class="bi bi-list"></i>
+          </button>
         </div>
-      </div>
 
-      <div class="px-4 mb-4">
-        <!-- Title -->
-        <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
+        <!-- Row 1: Back Button & Tabs -->
+        <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
+          <!-- Back Button -->
+          <a
+            href="/megacessweb/pages/manage-resources.html"
+            class="btn back-btn d-flex align-items-center"
+          >
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to Manage Resources
+          </a>
 
-        <!-- Search Bar + Filter + Add Button -->
-        <div class="d-flex flex-wrap gap-3 align-items-center">
-          <!-- Search Bar -->
-          <div class="flex-grow-1">
-            <input type="text" class="form-control" placeholder="Search vehicle...">
+          <!-- Tab Selection -->
+          <div class="btn-group" role="group">
+            <a href="#" class="tab-btn active d-flex align-items-center" data-target="vehicle">
+              <i class="bi bi-truck me-2"></i>
+              Vehicle
+            </a>
+            <a href="#" class="tab-btn d-flex align-items-center" data-target="booking">
+              <i class="bi bi-calendar-check me-2"></i>
+              Booking
+            </a>
+          </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Vehicle Tab -->
+          <div class="tab-pane" data-name="vehicle">
+            <!-- Row 2: Vehicle List Header -->
+            <div class="px-4 mb-4">
+              <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
+
+              <!-- Search Bar + Filter + Add Button -->
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <!-- Search Bar -->
+                <div class="flex-grow-1">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Search vehicle..."
+                  >
+                </div>
+
+                <!-- Filter Dropdown -->
+                <div>
+                  <select class="form-select">
+                    <option selected>All Status</option>
+                    <option value="available">Available</option>
+                    <option value="inuse">In Use</option>
+                    <option value="maintenance">Under Maintenance</option>
+                  </select>
+                </div>
+
+                <!-- Add Vehicle Button -->
+                <div>
+                  <button
+                    class="btn btn-primary d-flex align-items-center"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addVehicleModal"
+                  >
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Add Vehicle
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Vehicle Table -->
+            <div class="mt-4 px-4">
+              <div class="vehicle-table mt-4">
+                <!-- Table Header -->
+                <div class="vehicle-row vehicle-header d-flex fw-bold border-bottom py-2">
+                  <div class="col-3">Vehicle Name</div>
+                  <div class="col-3">Plate No.</div>
+                  <div class="col-3">Status</div>
+                  <div class="col-3 text-center">Action</div>
+                </div>
+
+                <!-- Row 1 -->
+                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                  <div class="col-3">Toyota Hilux</div>
+                  <div class="col-3">SAA 1234 X</div>
+                  <div class="col-3">
+                    <span class="badge bg-success">Available</span>
+                  </div>
+                  <div class="col-3 text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                  <div class="col-3">Nissan Navara</div>
+                  <div class="col-3">SAB 5678 A</div>
+                  <div class="col-3">
+                    <span class="badge bg-secondary">In Use</span>
+                  </div>
+                  <div class="col-3 text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                  <div class="col-3">Ford Ranger</div>
+                  <div class="col-3">SAC 9988 T</div>
+                  <div class="col-3">
+                    <span class="badge badge-maintenance">Under Maintenance</span>
+                  </div>
+                  <div class="col-3 text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Filter Dropdown -->
-          <div>
-            <select class="form-select">
-              <option selected>All Status</option>
-              <option value="available">Available</option>
-              <option value="inuse">In Use</option>
-              <option value="maintenance">Under Maintenance</option>
-            </select>
+          <!-- Booking Tab -->
+          <div class="tab-pane" data-name="booking">
+            <div class="px-4 mb-4">
+              <!-- Title -->
+              <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
+
+              <!-- Search Bar + Filter + Add Button -->
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <!-- Search Bar -->
+                <div class="flex-grow-1">
+                  <input type="text" class="form-control" placeholder="Search vehicle...">
+                </div>
+
+                <!-- Filter Dropdown -->
+                <div>
+                  <select class="form-select">
+                    <option selected>Filter by...</option>
+                    <!-- Date sorting -->
+                    <option value="booking-date-asc">Booking Date ↑ (asc)</option>
+                    <option value="booking-date-desc">Booking Date ↓ (desc)</option>
+                    <option value="return-date-asc">Return Date ↑ (asc)</option>
+                    <option value="return-date-desc">Return Date ↓ (desc)</option>
+                  </select>
+                </div>
+
+                <!-- Add Booking Button -->
+                <div>
+                  <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                    <i class="bi bi-plus-circle me-2"></i> Add Booking
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 px-4">
+              <!-- Vehicle Table-like Div -->
+              <div class="vehicle-table mt-4">
+
+                <!-- Table Header -->
+                <div class="vehicle-row vehicle-header d-flex fw-bold border-bottom py-2">
+                  <div class="col">Vehicle Name</div>
+                  <div class="col">Plate No.</div>
+                  <div class="col">Status</div>
+                  <div class="col">Assigned Person</div>
+                  <div class="col">Booking Date</div>
+                  <div class="col">Return Date</div>
+                  <div class="col text-center">Action</div>
+                </div>
+
+                <!-- Table Row 1 -->
+                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                  <div class="col">Toyota Hilux</div>
+                  <div class="col">SAA 1234 X</div>
+                  <div class="col">
+                    <span class="badge bg-warning text-dark">In Use</span>
+                  </div>
+                  <div class="col">John Doe</div>
+                  <div class="col">2025-11-07</div>
+                  <div class="col">2025-11-10</div>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+
+                <!-- Table Row 2 -->
+                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                  <div class="col">Nissan Navara</div>
+                  <div class="col">SAB 5678 A</div>
+                  <div class="col">
+                    <span class="badge bg-warning text-dark">In Use</span>
+                  </div>
+                  <div class="col">Jane Smith</div>
+                  <div class="col">2025-11-06</div>
+                  <div class="col">2025-11-09</div>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+
+                <!-- Table Row 3 -->
+                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                  <div class="col">Ford Ranger</div>
+                  <div class="col">SAC 9988 T</div>
+                  <div class="col">
+                    <span class="badge bg-warning text-dark">In Use</span>
+                  </div>
+                  <div class="col">Mike Johnson</div>
+                  <div class="col">2025-11-05</div>
+                  <div class="col">2025-11-08</div>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Add Vehicle Modal -->
+    <div
+      class="modal fade"
+      id="addVehicleModal"
+      tabindex="-1"
+      aria-labelledby="addVehicleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <!-- Header -->
+          <div class="modal-header">
+            <h5 class="modal-title" id="addVehicleModalLabel">Add New Vehicle</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
 
-          <!-- Add Vehicle Button -->
-          <div>
-            <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
-              <i class="bi bi-plus-circle me-2"></i> Add Vehicle
+          <!-- Body -->
+          <div class="modal-body">
+            <form>
+              <!-- Vehicle Name -->
+              <div class="mb-3">
+                <label for="vehicleName" class="form-label">Vehicle Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="vehicleName"
+                  placeholder="Enter vehicle name"
+                >
+              </div>
+
+              <!-- Plate Number -->
+              <div class="mb-3">
+                <label for="plateNo" class="form-label">Plate Number</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="plateNo"
+                  placeholder="Enter plate number"
+                >
+              </div>
+
+              <!-- Status -->
+              <div class="mb-3">
+                <label for="vehicleStatus" class="form-label">Status</label>
+                <select class="form-select" id="vehicleStatus">
+                  <option selected>Choose status</option>
+                  <option value="available">Available</option>
+                  <option value="inuse">In Use</option>
+                  <option value="maintenance">Under Maintenance</option>
+                </select>
+              </div>
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
             </button>
+            <button type="button" class="btn btn-primary">Add Vehicle</button>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Add Vehicle Modal -->
-      <div class="modal fade" id="addVehicleModal" tabindex="-1" aria-labelledby="addVehicleModalLabel" aria-hidden="true">
+    <!-- Add Booking Modal -->
+    <div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">
             
             <!-- Modal Header -->
             <div class="modal-header">
-              <h5 class="modal-title" id="addVehicleModalLabel">Add New Vehicle</h5>
+              <h5 class="modal-title" id="addBookingModalLabel">Add New Booking</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
             <!-- Modal Body -->
             <div class="modal-body">
               <form>
-                <!-- Vehicle Name -->
+                <!-- Vehicle Dropdown -->
                 <div class="mb-3">
-                  <label for="vehicleName" class="form-label">Vehicle Name</label>
-                  <input type="text" class="form-control" id="vehicleName" placeholder="Enter vehicle name">
-                </div>
-                
-                <!-- Plate Number -->
-                <div class="mb-3">
-                  <label for="plateNo" class="form-label">Plate Number</label>
-                  <input type="text" class="form-control" id="plateNo" placeholder="Enter plate number">
-                </div>
-                
-                <!-- Status Dropdown -->
-                <div class="mb-3">
-                  <label for="vehicleStatus" class="form-label">Status</label>
-                  <select class="form-select" id="vehicleStatus">
-                    <option selected>Choose status</option>
-                    <option value="available">Available</option>
-                    <option value="inuse">In Use</option>
-                    <option value="maintenance">Under Maintenance</option>
+                  <label for="vehicleSelect" class="form-label">Select Available Vehicle</label>
+                  <select class="form-select" id="vehicleSelect">
+                    <option selected>Choose a vehicle...</option>
+                    <option value="toyota-hilux">Toyota Hilux (SAA 6787)</option>
+                    <option value="nissan-navara">Nissan Navara (SBA 1234)</option>
+                    <option value="ford-ranger">Ford Ranger (SBP 1399)</option>
                   </select>
+                </div>
+                
+                <!-- Assigned Person (searchable input) -->
+                <div class="mb-3">
+                  <label for="assignedPerson" class="form-label">Assigned Person</label>
+                  <input type="text" class="form-control" id="assignedPerson" placeholder="Search for person...">
+                </div>
+                
+                <!-- Booking Date (required) -->
+                <div class="mb-3">
+                  <label for="bookingDate" class="form-label">Booking Date</label>
+                  <input type="date" class="form-control" id="bookingDate" required>
+                </div>
+                
+                <!-- Return Date (optional) -->
+                <div class="mb-3">
+                  <label for="returnDate" class="form-label">Return Date (optional)</label>
+                  <input type="date" class="form-control" id="returnDate">
                 </div>
               </form>
             </div>
@@ -108,69 +388,29 @@
             <!-- Modal Footer -->
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-primary">Add Vehicle</button>
-            </div>
-            
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-4 px-4">
-        <!-- Vehicle Table-like Div -->
-        <div class="vehicle-table mt-4">
-
-          <!-- Table Header -->
-          <div class="vehicle-row vehicle-header d-flex fw-bold border-bottom py-2">
-            <div class="col-3">Vehicle Name</div>
-            <div class="col-3">Plate No.</div>
-            <div class="col-3">Status</div>
-            <div class="col-3 text-center">Action</div>
-          </div>
-
-          <!-- Table Row 1 -->
-          <div class="vehicle-row d-flex align-items-center border-bottom py-2">
-            <div class="col-3">Toyota Hilux</div>
-            <div class="col-3">SAA 1234 X</div>
-            <div class="col-3">
-              <span class="badge bg-success">Available</span>
-            </div>
-            <div class="col-3 text-center">
-              <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-              <button class="btn btn-sm btn-outline-danger">Delete</button>
-            </div>
-          </div>
-
-          <!-- Table Row 2 -->
-          <div class="vehicle-row d-flex align-items-center border-bottom py-2">
-            <div class="col-3">Nissan Navara</div>
-            <div class="col-3">SAB 5678 A</div>
-            <div class="col-3">
-              <span class="badge bg-secondary">In Use</span>
-            </div>
-            <div class="col-3 text-center">
-              <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-              <button class="btn btn-sm btn-outline-danger">Delete</button>
-            </div>
-          </div>
-
-          <!-- Table Row 3 -->
-          <div class="vehicle-row d-flex align-items-center border-bottom py-2">
-            <div class="col-3">Ford Ranger</div>
-            <div class="col-3">SAC 9988 T</div>
-            <div class="col-3">
-              <span class="badge badge-maintenance">Under Maintenance</span>
-            </div>
-            <div class="col-3 text-center">
-              <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-              <button class="btn btn-sm btn-outline-danger">Delete</button>
+              <button type="button" class="btn btn-primary">Add Booking</button>
             </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
+    </div>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/megacessweb/assets/js/main.js"></script>
+    <script src="/megacessweb/assets/js/roderick.js"></script>
+    <script>
+      $(document).ready(function () {
+        $(".tab-btn").click(function () {
+          const target = $(this).data("target");
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/megacessweb/assets/js/main.js"></script>
-</body>
+          // Remove active class from all tab panes and buttons
+          $(".tab-btn").removeClass("active");
+          $(".tab-pane").removeClass("active");
+
+          // Add active class to selected tab and pane
+          $(this).addClass("active");
+          $(`.tab-pane[data-name="${target}"]`).addClass("active");
+        });
+      });
+    </script>
+  </body>
 </html>
