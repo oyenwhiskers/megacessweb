@@ -52,21 +52,141 @@
           <div>
             <select class="form-select">
               <option selected>Filter by...</option>
-              <option value="available">Available</option>
-              <option value="inuse">In Use</option>
-              <option value="maintenance">Under Maintenance</option>
+               <!-- Date sorting -->
+              <option value="booking-date-asc">Booking Date ↑ (asc)</option>
+              <option value="booking-date-desc">Booking Date ↓ (desc)</option>
+              <option value="return-date-asc">Return Date ↑ (asc)</option>
+              <option value="return-date-desc">Return Date ↓ (desc)</option>
             </select>
           </div>
 
           <!-- Add Booking Button -->
           <div>
-            <button class="btn btn-primary d-flex align-items-center">
+            <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addBookingModal">
               <i class="bi bi-plus-circle me-2"></i> Add Booking
             </button>
           </div>
         </div>
       </div>
 
+      <div class="mt-4 px-4">
+        <!-- Vehicle Table-like Div -->
+        <div class="vehicle-table mt-4">
+
+          <!-- Table Header -->
+          <div class="vehicle-row vehicle-header d-flex fw-bold border-bottom py-2">
+            <div class="col">Vehicle Name</div>
+            <div class="col">Plate No.</div>
+            <div class="col">Status</div>
+            <div class="col">Assigned Person</div>
+            <div class="col">Booking Date</div>
+            <div class="col">Return Date</div>
+            <div class="col text-center">Action</div>
+          </div>
+
+          <!-- Table Row 1 -->
+          <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+            <div class="col">Toyota Hilux</div>
+            <div class="col">SAA 1234 X</div>
+            <div class="col">
+              <span class="badge bg-warning text-dark">In Use</span>
+            </div>
+            <div class="col">John Doe</div>
+            <div class="col">2025-11-07</div>
+            <div class="col">2025-11-10</div>
+            <div class="col text-center">
+              <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </div>
+          </div>
+
+          <!-- Table Row 2 -->
+          <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+            <div class="col">Nissan Navara</div>
+            <div class="col">SAB 5678 A</div>
+            <div class="col">
+              <span class="badge bg-warning text-dark">In Use</span>
+            </div>
+            <div class="col">Jane Smith</div>
+            <div class="col">2025-11-06</div>
+            <div class="col">2025-11-09</div>
+            <div class="col text-center">
+              <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </div>
+          </div>
+
+          <!-- Table Row 3 -->
+          <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+            <div class="col">Ford Ranger</div>
+            <div class="col">SAC 9988 T</div>
+            <div class="col">
+              <span class="badge bg-warning text-dark">In Use</span>
+            </div>
+            <div class="col">Mike Johnson</div>
+            <div class="col">2025-11-05</div>
+            <div class="col">2025-11-08</div>
+            <div class="col text-center">
+              <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Booking Modal -->
+      <div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <h5 class="modal-title" id="addBookingModalLabel">Add New Booking</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="modal-body">
+              <form>
+                <!-- Vehicle Dropdown -->
+                <div class="mb-3">
+                  <label for="vehicleSelect" class="form-label">Select Available Vehicle</label>
+                  <select class="form-select" id="vehicleSelect">
+                    <option selected>Choose a vehicle...</option>
+                    <option value="toyota-hilux">Toyota Hilux (SAA 6787)</option>
+                    <option value="nissan-navara">Nissan Navara (SBA 1234)</option>
+                    <option value="ford-ranger">Ford Ranger (SBP 1399)</option>
+                  </select>
+                </div>
+                
+                <!-- Assigned Person (searchable input) -->
+                <div class="mb-3">
+                  <label for="assignedPerson" class="form-label">Assigned Person</label>
+                  <input type="text" class="form-control" id="assignedPerson" placeholder="Search for person...">
+                </div>
+                
+                <!-- Booking Date (required) -->
+                <div class="mb-3">
+                  <label for="bookingDate" class="form-label">Booking Date</label>
+                  <input type="date" class="form-control" id="bookingDate" required>
+                </div>
+                
+                <!-- Return Date (optional) -->
+                <div class="mb-3">
+                  <label for="returnDate" class="form-label">Return Date (optional)</label>
+                  <input type="date" class="form-control" id="returnDate">
+                </div>
+              </form>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary">Add Booking</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
