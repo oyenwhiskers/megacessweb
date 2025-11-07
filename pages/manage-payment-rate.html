@@ -8,6 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
   <link rel="stylesheet" href="/megacessweb/assets/css/manage-payment-rate.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body data-page="payment-rate">
   <div class="app d-flex">
@@ -19,8 +20,8 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
+        <!-- Slider (Control both views)-->
         <div class="type-of-employee-slider text-center my-4">
-          
           <div class="btn-group" role="group" aria-label="Type of Payment Rate">
             <input type="radio" class="btn-check" name="rateType" id="salary" autocomplete="off" checked>
             <label class="rate-btn" for="salary">
@@ -34,8 +35,8 @@
           </div>
         </div>
 
-        
-        <div class="payment-rate-container mx-auto">
+        <!-- Salary Management Section (visible by default) -->
+        <div id="salarySection" class="payment-rate-container mx-auto">
         <!-- Search Section -->
          <div class="search-section my-4">
           <div class="card shadow-sm">
@@ -44,7 +45,7 @@
               <!-- Search Input -->
                <div class="col-md-8 col-sm-12">
                 <label for="searchStaff" class="form-label fw-semibold">
-                  Search Staff (Just for subtitute)
+                  Search Staff Name:
                 </label>
                 <div class="input-group">
                   <span class="input-group-text bg-success text-white">
@@ -88,12 +89,134 @@
             </div>
           </div>
         </div>
+  <!-- Supposedly API needed to integrate for here to display the list of registered staffs.-->
+
+
+  <!-- Work-based Rate Section (hidden by default) -->
+   <div id="workSection" class="payment-rate-container mx-auto">
+    <!-- Add new Payment Rate Button -->
+        <div class="add-rate-btn text-end mb-3">
+            <a href="/megacessweb/pages/manage-payment-rate-work-based-rate-add-new.html" class="btn btn-success">
+                <i class="bi bi-plus-circle me-1"></i> Add new Payment Rate
+            </a>
+        </div>
+
+        <!-- Two-panel layout -->
+        <div class="work-based-container mx-auto d-flex flex-column flex-lg-row gap-3">
+
+          <!-- Left panel: Task List -->
+          <div class="task-list card shadow-sm flex-fill">
+            <div class="card-header bg-success text-white">
+              <h6 class="mb-0"><i class="bi bi-list-task me-2"></i> Task Rate List</h6>
+            </div>
+            <div class="card-body p-0">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center active">
+                  Harvesting
+                  <span class="badge bg-success">RM 80 / day</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  Fertilizing
+                  <span class="badge bg-success">RM 70 / day</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  Spraying
+                  <span class="badge bg-success">RM 60 / day</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  Manuring
+                  <span class="badge bg-success">RM 65 / day</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Right panel: Preview/Editor -->
+          <div class="task-editor card shadow-sm flex-fill">
+            <div class="card-header bg-success text-white">
+              <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Edit Task Details</h6>
+            </div>
+            <div class="card-body">
+              <form>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Task Name</label>
+                  <input type="text" class="form-control" value="Harvesting" readonly>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Payment Rate (RM / day)</label>
+                  <input type="number" class="form-control" value="80">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Description</label>
+                  <textarea class="form-control" rows="3" placeholder="Optional description..."></textarea>
+                </div>
+                <div class="text-end">
+                  <button type="button" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                  </button>
+                  <button type="submit" class="btn btn-success">
+                    <i class="bi bi-save"></i> Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
 
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
+
+  <script>
+    $(function() {
+      // Show/Hide sections and keep URL in sync
+      function showType(type, push) {
+        if(type === 'work') {
+          $('#salarySection').addClass('d-none');
+          $('#workSection').removeClass('d-none');
+          $('#work').prop('checked', true);
+        } else {
+          $('#workSection').addClass('d-none');
+          $('#salarySection').removeClass('d-none');
+          $('#salary').prop('checked', true);
+        }
+
+        var url = (type === 'work') ? '?type=work' : '?type=salary';
+        if(push) {
+          history.pushState({type: type}, '', url);
+        } else {
+          history.replaceState({type: type}, '', url);
+        }
+      }
+
+      // Initial state from URL
+      var params = new URLSearchParams(window.location.search);
+      var initial = (params.get('type') === 'work') ? 'work' : 'salary';
+      showType(initial, false);
+
+      // Toggle by Slider - Fixed syntax
+      $('#salary').on('change', function() {
+        if($(this).is(':checked')) {
+          showType('salary', true);
+        }
+      });
+
+      $('#work').on('change', function() {
+        if($(this).is(':checked')) {
+          showType('work', true);
+        }
+      });
+
+      // Handle Back/Forward
+      window.addEventListener('popstate', function(ev) {
+        var p = new URLSearchParams(window.location.search).get('type');
+        showType(p === 'work' ? 'work' : 'salary', false);
+      });
+    }); // Added missing closing parenthesis
+</script>
 
 </body>
 </html>
