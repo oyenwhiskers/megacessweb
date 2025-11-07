@@ -159,3 +159,30 @@
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* subtle shadow */
   border: 1px solid #dee2e6;          /* optional border */
 }
+
+/* ============================================================
+   Tools Table Styles
+   ============================================================ */
+
+/* Tools Table Styling (same as Vehicle Table) */
+.tools-table {
+  background-color: #fff;
+  border: 1px solid #f1f3f5;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tools-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+.tools-row:hover {
+  background-color: #f1f3f5;
+  transition: background-color 0.2s ease;
+}
+
+/* Padding for first column text only */
+.tools-row > div:first-child {
+  padding-left: 12px;
+}

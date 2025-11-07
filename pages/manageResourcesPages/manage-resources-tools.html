@@ -3,29 +3,308 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MegaCess Web • Manage Resources</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+ <title>MegaCess Web • Manage Resources</title>
+ 
+  <!-- Bootstrap & Icons -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"
+  >
 
-  <link rel="stylesheet" href="/megacessweb/assets/css/roderick.css"> <!-- Links to Roderick's css style -->
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="/megacessweb/assets/css/roderick.css">
+  <!-- Links to Roderick's CSS style -->
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body data-page="manage-resources">
+  <!-- Main Content -->
   <div class="app d-flex">
+    <!-- Sidebar -->
     <aside class="sidebar p-3" id="sidebar-root"></aside>
 
+    <!-- Main Content -->
     <main class="content flex-grow-1">
+
+      <!-- Topbar -->
       <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
-        <h1 class="page-title h5 mb-0">Manage Resources</h1>
+        <h1 class="page-title h5 mb-0">Manage Resources (Tools)</h1>
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
-      <div class="container-fluid p-4">
-        <h1>Tools Page</h1>
+      
+      <!-- Row 1 (Back btn and tab selection) -->
+      <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
+          <!-- Back Button -->
+          <a
+            href="/megacessweb/pages/manage-resources.html"
+            class="btn back-btn d-flex align-items-center"
+          >
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to Manage Resources
+          </a>
+
+          <!-- Tab Selection -->
+          <div class="btn-group" role="group">
+            <a href="#" class="tab-btn active d-flex align-items-center" data-target="tools">
+              <i class="bi bi-tools me-2"></i>
+              Tools
+            </a>
+            <a href="#" class="tab-btn d-flex align-items-center" data-target="booking">
+              <i class="bi bi-calendar-check me-2"></i>
+              Booking
+            </a>
+          </div>
       </div>
+    
+      <!-- Tab Content for Tools and Booking -->
+      <div class="tab-content">
+        <!-- Tools Tab -->
+        <div class="tab-pane" data-name="tools">
+          <!-- Row 2: Tools List Header -->
+          <div class="px-4 mb-4">
+            <h5 class="fw-semibold mb-3">List of Tools :</h5>
+
+            <!-- Search Bar + Filter + Add Button -->
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+              <!-- Search Bar -->
+              <div class="flex-grow-1">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Search tools..."
+                >
+              </div>
+
+              <!-- Filter Dropdown -->
+              <div>
+                <select class="form-select">
+                  <option selected>All Status</option>
+                  <option value="available">Available</option>
+                  <option value="inuse">In Use</option>
+                  <option value="maintenance">Broken</option>
+                </select>
+              </div>
+
+              <!-- Add Tools Button -->
+              <div>
+                <button
+                  class="btn btn-primary d-flex align-items-center"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addToolsModal"
+                >
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Add Tools
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: Tools Table -->
+          <div class="mt-4 px-4">
+            <div class="tools-table mt-4">
+              <!-- Table Header -->
+              <div class="tools-row tools-header d-flex fw-bold border-bottom py-2">
+                <div class="col-4">Tool Name</div>
+                <div class="col-4">Status</div>
+                <div class="col-4 text-center">Action</div>
+              </div>
+
+              <!-- Sample Tool Rows -->
+              <div class="tools-row d-flex border-bottom py-2 align-items-center">
+                <div class="col-4">Electric Drill</div>
+                <div class="col-4">
+                  <span class="badge bg-success">Available</span>
+                </div>
+                <div class="col-4 text-center">
+                  <button class="btn btn-sm btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i> Edit
+                  </button>
+                  <button class="btn btn-sm btn-danger">
+                    <i class="bi bi-trash me-1"></i> Delete
+                  </button>
+                </div>
+              </div>
+
+              <div class="tools-row d-flex border-bottom py-2 align-items-center">
+                <div class="col-4">Hammer</div>
+                <div class="col-4">
+                  <span class="badge bg-secondary">In Use</span>
+                </div>
+                <div class="col-4 text-center">
+                  <button class="btn btn-sm btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i> Edit
+                  </button>
+                  <button class="btn btn-sm btn-danger">
+                    <i class="bi bi-trash me-1"></i> Delete
+                  </button>
+                </div>
+              </div>
+
+              <div class="tools-row d-flex border-bottom py-2 align-items-center">
+                <div class="col-4">Welding Machine</div>
+                <div class="col-4">
+                  <span class="badge badge-maintenance">Under Maintenance</span>
+                </div>
+                <div class="col-4 text-center">
+                  <button class="btn btn-sm btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i> Edit
+                  </button>
+                  <button class="btn btn-sm btn-danger">
+                    <i class="bi bi-trash me-1"></i> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Tab -->
+        <div class="tab-pane" data-name="booking">
+          <div class="tab-pane" data-name="booking">
+            <div class="px-4 mb-4">
+              <!-- Title -->
+              <h5 class="fw-semibold mb-3">List of Tools :</h5>
+
+              <!-- Search Bar + Filter + Add Button -->
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <!-- Search Bar -->
+                <div class="flex-grow-1">
+                  <input type="text" class="form-control" placeholder="Search tools...">
+                </div>
+
+                <!-- Filter Dropdown -->
+                <div>
+                  <select class="form-select">
+                    <option selected>Filter by...</option>
+                    <option value="booking-date-asc">Booking Date ↑ (asc)</option>
+                    <option value="booking-date-desc">Booking Date ↓ (desc)</option>
+                    <option value="return-date-asc">Return Date ↑ (asc)</option>
+                    <option value="return-date-desc">Return Date ↓ (desc)</option>
+                  </select>
+                </div>
+
+                <!-- Add Booking Button -->
+                <div>
+                  <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                    <i class="bi bi-plus-circle me-2"></i> Add Booking
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 px-4">
+              <!-- Tool Table-like Div -->
+              <div class="tools-table mt-4">
+
+                <!-- Table Header -->
+                <div class="tools-row tools-header d-flex fw-bold border-bottom py-2">
+                  <div class="col">Tool Name</div>
+                  <div class="col">Status (In Use)</div>
+                  <div class="col">Assigned Person</div>
+                  <div class="col">Booking Date</div>
+                  <div class="col">Return Date</div>
+                  <div class="col text-center">Action</div>
+                </div>
+
+                <!-- Sample Row 1 -->
+                <div class="tools-row d-flex border-bottom py-2 align-items-center">
+                  <div class="col">Electric Drill</div>
+                  <div class="col">
+                    <span class="badge bg-success">Available</span>
+                  </div>
+                  <div class="col">—</div>
+                  <div class="col">—</div>
+                  <div class="col">—</div>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-primary">
+                      <i class="bi bi-pencil-square me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Sample Row 2 -->
+                <div class="tools-row d-flex border-bottom py-2 align-items-center">
+                  <div class="col">Hammer Drill</div>
+                  <div class="col">
+                    <span class="badge bg-secondary">In Use</span>
+                  </div>
+                  <div class="col">Ahmad Zaki</div>
+                  <div class="col">2025-11-02</div>
+                  <div class="col">2025-11-05</div>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-primary">
+                      <i class="bi bi-pencil-square me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Sample Row 3 -->
+                <div class="tools-row d-flex border-bottom py-2 align-items-center">
+                  <div class="col">Angle Grinder</div>
+                  <div class="col">
+                    <span class="badge bg-danger">Under Maintenance</span>
+                  </div>
+                  <div class="col">—</div>
+                  <div class="col">—</div>
+                  <div class="col">—</div>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-primary">
+                      <i class="bi bi-pencil-square me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
+    <!-- End of Main Content -->
   </div>
+
+  <!-- Add tools Modal -->
+
+  <!-- Add booking Modal -->
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="/megacessweb/assets/js/roderick.js"></script>
+  <script>
+      $(document).ready(function () {
+        // Show the first tab content by default
+        $(".tab-pane").first().show();
+
+        // Tab Button Click Handler
+        $(".tab-btn").click(function () {
+          const target = $(this).data("target"); // Get target tab name
+
+          // Hide all panes
+          $(".tab-pane").hide();
+
+          // Show the selected one
+          $(`.tab-pane[data-name="${target}"]`).show();
+
+          // Update active button
+          $(".tab-btn").removeClass("active");
+          $(this).addClass("active");
+        });
+      });
+    </script>
 </body>
 </html>
