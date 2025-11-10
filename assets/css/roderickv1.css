@@ -123,28 +123,28 @@
 }
 
 /* ============================================================
-   Vehicle Table Styles
+   Content Table Styles
    ============================================================ */
 
-.vehicle-table {
+.content-table {
   background-color: #fff;
   border: 1px solid #f1f3f5;
   border-radius: 0.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.vehicle-header {
+.content-header {
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6 !important;
 }
 
-.vehicle-row:hover {
+.content-row:hover {
   background-color: #f1f3f5;
   transition: background-color 0.2s ease;
 }
 
 /* Padding for first column text only */
-.vehicle-row > div:first-child {
+.content-row > div:first-child {
   padding-left: 12px;
 }
 
@@ -186,3 +186,4 @@
 .tools-row > div:first-child {
   padding-left: 12px;
 }
+

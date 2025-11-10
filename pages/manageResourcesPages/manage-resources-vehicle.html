@@ -17,7 +17,7 @@
 
     <!-- Custom Styles -->
     <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
-    <link rel="stylesheet" href="/megacessweb/assets/css/roderick.css">
+    <link rel="stylesheet" href="/megacessweb/assets/css/roderickv1.css">
     <!-- Links to Roderick's CSS style -->
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -79,7 +79,7 @@
                   <input
                     type="text"
                     class="form-control"
-                    placeholder="Search vehicle..."
+                    placeholder="Search vehicle/plate number..."
                   >
                 </div>
 
@@ -109,9 +109,9 @@
 
             <!-- Row 3: Vehicle Table -->
             <div class="mt-4 px-4">
-              <div class="vehicle-table mt-4">
+              <div class="content-table mt-4">
                 <!-- Table Header -->
-                <div class="vehicle-row vehicle-header d-flex fw-bold border-bottom py-2">
+                <div class="content-row content-header d-flex fw-bold border-bottom py-2">
                   <div class="col-3">Vehicle Name</div>
                   <div class="col-3">Plate No.</div>
                   <div class="col-3">Status</div>
@@ -119,42 +119,54 @@
                 </div>
 
                 <!-- Row 1 -->
-                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                <div class="content-row d-flex align-items-center border-bottom py-2">
                   <div class="col-3">Toyota Hilux</div>
                   <div class="col-3">SAA 1234 X</div>
                   <div class="col-3">
                     <span class="badge bg-success">Available</span>
                   </div>
-                  <div class="col-3 text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">
+                      <i class="bi bi-pencil me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
                   </div>
                 </div>
 
                 <!-- Row 2 -->
-                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                <div class="content-row d-flex align-items-center border-bottom py-2">
                   <div class="col-3">Nissan Navara</div>
                   <div class="col-3">SAB 5678 A</div>
                   <div class="col-3">
                     <span class="badge bg-secondary">In Use</span>
                   </div>
-                  <div class="col-3 text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">
+                      <i class="bi bi-pencil me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
                   </div>
                 </div>
 
                 <!-- Row 3 -->
-                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                <div class="content-row d-flex align-items-center border-bottom py-2">
                   <div class="col-3">Ford Ranger</div>
                   <div class="col-3">SAC 9988 T</div>
                   <div class="col-3">
                     <span class="badge badge-maintenance">Under Maintenance</span>
                   </div>
-                  <div class="col-3 text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
-                  </div>
+                  <div class="col text-center">
+                    <button class="btn btn-sm btn-outline-primary me-2">
+                      <i class="bi bi-pencil me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                  </div>  
                 </div>
               </div>
             </div>
@@ -170,13 +182,13 @@
               <div class="d-flex flex-wrap gap-3 align-items-center">
                 <!-- Search Bar -->
                 <div class="flex-grow-1">
-                  <input type="text" class="form-control" placeholder="Search vehicle...">
+                  <input type="text" class="form-control" placeholder="Search vehicle/plate number/assigned person...">
                 </div>
 
                 <!-- Filter Dropdown -->
                 <div>
                   <select class="form-select">
-                    <option selected>Filter by...</option>
+                    <option selected>Sort by...</option>
                     <!-- Date sorting -->
                     <option value="booking-date-asc">Booking Date ↑ (asc)</option>
                     <option value="booking-date-desc">Booking Date ↓ (desc)</option>
@@ -196,10 +208,10 @@
 
             <div class="mt-4 px-4">
               <!-- Vehicle Table-like Div -->
-              <div class="vehicle-table mt-4">
+              <div class="content-table mt-4">
 
                 <!-- Table Header -->
-                <div class="vehicle-row vehicle-header d-flex fw-bold border-bottom py-2">
+                <div class="content-row content-header d-flex fw-bold border-bottom py-2">
                   <div class="col">Vehicle Name</div>
                   <div class="col">Plate No.</div>
                   <div class="col">Status</div>
@@ -210,7 +222,7 @@
                 </div>
 
                 <!-- Table Row 1 -->
-                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                <div class="content-row d-flex align-items-center border-bottom py-2">
                   <div class="col">Toyota Hilux</div>
                   <div class="col">SAA 1234 X</div>
                   <div class="col">
@@ -220,13 +232,17 @@
                   <div class="col">2025-11-07</div>
                   <div class="col">2025-11-10</div>
                   <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    <button class="btn btn-sm btn-outline-primary me-2">
+                      <i class="bi bi-pencil me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
                   </div>
                 </div>
 
                 <!-- Table Row 2 -->
-                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                <div class="content-row d-flex align-items-center border-bottom py-2">
                   <div class="col">Nissan Navara</div>
                   <div class="col">SAB 5678 A</div>
                   <div class="col">
@@ -236,13 +252,17 @@
                   <div class="col">2025-11-06</div>
                   <div class="col">2025-11-09</div>
                   <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    <button class="btn btn-sm btn-outline-primary me-2">
+                      <i class="bi bi-pencil me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
                   </div>
                 </div>
 
                 <!-- Table Row 3 -->
-                <div class="vehicle-row d-flex align-items-center border-bottom py-2">
+                <div class="content-row d-flex align-items-center border-bottom py-2">
                   <div class="col">Ford Ranger</div>
                   <div class="col">SAC 9988 T</div>
                   <div class="col">
@@ -252,8 +272,12 @@
                   <div class="col">2025-11-05</div>
                   <div class="col">2025-11-08</div>
                   <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    <button class="btn btn-sm btn-outline-primary me-2">
+                      <i class="bi bi-pencil me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </button>
                   </div>
                 </div>
               </div>
@@ -276,7 +300,7 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <!-- Header -->
-          <div class="modal-header">
+          <div class="modal-header bg-success text-white">
             <h5 class="modal-title" id="addVehicleModalLabel">Add New Vehicle</h5>
             <button
               type="button"
@@ -345,7 +369,7 @@
           <div class="modal-content">
             
             <!-- Modal Header -->
-            <div class="modal-header">
+            <div class="modal-header bg-success text-white">
               <h5 class="modal-title" id="addBookingModalLabel">Add New Booking</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
