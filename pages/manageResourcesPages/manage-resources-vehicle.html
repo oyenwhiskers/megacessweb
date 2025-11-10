@@ -78,6 +78,7 @@
                 <div class="flex-grow-1">
                   <input
                     type="text"
+                    id="vehicleSearch" 
                     class="form-control"
                     placeholder="Search vehicle/plate number..."
                   >
@@ -85,17 +86,18 @@
 
                 <!-- Filter Dropdown -->
                 <div>
-                  <select class="form-select">
-                    <option selected>All Status</option>
-                    <option value="available">Available</option>
-                    <option value="inuse">In Use</option>
-                    <option value="maintenance">Under Maintenance</option>
+                  <select id="vehicleStatus" class="form-select">
+                    <option selected value="">All Status</option>
+                    <option value="Available">Available</option>
+                    <option value="In Use">In Use</option>
+                    <option value="Under Maintenance">Under Maintenance</option>
                   </select>
                 </div>
 
                 <!-- Add Vehicle Button -->
                 <div>
                   <button
+                    type="button" 
                     class="btn btn-primary d-flex align-items-center"
                     data-bs-toggle="modal"
                     data-bs-target="#addVehicleModal"
@@ -118,56 +120,13 @@
                   <div class="col-3 text-center">Action</div>
                 </div>
 
-                <!-- Row 1 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col-3">Toyota Hilux</div>
-                  <div class="col-3">SAA 1234 X</div>
-                  <div class="col-3">
-                    <span class="badge bg-success">Available</span>
-                  </div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
+                <div id="loading" class="text-center my-3" style="display: none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
                   </div>
                 </div>
-
-                <!-- Row 2 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col-3">Nissan Navara</div>
-                  <div class="col-3">SAB 5678 A</div>
-                  <div class="col-3">
-                    <span class="badge bg-secondary">In Use</span>
-                  </div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Row 3 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col-3">Ford Ranger</div>
-                  <div class="col-3">SAC 9988 T</div>
-                  <div class="col-3">
-                    <span class="badge badge-maintenance">Under Maintenance</span>
-                  </div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>  
-                </div>
+                 <!-- Table Body (Empty, JS will populate it) -->
+                <div id="vehicleTableBody"></div>
               </div>
             </div>
           </div>
@@ -337,12 +296,12 @@
 
               <!-- Status -->
               <div class="mb-3">
-                <label for="vehicleStatus" class="form-label">Status</label>
-                <select class="form-select" id="vehicleStatus">
+                <label for="addVehicleStatus" class="form-label">Status</label>
+                <select class="form-select" id="addVehicleStatus">
                   <option selected>Choose status</option>
-                  <option value="available">Available</option>
-                  <option value="inuse">In Use</option>
-                  <option value="maintenance">Under Maintenance</option>
+                  <option value="Available">Available</option>
+                  <option value="In Use">In Use</option>
+                  <option value="Under Maintenance">Under Maintenance</option>
                 </select>
               </div>
             </form>
@@ -357,7 +316,7 @@
             >
               Cancel
             </button>
-            <button type="button" class="btn btn-primary">Add Vehicle</button>
+            <button type="button" class="btn btn-primary" id="addVehicleBtn">Add Vehicle</button>
           </div>
         </div>
       </div>
@@ -416,10 +375,12 @@
           </div>
         </div>
     </div>
+
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/megacessweb/assets/js/main.js"></script>
     <script src="/megacessweb/assets/js/roderick.js"></script>
+    <script src="/megacessweb/assets/js/vehicles.js"></script>
     <script>
       $(document).ready(function () {
         // Show the first tab content by default
@@ -441,5 +402,11 @@
         });
       });
     </script>
+    <!-- Loading overlay spinner at the very end of body -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
   </body>
 </html>
