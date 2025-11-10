@@ -48,12 +48,26 @@
         return gender.charAt(0).toUpperCase() + gender.slice(1);
     }
     
+    // Highlight search terms in text
+    function highlightSearchTerm(text, searchTerm) {
+        if (!searchTerm || !searchTerm.trim() || !text) {
+            return text;
+        }
+        
+        const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedTerm})`, 'gi');
+        return text.replace(regex, '<mark class="bg-warning text-dark">$1</mark>');
+    }
+    
     // Create worker list item HTML (similar to staff list)
     function createWorkerListItem(worker) {
         const claimedBy = worker.claimed_staff?.user?.user_fullname || 'Unclaimed';
         const claimedStatus = worker.claimed_staff ? 'claimed' : 'unclaimed';
         const claimedBadge = claimedStatus === 'claimed' ? 'bg-success' : 'bg-warning text-dark';
         const claimedText = claimedStatus === 'claimed' ? 'Claimed' : 'Available';
+        
+        // Apply search highlighting to worker name
+        const highlightedName = highlightSearchTerm(worker.staff_fullname, currentSearch);
         
         return `
             <div class="list-group-item worker-list-item ${claimedStatus}">
@@ -68,7 +82,7 @@
                     <div class="flex-grow-1 ms-3">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="fw-semibold">${worker.staff_fullname}</div>
+                                <div class="fw-semibold">${highlightedName}</div>
                                 <div class="small text-muted mb-1">
                                     <i class="bi bi-telephone me-1"></i>${formatPhone(worker.staff_phone)}
                                     <span class="ms-3"><i class="bi bi-person me-1"></i>${getGenderDisplay(worker.staff_gender)}</span>
@@ -216,14 +230,16 @@
     
     // Show empty state
     function showEmpty(currentSearch, currentGender = 'all') {
+        const searchMessage = currentSearch ? 
+            `No workers found matching "${currentSearch}".` : 
+            'No workers have been registered yet.';
+            
         workersView.innerHTML = `
             <div class="list-group text-start">
                 <div class="list-group-item text-center py-5">
                     <i class="bi bi-people display-1 text-muted mb-3"></i>
                     <h5 class="text-muted">No workers found</h5>
-                    <p class="text-muted">
-                        ${currentSearch ? `No workers match your search "${currentSearch}".` : 'No workers have been registered yet.'}
-                    </p>
+                    <p class="text-muted">${searchMessage}</p>
                     ${currentSearch ? `
                         <button class="btn btn-outline-primary" onclick="fetchWorkersList('', 1, '${currentGender}')">
                             <i class="bi bi-x-circle me-1"></i>Clear Search
@@ -247,7 +263,6 @@
             
             // Add query parameters
             const params = {
-                claimed: "0", // For workers, we typically want unclaimed staff
                 per_page: DEFAULT_PER_PAGE.toString(),
                 page: page.toString()
             };
@@ -295,7 +310,27 @@
                 throw new Error('Invalid response format');
             }
             
-            if (result.data.length === 0) {
+            let filteredData = result.data;
+            let filteredMeta = result.meta;
+            
+            // Apply client-side filtering as fallback if API doesn't filter properly
+            if (search && search.trim() && filteredData.length > 0) {
+                const searchTerm = search.trim().toLowerCase();
+                console.log('Applying client-side search filter for:', searchTerm);
+                
+                filteredData = filteredData.filter(worker => {
+                    return worker.staff_fullname && worker.staff_fullname.toLowerCase().includes(searchTerm);
+                });
+                
+                // Update meta information for filtered results
+                if (filteredMeta) {
+                    filteredMeta.total = filteredData.length;
+                    filteredMeta.last_page = Math.ceil(filteredData.length / (filteredMeta.per_page || DEFAULT_PER_PAGE));
+                    filteredMeta.current_page = 1; // Reset to first page for search results
+                }
+            }
+            
+            if (filteredData.length === 0) {
                 showEmpty(search, gender);
                 return;
             }
@@ -303,14 +338,14 @@
             // Render workers in list format
             let workersHTML = `
                 <div class="list-group text-start">
-                    ${result.data.map(worker => createWorkerListItem(worker)).join('')}
+                    ${filteredData.map(worker => createWorkerListItem(worker)).join('')}
                 </div>
             `;
             
             // Add pagination if available
-            if (result.meta) {
-                const totalPages = result.meta.last_page || 1;
-                const totalItems = result.meta.total || result.data.length;
+            if (filteredMeta) {
+                const totalPages = filteredMeta.last_page || 1;
+                const totalItems = filteredMeta.total || filteredData.length;
                 workersHTML += createPaginationHTML(page, totalPages, totalItems, search, gender);
             }
             

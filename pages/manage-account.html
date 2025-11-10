@@ -33,7 +33,7 @@
           <div class="mt-3 d-flex justify-content-start">
             <div class="input-group search-group">
               <span class="input-group-text"><i class="bi bi-search"></i></span>
-              <input id="accountSearch" type="search" class="form-control" placeholder="Search accounts..." aria-label="Search accounts">
+              <input id="accountSearch" type="search" class="form-control" placeholder="Search by name..." aria-label="Search accounts">
               <button class="btn btn-outline-secondary" type="button" id="clearAccountSearch" title="Clear"><i class="bi bi-x-lg"></i></button>
             </div>
           </div>
@@ -364,6 +364,22 @@
               window.fetchStaffList(searchInput.value, currentRoleFilter);
             } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
               window.fetchWorkersList(searchInput.value, 1, currentGenderFilter);
+            }
+          }
+        });
+      }
+
+      // Clear search functionality
+      const clearSearch = document.getElementById('clearAccountSearch');
+      if (clearSearch) {
+        clearSearch.addEventListener('click', function() {
+          if (searchInput) {
+            searchInput.value = '';
+            // Trigger search with empty value
+            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+              window.fetchStaffList('', currentRoleFilter);
+            } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
+              window.fetchWorkersList('', 1, currentGenderFilter);
             }
           }
         });

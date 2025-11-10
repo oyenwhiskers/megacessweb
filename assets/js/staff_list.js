@@ -1,7 +1,20 @@
 (function () {
   const searchInput = document.getElementById('accountSearch');
   const staffView = document.getElementById('staffView');
+    // Shared variables
   let currentRoleFilter = 'all';
+  let currentSearch = '';
+
+  // Highlight search terms in text
+  function highlightSearchTerm(text, searchTerm) {
+    if (!searchTerm || !searchTerm.trim() || !text) {
+      return text;
+    }
+    
+    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedTerm})`, 'gi');
+    return text.replace(regex, '<mark class="bg-warning text-dark">$1</mark>');
+  }
 
   if (!staffView) return;
 
@@ -46,6 +59,7 @@
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
   async function fetchStaffList(search = '', role = 'all') {
     currentRoleFilter = role || 'all';
+    currentSearch = search || '';
     // retrieve token from localStorage / session or replace with secure retrieval
     const token = localStorage.getItem('authToken') || '{YOUR_TOKEN}';
     if (!token || token === '{YOUR_TOKEN}') {
@@ -99,18 +113,39 @@
     list.className = 'list-group text-start';
 
     let users = Array.isArray(payload.data) ? payload.data : (payload.users || payload || []);
+    
     // Client-side filter fallback (if API doesn't filter)
     if (roleFilter && roleFilter !== 'all') {
       users = users.filter(u => (u.user_role || '').toLowerCase() === roleFilter.toLowerCase());
     }
+    
+    // Apply client-side search filter as fallback
+    if (currentSearch && currentSearch.trim()) {
+      const searchTerm = currentSearch.trim().toLowerCase();
+      console.log('Applying client-side search filter for:', searchTerm);
+      
+      users = users.filter(u => {
+        const name = u.user_fullname || u.name || u.full_name || u.username || '';
+        const nickname = u.user_nickname || '';
+        return name.toLowerCase().includes(searchTerm) || nickname.toLowerCase().includes(searchTerm);
+      });
+    }
+    
     if (!users || users.length === 0) {
-      list.innerHTML = '<div class="list-group-item text-center py-5"><div class="text-muted">No staff found.</div></div>';
+      const emptyMessage = currentSearch ? 
+        `No staff found matching "${currentSearch}".` : 
+        'No staff found.';
+      list.innerHTML = `<div class="list-group-item text-center py-5"><div class="text-muted">${emptyMessage}</div></div>`;
     } else {
       users.forEach(u => {
         const name = u.user_fullname || u.name || u.full_name || u.username || 'Unknown';
         const nick = u.user_nickname ? ` (${u.user_nickname})` : '';
         const role = u.user_role || u.role || '—';
         const staffCount = (typeof u.staff_count !== 'undefined') ? u.staff_count : 0;
+        
+        // Apply search highlighting to staff name
+        const highlightedName = highlightSearchTerm(name, currentSearch);
+        const highlightedNick = nick ? ` (${highlightSearchTerm(u.user_nickname, currentSearch)})` : '';
         
         // Get role badge color
         const getRoleBadgeColor = (role) => {
@@ -141,7 +176,7 @@
             <div class="flex-grow-1 ms-3">
               <div class="d-flex justify-content-between align-items-start">
                 <div>
-                  <div class="fw-semibold">${name}${nick}</div>
+                  <div class="fw-semibold">${highlightedName}${highlightedNick}</div>
                   <div class="small text-muted mb-1">
                     <i class="bi bi-person-badge me-1"></i>Role: <span class="badge ${getRoleBadgeColor(role)}">${role}</span>
                     ${staffCount > 0 ? `<span class="ms-3"><i class="bi bi-people me-1"></i>Staff: ${staffCount}</span>` : ''}
