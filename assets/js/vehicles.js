@@ -1,11 +1,41 @@
-/* ===============================
-   Vehicle Management JS
-=============================== */
+// ==================== SweetAlert2 Helper Functions ====================
+function showSuccess(msg) {
+  Swal.fire({
+    icon: 'success',
+    title: 'Success!',
+    text: msg,
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
 
-// Token
-const TOKEN = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
+function showError(msg) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Error',
+    text: msg,
+    timer: 3000,
+    showConfirmButton: true
+  });
+}
 
-/* ---------- Loading Overlay ---------- */
+function showConfirm(message, callbackYes) {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: message,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, do it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      callbackYes();
+    }
+  });
+}
+
+// ==================== Loading Overlay ====================
 function showLoading() {
   const overlay = document.getElementById('loadingOverlay');
   if (overlay) overlay.classList.remove('d-none');
@@ -16,52 +46,55 @@ function hideLoading() {
   if (overlay) overlay.classList.add('d-none');
 }
 
-/* ---------- GET Vehicles ---------- */
+// ==================== GET /vehicles ====================
 async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) {
+  const token = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
   const apiUrl = new URL('https://mwms.megacess.com/api/v1/vehicles');
+
   if (search) apiUrl.searchParams.append('search', search);
-  if (status && status !== 'all') apiUrl.searchParams.append('status', status);
+  if (status) apiUrl.searchParams.append('status', status);
   if (per_page) apiUrl.searchParams.append('per_page', per_page);
 
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('vehicleTableBody');
-
   loading.style.display = 'block';
   tableBody.innerHTML = '';
 
   try {
-    const res = await fetch(apiUrl, {
-      headers: { 
-        'Authorization': `Bearer ${TOKEN}`,
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
     });
-    const result = await res.json();
+    const result = await response.json();
     loading.style.display = 'none';
 
-    if (res.ok && result.success) {
+    if (response.ok && result.success) {
       if (result.data.length > 0) populateVehicleTable(result.data);
       else tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
     } else {
       tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message}</div>`;
-      console.error(result.message);
+      showError(result.message);
     }
-  } catch (err) {
+  } catch (error) {
     loading.style.display = 'none';
     tableBody.innerHTML = `<div class="text-center text-danger py-3">Failed to load vehicles</div>`;
-    console.error(err);
+    showError('Failed to load vehicles. Please try again.');
+    console.error('Fetch error:', error);
   }
 }
 
-/* ---------- Populate Table ---------- */
+// ==================== Populate Table ====================
 function populateVehicleTable(vehicles) {
   const tableBody = document.getElementById('vehicleTableBody');
   tableBody.innerHTML = '';
 
   vehicles.forEach(vehicle => {
     const row = document.createElement('div');
-    row.className = 'vehicle-row d-flex border-bottom py-2';
+    row.className = 'content-row d-flex border-bottom py-2 align-items-center';
 
     let statusClass = 'bg-secondary';
     if (vehicle.status.toLowerCase() === 'available') statusClass = 'bg-success';
@@ -73,13 +106,11 @@ function populateVehicleTable(vehicles) {
       <div class="col">${vehicle.plate_number}</div>
       <div class="col"><span class="badge ${statusClass}">${vehicle.status}</span></div>
       <div class="col text-center">
-        <button 
-          class="btn btn-sm btn-warning me-2 edit-vehicle-btn" 
-          data-id="${vehicle.id}" 
-          data-name="${vehicle.vehicle_name}" 
-          data-plate="${vehicle.plate_number}" 
-          data-status="${vehicle.status.toLowerCase()}"
-        >
+        <button class="btn btn-sm btn-warning me-2 edit-vehicle-btn" 
+                data-id="${vehicle.id}" 
+                data-name="${vehicle.vehicle_name}" 
+                data-plate="${vehicle.plate_number}" 
+                data-status="${vehicle.status.toLowerCase()}">
           <i class="bi bi-pencil"></i> Edit
         </button>
         <button class="btn btn-sm btn-danger delete-vehicle-btn" data-id="${vehicle.id}">
@@ -87,41 +118,75 @@ function populateVehicleTable(vehicles) {
         </button>
       </div>
     `;
-
     tableBody.appendChild(row);
   });
 
+  // ✅ Update stat cards
+  updateVehicleStats(vehicles);
+
+  // ✅ Reattach event listeners
   attachEditListeners();
   attachDeleteListeners();
 }
 
-/* ---------- Debounce Search ---------- */
-function debounce(func, delay) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => func.apply(this, args), delay);
-  };
+// Animate the counting with fade-in & scale effect
+function animateCount(el, value, duration = 1500) {
+  let start = 0;
+  const startTime = performance.now();
+
+  // Reset visual styles before animating
+  el.style.opacity = 0;
+  el.style.transform = "scale(0.9)";
+  el.style.transition = "opacity 0.4s ease-out, transform 0.4s ease-out";
+
+  // Trigger fade/scale animation
+  requestAnimationFrame(() => {
+    el.style.opacity = 1;
+    el.style.transform = "scale(1)";
+  });
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // Ease-out curve (smooth stop)
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.floor(start + (value - start) * eased);
+    el.textContent = current;
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      el.textContent = value;
+    }
+  }
+
+  requestAnimationFrame(update);
 }
 
-function updateVehicleTable() {
-  const searchValue = document.getElementById('vehicleSearch').value.trim() || undefined;
-  const statusValue = document.getElementById('vehicleStatus').value || 'all';
-  getAllVehicles({ search: searchValue, status: statusValue });
+// Update vehicle stats cards
+function updateVehicleStats(vehicles) {
+  const total = vehicles.length;
+  const available = vehicles.filter(v => v.status.toLowerCase() === 'available').length;
+  const inUse = vehicles.filter(v => v.status.toLowerCase() === 'in use').length;
+  const maintenance = vehicles.filter(v => v.status.toLowerCase() === 'under maintenance').length;
+
+  animateCount(document.getElementById('totalVehicles'), total, 1800);
+  animateCount(document.getElementById('availableVehicles'), available, 1800);
+  animateCount(document.getElementById('inUseVehicles'), inUse, 1800);
+  animateCount(document.getElementById('maintenanceVehicles'), maintenance, 1800);
 }
 
-const handleSearch = debounce(updateVehicleTable, 200);
-document.getElementById('vehicleSearch').addEventListener('input', handleSearch);
-document.getElementById('vehicleStatus').addEventListener('change', updateVehicleTable);
-
-/* ---------- POST Add Vehicle ---------- */
+// ==================== POST /vehicles ====================
 document.getElementById('addVehicleBtn').addEventListener('click', async () => {
+  const token = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
   const vehicleName = document.getElementById('vehicleName').value.trim();
   const plateNo = document.getElementById('plateNo').value.trim();
-  const status = document.getElementById('addVehicleStatus').value;
+  const statusSelect = document.getElementById('addVehicleStatus');
+  const status = statusSelect.value;
 
   if (!vehicleName || !plateNo || !status || status === 'Choose status') {
-    alert('Please fill in all fields.');
+    showError('Please fill in all fields.');
     return;
   }
 
@@ -131,39 +196,40 @@ document.getElementById('addVehicleBtn').addEventListener('click', async () => {
   addBtn.textContent = 'Adding...';
 
   try {
-    const res = await fetch('https://mwms.megacess.com/api/v1/vehicles', {
+    const response = await fetch('https://mwms.megacess.com/api/v1/vehicles', {
       method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${TOKEN}`,
+      headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
       body: JSON.stringify({ vehicle_name: vehicleName, plate_number: plateNo, status })
     });
+    const result = await response.json();
 
-    const result = await res.json();
-    if (res.ok && result.success) {
+    if (response.ok && result.success) {
       bootstrap.Modal.getInstance(document.getElementById('addVehicleModal')).hide();
       document.getElementById('vehicleName').value = '';
       document.getElementById('plateNo').value = '';
-      document.getElementById('addVehicleStatus').value = 'Choose status';
+      statusSelect.value = 'Choose status';
       getAllVehicles();
-      alert('Vehicle added successfully!');
+      showSuccess('Vehicle added successfully!');
     } else {
-      alert('Error: ' + result.message);
+      showError(result.message);
     }
-  } catch (err) {
-    console.error(err);
-    alert('Failed to add vehicle');
+  } catch (error) {
+    console.error(error);
+    showError('Failed to add vehicle. Please try again.');
   } finally {
     addBtn.disabled = false;
     addBtn.textContent = originalText;
   }
 });
 
-/* ---------- DELETE Vehicle ---------- */
+// ==================== DELETE /vehicles ====================
 function attachDeleteListeners() {
-  document.querySelectorAll('.delete-vehicle-btn').forEach(btn => {
+  const deleteButtons = document.querySelectorAll('.delete-vehicle-btn');
+  deleteButtons.forEach(btn => {
     btn.removeEventListener('click', handleDelete);
     btn.addEventListener('click', handleDelete);
   });
@@ -171,36 +237,39 @@ function attachDeleteListeners() {
 
 async function handleDelete(e) {
   const vehicleId = e.currentTarget.dataset.id;
-  if (!confirm('Are you sure you want to delete this vehicle?')) return;
-
-  showLoading();
-  try {
-    const res = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${vehicleId}`, {
-      method: 'DELETE',
-      headers: { 
-        'Authorization': `Bearer ${TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+  showConfirm('You want to delete this vehicle?', async () => {
+    showLoading();
+    try {
+      const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer 69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        showSuccess(result.message);
+        getAllVehicles();
+      } else {
+        showError(result.message);
       }
-    });
-    const result = await res.json();
-    if (res.ok && result.success) {
-      getAllVehicles();
-      alert(result.message);
-    } else alert('Error: ' + result.message);
-  } catch (err) {
-    console.error(err);
-    alert('Failed to delete vehicle');
-  } finally {
-    hideLoading();
-  }
+    } catch (err) {
+      console.error(err);
+      showError('Failed to delete vehicle. Please try again.');
+    } finally {
+      hideLoading();
+    }
+  });
 }
 
-/* ---------- UPDATE Vehicle ---------- */
+// ==================== UPDATE /vehicles ====================
 let currentVehicleId = null;
 
 function attachEditListeners() {
-  document.querySelectorAll('.edit-vehicle-btn').forEach(btn => {
+  const editBtns = document.querySelectorAll('.edit-vehicle-btn');
+  editBtns.forEach(btn => {
     btn.removeEventListener('click', handleEdit);
     btn.addEventListener('click', handleEdit);
   });
@@ -209,11 +278,9 @@ function attachEditListeners() {
 function handleEdit(e) {
   const btn = e.currentTarget;
   currentVehicleId = btn.dataset.id;
-
   document.getElementById('updateVehicleName').value = btn.dataset.name;
   document.getElementById('updatePlateNo').value = btn.dataset.plate;
   document.getElementById('updateVehicleStatus').value = btn.dataset.status;
-
   bootstrap.Modal.getOrCreateInstance(document.getElementById('updateVehicleModal')).show();
 }
 
@@ -224,8 +291,8 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
   const plate = document.getElementById('updatePlateNo').value.trim();
   const status = document.getElementById('updateVehicleStatus').value;
 
-  if (!name || !plate || !status) {
-    alert('Please fill all fields.');
+  if (!name && !plate && !status) {
+    showError('Please fill at least one field to update.');
     return;
   }
 
@@ -235,30 +302,74 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
   updateBtn.textContent = 'Updating...';
 
   try {
-    const res = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${currentVehicleId}`, {
+    const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${currentVehicleId}`, {
       method: 'PUT',
-      headers: { 
-        'Authorization': `Bearer ${TOKEN}`,
+      headers: {
+        'Authorization': `Bearer 69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ vehicle_name: name, plate_number: plate, status })
+      body: JSON.stringify({
+        vehicle_name: name || undefined,
+        plate_number: plate || undefined,
+        status: status || undefined
+      })
     });
-    const result = await res.json();
+    const result = await response.json();
 
-    if (res.ok && result.success) {
+    if (response.ok && result.success) {
       bootstrap.Modal.getInstance(document.getElementById('updateVehicleModal')).hide();
       getAllVehicles();
-      alert(result.message);
-    } else alert('Error: ' + result.message);
+      showSuccess(result.message);
+    } else {
+      showError(result.message);
+    }
   } catch (err) {
     console.error(err);
-    alert('Failed to update vehicle');
+    showError('Failed to update vehicle.');
   } finally {
     updateBtn.disabled = false;
     updateBtn.textContent = originalText;
   }
 });
 
-/* ---------- Init ---------- */
-window.addEventListener('DOMContentLoaded', () => getAllVehicles());
+// ==================== DOMContentLoaded ====================
+window.addEventListener('DOMContentLoaded', () => {
+  getAllVehicles();
+});
+
+// ==================== Search Functions ====================
+
+// Debounce helper to limit rapid API calls
+function debounce(func, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// Triggered whenever search input or filter changes
+function updateVehicleTable() {
+  const searchValue = document.getElementById('vehicleSearch').value.trim() || undefined;
+  const statusValue = document.getElementById('vehicleStatus').value || undefined; // 'All Status' can map to undefined
+  getAllVehicles({ search: searchValue, status: statusValue });
+}
+
+// Debounce the search input to avoid flooding API requests
+const handleVehicleSearch = debounce(updateVehicleTable, 300);
+
+// Attach event listeners
+document.getElementById('vehicleSearch').addEventListener('input', handleVehicleSearch);
+document.getElementById('vehicleStatus').addEventListener('change', updateVehicleTable);
+
+document.getElementById('refreshVehicleBtn').addEventListener('click', () => {
+  // Reset search input
+  document.getElementById('vehicleSearch').value = '';
+
+  // Reset status filter
+  document.getElementById('vehicleStatus').value = '';
+
+  // Reload vehicle table
+  getAllVehicles();
+});

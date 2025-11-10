@@ -21,6 +21,10 @@
     <!-- Links to Roderick's CSS style -->
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Sweet2Alert style -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   </head>
 
   <body data-page="manage-resources">
@@ -40,7 +44,7 @@
           </button>
         </div>
 
-        <!-- Row 1: Back Button & Tabs -->
+        <!-- Row 1: Back Button & Stats Cards -->
         <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
           <!-- Back Button -->
           <a
@@ -50,7 +54,67 @@
             <i class="bi bi-arrow-left me-2"></i>
             Back to Manage Resources
           </a>
+        </div>
 
+        <!-- Row 2: Statistics Cards -->
+        <div class="container my-4 mb-4 px-4 mt-4">
+          <div class="row g-4">
+            <!-- Total Vehicles -->
+            <div class="col-md-3 col-sm-6">
+              <div class="card text-white bg-primary shadow-sm stat-card">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <h6 class="card-title mb-1">Total Vehicles</h6>
+                    <h3 id="totalVehicles" class="mb-0">-</h3>
+                  </div>
+                  <i class="bi bi-truck fs-1"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Available -->
+            <div class="col-md-3 col-sm-6">
+              <div class="card text-white bg-success shadow-sm stat-card">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <h6 class="card-title mb-1">Available</h6>
+                    <h3 id="availableVehicles" class="mb-0">-</h3>
+                  </div>
+                  <i class="bi bi-check-circle fs-1"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- In Use -->
+            <div class="col-md-3 col-sm-6">
+              <div class="card text-white bg-warning text-dark shadow-sm stat-card">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <h6 class="card-title mb-1">In Use</h6>
+                    <h3 id="inUseVehicles" class="mb-0">-</h3>
+                  </div>
+                  <i class="bi bi-gear fs-1"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Under Maintenance -->
+            <div class="col-md-3 col-sm-6">
+              <div class="card text-white bg-danger shadow-sm stat-card">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                  <div>
+                    <h6 class="card-title mb-1">Under Maintenance</h6>
+                    <h3 id="maintenanceVehicles" class="mb-0">-</h3>
+                  </div>
+                  <i class="bi bi-tools fs-1"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Back Button & Tabs -->
+        <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
           <!-- Tab Selection -->
           <div class="btn-group" role="group">
             <a href="#" class="tab-btn active d-flex align-items-center" data-target="vehicle">
@@ -69,43 +133,44 @@
           <!-- Vehicle Tab -->
           <div class="tab-pane" data-name="vehicle">
             <!-- Row 2: Vehicle List Header -->
-            <div class="px-4 mb-4">
-              <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
-
-              <!-- Search Bar + Filter + Add Button -->
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <!-- Search Bar -->
-                <div class="flex-grow-1">
+            <div class="d-flex flex-wrap gap-3 align-items-center px-4 mb-4">
+              <!-- Search Bar -->
+              <div class="flex-grow-1">
+                <div class="input-group">
                   <input
                     type="text"
                     id="vehicleSearch" 
                     class="form-control"
                     placeholder="Search vehicle/plate number..."
                   >
-                </div>
-
-                <!-- Filter Dropdown -->
-                <div>
-                  <select id="vehicleStatus" class="form-select">
-                    <option selected value="">All Status</option>
-                    <option value="Available">Available</option>
-                    <option value="In Use">In Use</option>
-                    <option value="Under Maintenance">Under Maintenance</option>
-                  </select>
-                </div>
-
-                <!-- Add Vehicle Button -->
-                <div>
-                  <button
-                    type="button" 
-                    class="btn btn-primary d-flex align-items-center"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addVehicleModal"
-                  >
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Add Vehicle
+                  <button class="btn btn-secondary" id="refreshVehicleBtn" type="button">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
                   </button>
                 </div>
+              </div>
+
+              <!-- Filter Dropdown -->
+              <div class="me-2">
+                <select id="vehicleStatus" class="form-select shadow-sm rounded" style="min-width: 160px;">
+                  <option selected value="">All Status</option>
+                  <option value="Available">Available</option>
+                  <option value="In Use">In Use</option>
+                  <option value="Under Maintenance">Under Maintenance</option>
+                </select>
+              </div>
+
+
+              <!-- Add Vehicle Button -->
+              <div>
+                <button
+                  type="button" 
+                  class="btn btn-primary d-flex align-items-center"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addVehicleModal"
+                >
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Add Vehicle
+                </button>
               </div>
             </div>
 
@@ -126,7 +191,7 @@
                   </div>
                 </div>
                  <!-- Table Body (Empty, JS will populate it) -->
-                <div id="vehicleTableBody"></div>
+                <div id="vehicleTableBody" style="padding-bottom: 70px;"></div>
               </div>
             </div>
           </div>
