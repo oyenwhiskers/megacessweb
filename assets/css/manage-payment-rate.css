@@ -132,3 +132,18 @@
   background-color: #e7e7e7;
   color: #0d6832;
 }
+
+/* Active/Inactive switch colors */
+.form-check-input:checked {
+    background-color: #28a745;  /* Bootstrap green */
+    border-color: #28a745;
+}
+
+.form-check-input:checked:focus {
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25); /* subtle green glow */
+}
+
+.form-check-input {
+    background-color: #6c757d; /* gray when off */
+    border-color: #6c757d;
+}
