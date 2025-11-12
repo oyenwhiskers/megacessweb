@@ -163,7 +163,11 @@ function renderTaskEditor(task) {
           <h5 class="mb-1">Edit Payment Rate</h5>
           <div class="small text-muted">Payment Rate ID: <strong>${task.id || 'N/A'}</strong></div>
         </div>
-        <button class="btn btn-sm btn-outline-primary" id="editToggleBtn">✏️ Edit</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-danger" id="deleteBtn">🗑️ Delete</button>
+          <button class="btn btn-sm btn-outline-primary" id="editToggleBtn">✏️ Edit</button>
+        </div>
+
       </div>
 
       <div class="mb-3">
@@ -194,6 +198,15 @@ function renderTaskEditor(task) {
 
   $editor.html(html);
 
+  // Delete button
+  $('#deleteBtn').off('click').on('click', async function () {
+    console.log("Delete button clicked for ID:", task.id);
+
+    if (!confirm("Are you sure you want to delete this payment rate?")) return;
+
+    await deletePaymentRate(task.id);
+  });
+
   // Toggle edit mode
   $('#editToggleBtn').off('click').on('click', function () {
     const isEditing = $(this).data('editing') || false;
@@ -218,9 +231,6 @@ function renderTaskEditor(task) {
     await updatePaymentRate(task.id, updatedData);
   });
 }
-
-
-
 
 /* -------------------- Collect Form Data -------------------- */
 function collectFormData(taskId) {
