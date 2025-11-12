@@ -198,6 +198,14 @@ function initializeChart() {
             scales: {
                 y: {
                     beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Tasks',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
                     ticks: {
                         font: {
                             size: 11

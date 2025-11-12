@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch block task completion data
     fetchBlockTaskCompletion(year);
+    
+    // Fetch resource usage data
+    fetchResourceUsage();
 });
 
 async function fetchMonthlyTaskCompletion(year, locationId = 1) {
@@ -104,6 +107,14 @@ function initializeMonthlyChart() {
             scales: {
                 y: {
                     beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Tasks',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
                     ticks: {
                         font: {
                             size: 11
@@ -244,6 +255,14 @@ function initializeBlockChart() {
             scales: {
                 y: {
                     beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Tasks',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
                     ticks: {
                         font: {
                             size: 11
@@ -303,4 +322,101 @@ function updateBlockChart(apiData) {
     taskCompletionChartBlock.update();
     
     console.log('Block chart updated successfully');
+}
+
+async function fetchResourceUsage() {
+    try {
+        // Get token from localStorage
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        // Set date range for current year
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const startDate = `${year}-01-01`;
+        const endDate = `${year}-12-31`;
+        
+        console.log('Fetching resource usage data...');
+
+        const response = await fetch(
+            `https://mwms.megacess.com/api/v1/analytics/resource-usage?task_type=manuring&sanitation_type=spraying&start_date=${startDate}&end_date=${endDate}&location_id=1`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Resource Usage API Response:', result);
+        
+        if (result.data && result.data.records) {
+            console.log('Updating resource list with data:', result.data.records);
+            updateResourceList(result.data);
+        } else {
+            console.warn('No resource usage data found in API response');
+        }
+    } catch (error) {
+        console.error('Error fetching resource usage:', error);
+    }
+}
+
+function updateResourceList(data) {
+    const resourceListContainer = document.querySelector('.resources-list');
+    if (!resourceListContainer) {
+        console.error('Resource list container not found');
+        return;
+    }
+    
+    // Clear existing items
+    resourceListContainer.innerHTML = '';
+    
+    if (!data.records || data.records.length === 0) {
+        resourceListContainer.innerHTML = '<p class="text-muted text-center py-4">No resource usage data available</p>';
+        return;
+    }
+    
+    // Create resource items from API data
+    data.records.forEach(record => {
+        const resourceItem = document.createElement('div');
+        resourceItem.className = 'resource-item border rounded-4 p-3 mb-3';
+        resourceItem.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <div class="text-muted small">Date:</div>
+                    <div class="fw-semibold">${record.date}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-muted small">Estate Officer:</div>
+                    <div class="fw-semibold">${record.estate_officer}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-muted small">Block:</div>
+                    <div class="fw-semibold">${record.block}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">${data.resource_type ? data.resource_type.charAt(0).toUpperCase() + data.resource_type.slice(1) : 'Resource'} type:</div>
+                    <div class="fw-semibold">${record.fertilizer_type || record.resource_name || 'N/A'}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Amount (${data.unit || 'unit'}):</div>
+                    <div class="fw-semibold">${record.amount}</div>
+                </div>
+            </div>
+        `;
+        resourceListContainer.appendChild(resourceItem);
+    });
+    
+    console.log('Resource list updated successfully');
 }
