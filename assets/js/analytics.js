@@ -390,8 +390,36 @@ function updateResourceList(data) {
         return;
     }
     
+    // Store original data and resource type for filtering
+    window.resourceUsageData = {
+        records: data.records,
+        resourceType: data.resource_type,
+        unit: data.unit
+    };
+    
     // Create resource items from API data
-    data.records.forEach(record => {
+    renderResourceItems(data.records, data.resource_type, data.unit);
+    
+    // Setup filter functionality
+    setupResourceFilters();
+    
+    console.log('Resource list updated successfully');
+}
+
+function renderResourceItems(records, resourceType, unit) {
+    const resourceListContainer = document.querySelector('.resources-list');
+    if (!resourceListContainer) return;
+    
+    // Clear container
+    resourceListContainer.innerHTML = '';
+    
+    if (records.length === 0) {
+        resourceListContainer.innerHTML = '<p class="text-muted text-center py-4">No matching resources found</p>';
+        return;
+    }
+    
+    // Create resource items
+    records.forEach(record => {
         const resourceItem = document.createElement('div');
         resourceItem.className = 'resource-item border rounded-4 p-3 mb-3';
         resourceItem.innerHTML = `
@@ -409,19 +437,65 @@ function updateResourceList(data) {
                     <div class="fw-semibold">${record.block}</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">${data.resource_type ? data.resource_type.charAt(0).toUpperCase() + data.resource_type.slice(1) : 'Resource'} type:</div>
+                    <div class="text-muted small">${resourceType ? resourceType.charAt(0).toUpperCase() + resourceType.slice(1) : 'Resource'} type:</div>
                     <div class="fw-semibold">${record.fertilizer_type || record.resource_name || 'N/A'}</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">Amount (${data.unit || 'unit'}):</div>
+                    <div class="text-muted small">Amount (${unit || 'unit'}):</div>
                     <div class="fw-semibold">${record.amount}</div>
                 </div>
             </div>
         `;
         resourceListContainer.appendChild(resourceItem);
     });
+}
+
+function setupResourceFilters() {
+    const estateOfficerSearch = document.getElementById('resourceEstateOfficerSearch');
+    const dateFilter = document.getElementById('resourceDateFilter');
     
-    console.log('Resource list updated successfully');
+    if (!estateOfficerSearch || !dateFilter) return;
+    
+    // Remove existing event listeners
+    estateOfficerSearch.removeEventListener('input', handleResourceFilter);
+    dateFilter.removeEventListener('change', handleResourceFilter);
+    
+    // Add event listeners
+    estateOfficerSearch.addEventListener('input', handleResourceFilter);
+    dateFilter.addEventListener('change', handleResourceFilter);
+}
+
+function handleResourceFilter() {
+    if (!window.resourceUsageData) return;
+    
+    const estateOfficerSearch = document.getElementById('resourceEstateOfficerSearch');
+    const dateFilter = document.getElementById('resourceDateFilter');
+    
+    const searchTerm = estateOfficerSearch.value.toLowerCase().trim();
+    const filterDate = dateFilter.value;
+    
+    let filteredRecords = window.resourceUsageData.records;
+    
+    // Filter by estate officer name
+    if (searchTerm !== '') {
+        filteredRecords = filteredRecords.filter(record => 
+            record.estate_officer.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // Filter by date
+    if (filterDate) {
+        filteredRecords = filteredRecords.filter(record => 
+            record.date === filterDate
+        );
+    }
+    
+    // Render filtered results
+    renderResourceItems(
+        filteredRecords, 
+        window.resourceUsageData.resourceType, 
+        window.resourceUsageData.unit
+    );
 }
 
 async function fetchEstateOfficerTasks(year, month) {
