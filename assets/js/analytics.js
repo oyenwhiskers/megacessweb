@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch resource usage data
     fetchResourceUsage();
+    
+    // Fetch estate officer task completion data
+    fetchEstateOfficerTasks(year, 10); // Default to October
 });
 
 async function fetchMonthlyTaskCompletion(year, locationId = 1) {
@@ -419,4 +422,159 @@ function updateResourceList(data) {
     });
     
     console.log('Resource list updated successfully');
+}
+
+async function fetchEstateOfficerTasks(year, month) {
+    try {
+        // Get token from localStorage
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        console.log('Fetching estate officer tasks for year:', year, 'month:', month);
+
+        const response = await fetch(
+            `https://mwms.megacess.com/api/v1/analytics/tasks-by-mandors?year=${year}&month=${month}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Estate Officer Tasks API Response:', result);
+        
+        if (result.data && result.data.records) {
+            console.log('Updating estate officer list with data:', result.data.records);
+            updateEstateOfficerList(result.data);
+        } else {
+            console.warn('No estate officer task data found in API response');
+        }
+    } catch (error) {
+        console.error('Error fetching estate officer tasks:', error);
+    }
+}
+
+function updateEstateOfficerList(data) {
+    const officerListContainer = document.querySelector('.estate-officers-list');
+    if (!officerListContainer) {
+        console.error('Estate officer list container not found');
+        return;
+    }
+    
+    // Update the period display
+    const periodElement = document.querySelector('.estate-officers-list').closest('.card-body').querySelector('.text-muted');
+    if (periodElement && data.period) {
+        periodElement.textContent = data.period;
+    }
+    
+    // Clear existing items
+    officerListContainer.innerHTML = '';
+    
+    if (!data.records || data.records.length === 0) {
+        officerListContainer.innerHTML = '<p class="text-muted text-center py-4">No estate officer task data available</p>';
+        return;
+    }
+    
+    // Store original data for filtering
+    window.estateOfficerData = data.records;
+    
+    // Create estate officer items from API data
+    renderEstateOfficers(data.records);
+    
+    // Setup search functionality
+    setupEstateOfficerSearch();
+    
+    console.log('Estate officer list updated successfully');
+}
+
+function renderEstateOfficers(records) {
+    const officerListContainer = document.querySelector('.estate-officers-list');
+    if (!officerListContainer) return;
+    
+    // Clear container
+    officerListContainer.innerHTML = '';
+    
+    if (records.length === 0) {
+        officerListContainer.innerHTML = '<p class="text-muted text-center py-4">No matching estate officers found</p>';
+        return;
+    }
+    
+    // Create officer cards
+    records.forEach(record => {
+        const officerCard = document.createElement('div');
+        officerCard.className = 'card border rounded-3 mb-3 estate-officer-item';
+        officerCard.setAttribute('data-officer-name', record.estate_officer_name.toLowerCase());
+        
+        // Check if profile image exists, otherwise use default icon
+        const profileImageHTML = record.profile_image || record.avatar || record.image_url
+            ? `<img src="${record.profile_image || record.avatar || record.image_url}" 
+                    alt="${record.estate_officer_name}" 
+                    class="rounded-circle" 
+                    style="width: 60px; height: 60px; object-fit: cover;"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+               <div class="rounded-circle bg-dark d-none align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                   <i class="bi bi-person-fill text-white fs-3"></i>
+               </div>`
+            : `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                   <i class="bi bi-person-fill text-white fs-3"></i>
+               </div>`;
+        
+        officerCard.innerHTML = `
+            <div class="card-body p-3">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        ${profileImageHTML}
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-0 fw-bold">${record.estate_officer_name}</h6>
+                    </div>
+                    <div class="col-auto text-end">
+                        <p class="text-muted mb-1 small">Team task completion:</p>
+                        <h2 class="mb-0 fw-bold">${record.team_task_completion}</h2>
+                    </div>
+                </div>
+            </div>
+        `;
+        officerListContainer.appendChild(officerCard);
+    });
+}
+
+function setupEstateOfficerSearch() {
+    const searchInput = document.getElementById('estateOfficerSearch');
+    if (!searchInput) return;
+    
+    // Remove existing event listener if any
+    searchInput.removeEventListener('input', handleEstateOfficerSearch);
+    
+    // Add search event listener
+    searchInput.addEventListener('input', handleEstateOfficerSearch);
+}
+
+function handleEstateOfficerSearch(event) {
+    const searchTerm = event.target.value.toLowerCase().trim();
+    
+    if (!window.estateOfficerData) return;
+    
+    if (searchTerm === '') {
+        // Show all officers if search is empty
+        renderEstateOfficers(window.estateOfficerData);
+    } else {
+        // Filter officers by name
+        const filteredOfficers = window.estateOfficerData.filter(officer => 
+            officer.estate_officer_name.toLowerCase().includes(searchTerm)
+        );
+        renderEstateOfficers(filteredOfficers);
+    }
 }
