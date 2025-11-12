@@ -1,6 +1,34 @@
 // Dashboard API Integration
 let taskCompletionChart = null;
 
+// Loading helper functions
+function showLoading(container) {
+    if (!container) return;
+    
+    // Add loading class
+    container.classList.add('position-relative');
+    
+    // Create loading overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    `;
+    
+    container.appendChild(loadingOverlay);
+}
+
+function hideLoading(container) {
+    if (!container) return;
+    
+    const loadingOverlay = container.querySelector('.loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Get current month and year
     const currentDate = new Date();
@@ -31,6 +59,17 @@ async function fetchDashboardData(month, year) {
             // window.location.href = '/megacessweb/pages/log-in.html';
             return;
         }
+        
+        // Show loading for all stat cards
+        const pendingLeaveCard = document.getElementById('pending-leave')?.closest('.card-body');
+        const absenceCard = document.getElementById('number-absence')?.closest('.card-body');
+        const payrollCard = document.getElementById('pending-payroll')?.closest('.card-body');
+        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
+        const equipmentCard = document.getElementById('equipment-bags')?.closest('.card-body');
+        
+        [pendingLeaveCard, absenceCard, payrollCard, yieldCard, equipmentCard].forEach(card => {
+            if (card) showLoading(card);
+        });
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/dashboard?month=${month}&year=${year}`,
@@ -56,6 +95,17 @@ async function fetchDashboardData(month, year) {
     } catch (error) {
         console.error('Error fetching dashboard data:', error);
         // Keep the placeholder values if API fails
+    } finally {
+        // Hide loading for all stat cards
+        const pendingLeaveCard = document.getElementById('pending-leave')?.closest('.card-body');
+        const absenceCard = document.getElementById('number-absence')?.closest('.card-body');
+        const payrollCard = document.getElementById('pending-payroll')?.closest('.card-body');
+        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
+        const equipmentCard = document.getElementById('equipment-bags')?.closest('.card-body');
+        
+        [pendingLeaveCard, absenceCard, payrollCard, yieldCard, equipmentCard].forEach(card => {
+            if (card) hideLoading(card);
+        });
     }
 }
 
@@ -125,6 +175,13 @@ async function fetchTasksByBlocks(year, month, week = null) {
             return;
         }
 
+        // Show loading state
+        const chartCanvas = document.getElementById('taskCompletionChart');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            showLoading(card);
+        }
+
         // Build URL with parameters
         let url = `https://mwms.megacess.com/api/v1/analytics/tasks-by-blocks?year=${year}&month=${month}`;
         if (week) {
@@ -152,6 +209,13 @@ async function fetchTasksByBlocks(year, month, week = null) {
     } catch (error) {
         console.error('Error fetching tasks by blocks:', error);
         // Keep the default chart data if API fails
+    } finally {
+        // Hide loading state
+        const chartCanvas = document.getElementById('taskCompletionChart');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            hideLoading(card);
+        }
     }
 }
 

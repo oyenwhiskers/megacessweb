@@ -2,6 +2,34 @@
 let taskCompletionChartMonth = null;
 let taskCompletionChartBlock = null;
 
+// Loading helper functions
+function showLoading(container) {
+    if (!container) return;
+    
+    // Add loading class
+    container.classList.add('position-relative');
+    
+    // Create loading overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    `;
+    
+    container.appendChild(loadingOverlay);
+}
+
+function hideLoading(container) {
+    if (!container) return;
+    
+    const loadingOverlay = container.querySelector('.loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Get current year
     const currentDate = new Date();
@@ -44,6 +72,13 @@ async function fetchMonthlyTaskCompletion(year, locationId = 1) {
         }
 
         console.log('Fetching monthly task completion for year:', year, 'location:', locationId);
+        
+        // Show loading state
+        const chartCanvas = document.getElementById('taskCompletionChartMonth');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            showLoading(card);
+        }
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/task-completion?year=${year}&location_id=${locationId}`,
@@ -73,6 +108,13 @@ async function fetchMonthlyTaskCompletion(year, locationId = 1) {
     } catch (error) {
         console.error('Error fetching monthly task completion:', error);
         // Keep the default chart data if API fails
+    } finally {
+        // Hide loading state
+        const chartCanvas = document.getElementById('taskCompletionChartMonth');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            hideLoading(card);
+        }
     }
 }
 
@@ -191,6 +233,13 @@ async function fetchBlockTaskCompletion(year) {
         }
 
         console.log('Fetching block task completion for year:', year);
+        
+        // Show loading state
+        const chartCanvas = document.getElementById('taskCompletionChartBlock');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            showLoading(card);
+        }
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/tasks-by-blocks?year=${year}`,
@@ -221,6 +270,13 @@ async function fetchBlockTaskCompletion(year) {
     } catch (error) {
         console.error('Error fetching block task completion:', error);
         // Keep the default chart data if API fails
+    } finally {
+        // Hide loading state
+        const chartCanvas = document.getElementById('taskCompletionChartBlock');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            hideLoading(card);
+        }
     }
 }
 
@@ -353,6 +409,12 @@ async function fetchResourceUsage() {
         const endDate = `${year}-12-31`;
         
         console.log('Fetching resource usage data...');
+        
+        // Show loading state
+        const resourceList = document.querySelector('.resources-list');
+        if (resourceList) {
+            showLoading(resourceList.closest('.card-body'));
+        }
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/resource-usage?task_type=manuring&sanitation_type=spraying&start_date=${startDate}&end_date=${endDate}&location_id=1`,
@@ -381,6 +443,12 @@ async function fetchResourceUsage() {
         }
     } catch (error) {
         console.error('Error fetching resource usage:', error);
+    } finally {
+        // Hide loading state
+        const resourceList = document.querySelector('.resources-list');
+        if (resourceList) {
+            hideLoading(resourceList.closest('.card-body'));
+        }
     }
 }
 
@@ -518,6 +586,12 @@ async function fetchEstateOfficerTasks(year, month) {
         }
 
         console.log('Fetching estate officer tasks for year:', year, 'month:', month);
+        
+        // Show loading state
+        const officerList = document.querySelector('.estate-officers-list');
+        if (officerList) {
+            showLoading(officerList.closest('.card-body'));
+        }
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/tasks-by-mandors?year=${year}&month=${month}`,
@@ -546,6 +620,12 @@ async function fetchEstateOfficerTasks(year, month) {
         }
     } catch (error) {
         console.error('Error fetching estate officer tasks:', error);
+    } finally {
+        // Hide loading state
+        const officerList = document.querySelector('.estate-officers-list');
+        if (officerList) {
+            hideLoading(officerList.closest('.card-body'));
+        }
     }
 }
 
@@ -673,6 +753,12 @@ async function fetchAttendanceByMandors(year, month) {
         }
 
         console.log('Fetching attendance by mandors for year:', year, 'month:', month);
+        
+        // Show loading state
+        const attendanceList = document.querySelector('.attendance-list');
+        if (attendanceList) {
+            showLoading(attendanceList.closest('.card-body'));
+        }
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/attendance-by-mandors?year=${year}&month=${month}`,
@@ -701,6 +787,12 @@ async function fetchAttendanceByMandors(year, month) {
         }
     } catch (error) {
         console.error('Error fetching attendance data:', error);
+    } finally {
+        // Hide loading state
+        const attendanceList = document.querySelector('.attendance-list');
+        if (attendanceList) {
+            hideLoading(attendanceList.closest('.card-body'));
+        }
     }
 }
 
@@ -755,6 +847,12 @@ async function fetchAbsentWorkers(year, month) {
         }
 
         console.log('Fetching absent workers for year:', year, 'month:', month);
+        
+        // Show loading state
+        const absentList = document.querySelector('.absent-list');
+        if (absentList) {
+            showLoading(absentList.closest('.card-body'));
+        }
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/absent-workers?year=${year}&month=${month}`,
@@ -783,6 +881,12 @@ async function fetchAbsentWorkers(year, month) {
         }
     } catch (error) {
         console.error('Error fetching absent workers data:', error);
+    } finally {
+        // Hide loading state
+        const absentList = document.querySelector('.absent-list');
+        if (absentList) {
+            hideLoading(absentList.closest('.card-body'));
+        }
     }
 }
 
@@ -837,6 +941,19 @@ async function fetchAuditedSummary(year, month) {
         }
 
         console.log('Fetching audited summary for year:', year, 'month:', month);
+        
+        // Show loading state
+        const summaryContainer = document.querySelector('.audited-summary-content');
+        if (summaryContainer) {
+            summaryContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Loading audited summary...</p>
+                </div>
+            `;
+        }
 
         const response = await fetch(
             `https://mwms.megacess.com/api/v1/analytics/audited-summary?year=${year}&month=${month}`,
@@ -865,6 +982,10 @@ async function fetchAuditedSummary(year, month) {
         }
     } catch (error) {
         console.error('Error fetching audited summary:', error);
+        const summaryContainer = document.querySelector('.audited-summary-content');
+        if (summaryContainer) {
+            summaryContainer.innerHTML = '<p class="text-danger text-center py-4">Error loading audited summary data</p>';
+        }
     }
 }
 
