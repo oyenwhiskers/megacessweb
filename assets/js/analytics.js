@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch estate officer task completion data
     fetchEstateOfficerTasks(year, 10); // Default to October
+    
+    // Fetch attendance data
+    fetchAttendanceByMandors(year, 10); // Default to October
+    
+    // Fetch absent workers data
+    fetchAbsentWorkers(year, 10); // Default to October
 });
 
 async function fetchMonthlyTaskCompletion(year, locationId = 1) {
@@ -651,4 +657,168 @@ function handleEstateOfficerSearch(event) {
         );
         renderEstateOfficers(filteredOfficers);
     }
+}
+
+async function fetchAttendanceByMandors(year, month) {
+    try {
+        // Get token from localStorage
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        console.log('Fetching attendance by mandors for year:', year, 'month:', month);
+
+        const response = await fetch(
+            `https://mwms.megacess.com/api/v1/analytics/attendance-by-mandors?year=${year}&month=${month}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Attendance API Response:', result);
+        
+        if (result.data && result.data.records) {
+            console.log('Updating attendance list with data:', result.data.records);
+            updateAttendanceList(result.data);
+        } else {
+            console.warn('No attendance data found in API response');
+        }
+    } catch (error) {
+        console.error('Error fetching attendance data:', error);
+    }
+}
+
+function updateAttendanceList(data) {
+    const attendanceListContainer = document.querySelector('.attendance-list');
+    if (!attendanceListContainer) {
+        console.error('Attendance list container not found');
+        return;
+    }
+    
+    // Update the period display
+    const periodElement = document.querySelector('.attendance-period');
+    if (periodElement && data.period) {
+        periodElement.textContent = data.period;
+    }
+    
+    // Clear existing items
+    attendanceListContainer.innerHTML = '';
+    
+    if (!data.records || data.records.length === 0) {
+        attendanceListContainer.innerHTML = '<p class="text-muted text-center py-4">No attendance data available</p>';
+        return;
+    }
+    
+    // Create attendance items from API data
+    data.records.forEach(record => {
+        const attendanceItem = document.createElement('div');
+        attendanceItem.className = 'd-flex align-items-center justify-content-between border rounded-3 p-3 mb-3';
+        attendanceItem.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="bi bi-person-fill text-white fs-4"></i>
+                </div>
+                <span class="fw-semibold">${record.estate_officer_name}</span>
+            </div>
+            <span class="fs-4 fw-bold">${record.attendance_rate}%</span>
+        `;
+        attendanceListContainer.appendChild(attendanceItem);
+    });
+    
+    console.log('Attendance list updated successfully');
+}
+
+async function fetchAbsentWorkers(year, month) {
+    try {
+        // Get token from localStorage
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        console.log('Fetching absent workers for year:', year, 'month:', month);
+
+        const response = await fetch(
+            `https://mwms.megacess.com/api/v1/analytics/absent-workers?year=${year}&month=${month}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Absent Workers API Response:', result);
+        
+        if (result.data && result.data.records) {
+            console.log('Updating absent workers list with data:', result.data.records);
+            updateAbsentWorkersList(result.data);
+        } else {
+            console.warn('No absent workers data found in API response');
+        }
+    } catch (error) {
+        console.error('Error fetching absent workers data:', error);
+    }
+}
+
+function updateAbsentWorkersList(data) {
+    const absentListContainer = document.querySelector('.absent-list');
+    if (!absentListContainer) {
+        console.error('Absent workers list container not found');
+        return;
+    }
+    
+    // Update the period display
+    const periodElement = document.querySelector('.absent-period');
+    if (periodElement && data.period) {
+        periodElement.textContent = data.period;
+    }
+    
+    // Clear existing items
+    absentListContainer.innerHTML = '';
+    
+    if (!data.records || data.records.length === 0) {
+        absentListContainer.innerHTML = '<p class="text-muted text-center py-4">No absent workers</p>';
+        return;
+    }
+    
+    // Create absent worker items from API data
+    data.records.forEach(record => {
+        const absentItem = document.createElement('div');
+        absentItem.className = 'd-flex align-items-center gap-3 border rounded-3 p-3 mb-3';
+        absentItem.innerHTML = `
+            <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                <i class="bi bi-person-fill text-white fs-4"></i>
+            </div>
+            <div>
+                <div class="fw-semibold">${record.staff_name}</div>
+                <small class="text-muted">${record.total_absent_days} day(s) absent</small>
+            </div>
+        `;
+        absentListContainer.appendChild(absentItem);
+    });
+    
+    console.log('Absent workers list updated successfully');
 }
