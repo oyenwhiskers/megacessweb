@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch absent workers data
     fetchAbsentWorkers(year, 10); // Default to October
+    
+    // Fetch audited summary data
+    fetchAuditedSummary(year, 10); // Default to October
 });
 
 async function fetchMonthlyTaskCompletion(year, locationId = 1) {
@@ -821,4 +824,249 @@ function updateAbsentWorkersList(data) {
     });
     
     console.log('Absent workers list updated successfully');
+}
+
+async function fetchAuditedSummary(year, month) {
+    try {
+        // Get token from localStorage
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        console.log('Fetching audited summary for year:', year, 'month:', month);
+
+        const response = await fetch(
+            `https://mwms.megacess.com/api/v1/analytics/audited-summary?year=${year}&month=${month}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Audited Summary API Response:', result);
+        
+        if (result.data && result.data.summary) {
+            console.log('Updating audited summary with data:', result.data.summary);
+            updateAuditedSummary(result.data);
+        } else {
+            console.warn('No audited summary data found in API response');
+        }
+    } catch (error) {
+        console.error('Error fetching audited summary:', error);
+    }
+}
+
+function updateAuditedSummary(data) {
+    const summaryContainer = document.querySelector('.audited-summary-content');
+    if (!summaryContainer) {
+        console.error('Audited summary container not found');
+        return;
+    }
+    
+    // Clear existing content
+    summaryContainer.innerHTML = '';
+    
+    if (!data.summary || data.summary.length === 0) {
+        // Display empty state with cards
+        const emptyRow = document.createElement('div');
+        emptyRow.className = 'row g-3 mb-3';
+        emptyRow.innerHTML = `
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="bg-success text-white p-2"></div>
+                    <div class="card-body p-4 text-center">
+                        <p class="text-muted mb-0">No audited summary data available</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="bg-success text-white p-2"></div>
+                    <div class="card-body p-4 text-center">
+                        <p class="text-muted mb-0">No audited summary data available</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        summaryContainer.appendChild(emptyRow);
+        return;
+    }
+    
+    // Group data by task type and category
+    const groupedData = {
+        fertilizing: [],
+        harvesting: [],
+        pruning: [],
+        sanitation: []
+    };
+    
+    data.summary.forEach(item => {
+        const taskType = item.task_type.toLowerCase();
+        if (groupedData[taskType]) {
+            groupedData[taskType].push(item);
+        } else {
+            // Create new category if not exists
+            if (!groupedData.other) groupedData.other = [];
+            groupedData.other.push(item);
+        }
+    });
+    
+    // Create sections based on available data
+    
+    // Fertilizing and Harvesting Section
+    const fertHarvestData = [...groupedData.fertilizing, ...groupedData.harvesting];
+    if (fertHarvestData.length > 0) {
+        const fertHarvestRow = document.createElement('div');
+        fertHarvestRow.className = 'row g-3 mb-3';
+        
+        fertHarvestData.forEach(item => {
+            const col = document.createElement('div');
+            col.className = 'col-md-6';
+            
+            const formattedDate = item.recent_block?.checked_at 
+                ? formatDate(item.recent_block.checked_at) 
+                : 'N/A';
+            
+            const totalValue = formatNumber(item.total_value);
+            const recentValue = item.recent_block?.total_value 
+                ? formatNumber(item.recent_block.total_value) 
+                : 'N/A';
+            
+            col.innerHTML = `
+                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="bg-success text-white p-2"></div>
+                    <div class="card-body p-4">
+                        <p class="text-muted mb-2">${item.category_name}:</p>
+                        <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
+                        <hr>
+                        <p class="text-muted mb-2">Recent ${item.task_name.toLowerCase()} block:</p>
+                        <p class="mb-0">
+                            <strong>Area:</strong> ${item.recent_block?.location_name || 'N/A'}
+                            ${item.recent_block?.total_value ? `<strong class="ms-3">Total:</strong> ${recentValue} ${item.unit}` : ''}
+                        </p>
+                    </div>
+                </div>
+            `;
+            fertHarvestRow.appendChild(col);
+        });
+        
+        summaryContainer.appendChild(fertHarvestRow);
+    }
+    
+    // Pruning Section
+    if (groupedData.pruning.length > 0) {
+        const pruningRow = document.createElement('div');
+        pruningRow.className = 'row g-3 mb-3';
+        
+        const pruningCard = document.createElement('div');
+        pruningCard.className = 'col-12';
+        
+        let pruningColumns = '';
+        groupedData.pruning.forEach((item, index) => {
+            const formattedDate = item.recent_block?.checked_at 
+                ? formatDate(item.recent_block.checked_at) 
+                : 'N/A';
+            const totalValue = formatNumber(item.total_value);
+            const borderClass = index > 0 ? 'border-start' : '';
+            
+            pruningColumns += `
+                <div class="col-md-${12 / groupedData.pruning.length} ${borderClass}">
+                    <p class="text-muted mb-2">${item.category_name}:</p>
+                    <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
+                    <p class="text-muted mb-1">Recent pruned block:</p>
+                    <p class="mb-1"><strong>Area:</strong> ${item.recent_block?.location_name || 'N/A'}</p>
+                    <p class="mb-1"><strong>Checked by:</strong> ${item.recent_block?.checked_by || 'N/A'}</p>
+                    <p class="mb-0"><strong>Checked at:</strong> ${formattedDate}</p>
+                </div>
+            `;
+        });
+        
+        pruningCard.innerHTML = `
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="bg-success text-white p-2"></div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        ${pruningColumns}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        pruningRow.appendChild(pruningCard);
+        summaryContainer.appendChild(pruningRow);
+    }
+    
+    // Sanitation Section
+    if (groupedData.sanitation.length > 0) {
+        const sanitationRow = document.createElement('div');
+        sanitationRow.className = 'row g-3 mb-3';
+        
+        const sanitationCard = document.createElement('div');
+        sanitationCard.className = 'col-12';
+        
+        let sanitationColumns = '';
+        groupedData.sanitation.forEach((item, index) => {
+            const formattedDate = item.recent_block?.checked_at 
+                ? formatDate(item.recent_block.checked_at) 
+                : 'N/A';
+            const totalValue = formatNumber(item.total_value);
+            const borderClass = index > 0 ? 'border-start' : '';
+            
+            sanitationColumns += `
+                <div class="col-md-${12 / groupedData.sanitation.length} ${borderClass}">
+                    <p class="mb-2"><strong>${item.category_name}:</strong></p>
+                    <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
+                    <p class="text-muted mb-1">Recent ${item.category_name.toLowerCase()} block:</p>
+                    <p class="mb-1"><strong>Area:</strong> ${item.recent_block?.location_name || 'N/A'}</p>
+                    <p class="mb-1"><strong>Checked by:</strong> ${item.recent_block?.checked_by || 'N/A'}</p>
+                    <p class="mb-0"><strong>Checked at:</strong> ${formattedDate}</p>
+                </div>
+            `;
+        });
+        
+        sanitationCard.innerHTML = `
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="bg-success text-white p-2"></div>
+                <div class="card-body p-4">
+                    <p class="text-muted mb-3">Total acre sanitized:</p>
+                    <div class="row">
+                        ${sanitationColumns}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        sanitationRow.appendChild(sanitationCard);
+        summaryContainer.appendChild(sanitationRow);
+    }
+    
+    console.log('Audited summary updated successfully');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('en-GB', options);
+}
+
+function formatNumber(value) {
+    if (value === null || value === undefined) return '0';
+    
+    // Round to 2 decimal places and remove unnecessary trailing zeros
+    const rounded = Math.round(value * 100) / 100;
+    return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(2);
 }
