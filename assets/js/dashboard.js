@@ -19,11 +19,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function fetchDashboardData(month, year) {
     try {
-        // Get token from localStorage or sessionStorage
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        // Get token from localStorage (using 'authToken' key)
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        console.log('Dashboard - Checking for token:', token ? 'Found' : 'Not found');
+        console.log('LocalStorage authToken:', localStorage.getItem('authToken'));
         
         if (!token) {
-            console.error('No authentication token found');
+            console.error('No authentication token found. Please log in again.');
+            // Redirect to login page
+            // window.location.href = '/megacessweb/pages/log-in.html';
             return;
         }
 
@@ -112,8 +117,8 @@ function updateDashboard(data) {
 
 async function fetchTasksByBlocks(year, month, week = null) {
     try {
-        // Get token from localStorage or sessionStorage
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        // Get token from localStorage (using 'authToken' key)
+        const token = localStorage.getItem('authToken');
         
         if (!token) {
             console.error('No authentication token found');
@@ -154,19 +159,14 @@ function initializeChart() {
     const ctx = document.getElementById('taskCompletionChart');
     if (!ctx) return;
     
-    // Default data matching the image
-    const defaultData = {
-        labels: ['A01', 'A02', 'B01', 'B02', 'C01', 'C02', 'D01', 'D02', 'E01', 'E02', 'F01', 'F02'],
-        values: [15, 20, 25, 20, 15, 15, 25, 25, 15, 20, 20, 15]
-    };
-    
+    // Empty chart - will be populated by API
     taskCompletionChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: defaultData.labels,
+            labels: [],
             datasets: [{
                 label: 'Task Completed',
-                data: defaultData.values,
+                data: [],
                 backgroundColor: '#1e7e5c',
                 borderColor: '#1e7e5c',
                 borderWidth: 1,
@@ -198,9 +198,7 @@ function initializeChart() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 35,
                     ticks: {
-                        stepSize: 5,
                         font: {
                             size: 11
                         }
@@ -211,6 +209,14 @@ function initializeChart() {
                     }
                 },
                 x: {
+                    title: {
+                        display: true,
+                        text: 'Block',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
                     grid: {
                         display: false
                     },
@@ -232,8 +238,18 @@ function updateChart(apiData) {
     const labels = apiData.map(item => item.location_name);
     const values = apiData.map(item => item.count);
     
+    console.log('Dashboard Chart Labels:', labels);
+    console.log('Dashboard Chart Values:', values);
+    
+    // Find the maximum value to set appropriate scale
+    const maxValue = Math.max(...values);
+    const yAxisMax = Math.ceil(maxValue / 10) * 10 + 10; // Round up and add padding
+    
     // Update chart with API data
     taskCompletionChart.data.labels = labels;
     taskCompletionChart.data.datasets[0].data = values;
+    taskCompletionChart.options.scales.y.max = yAxisMax;
     taskCompletionChart.update();
+    
+    console.log('Dashboard chart updated successfully');
 }
