@@ -18,9 +18,38 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Assign Worker content will go here.</p>
+        <!-- Search Bar -->
+        <div class="mb-4">
+          <input type="text" class="form-control form-control-lg" placeholder="search name..." id="searchInput">
+        </div>
+
+        <!-- List of Mandur -->
+        <div>
+          <h2 class="h5 mb-3">List of Mandur:</h2>
+          
+          <!-- Mandur Item -->
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                  <!-- Profile Picture -->
+                  <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <i class="bi bi-person-fill text-white fs-2"></i>
+                  </div>
+                  <!-- Name and Role -->
+                  <div>
+                    <h5 class="mb-0 fw-bold">Oikawa Yamaguchi</h5>
+                    <p class="mb-0 text-muted">Mandur</p>
+                  </div>
+                </div>
+                <!-- Worker Count -->
+                <div class="bg-light px-4 py-2 rounded">
+                  <span class="text-dark">Worker : <strong>0</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </main>
