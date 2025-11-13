@@ -245,37 +245,26 @@
   // Cache to store staff data from the list
   let staffListCache = [];
 
-  // Staff action functions (similar to workers)
+  // Staff action functions - View details
   window.viewStaffDetails = async function(staffId) {
     try {
-      // Show loading state in a modal
-      showStaffDetailsModal({
-        loading: true,
-        staffId: staffId
-      });
-      
-      // First, try to find staff in cache from the already-loaded list
-      const cachedStaff = staffListCache.find(s => (s.id || s.user_id) === staffId);
-      
-      if (cachedStaff) {
-        console.log('Using cached staff data for ID:', staffId);
-        // Display cached staff details in modal
-        showStaffDetailsModal(cachedStaff);
-        return;
-      }
-      
-      // If not in cache, fetch from API
+      // Get authentication token
       const token = localStorage.getItem('auth_token') || 
                    sessionStorage.getItem('auth_token') || 
                    localStorage.getItem('authToken') ||
                    sessionStorage.getItem('authToken');
       
       if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
+        alert('Authentication token not found. Please log in again.');
+        window.location.href = '/megacessweb/pages/log-in.html';
+        return;
       }
       
-      // Try fetching all users and find the specific one (since /users/{id} endpoint doesn't exist)
-      const response = await fetch(`https://mwms.megacess.com/api/v1/users?per_page=100`, {
+      // Show loading modal first
+      showStaffDetailsModal({ loading: true });
+      
+      // Fetch staff details from API
+      const response = await fetch(`https://mwms.megacess.com/api/v1/profile`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -287,28 +276,18 @@
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Authentication failed. Please log in again.');
-        } else if (response.status === 403) {
-          throw new Error('Access denied.');
+        } else if (response.status === 404) {
+          throw new Error('Staff member not found.');
         } else {
           throw new Error(`Failed to load staff details (${response.status})`);
         }
       }
       
       const result = await response.json();
-      
-      if (!result.data || !Array.isArray(result.data)) {
-        throw new Error('Invalid response format');
-      }
-      
-      // Find the specific staff member
-      const staffMember = result.data.find(s => (s.id || s.user_id) === staffId);
-      
-      if (!staffMember) {
-        throw new Error('Staff member not found');
-      }
+      const staffData = result.data || result;
       
       // Display staff details in modal
-      showStaffDetailsModal(staffMember);
+      showStaffDetailsModal(staffData);
       
     } catch (error) {
       console.error('Error fetching staff details:', error);
@@ -317,16 +296,15 @@
       });
     }
   };
-
+  
   // Function to display staff details in a modal
   function showStaffDetailsModal(staffData) {
-    // Remove existing modal if any
+    // Remove existing modal if present
     const existingModal = document.getElementById('staffDetailsModal');
     if (existingModal) {
-      // Properly dispose of existing modal instance
-      const existingModalInstance = bootstrap.Modal.getInstance(existingModal);
-      if (existingModalInstance) {
-        existingModalInstance.dispose();
+      const modalInstance = bootstrap.Modal.getInstance(existingModal);
+      if (modalInstance) {
+        modalInstance.dispose();
       }
       existingModal.remove();
     }
@@ -361,69 +339,56 @@
         </div>
       `;
     } else {
-      const staff = staffData;
+      // Extract staff details from API response
+      const staffId = staffData.id;
+      const name = staffData.user_fullname || 'Unknown';
+      const nickname = staffData.user_nickname || '-';
+      const role = staffData.user_role || '-';
+      const phone = staffData.user_phone || '-';
+      const ic = staffData.user_ic || '-';
+      const dob = staffData.user_dob || '-';
+      const gender = staffData.user_gender || '-';
+      const bankName = staffData.user_bank_name || '-';
+      const bankNumber = staffData.user_bank_number || '-';
+      const kwspNumber = staffData.user_kwsp_number || '-';
       
-      // Generate avatar placeholder
-      const userName = staff.user_fullname || 'Staff';
-      const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=200&bold=true&rounded=true`;
-      
-      // Use staff image if exists and valid, otherwise use placeholder
-      let imageSrc = placeholderImage;
-      if (staff.user_img && staff.user_img.trim() !== '') {
-        const imgPath = staff.user_img.trim();
-        console.log('Modal - Image path from API:', imgPath);
-        console.log('Modal - Staff data:', staff);
-        // Check if it's a full URL or relative path
+      // Get image source with fallback
+      const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0d6efd&color=fff&size=256&bold=true&rounded=true`;
+      let imgSrc = placeholderImage;
+      const userImage = staffData.user_img || '';
+      if (userImage && userImage.trim() !== '') {
+        const imgPath = userImage.trim();
         if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
-          imageSrc = imgPath;
+          imgSrc = imgPath;
         } else {
-          // Construct full URL using API base URL
-          imageSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
+          imgSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
         }
-        console.log('Modal - Final image URL:', imageSrc);
-      } else {
-        console.log('Modal - No image, staff.user_img:', staff.user_img);
       }
       
-      // Format date for input field (YYYY-MM-DD to DD/MM/YYYY)
-      function formatDateForDisplay(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-      }
-      
-      // Helper function to display value or dash
-      function displayValue(value) {
-        return (value && value.trim() !== '') ? value : '-';
-      }
-      
-      // Get gender display text
-      function getGenderDisplay(gender) {
-        if (!gender) return '-';
-        return gender.charAt(0).toUpperCase() + gender.slice(1);
-      }
-      
-      // Get role badge color
-      const getRoleBadgeColor = (role) => {
-        switch(role.toLowerCase()) {
-          case 'admin': return 'bg-danger';
-          case 'manager': return 'bg-primary';
-          case 'mandor': return 'bg-success';
-          case 'checker': return 'bg-warning text-dark';
-          default: return 'bg-secondary';
+      // Format date if available (convert YYYY-MM-DD to DD/MM/YYYY)
+      let formattedDob = dob;
+      if (dob && dob !== '-') {
+        // Handle both YYYY-MM-DD and ISO date formats
+        const date = new Date(dob);
+        if (!isNaN(date.getTime())) {
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          formattedDob = `${day}/${month}/${year}`;
         }
-      };
+      }
+      
+      // Format gender for display
+      const genderDisplay = gender && gender !== '-' ? gender.charAt(0).toUpperCase() + gender.slice(1) : '-';
       
       modalContent = `
         <div class="row">
           <div class="col-md-3 text-center mb-3 mb-md-0">
             <div style="border:2px solid #dee2e6; border-radius:8px; padding:10px; display:inline-block; background:#f8f9fa;">
-              <img id="staffDetailsImagePreview" src="${imageSrc}" 
-                   alt="${userName}" 
-                   style="width:120px; height:120px; object-fit:cover; border-radius:8px;"
+              <img src="${imgSrc}" 
+                   alt="${name}" 
+                   id="staffDetailsImagePreview"
+                   style="width:120px; height:120px; object-fit:cover; border-radius:8px;" 
                    onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
               <input type="file" id="staffDetailsImageInput" accept="image/*" style="display:none;">
             </div>
@@ -433,54 +398,52 @@
             <div class="row g-2">
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">IC / Document ID:</label>
-                <input type="text" class="form-control form-control-sm" value="${displayValue(staff.user_ic) !== '-' ? displayValue(staff.user_ic) : staff.id}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${ic}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Nickname:</label>
-                <input type="text" class="form-control form-control-sm" value="${displayValue(staff.user_nickname)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${nickname}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Full Name:</label>
-                <input type="text" class="form-control form-control-sm" value="${displayValue(staff.user_fullname)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${name}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Phone Number:</label>
-                <input type="text" class="form-control form-control-sm" value="${displayValue(staff.user_phone)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${phone}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Date Of Birth:</label>
-                <input type="text" class="form-control form-control-sm" value="${formatDateForDisplay(staff.user_dob)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${formattedDob}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Gender:</label>
-                <input type="text" class="form-control form-control-sm" value="${getGenderDisplay(staff.user_gender)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${genderDisplay}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Role:</label>
-                <div class="form-control form-control-sm d-flex align-items-center" style="border:1px solid #dee2e6; background:#e9ecef;">
-                  <span class="badge ${getRoleBadgeColor(staff.user_role || '')}">${staff.user_role ? staff.user_role.charAt(0).toUpperCase() + staff.user_role.slice(1) : '-'}</span>
-                </div>
+                <input type="text" class="form-control form-control-sm" value="${role}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Bank Type:</label>
-                <input type="text" class="form-control form-control-sm" value="${displayValue(staff.user_bank_name)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${bankName}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">Bank Account Number:</label>
-                <input type="text" class="form-control form-control-sm" value="${displayValue(staff.user_bank_number)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${bankNumber}" readonly>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label fw-semibold mb-1 small">KWSP Number:</label>
-                <input type="text" class="form-control form-control-sm" value="${displayValue(staff.user_kwsp_number)}" readonly>
+                <input type="text" class="form-control form-control-sm" value="${kwspNumber}" readonly>
               </div>
             </div>
           </div>
@@ -488,7 +451,7 @@
       `;
     }
     
-    // Create modal element
+    // Create modal HTML
     const modalHTML = `
       <div class="modal fade" id="staffDetailsModal" tabindex="-1" aria-labelledby="staffDetailsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -535,20 +498,20 @@
         modalInstance.dispose();
       }
       
-      // Remove the modal element
+      // Remove modal element from DOM
       modalElement.remove();
       
-      // Clean up any lingering backdrops
-      const backdrops = document.querySelectorAll('.modal-backdrop');
-      backdrops.forEach(backdrop => backdrop.remove());
+      // Remove any lingering backdrops
+      const remainingBackdrops = document.querySelectorAll('.modal-backdrop');
+      remainingBackdrops.forEach(backdrop => backdrop.remove());
       
-      // Ensure body classes and styles are reset
+      // Ensure body classes and styles are cleaned up
       if (!document.querySelector('.modal.show')) {
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
       }
-    }, { once: true });
+    });
   }
 
   window.editStaff = function(staffId) {
@@ -581,13 +544,19 @@
       
       if (label.includes('IC / Document ID')) {
         input.setAttribute('name', 'user_ic');
+        input.setAttribute('required', 'required');
       } else if (label.includes('Nickname')) {
         input.setAttribute('name', 'user_nickname');
+        // Note: API may not support updating nickname
       } else if (label.includes('Full Name')) {
         input.setAttribute('name', 'user_fullname');
+        input.setAttribute('required', 'required');
+        input.setAttribute('minlength', '2');
+        // Note: API may not support updating fullname
       } else if (label.includes('Phone Number')) {
         input.type = 'tel';
         input.setAttribute('name', 'user_phone');
+        input.setAttribute('required', 'required');
       } else if (label.includes('Date Of Birth')) {
         // Convert DD/MM/YYYY to YYYY-MM-DD for date input BEFORE changing type
         const dateValue = input.value;
@@ -604,6 +573,7 @@
         // Now change the type after value is converted
         input.type = 'date';
         input.setAttribute('name', 'user_dob');
+        input.setAttribute('required', 'required');
       } else if (label.includes('Gender')) {
         // Replace gender input with select
         const currentValue = input.value.toLowerCase();
@@ -618,9 +588,18 @@
         input.outerHTML = selectHTML;
         return; // Skip further processing for this field
       } else if (label.includes('Role:')) {
-        // Role field stays readonly - cannot change role through edit
-        input.classList.remove('border-primary');
-        input.setAttribute('readonly', 'readonly');
+        // Make role editable with select
+        const currentValue = input.value.toLowerCase();
+        const selectHTML = `
+          <select class="form-control form-control-sm border-primary" name="user_role" required>
+            <option value="">Select Role</option>
+            <option value="admin" ${currentValue === 'admin' ? 'selected' : ''}>Admin</option>
+            <option value="manager" ${currentValue === 'manager' ? 'selected' : ''}>Manager</option>
+            <option value="mandor" ${currentValue === 'mandor' ? 'selected' : ''}>Mandor</option>
+            <option value="checker" ${currentValue === 'checker' ? 'selected' : ''}>Checker</option>
+          </select>
+        `;
+        input.outerHTML = selectHTML;
         return; // Skip further processing for this field
       } else if (label.includes('Bank Type')) {
         input.setAttribute('name', 'user_bank_name');
@@ -754,6 +733,49 @@
       
       const modalBody = modal.querySelector('.modal-body');
       
+      // Collect all input values first
+      const inputs = modalBody.querySelectorAll('input:not([type="file"]):not([readonly]), select');
+      const staffData = {};
+      
+      inputs.forEach(input => {
+        const name = input.getAttribute('name');
+        if (name) {
+          let value = input.value.trim();
+          // Only include password if it's not empty (user wants to change it)
+          if (name === 'user_password') {
+            if (value !== '') {
+              staffData[name] = value;
+            }
+          } else if (value !== '' && value !== '-') {
+            // Include non-empty values
+            staffData[name] = value;
+          }
+        }
+      });
+      
+      // Validate required fields before proceeding
+      // Note: fullname and nickname may not be updatable via /profile endpoint
+      if (!staffData.user_ic) {
+        alert('IC / Document ID is required');
+        return;
+      }
+      if (!staffData.user_phone) {
+        alert('Phone Number is required');
+        return;
+      }
+      if (!staffData.user_dob) {
+        alert('Date of Birth is required');
+        return;
+      }
+      if (!staffData.user_gender) {
+        alert('Gender is required');
+        return;
+      }
+      if (!staffData.user_role) {
+        alert('Role is required');
+        return;
+      }
+      
       // Check if there's an image file to upload
       const imageInput = document.getElementById('staffDetailsImageInput');
       const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
@@ -769,22 +791,9 @@
         // Use FormData for file upload
         const formData = new FormData();
         
-        // Collect all input values
-        const inputs = modalBody.querySelectorAll('input:not([type="file"]):not([readonly]), select');
-        
-        inputs.forEach(input => {
-          const name = input.getAttribute('name');
-          if (name) {
-            let value = input.value.trim();
-            // Only include password if it's not empty
-            if (name === 'user_password') {
-              if (value !== '') {
-                formData.append(name, value);
-              }
-            } else if (value !== '') {
-              formData.append(name, value);
-            }
-          }
+        // Add all collected data to FormData
+        Object.keys(staffData).forEach(key => {
+          formData.append(key, staffData[key]);
         });
         
         // Add image file
@@ -792,42 +801,9 @@
         requestBody = formData;
         // Don't set Content-Type for FormData, browser will set it with boundary
       } else {
-        // Use JSON for regular update
-        const staffData = {};
-        const inputs = modalBody.querySelectorAll('input:not([readonly]), select');
-        
-        inputs.forEach(input => {
-          const name = input.getAttribute('name');
-          if (name) {
-            let value = input.value.trim();
-            // Convert empty values to null, except for password
-            if (name === 'user_password') {
-              // Only include password if it's not empty (user wants to change it)
-              if (value !== '') {
-                staffData[name] = value;
-              }
-            } else {
-              staffData[name] = value !== '' ? value : null;
-            }
-          }
-        });
-        
+        // Use JSON for regular update (no image)
         requestBody = JSON.stringify(staffData);
         headers['Content-Type'] = 'application/json';
-        
-        // Validate required fields
-        if (!staffData.user_phone) {
-          alert('Phone Number is required');
-          return;
-        }
-        if (!staffData.user_dob) {
-          alert('Date of Birth is required');
-          return;
-        }
-        if (!staffData.user_gender) {
-          alert('Gender is required');
-          return;
-        }
       }
       
       // Disable save button and show loading state
@@ -898,9 +874,67 @@
            sessionStorage.getItem('authToken');
   }
 
-  window.deleteStaff = function(staffId) {
-    if (confirm('Are you sure you want to delete this staff member?')) {
-      alert(`Delete staff for ID: ${staffId}\nThis functionality will be implemented soon.`);
+  window.deleteStaff = async function(staffId) {
+    // Find staff member details for confirmation message
+    const staffMember = staffListCache.find(s => (s.id || s.user_id) === staffId);
+    const staffName = staffMember ? (staffMember.user_fullname || staffMember.name || 'this staff member') : 'this staff member';
+    
+    if (!confirm(`Delete this staff permanently?\n\nStaff: ${staffName}\n\nThis action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token') || 
+                   sessionStorage.getItem('auth_token') || 
+                   localStorage.getItem('authToken') ||
+                   sessionStorage.getItem('authToken');
+      
+      if (!token) {
+        alert('Authentication token not found. Please log in again.');
+        window.location.href = '/megacessweb/pages/log-in.html';
+        return;
+      }
+      
+      // Make DELETE request
+      const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          window.location.href = '/megacessweb/pages/log-in.html';
+          return;
+        } else if (response.status === 403) {
+          alert('Access denied. You do not have permission to delete this staff member.');
+          return;
+        } else if (response.status === 404) {
+          alert('Staff member not found.');
+          return;
+        } else {
+          throw new Error(`Failed to delete staff (${response.status})`);
+        }
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(result.message || 'User deleted successfully');
+        
+        // Refresh the staff list
+        fetchStaffList(currentSearch, currentRoleFilter);
+      } else {
+        alert('Failed to delete staff member.');
+      }
+      
+    } catch (error) {
+      console.error('Error deleting staff:', error);
+      alert(`Failed to delete staff member: ${error.message}`);
     }
   };
 
