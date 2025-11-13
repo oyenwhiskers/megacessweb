@@ -2,7 +2,7 @@
 
 $(document).ready(function () {
   const API_BASE = "https://mwms.megacess.com/api/v1/users";
-  const token = getToken(); // from main.js
+  const token = getToken(); 
 
   if (!token) {
     console.error("Token not found. User must be authenticated.");
@@ -23,11 +23,23 @@ $(document).ready(function () {
 
   if (!userId) {
     console.error("No user ID provided in URL.");
-    container.html('<p class="text-danger">No user selected.</p>');
+    container.html('<div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>No user selected.</div>');
     return;
   }
 
-  container.html('<p>Loading staff base salary...</p>');
+  // Loading state with styling
+  container.html(`
+        <div class="card p-4 shadow-sm">
+            <div class="d-flex align-items-center justify-content-center" style="min-height: 200px;">
+                <div class="text-center">
+                    <div class="spinner-border text-success mb-3" role="status">
+                         <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted">Loading staff base salary...</p>
+                </div>
+            </div>
+        </div>
+        `);
 
   // -------------------------
   // Render Base Salary Form
@@ -79,7 +91,7 @@ $(document).ready(function () {
 
       $.ajax({
         url: `${API_BASE}/${userId}/base-salary`,
-        method: "PUT", // or PATCH depending on backend
+        method: "POST", // or PATCH depending on backend
         headers: headers,
         contentType: "application/json",
         data: JSON.stringify({ base_salary: newSalary }),

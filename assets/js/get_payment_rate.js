@@ -301,6 +301,10 @@ async function updatePaymentRate(id, bodyData) {
 
 /* -------------------- Initialize -------------------- */
 document.addEventListener('DOMContentLoaded', () => {
-  console.log(" Loading payment rates...");
-  getPaymentRates();
+  // Only fetch payment rates if the container exists
+  if ($('#workSection .task-list .list-group').length) {
+    console.log(" Loading payment rates...");
+    getPaymentRates();
+  }
 });
+

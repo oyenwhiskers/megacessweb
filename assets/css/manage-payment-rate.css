@@ -1,13 +1,111 @@
-/* Container */
+/* -----------------------------
+   Layout: Sidebar + Content
+------------------------------*/
+body, html {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.app {
+  display: flex;       /* keep sidebar and content side by side */
+  flex-direction: row; /* ensure row layout */
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;      /* fix it in place */
+  top: 0;
+  left: 0;
+  width: 260px;         /* fixed sidebar width */
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f8f9fa; /* optional sidebar background */
+  z-index: 100;        /* ensure it stays above content if needed */
+}
+
+/* Adjust content to avoid sidebar overlap */
+.content {
+  margin-left: 250px;   /* same as sidebar width */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 100vh;
+  width: calc(100% - 250px);
+}
+
+
+.content-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 2rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.content-inner {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* -----------------------------
+   Payment Rate Containers
+------------------------------*/
+.payment-rate-container {
+  width: 100%;
+  margin: 0 auto;
+  max-width: 1200px; /* optional max width */
+}
+
+/* Salary Section */
+.staff-list {
+  width: 100%;
+}
+
+/* Work-based Section */
+.work-based-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 992px) {
+  .work-based-container {
+    flex-direction: row;
+  }
+}
+
+.task-list {
+  flex: 1 1 35%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.task-editor {
+  flex: 1 1 65%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* -----------------------------
+   Buttons, Slider, Filters
+------------------------------*/
 .type-of-rate-slider {
   display: inline-flex;
   background: #fff;
   border-radius: 50px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   overflow: hidden;
 }
 
-/* Base button style */
 .rate-btn {
   cursor: pointer;
   flex: 1;
@@ -25,7 +123,6 @@
   gap: 8px;
 }
 
-/* Rounded corners */
 .rate-btn:first-of-type {
   border-top-left-radius: 50px;
   border-bottom-left-radius: 50px;
@@ -35,76 +132,17 @@
   border-bottom-right-radius: 50px;
 }
 
-/* Active state */
 .btn-check:checked + .rate-btn {
-  background-color: #0d6832; /* Deep green */
+  background-color: #0d6832;
   color: #fff;
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
 }
 
-.btn-check:checked + .rate-btn i {
-  color: #fff;
-}
-
-/* Hover state */
 .rate-btn:hover {
   background-color: #e7e7e7;
 }
 
-/* Search, Filter and Display container */
-.payment-rate-container {
-  max-width: 900px;   /* Adjust this to match your design width */
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* Make both cards fill the same width */
-.search-section .card,
-.filter-section .card {
-  width: 100%;
-  border-radius: 12px;
-}
-
-/* Optional: keep the same inner padding */
-.search-section .card-body,
-.filter-section .card-body {
-  padding: 1.5rem;
-}
-
-
-/* Salary Search Section Styles */
-.search-section .card {
-  border-radius: 12px;
-  border: none;
-}
-
-.search-section .form-label {
-  font-size: 0.95rem;
-  color: #333;
-}
-
-.search-section .input-group-text {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
-}
-
-.search-section .form-control {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
-@media (max-width: 768px) {
-  .search-section .text-end {
-    text-align: left !important;
-  }
-}
-
-/* Filter Section */
-.filter-section .card {
-  border-radius: 12px;
-  border: none;
-}
-
+/* Filters */
 .filter-group {
   display: flex;
   justify-content: space-between;
@@ -115,7 +153,7 @@
 .filter-btn {
   border-radius: 8px !important;
   flex: 1;
-  text-align: center;;
+  text-align: center;
   padding: 10px 0;
   font-weight: 500;
   transition: all 0.25s ease-in-out;
@@ -124,7 +162,7 @@
 .btn-check:checked + .filter-btn {
   background-color: #0d6832;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(13, 104, 50, 0.3);
+  box-shadow: 0 2px 8px rgba(13,104,50,0.3);
   border-color: #0d6832;
 }
 
@@ -133,17 +171,17 @@
   color: #0d6832;
 }
 
-/* Active/Inactive switch colors */
+/* Switch styles */
 .form-check-input:checked {
-    background-color: #28a745;  /* Bootstrap green */
-    border-color: #28a745;
+  background-color: #28a745;
+  border-color: #28a745;
 }
 
 .form-check-input:checked:focus {
-    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25); /* subtle green glow */
+  box-shadow: 0 0 0 0.25rem rgba(40,167,69,0.25);
 }
 
 .form-check-input {
-    background-color: #6c757d; /* gray when off */
-    border-color: #6c757d;
+  background-color: #6c757d;
+  border-color: #6c757d;
 }

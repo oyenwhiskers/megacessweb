@@ -15,9 +15,11 @@
     <aside class="sidebar p-3" id="sidebar-root"></aside>
 
     <main class="content flex-grow-1">
-      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+      <div class="topbar py-3 px-4 d-flex align-items-center justify-content-between">
         <h1 class="page-title h5 mb-0">Manage Payment Rate</h1>
-        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle">
+          <i class="bi bi-list"></i>
+        </button>
       </div>
       
       <div class="container-fluid p-4">
@@ -36,6 +38,7 @@
           </div>
         </div>
 
+        <div class="content-inner flex-grow-1 px-3">
         <!-- Salary Management Section (visible by default) -->
         <div id="salarySection" class="payment-rate-container mx-auto">
         <!-- Search Section -->
@@ -44,25 +47,16 @@
             <div class="card-body">
               <form class="row g-3 align-items-center">
               <!-- Search Input -->
-               <div class="col-md-8 col-sm-12">
+               <div class="col-12">
                 <label for="searchStaff" class="form-label fw-semibold">
                   Search Staff Name:
                 </label>
-                <div class="input-group">
+                <div class="input-group justify-content-center">
                   <span class="input-group-text bg-success text-white">
                     <i class="bi bi-person-search"></i>
                   </span>
                   <input type="text" id="searchStaff" class="form-control" placeholder="Enter staff name..">
                 </div>
-               </div>
-               <!-- Actions Buttons for search bar-->
-               <div class="col-md-4 col-sm-12 text-end mt-3 mt-md-4">
-                <button type="button" class="btn btn-outline-secondary me-2">
-                  <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
-                </button>
-                <button type="submit" class="btn btn-success">
-                  <i class="bi bi-search me-1"></i> Search
-                </button>
                </div>
                </form>
             </div>
@@ -112,25 +106,24 @@
         </div>
 
         <!-- Two-panel layout -->
-        <div class="work-based-container mx-auto d-flex flex-column flex-lg-row gap-3">
-
-          <!-- Left panel: Task List -->
-          <div class="task-list card shadow-sm flex-fill">
-            <div class="card-header bg-success text-white">
-              <h6 class="mb-0"><i class="bi bi-list-task me-2"></i> Task Rate List</h6>
-            </div>
-            <div class="card-body p-0">
-              <ul id="taskList" class="list-group list-group-flush"></ul>
-              <!-- Here is the list of payment rate for the existing tasks-->
-            </div>
+        <div class="work-based-container d-flex flex-column flex-lg-row gap-3">
+        <!-- Left panel: Task List -->
+        <div class="task-list card shadow-sm col-12 col-lg-4">
+          <div class="card-header bg-success text-white">
+            <h6 class="mb-0"><i class="bi bi-list-task me-2"></i> Task Rate List</h6>
           </div>
+          <div class="card-body p-0">
+            <ul id="taskList" class="list-group list-group-flush"></ul>
+          </div>
+        </div>
 
-          <!-- Right panel: Preview/Editor -->
-          <div class="task-editor card shadow-sm flex-fill">
-            <div class="card-header bg-success text-white">
-              <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Edit Task Details</h6>
-            </div>
-            <div class="card-body"></div>
+        <!-- Right panel: Preview/Editor -->
+        <div class="task-editor card shadow-sm col-12 col-lg-8">
+          <div class="card-header bg-success text-white">
+            <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Edit Task Details</h6>
+          </div>
+          <div class="card-body"></div>
+        </div>
       </div>
       </div>
     </main>
