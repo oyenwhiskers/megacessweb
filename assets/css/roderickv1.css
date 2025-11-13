@@ -1,0 +1,210 @@
+/* ============================================================
+   manage-resources.html Custom Styles
+   Created by Roderick
+   ============================================================ */
+
+/* === Resource Buttons (Vehicle / Tools / Fuels) === */
+.resource-btn {
+  width: 160px;
+  height: 160px;
+  border-radius: 20px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+}
+
+/* --- Vehicle Button (Primary - Blue) --- */
+.btn-vehicle {
+  border: 2px solid #0d6efd;
+  color: #0d6efd;
+}
+.btn-vehicle:hover {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+/* --- Tools Button (Success - Green) --- */
+.btn-tools {
+  border: 2px solid #198754;
+  color: #198754;
+}
+.btn-tools:hover {
+  background-color: #198754;
+  color: #fff;
+}
+
+/* --- Fuels Button (Warning - Yellow) --- */
+.btn-fuels {
+  border: 2px solid #ffc107;
+  color: #ffc107;
+}
+.btn-fuels:hover {
+  background-color: #ffc107;
+  color: #fff;
+}
+
+/* ============================================================
+   manage-resources-vehicle.html Custom Styles
+   ============================================================ */
+
+/* === Back Button === */
+.back-btn {
+  background-color: #0d6efd; /* Bootstrap danger red */
+  color: #fff;
+  border: none;
+}
+.back-btn:hover {
+  background-color: #0b5ed7; /* darker red */
+  color: #fff;
+}
+
+/* === Selection Tabs === */
+
+/* Base (inactive) tab style */
+.tab-btn {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  text-decoration: none !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease-in-out;
+}
+
+/* Hover on inactive tab */
+.tab-btn:hover {
+  background-color: #e9ecef;
+  color: #495057;
+  text-decoration: none !important;
+  transform: translateY(-1px); /* subtle lift */
+}
+
+/* Active tab style */
+.tab-btn.active {
+  background-color: #198754; /* Bootstrap success green */
+  color: #fff;
+  border-color: #198754;
+  text-decoration: none !important;
+  transform: scale(1.02);
+  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.25); /* soft glow */
+}
+
+/* Active tab hover (slightly darker green) */
+.tab-btn.active:hover {
+  background-color: #157347;
+  color: #fff;
+  text-decoration: none !important;
+  transform: scale(1.03);
+}
+
+/* Tab highlight animation */
+.tab-btn::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background-color: #198754;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.tab-btn.active::after {
+  width: 100%;
+  background-color: #198754;
+}
+
+/* Reset icons/text alignment inside buttons */
+.btn i {
+  font-size: 1rem;
+}
+
+/* ============================================================
+   Content Table Styles
+   ============================================================ */
+
+.content-table {
+  background-color: #fff;
+  border: 1px solid #f1f3f5;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.content-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+.content-row:hover {
+  background-color: #f1f3f5;
+  transition: background-color 0.2s ease;
+}
+
+/* Padding for first column text only */
+.content-row > div:first-child {
+  padding-left: 12px;
+}
+
+.badge-maintenance {
+  background-color: #fd7e14; /* bright orange tone */
+  color: #fff;
+}
+
+/* Solid dropdown background */
+.solid-dropdown {
+  background-color: #fff !important;  /* force white background */
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* subtle shadow */
+  border: 1px solid #dee2e6;          /* optional border */
+}
+
+/* ============================================================
+   Tools Table Styles
+   ============================================================ */
+
+/* Tools Table Styling (same as Vehicle Table) */
+.tools-table {
+  background-color: #fff;
+  border: 1px solid #f1f3f5;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tools-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+.tools-row:hover {
+  background-color: #f1f3f5;
+  transition: background-color 0.2s ease;
+}
+
+/* Padding for first column text only */
+.tools-row > div:first-child {
+  padding-left: 12px;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7); /* semi-transparent white */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050; /* higher than Bootstrap modals */
+}
+
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
