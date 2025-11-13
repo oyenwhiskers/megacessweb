@@ -7,6 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body data-page="analytics">
   <div class="app d-flex">
@@ -18,9 +19,145 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Analytics content will go here.</p>
+        <!-- Chart Section - By Month -->
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4">
+              <div class="card-body p-4">
+                <h5 class="mb-4 fw-bold">Number of Completed Tasks per Month</h5>
+                <canvas id="taskCompletionChartMonth" style="max-height: 400px;"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart Section - By Block -->
+        <div class="row g-3 mt-3">
+          <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4">
+              <div class="card-body p-4">
+                <h5 class="mb-4 fw-bold">Number of Completed Tasks by Block</h5>
+                <canvas id="taskCompletionChartBlock" style="max-height: 400px;"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resources Used for Fertilizing Section -->
+        <div class="row g-3 mt-3">
+          <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                  <span class="badge bg-success text-white px-3 py-2 fs-6">Task type:</span>
+                  <span class="badge bg-success text-white px-3 py-2 fs-6">Manuring</span>
+                  <span class="badge bg-success text-white px-3 py-2 fs-6">Sanitation (Spraying)</span>
+                </div>
+                
+                <h5 class="mb-4 fw-bold">Resources Used for Fertilizing:</h5>
+                
+                <!-- Filter Section -->
+                <div class="row g-3 mb-3">
+                  <div class="col-md-8">
+                    <input 
+                      type="text" 
+                      id="resourceEstateOfficerSearch" 
+                      class="form-control" 
+                      placeholder="Search by estate officer name..."
+                    >
+                  </div>
+                  <div class="col-md-4">
+                    <input 
+                      type="date" 
+                      id="resourceDateFilter" 
+                      class="form-control" 
+                      placeholder="Filter by Date"
+                    >
+                  </div>
+                </div>
+                
+                <div class="resources-list">
+                  <!-- Resource items will be loaded from API -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Number of Completed Task by Estate Officer Section -->
+        <div class="row g-3 mt-3">
+          <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold mb-0">Number of Completed Task by Estate Officer</h5>
+                  <span class="text-muted">October 2025</span>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="mb-3">
+                  <input 
+                    type="text" 
+                    id="estateOfficerSearch" 
+                    class="form-control" 
+                    placeholder="Search estate officer by name..."
+                  >
+                </div>
+                
+                <!-- Scrollable List -->
+                <div class="estate-officers-list" style="max-height: 500px; overflow-y: auto;">
+                  <!-- Estate officer items will be loaded from API -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Rate Section -->
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+            <div class="card shadow-sm border-0 rounded-4">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold mb-0">Attendance Rate - Estate Officer's team</h5>
+                  <span class="text-muted attendance-period">October 2025</span>
+                </div>
+                
+                <!-- Attendance List -->
+                <div class="attendance-list" style="max-height: 500px; overflow-y: auto;">
+                  <!-- Data will be loaded from API -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card shadow-sm border-0 rounded-4">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold mb-0">List of absent worker</h5>
+                  <span class="text-muted absent-period">October 2025</span>
+                </div>
+                
+                <!-- Absent Workers List -->
+                <div class="absent-list" style="max-height: 500px; overflow-y: auto;">
+                  <!-- Data will be loaded from API -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audited Summary Section -->
+        <div class="row g-3 mt-3">
+          <div class="col-12">
+            <h4 class="fw-bold mb-3">Audited Summary</h4>
+          </div>
+        </div>
+
+        <!-- Audited Summary Content -->
+        <div class="audited-summary-content">
+          <!-- Data will be loaded from API -->
         </div>
       </div>
     </main>
@@ -28,5 +165,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="/megacessweb/assets/js/analytics.js"></script>
+  <script src="/megacessweb/assets/js/logout.js"></script>
 </body>
 </html>
