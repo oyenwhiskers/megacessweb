@@ -60,10 +60,14 @@
   async function fetchStaffList(search = '', role = 'all') {
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
-    // retrieve token from localStorage / session or replace with secure retrieval
-    const token = localStorage.getItem('authToken') || '{YOUR_TOKEN}';
-    if (!token || token === '{YOUR_TOKEN}') {
-      showStatus('Not authenticated — set a valid token (localStorage.authToken) or implement token retrieval.', 'danger');
+    // retrieve token from localStorage / session
+    const token = localStorage.getItem('auth_token') || 
+                 sessionStorage.getItem('auth_token') || 
+                 localStorage.getItem('authToken') ||
+                 sessionStorage.getItem('authToken');
+    if (!token) {
+      console.error('No authentication token found. Please log in.');
+      window.location.href = '/megacessweb/pages/log-in.html';
       return;
     }
 
@@ -158,8 +162,12 @@
           }
         };
         
-        // image (may be relative path from API)
-        let imgSrc = u.user_img || u.user_image || '';
+        // Set image source with fallback - generate avatar from name
+        const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
+        
+        // Use staff image if exists and valid, otherwise use placeholder
+        const userImage = u.user_img || u.user_image || '';
+        const imgSrc = (userImage && userImage.trim() !== '') ? userImage : placeholderImage;
         
         // create item with similar structure to workers
         const item = document.createElement('div');
@@ -167,11 +175,11 @@
         item.innerHTML = `
           <div class="d-flex align-items-center">
             <div style="width:48px;height:48px;flex:0 0 48px;">
-              <img src="${imgSrc || 'https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png'}" 
+              <img src="${imgSrc}" 
                    alt="${name}" 
                    class="rounded-circle" 
-                   style="width:48px;height:48px;object-fit:cover" 
-                   onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png'">
+                   style="width:48px;height:48px;object-fit:cover;background:#0d6efd;" 
+                   onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
             </div>
             <div class="flex-grow-1 ms-3">
               <div class="d-flex justify-content-between align-items-start">
@@ -193,11 +201,6 @@
                             onclick="viewStaffDetails(${u.id || u.user_id})"
                             title="View Details">
                       <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" 
-                            onclick="editStaff(${u.id || u.user_id})"
-                            title="Edit Staff">
-                      <i class="bi bi-pencil"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" 
                             onclick="deleteStaff(${u.id || u.user_id})"

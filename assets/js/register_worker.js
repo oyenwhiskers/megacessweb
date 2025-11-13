@@ -8,7 +8,7 @@
     const registerWorkerModal = document.getElementById('registerWorkerModal');
     let modalInstance = null;
     
-    // Get auth token (same as worker_list.js)
+    // Get auth token
     function getAuthToken() {
         const token = localStorage.getItem('auth_token') || 
                      sessionStorage.getItem('auth_token') || 
@@ -16,10 +16,12 @@
                      sessionStorage.getItem('authToken');
         
         if (!token) {
-            console.warn('No authentication token found. Please ensure user is logged in.');
+            console.error('No authentication token found. Please log in.');
+            window.location.href = '/megacessweb/pages/log-in.html';
+            return null;
         }
         
-        return token || 'YOUR_TOKEN';
+        return token;
     }
     
     // Show loading state on form
@@ -142,23 +144,46 @@
     }
     
     // Format form data for API
-    function formatFormDataForAPI(formData) {
-        return {
-            staff_fullname: formData.fullname.trim(),
-            staff_phone: formData.phone.trim(),
-            staff_dob: formData.dob,
-            staff_gender: formData.gender,
-            staff_doc: formData.ic.trim(), // Using IC as document ID
-            staff_bank_name: formData.banktype?.trim() || null,
-            staff_bank_number: formData.bankaccount?.trim() || null,
-            staff_kwsp_number: formData.kwsp?.trim() || null,
-            staff_img: null // Will be implemented later for file uploads
-        };
+    function formatFormDataForAPI(formData, imageFile = null) {
+        // Create FormData object to handle file upload
+        const apiFormData = new FormData();
+        
+        // Add text fields
+        apiFormData.append('staff_fullname', formData.fullname.trim());
+        apiFormData.append('staff_phone', formData.phone.trim());
+        apiFormData.append('staff_dob', formData.dob);
+        apiFormData.append('staff_gender', formData.gender);
+        apiFormData.append('staff_doc', formData.ic.trim());
+        
+        // Add optional fields
+        if (formData.banktype?.trim()) {
+            apiFormData.append('staff_bank_name', formData.banktype.trim());
+        }
+        if (formData.bankaccount?.trim()) {
+            apiFormData.append('staff_bank_number', formData.bankaccount.trim());
+        }
+        if (formData.kwsp?.trim()) {
+            apiFormData.append('staff_kwsp_number', formData.kwsp.trim());
+        }
+        
+        // Add image file if provided
+        if (imageFile) {
+            apiFormData.append('staff_img', imageFile);
+        }
+        
+        return apiFormData;
     }
     
     // Reset form
     function resetForm() {
         registerWorkerForm.reset();
+        
+        // Reset image preview to placeholder generated from default name
+        const imagePreview = document.getElementById('workerProfilePreview');
+        if (imagePreview) {
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent('Worker')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            imagePreview.src = placeholderImage;
+        }
         
         // Remove any alerts
         const existingAlert = registerWorkerModal.querySelector('.alert');
@@ -187,18 +212,23 @@
                 throw new Error(errors.join(', '));
             }
             
+            // Get image file if uploaded
+            const imageInput = document.getElementById('workerProfileImageInput');
+            const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
+            
             // Format data for API
-            const apiData = formatFormDataForAPI(formData);
+            const apiData = formatFormDataForAPI(formData, imageFile);
             
             // Make API request
             const response = await fetch(`${API_BASE_URL}/staff/register`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${getAuthToken()}`,
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
+                    // Note: Don't set Content-Type header when sending FormData
+                    // Browser will set it automatically with correct boundary
                 },
-                body: JSON.stringify(apiData)
+                body: apiData
             });
             
             const result = await response.json();

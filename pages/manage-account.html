@@ -93,8 +93,12 @@
           <form id="registerWorkerForm">
             <div class="row justify-content-center mb-4">
               <div class="col-auto text-center">
-                <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block;">
-                  <img src="https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
+                <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block; position:relative;">
+                  <img id="workerProfilePreview" src="https://ui-avatars.com/api/?name=Worker&background=6c757d&color=fff&size=128&bold=true&rounded=true" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
+                  <input type="file" id="workerProfileImageInput" name="profile_image" accept="image/*" style="display:none;">
+                  <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="document.getElementById('workerProfileImageInput').click()">
+                    <i class="bi bi-camera"></i> Choose Photo
+                  </button>
                 </div>
               </div>
               <div class="col-auto align-self-center">
@@ -170,8 +174,12 @@
           <form id="registerStaffForm">
             <div class="row justify-content-center mb-4">
               <div class="col-auto text-center">
-                <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block;">
-                  <img src="https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
+                <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block; position:relative;">
+                  <img id="staffProfilePreview" src="https://ui-avatars.com/api/?name=Staff&background=0d6efd&color=fff&size=128&bold=true&rounded=true" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
+                  <input type="file" id="staffProfileImageInput" name="profile_image" accept="image/*" style="display:none;">
+                  <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="document.getElementById('staffProfileImageInput').click()">
+                    <i class="bi bi-camera"></i> Choose Photo
+                  </button>
                 </div>
               </div>
               <div class="col-auto align-self-center">
@@ -251,6 +259,76 @@
   <script src="/megacessweb/assets/js/register_staff.js"></script>
   <script src="/megacessweb/assets/js/register_worker.js"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
+
+  <script>
+    // Image preview functionality for Worker registration
+    (function() {
+      const workerImageInput = document.getElementById('workerProfileImageInput');
+      const workerImagePreview = document.getElementById('workerProfilePreview');
+      
+      if (workerImageInput && workerImagePreview) {
+        workerImageInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+              alert('Please select a valid image file.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+              alert('Image size must be less than 5MB.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              workerImagePreview.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    })();
+
+    // Image preview functionality for Staff registration
+    (function() {
+      const staffImageInput = document.getElementById('staffProfileImageInput');
+      const staffImagePreview = document.getElementById('staffProfilePreview');
+      
+      if (staffImageInput && staffImagePreview) {
+        staffImageInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+              alert('Please select a valid image file.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+              alert('Image size must be less than 5MB.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              staffImagePreview.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    })();
+  </script>
 
   <script>
     (function(){
