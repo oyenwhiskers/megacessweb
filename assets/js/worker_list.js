@@ -533,7 +533,12 @@
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-1 small">Name:</label>
+                                <label class="form-label fw-semibold mb-1 small">Nickname:</label>
+                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_nickname)}" readonly>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold mb-1 small">Full Name:</label>
                                 <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_fullname)}" readonly>
                             </div>
                             
@@ -670,7 +675,9 @@
             
             if (label.includes('IC / Document ID')) {
                 input.setAttribute('name', 'staff_ic');
-            } else if (label.includes('Name')) {
+            } else if (label.includes('Nickname')) {
+                input.setAttribute('name', 'staff_nickname');
+            } else if (label.includes('Full Name')) {
                 input.setAttribute('name', 'staff_fullname');
             } else if (label.includes('Phone Number')) {
                 input.type = 'tel';
