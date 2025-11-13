@@ -21,6 +21,10 @@
   <!-- Links to Roderick's CSS style -->
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ 
+  <!-- Sweet2Alert style -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body data-page="manage-resources">
   <!-- Main Content -->
@@ -114,51 +118,15 @@
                 <div class="col-4 text-center">Action</div>
               </div>
 
-              <!-- Sample Tool Rows -->
-              <div class="content-row d-flex border-bottom py-2 align-items-center">
-                <div class="col-4">Electric Drill</div>
-                <div class="col-4">
-                  <span class="badge bg-success">Available</span>
-                </div>
-                <div class="col text-center">
-                  <button class="btn btn-sm btn-outline-primary me-2">
-                    <i class="bi bi-pencil me-1"></i> Edit
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-trash me-1"></i> Delete
-                  </button>
+              <!-- 🔄 Loading indicator -->
+              <div id="loading" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
                 </div>
               </div>
+              <!-- Table Body -->
+              <div id="toolsTableBody" style="padding-bottom: 70px;"></div>
 
-              <div class="content-row d-flex border-bottom py-2 align-items-center">
-                <div class="col-4">Hammer</div>
-                <div class="col-4">
-                  <span class="badge bg-secondary">In Use</span>
-                </div>
-                <div class="col text-center">
-                  <button class="btn btn-sm btn-outline-primary me-2">
-                    <i class="bi bi-pencil me-1"></i> Edit
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-trash me-1"></i> Delete
-                  </button>
-                </div>
-              </div>
-
-              <div class="content-row d-flex border-bottom py-2 align-items-center">
-                <div class="col-4">Welding Machine</div>
-                <div class="col-4">
-                  <span class="badge badge-maintenance">Under Maintenance</span>
-                </div>
-                <div class="col text-center">
-                  <button class="btn btn-sm btn-outline-primary me-2">
-                    <i class="bi bi-pencil me-1"></i> Edit
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-trash me-1"></i> Delete
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -375,27 +343,20 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
-  <script src="/megacessweb/assets/js/roderick.js"></script>
+  <script src="/megacessweb/assets/js/tools.js"></script>
+
   <script>
-      $(document).ready(function () {
-        // Show the first tab content by default
-        $(".tab-pane").first().show();
-
-        // Tab Button Click Handler
-        $(".tab-btn").click(function () {
-          const target = $(this).data("target"); // Get target tab name
-
-          // Hide all panes
-          $(".tab-pane").hide();
-
-          // Show the selected one
-          $(`.tab-pane[data-name="${target}"]`).show();
-
-          // Update active button
-          $(".tab-btn").removeClass("active");
-          $(this).addClass("active");
-        });
+    $(document).ready(function () {
+      // --- Tab Handling ---
+      $(".tab-pane").first().show();
+      $(".tab-btn").click(function () {
+        const target = $(this).data("target");
+        $(".tab-pane").hide();
+        $(`.tab-pane[data-name="${target}"]`).show();
+        $(".tab-btn").removeClass("active");
+        $(this).addClass("active");
       });
-    </script>
+    });
+  </script>
 </body>
 </html>
