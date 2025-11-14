@@ -160,6 +160,51 @@ function populateFuelsTable(fuels) {
   if (typeof attachDeleteListeners === 'function') attachDeleteListeners();
 }
 
+// ==================== DELETE /fuels ====================
+function attachDeleteListeners() {
+  const deleteButtons = document.querySelectorAll('.delete-fuel-btn');
+  deleteButtons.forEach(btn => {
+    btn.removeEventListener('click', handleDelete);
+    btn.addEventListener('click', handleDelete);
+  });
+}
+
+async function handleDelete(e) {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
+
+  const fuelId = e.currentTarget.dataset.id;
+  showConfirm('You want to delete this fuel?', async () => {
+    showLoading();
+    try {
+      const response = await fetch(`https://mwms.megacess.com/api/v1/fuels/${fuelId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        showSuccess(result.message);
+        getAllFuels();
+      } else {
+        showError(result.message);
+      }
+    } catch (err) {
+      console.error(err);
+      showError('Failed to delete fuel. Please try again.');
+    } finally {
+      hideLoading();
+    }
+  });
+}
+
+
 // ==================== Initialize Fetch on Page Load ====================
 document.addEventListener('DOMContentLoaded', () => {
   getAllFuels(); // Fetch and render all fuels
