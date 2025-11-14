@@ -9,6 +9,16 @@ function showSuccess(msg) {
   });
 }
 
+function showErrorNoToken(msg) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Missing authentication token',
+    text: 'Please login first',
+  }).then(() => {
+    window.location.replace('../log-in.html');
+  });
+}
+
 function showError(msg) {
   Swal.fire({
     icon: 'error',
@@ -61,9 +71,10 @@ function getToken() {
 async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) {
   const token = getToken();
   if (!token) {
-    showError("Missing authentication token. Please login first.");
+    showErrorNoToken("Missing authentication token. Please login first.");  
     return;
   }
+
   const apiUrl = new URL('https://mwms.megacess.com/api/v1/vehicles');
 
   if (search) apiUrl.searchParams.append('search', search);

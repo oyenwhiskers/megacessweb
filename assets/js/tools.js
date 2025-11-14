@@ -9,6 +9,16 @@ function showSuccess(msg) {
   });
 }
 
+function showErrorNoToken(msg) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Missing authentication token',
+    text: 'Please login first',
+  }).then(() => {
+    window.location.replace('../log-in.html');
+  });
+}
+
 function showError(msg) {
   Swal.fire({
     icon: 'error',
@@ -61,7 +71,7 @@ function getToken() {
 async function getAllTools({ search = '', status = '', per_page = 15 } = {}) {
   const token = getToken();
   if (!token) {
-    showError("Missing authentication token. Please login first.");
+    showErrorNoToken("Missing authentication token. Please login first.");
     return;
   }
 
@@ -149,7 +159,7 @@ function populateToolsTable(tools) {
 document.getElementById('addToolBtn').addEventListener('click', async () => {
   const token = getToken();
   if (!token) {
-    showError("Missing authentication token. Please login first.");
+    showErrorNoToken("Missing authentication token. Please login first.");
     return;
   }
   const toolName = document.getElementById('toolName').value.trim();
