@@ -19,7 +19,12 @@ function getToken() {
 async function getPaymentRates() {
   const token = getToken();
   if (!token) {
-    alert("Missing authentication token. Please login first.");
+    Swal.fire({
+      icon: "warning",
+      title: "Authentication Required!",
+      text: "Please login first before proceeding."
+    });
+    <window className="/megacessweb/pages/log-in.html"></window>
     return;
   }
 
@@ -164,8 +169,8 @@ function renderTaskEditor(task) {
           <div class="small text-muted">Payment Rate ID: <strong>${task.id || 'N/A'}</strong></div>
         </div>
         <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-outline-danger" id="deleteBtn">🗑️ Delete</button>
-          <button class="btn btn-sm btn-outline-primary" id="editToggleBtn">✏️ Edit</button>
+          <button class="btn btn-sm btn-outline-danger" id="deleteBtn"> Delete</button>
+          <button class="btn btn-sm btn-outline-primary" id="editToggleBtn"> Edit</button>
         </div>
 
       </div>
