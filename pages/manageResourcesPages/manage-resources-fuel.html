@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="/megacessweb/assets/css/roderickv1.css">
     <!-- Links to Roderick's CSS style -->
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
 
@@ -117,10 +118,19 @@
                 <div class="content-row content-header d-flex fw-bold border-bottom py-2">
                   <div class="col">Supplier Name</div>
                   <div class="col">Buyer</div>
-                  <div class="col">Fuel Bought</div>
+                  <div class="col">Fuel Bought (ℓ)</div>
                   <div class="col">Date Bought</div>
                   <div class="col text-center">Action</div>
                 </div>
+
+                <!-- 🔄 Loading indicator -->
+                <div id="loading" class="text-center my-3" style="display: none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+                <!-- Table Body -->
+                <div id="fuelsTableBody" style="padding-bottom: 70px;"></div>
 
                 <!-- Row 1 -->
                 <div class="content-row d-flex align-items-center border-bottom py-2">
@@ -353,7 +363,7 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/megacessweb/assets/js/main.js"></script>
-    <script src="/megacessweb/assets/js/roderick.js"></script>
+    <script src="/megacessweb/assets/js/fuel.js"></script>
     <script>
       $(document).ready(function () {
         // Show the first tab content by default
