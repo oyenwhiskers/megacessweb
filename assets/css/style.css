@@ -26,6 +26,7 @@ body{
 .topbar{
   background: var(--brand-dark);
   color:#fff;
+  padding-left: 4rem;
 }
 .content{min-height:100vh;background:var(--brand-contrast);} 
 

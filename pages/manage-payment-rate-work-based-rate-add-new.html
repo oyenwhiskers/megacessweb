@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MegaCess Web • Manage Payment Rate • Add new Payment Rate</title>
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="/megacessweb/assets/css/manage-payment-rate.css">
+</head>
+
+<body data-page="payment-rate">
+  <div class="app d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar p-3" id="sidebar-root"></aside>
+
+    <!-- Main Content -->
+    <main class="content flex-grow-1">
+      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+        <h1 class="page-title h5 mb-0">Manage Payment Rate</h1>
+        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+
+      <div class="container-fluid mt-4 px-4">
+        <div class="back-btn text-start mb-3">
+          <a href="/megacessweb/pages/manage-payment-rate.html?type=work" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> Back to Manage Payment Rate
+          </a>
+        </div>
+
+        <div class="content-container my-4 bg-secondary-color">
+          <div class="card-shadow-sm">
+            <div class="card-body px-4">
+              <!-- Main Form Section -->
+              <form id="createPaymentRateForm">
+                <h4><strong>Add New Payment Rate</strong></h4>
+                <p class="text-muted">Insert the required details with the correct information</p>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Task Name:</label>
+                  <input type="text" id="task_name" class="form-control" placeholder="Insert task name.." required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Description:</label>
+                  <textarea id="description" class="form-control" placeholder="Insert description (optional).."></textarea>
+                </div>
+
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="is_active">
+                  <label class="form-check-label" for="is_active">Active</label>
+                </div>
+
+                <hr>
+
+                <!-- Category Section -->
+                <div class="category-header-section d-flex justify-content-between align-items-center mb-3">
+                  <h5><strong>Payment Rate Category (at least one category)</strong></h5>
+                  <button type="button" class="btn btn-success" id="addCategoryBtn">
+                    <i class="bi bi-plus-circle"></i> Add Category
+                  </button>
+                </div>
+
+                <!-- Category Card Starts -->
+                <div class="category-section category-card card mb-4">
+                  <div class="card-body">
+                    <h5><strong>Category 1</strong></h5>
+
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">Category Name *:</label>
+                      <input type="text" class="form-control category_name" placeholder="e.g Normal Pruning" required>
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold">Rate (RM) *:</label>
+                        <input type="number" step="any" class="form-control rate" placeholder="e.g 4.00" required>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold">Unit *:</label>
+                        <input type="text" class="form-control unit" placeholder="per palm" required>
+                      </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Condition Section -->
+                    <h6 class="mb-3"><strong>Condition (optional)</strong></h6>
+                    <div class="row mb-3">
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold">Type:</label>
+                        <input type="text" class="form-control condition_type" placeholder="e.g, Weight">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold">Min:</label>
+                        <input type="number" class="form-control condition_min" placeholder="e.g, 0">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold">Max:</label>
+                        <input type="number" class="form-control condition_max" placeholder="e.g, 30">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold">Unit:</label>
+                        <input type="text" class="form-control condition_unit" placeholder="e.g, kg or ton">
+                      </div>
+
+                      <div class="col-md-12 mt-3">
+                        <label class="form-label fw-semibold">Display Order:</label>
+                        <input type="number" class="form-control display_order" placeholder="0">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-end mt-3">
+                  <button type="submit" class="btn btn-primary">Create Payment Rate</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div> <!-- ✅ closes .container-fluid -->
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="/megacessweb/assets/js/create_payment_rate.js"></script>
+</body>
+</html>
