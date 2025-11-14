@@ -6,7 +6,16 @@ $(document).ready(function () {
 
   if (!token) {
     console.error("Token not found. User must be authenticated.");
-    $("#baseSalaryContainer").html('<p class="text-danger">Authentication required.</p>');
+    Swal.fire({
+      icon: "error",
+      title: "Authentication Required!",
+      text: "Please login first before proceeding.",
+      confirmButtonText: "Log in now."
+    }).then((result) => {
+      if (result.isConfirmed){
+        window.location.href = "/megacessweb/assets/pages/log-in.html"
+      }
+    });
     return;
   }
 
@@ -96,7 +105,14 @@ $(document).ready(function () {
         contentType: "application/json",
         data: JSON.stringify({ base_salary: newSalary }),
         success: function (res) {
-          alert("Base salary updated successfully!");
+          console.log("Base salary updated successfully!");
+          Swal.fire({
+            icon: "success",
+            text: "Base salary updated successfully!",
+            timer: 2500,
+            timerProgressBar: true,
+            showConfirmButton: false
+          });
           renderUserForm(res); // re-render with updated data
         },
         error: function (xhr) {

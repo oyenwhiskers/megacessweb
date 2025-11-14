@@ -19,12 +19,17 @@ function getToken() {
 async function getPaymentRates() {
   const token = getToken();
   if (!token) {
+    console.error("Token not found. Please ensure user is authenticated.");
     Swal.fire({
-      icon: "warning",
+      icon: "error",
       title: "Authentication Required!",
-      text: "Please login first before proceeding."
+      text: "Please login first before proceeding.",
+      confirmButtonText: "Log in now."
+    }).then((result) => {
+      if (result.isConfirmed){
+        window.location.href = "/megacessweb/assets/pages/log-in.html"
+      }
     });
-    <window className="/megacessweb/pages/log-in.html"></window>
     return;
   }
 
@@ -169,8 +174,12 @@ function renderTaskEditor(task) {
           <div class="small text-muted">Payment Rate ID: <strong>${task.id || 'N/A'}</strong></div>
         </div>
         <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-outline-danger" id="deleteBtn"> Delete</button>
-          <button class="btn btn-sm btn-outline-primary" id="editToggleBtn"> Edit</button>
+          <button class="btn btn-sm btn-danger py-1 px-3" id="deleteBtn">
+            <i class="bi bi-trash-fill"></i> Delete
+            </button>
+          <button class="btn btn-sm btn-success py-1 px-3" id="editToggleBtn"> 
+            <i class="bi bi-pencil-square"></i> Edit
+            </button>
         </div>
 
       </div>
@@ -204,12 +213,8 @@ function renderTaskEditor(task) {
   $editor.html(html);
 
   // Delete button
-  $('#deleteBtn').off('click').on('click', async function () {
-    console.log("Delete button clicked for ID:", task.id);
-
-    if (!confirm("Are you sure you want to delete this payment rate?")) return;
-
-    await deletePaymentRate(task.id);
+  $('#deleteBtn').off('click').on('click', function () {
+    deletePaymentRate(task.id);
   });
 
   // Toggle edit mode
@@ -217,11 +222,11 @@ function renderTaskEditor(task) {
     const isEditing = $(this).data('editing') || false;
 
     if (!isEditing) {
-      $(this).text('🔒 Cancel').data('editing', true);
+      $(this).text('Cancel').data('editing', true);
       $('#saveChangesBtn').removeClass('d-none');
       $editor.find('input, textarea').removeAttr('readonly').removeAttr('disabled');
     } else {
-      $(this).text('✏️ Edit').data('editing', false);
+      $(this).text('Edit').data('editing', false);
       $('#saveChangesBtn').addClass('d-none');
       $editor.find('input, textarea').attr('readonly', true);
       $editor.find('input[type="checkbox"], input[type="number"], input[type="text"]').attr('disabled', true);
@@ -273,7 +278,17 @@ function collectFormData(taskId) {
 async function updatePaymentRate(id, bodyData) {
   const token = getToken();
   if (!token) {
-    alert("Missing authentication token. Please login first.");
+    console.error("Token not found. Please ensure user is authenticated.");
+    Swal.fire({
+      icon: "error",
+      title: "Authentication Required!",
+      text: "Please login first before proceeding.",
+      confirmButtonText: "Log in now."
+    }).then((result) => {
+      if (result.isConfirmed){
+        window.location.href = "/megacessweb/assets/pages/log-in.html"
+      }
+    });
     return;
   }
 
@@ -292,11 +307,22 @@ async function updatePaymentRate(id, bodyData) {
     console.log("Update response:", json);
 
     if (json.success) {
-      alert("✅ Payment rate updated successfully!");
+      console.log("Payment rate updated successfully!");
+      Swal.fire({
+        icon: "success",
+        title: "Payment rate updated successfully!",
+        timer: 2500,
+        timerProgressBar: true
+      });
       getPaymentRates(); // reload list
     } else {
-      alert("Failed to update: " + json.message);
+      console.log("Failed to update: " + json.message);
       console.warn("Update validation errors:", json.errors);
+      Swal.fire({
+        icon: "warning",
+        title: "Failed to update",
+        text: `${json.message}\n\n ${json.errors}`
+      });
     }
   } catch (err) {
     console.error("Error updating payment rate:", err);

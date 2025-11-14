@@ -89,7 +89,13 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Server response:", result);
 
       if (response.ok && result.success) {
-        alert("Payment rate created successfully!");
+        console.log("Payment rate created successfully!");
+        Swal.fire({
+          icon: "success",
+          title: "Payment rate created successfully!",
+          timer: 2500,
+          timerProgressBar: true,
+        });
         window.location.href = "/megacessweb/pages/manage-payment-rate.html?type=work";
       } else {
         let msg = result.message || "Failed to create payment rate.";
@@ -98,12 +104,18 @@ document.addEventListener("DOMContentLoaded", () => {
             .map(([key, val]) => `${key}: ${val.join(", ")}`)
             .join("\n");
         }
-        alert(msg);
+        Swal.fire({
+          icon: "error",
+          text: msg,
+        });
       }
 
     } catch (error) {
       console.error("Error creating payment rate:", error);
-      alert("An unexpected error occurred while creating the payment rate.");
+      Swal.fire({
+        icon: "error",
+        text: "An unexpected error occurred while creating the payment rate."
+      });
     }
   });
 

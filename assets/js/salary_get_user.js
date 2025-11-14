@@ -6,6 +6,16 @@ $(document).ready(function() {
 
   if (!token) {
     console.error("Token not found. Please ensure user is authenticated.");
+    Swal.fire({
+      icon: "error",
+      title: "Authentication Required!",
+      text: "Please login first before proceeding.",
+      confirmButtonText: "Log in now."
+    }).then((result) => {
+      if (result.isConfirmed){
+        window.location.href = "/megacessweb/assets/pages/log-in.html"
+      }
+    });
     return;
   }
 

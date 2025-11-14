@@ -32,7 +32,11 @@ async function updateBaseSalary(baseSalary) {
   const userId = getUserIdFromURL();
 
   if (!userId) {
-    alert(" User ID not found in URL.");
+    console.alert(" User ID not found in URL.");
+    Swal.fire({
+      icon: "warning",
+      title: "User ID not found in URL."
+    });
     return;
   }
 
@@ -51,18 +55,47 @@ async function updateBaseSalary(baseSalary) {
     const result = await response.json();
 
     if (response.ok) {
-      alert(` ${result.message}\n\nBase Salary updated to RM ${result.base_salary}`);
+      console.log(` ${result.message}\n\nBase Salary updated to RM ${result.base_salary}`);
+      Swal.fire({
+        icon: "success",
+        title: `${result.message}`,
+        text: `Base Salary updated to RM ${result.base_salary}`,
+        timer: 2500,
+        timerProgressBar: true,
+      });
     } else {
       // Error message based on backend validation
       if (result.status_code === 422 || result.status_code === 404) {
-        alert(` ${result.message}`);
+        console.error(` ${result.message}`);
+        Swal.fire({
+          icon: "error",
+          title: "Error!",
+          text: `${result.message}`,
+          showCloseButton: true
+        });
       } else {
-        alert(` Unexpected error: ${result.message || "Something went wrong."}`);
+        console.error(` Unexpected error: ${result.message || "Something went wrong."}`);
+        Swal.fire({
+          icon: "error",
+          title: "Unexpected error!",
+          text: `${result.message || "Something went wrong."}`,
+          showCloseButton: true
+        });
       }
     }
   } catch (error) {
     console.error("Error updating base salary:", error);
-    alert(" Failed to update base salary. Please check your network or token.");
+    console.error(" Failed to update base salary. Please check your network or token.");
+    Swal.fire({
+      icon: "warning",
+      title: "Authentication Required!",
+      text: "Please login first before proceeding.",
+      confirmButtonText: "Log in now."
+    }).then((result) => {
+      if (result.isConfirmed){
+        window.location.href = "/megacessweb/assets/pages/log-in.html"
+      }
+    });
   }
 }
 
@@ -88,7 +121,6 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Base salary cannot be less than 0.");
         return;
       }
-
       updateBaseSalary(baseSalary);
     }
   });
