@@ -29,6 +29,8 @@
     if(!root){
       initActiveNav();
       initSidebarToggle();
+      // initialize in-page tabs if present
+      initTabs();
       return;
     }
     fetch('/megacessweb/partials/sidebar.html', {cache:'no-store'})
@@ -37,6 +39,8 @@
         root.innerHTML = html;
         initActiveNav();
         initSidebarToggle();
+        // initialize in-page tabs after sidebar is loaded
+        initTabs();
       })
       .catch(function(e){
         console.warn('Sidebar load failed', e);
@@ -47,3 +51,5 @@
 
   document.addEventListener('DOMContentLoaded', loadSidebar);
 })();
+
+
