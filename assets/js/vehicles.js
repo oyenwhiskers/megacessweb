@@ -46,9 +46,24 @@ function hideLoading() {
   if (overlay) overlay.classList.add('d-none');
 }
 
+/* -------------------- Token Helper -------------------- */
+function getToken() {
+  const keys = ['authToken', 'auth_token', 'token', 'access_token'];
+  for (const k of keys) {
+    const v = localStorage.getItem(k) || sessionStorage.getItem(k);
+    if (v) return v;
+  }
+  console.warn(" No token found in storage");
+  return null;
+}
+
 // ==================== GET /vehicles ====================
 async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) {
-  const token = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
+  const token = getToken();
+  if (!token) {
+    showError("Missing authentication token. Please login first.");
+    return;
+  }
   const apiUrl = new URL('https://mwms.megacess.com/api/v1/vehicles');
 
   if (search) apiUrl.searchParams.append('search', search);
@@ -179,7 +194,12 @@ function updateVehicleStats(vehicles) {
 
 // ==================== POST /vehicles ====================
 document.getElementById('addVehicleBtn').addEventListener('click', async () => {
-  const token = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
+  const token = getToken();
+  if (!token) {
+    showError("Missing authentication token. Please login first.");
+    return;
+  }
+
   const vehicleName = document.getElementById('vehicleName').value.trim();
   const plateNo = document.getElementById('plateNo').value.trim();
   const statusSelect = document.getElementById('addVehicleStatus');
@@ -339,7 +359,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==================== Search Functions ====================
-
 // Debounce helper to limit rapid API calls
 function debounce(func, delay) {
   let timer;

@@ -88,15 +88,16 @@
               <div>
                 <select class="form-select">
                   <option selected>All Status</option>
-                  <option value="available">Available</option>
-                  <option value="inuse">In Use</option>
-                  <option value="maintenance">Broken</option>
+                  <option value="Available">Available</option>
+                  <option value="In Use">In Use</option>
+                  <option value="Broken">Broken</option>
                 </select>
               </div>
 
               <!-- Add Tools Button -->
               <div>
                 <button
+                  type="button"
                   class="btn btn-primary d-flex align-items-center"
                   data-bs-toggle="modal"
                   data-bs-target="#addToolsModal"
@@ -246,7 +247,7 @@
     <!-- End of Main Content -->
   </div>
 
-  <!-- Add tools Modal -->
+  <!-- Add tool Modal -->
   <div class="modal fade" id="addToolsModal" tabindex="-1" aria-labelledby="addToolsModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -270,10 +271,10 @@
             <div class="mb-3">
               <label for="toolStatus" class="form-label fw-semibold">Status</label>
               <select id="toolStatus" class="form-select" required>
-                <option selected disabled>Select status</option>
-                <option value="available">Available</option>
-                <option value="inuse">In Use</option>
-                <option value="maintenance">Under Maintenance</option>
+                <option value="" selected>Choose status</option>
+                <option value="Available">Available</option>
+                <option value="In Use">In Use</option>
+                <option value="Broken">Broken</option>
               </select>
             </div>
           </form>
@@ -282,7 +283,7 @@
         <!-- Modal Footer -->
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" form="addToolForm" class="btn btn-primary">Save Tool</button>
+          <button type="submit" id="addToolBtn" form="addToolForm" class="btn btn-primary">Save Tool</button>
         </div>
 
       </div>

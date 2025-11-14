@@ -46,9 +46,25 @@ function hideLoading() {
   if (overlay) overlay.classList.add('d-none');
 }
 
+/* -------------------- Token Utilities -------------------- */
+function getToken() {
+  const keys = ['authToken', 'auth_token', 'token', 'access_token'];
+  for (const k of keys) {
+    const v = localStorage.getItem(k) || sessionStorage.getItem(k);
+    if (v) return v;
+  }
+  console.warn(" No token found in storage");
+  return null;
+}
+
 // ==================== GET /tools ====================
 async function getAllTools({ search = '', status = '', per_page = 15 } = {}) {
-  const token = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
+  const token = getToken();
+  if (!token) {
+    showError("Missing authentication token. Please login first.");
+    return;
+  }
+
   const apiUrl = new URL('https://mwms.megacess.com/api/v1/tools');
 
   if (search) apiUrl.searchParams.append('search', search);
@@ -102,7 +118,7 @@ function populateToolsTable(tools) {
     let statusClass = 'bg-secondary';
     if (toolStatus === 'available') statusClass = 'bg-success';
     else if (toolStatus === 'in use') statusClass = 'bg-warning text-dark';
-    else if (toolStatus === 'under maintenance') statusClass = 'bg-danger';
+    else if (toolStatus === 'broken') statusClass = 'bg-danger';
 
     row.innerHTML = `
       <div class="col-4 ps-3">${tool.tool_name || 'Unnamed Tool'}</div>
@@ -128,6 +144,57 @@ function populateToolsTable(tools) {
   if (typeof attachEditListeners === 'function') attachEditListeners();
   if (typeof attachDeleteListeners === 'function') attachDeleteListeners();
 }
+
+// ==================== POST /vehicles ====================
+document.getElementById('addToolBtn').addEventListener('click', async () => {
+  const token = getToken();
+  if (!token) {
+    showError("Missing authentication token. Please login first.");
+    return;
+  }
+  const toolName = document.getElementById('toolName').value.trim();
+  const statusSelect = document.getElementById('toolStatus');
+  const status = statusSelect.value;
+
+  if (!toolName || !status || status === 'Choose status') {
+    showError('Please fill in all fields.');
+    return;
+  }
+
+  const addBtn = document.getElementById('addToolBtn');
+  addBtn.disabled = true;
+  const originalText = addBtn.textContent;
+  addBtn.textContent = 'Adding...';
+
+  try {
+    const response = await fetch('https://mwms.megacess.com/api/v1/tools', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ tool_name : toolName, status })
+    });
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      bootstrap.Modal.getInstance(document.getElementById('addToolsModal')).hide();
+      document.getElementById('toolName').value = '';
+      statusSelect.value = 'Choose status';
+      getAllTools();
+      showSuccess('Tool added successfully!');
+    } else {
+      showError(result.message);
+    }
+  } catch (error) {
+    console.error(error);
+    showError('Failed to add tool. Please try again.');
+  } finally {
+    addBtn.disabled = false;
+    addBtn.textContent = originalText;
+  }
+});
 
 // ==================== Initialize Fetch on Page Load ====================
 document.addEventListener('DOMContentLoaded', () => {
