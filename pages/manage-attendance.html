@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaCess Web • Manage Attendance</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="/megacessweb/assets/css/manaageattendance.css">
+</head>
+<body data-page="manage-attendance">
+  <div class="app d-flex">
+    <aside class="sidebar p-3" id="sidebar-root"></aside>
+
+    <main class="content flex-grow-1">
+      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+        <h1 class="page-title h5 mb-0">Manage Attendance</h1>
+        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+      </div>
+      <div class="container-fluid p-4">
+        <!-- attendance type toggle -->
+        <div class="mb-3">
+          <div id="attendanceTypeToggle" class="btn-group" role="group" aria-label="Attendance type toggle">
+            <button type="button" class="btn btn-outline-primary active" data-type="workers">Workers</button>
+            <button type="button" class="btn btn-outline-primary" data-type="staff">Staff</button>
+          </div>
+
+          <!-- search bar below the toggle buttons -->
+          <div class="mt-3 d-flex justify-content-start">
+            <div class="input-group search-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input id="attendanceSearch" type="search" class="form-control" placeholder="Search by name..." aria-label="Search attendance">
+              <button class="btn btn-outline-secondary" type="button" id="clearAttendanceSearch" title="Clear"><i class="bi bi-x-lg"></i></button>
+            </div>
+          </div>
+
+          <!-- Date filter -->
+          <div class="mt-2 d-flex align-items-center gap-3">
+            <div>
+              <label class="form-label mb-1">Date:</label>
+              <input type="date" id="attendanceDate" class="form-control" value="">
+            </div>
+            <div>
+              <label class="form-label mb-1">Status:</label>
+              <select id="attendanceStatus" class="form-select">
+                <option value="all">All Status</option>
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="check_in">Check In</option>
+                <option value="late">Late</option>
+                <option value="annual_leave">Annual Leave</option>
+                <option value="sick_leave">Sick Leave</option>
+                <option value="unpaid_leave">Unpaid Leave</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- content views -->
+        <div id="workersAttendanceView" class="view">
+          <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading worker attendance...</p>
+          </div>
+        </div>
+
+        <div id="staffAttendanceView" class="view d-none">
+          <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading staff attendance...</p>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="/megacessweb/assets/js/list_workers_att.js"></script>
+  <script src="/megacessweb/assets/js/list_staff_att.js"></script>
+  <script src="/megacessweb/assets/js/logout.js"></script>
+
+  <script>
+    (function(){
+      const buttons = document.querySelectorAll('#attendanceTypeToggle button');
+      const views = {
+        workers: document.getElementById('workersAttendanceView'),
+        staff: document.getElementById('staffAttendanceView')
+      };
+      
+      // Set today's date as default
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('attendanceDate').value = today;
+      
+      function show(type){
+        // toggle active class on buttons
+        buttons.forEach(b => b.classList.toggle('active', b.dataset.type === type));
+        
+        // show/hide views
+        Object.keys(views).forEach(k => {
+          const el = views[k];
+          if (!el) return;
+          if (k === type) el.classList.remove('d-none');
+          else el.classList.add('d-none');
+        });
+        
+        // Load attendance data based on type
+        loadAttendanceData(type);
+      }
+      
+      function loadAttendanceData(type) {
+        const searchValue = document.getElementById('attendanceSearch').value;
+        const dateValue = document.getElementById('attendanceDate').value;
+        const statusValue = document.getElementById('attendanceStatus').value;
+        
+        if (type === 'workers' && window.fetchWorkerAttendanceList) {
+          // Use the actual API for workers
+          const dateAttendanceId = dateValue ? getDateAttendanceId(dateValue) : 1;
+          window.fetchWorkerAttendanceList(searchValue, 1, dateAttendanceId, 10, statusValue);
+        } else if (type === 'staff' && window.fetchStaffAttendanceList) {
+          // Use the actual API for staff
+          const dateAttendanceId = dateValue ? getDateAttendanceId(dateValue) : 1;
+          window.fetchStaffAttendanceList(searchValue, 1, dateAttendanceId, 10, statusValue);
+        }
+      }
+      
+      // Helper function to convert date to date_attendance_id
+      // This is a placeholder - you may need to adjust this based on your API's date handling
+      function getDateAttendanceId(dateString) {
+        if (!dateString) return 1;
+        // For now, return 1 as default. You might need to call an API to get the proper ID
+        // based on the selected date, or implement your own logic
+        return 1;
+      }
+      
+      // Search functionality
+      const searchInput = document.getElementById('attendanceSearch');
+      const dateInput = document.getElementById('attendanceDate');
+      const statusSelect = document.getElementById('attendanceStatus');
+      
+      if (searchInput) {
+        let debounceTimer = null;
+        searchInput.addEventListener('input', function() {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+            if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
+              const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+              const statusValue = statusSelect.value;
+              window.fetchWorkerAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
+            } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
+              const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+              const statusValue = statusSelect.value;
+              window.fetchStaffAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
+            } else {
+              loadAttendanceData(currentType);
+            }
+          }, 300);
+        });
+      }
+      
+      if (dateInput) {
+        dateInput.addEventListener('change', function() {
+          const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+          if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
+            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+            const statusValue = statusSelect.value;
+            window.fetchWorkerAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
+          } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
+            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+            const statusValue = statusSelect.value;
+            window.fetchStaffAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
+          } else {
+            loadAttendanceData(currentType);
+          }
+        });
+      }
+      
+      if (statusSelect) {
+        statusSelect.addEventListener('change', function() {
+          const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+          if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
+            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+            window.fetchWorkerAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusSelect.value);
+          } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
+            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+            window.fetchStaffAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusSelect.value);
+          } else {
+            loadAttendanceData(currentType);
+          }
+        });
+      }
+      
+      // Clear search functionality
+      const clearSearch = document.getElementById('clearAttendanceSearch');
+      if (clearSearch) {
+        clearSearch.addEventListener('click', function() {
+          searchInput.value = '';
+          const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+          if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
+            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+            const statusValue = statusSelect.value;
+            window.fetchWorkerAttendanceList('', 1, dateAttendanceId, 10, statusValue);
+          } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
+            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
+            const statusValue = statusSelect.value;
+            window.fetchStaffAttendanceList('', 1, dateAttendanceId, 10, statusValue);
+          } else {
+            loadAttendanceData(currentType);
+          }
+        });
+      }
+      
+      // Toggle event listeners
+      buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.type)));
+      
+      // Initial state
+      show('workers');
+    })();
+  </script>
+</body>
+</html>
