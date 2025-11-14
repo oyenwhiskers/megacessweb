@@ -206,6 +206,50 @@ document.getElementById('addToolBtn').addEventListener('click', async () => {
   }
 });
 
+// ==================== DELETE /vehicles ====================
+function attachDeleteListeners() {
+  const deleteButtons = document.querySelectorAll('.delete-tool-btn');
+  deleteButtons.forEach(btn => {
+    btn.removeEventListener('click', handleDelete);
+    btn.addEventListener('click', handleDelete);
+  });
+}
+
+async function handleDelete(e) {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
+  
+  const toolId = e.currentTarget.dataset.id;
+  showConfirm('You want to delete this tool?', async () => {
+    showLoading();
+    try {
+      const response = await fetch(`https://mwms.megacess.com/api/v1/tools/${toolId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        showSuccess(result.message);
+        getAllTools();
+      } else {
+        showError(result.message);
+      }
+    } catch (err) {
+      console.error(err);
+      showError('Failed to delete tool. Please try again.');
+    } finally {
+      hideLoading();
+    }
+  });
+}
+
 // ==================== Initialize Fetch on Page Load ====================
 document.addEventListener('DOMContentLoaded', () => {
   getAllTools(); // Fetch and render all tools

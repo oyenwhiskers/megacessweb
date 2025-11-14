@@ -274,7 +274,7 @@ async function handleDelete(e) {
       const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${vehicleId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer 69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
