@@ -136,7 +136,7 @@ function populateToolsTable(tools) {
         <span class="badge ${statusClass}">${tool.status || 'Unknown'}</span>
       </div>
       <div class="col-4 text-center">
-        <button class="btn btn-sm btn-warning me-2 edit-tool-btn" 
+        <button class="btn btn-sm btn-warning me-2 update-tool-btn" 
                 data-id="${tool.id}" 
                 data-name="${tool.tool_name || ''}" 
                 data-status="${toolStatus}">
@@ -155,7 +155,7 @@ function populateToolsTable(tools) {
   if (typeof attachDeleteListeners === 'function') attachDeleteListeners();
 }
 
-// ==================== POST /vehicles ====================
+// ==================== POST /tools ====================
 document.getElementById('addToolBtn').addEventListener('click', async () => {
   const token = getToken();
   if (!token) {
@@ -206,7 +206,79 @@ document.getElementById('addToolBtn').addEventListener('click', async () => {
   }
 });
 
-// ==================== DELETE /vehicles ====================
+// ==================== UPDATE /tools ====================
+let currentToolId = null;
+
+function attachEditListeners() {
+  const editBtns = document.querySelectorAll('.update-tool-btn');
+  editBtns.forEach(btn => {
+    btn.removeEventListener('click', handleEdit);
+    btn.addEventListener('click', handleEdit);
+  });
+}
+
+function handleEdit(e) {
+  const btn = e.currentTarget;
+  currentToolId = btn.dataset.id;
+  document.getElementById('updateToolName').value = btn.dataset.name;
+  document.getElementById('updateToolStatus').value = btn.dataset.status;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal')).show();
+}
+
+document.getElementById('updateToolBtn').addEventListener('click', async () => {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
+
+  if (!currentToolId) return;
+
+  const name = document.getElementById('updateToolName').value.trim();
+  const status = document.getElementById('updateToolStatus').value;
+
+  if (!name && !status) {
+    showError('Please fill at least one field to update.');
+    return;
+  }
+
+  const updateBtn = document.getElementById('updateToolBtn');
+  updateBtn.disabled = true;
+  const originalText = updateBtn.textContent;
+  updateBtn.textContent = 'Updating...';
+
+  try {
+    const response = await fetch(`https://mwms.megacess.com/api/v1/tools/${currentToolId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        tool_name: name || undefined,
+        status: status || undefined
+      })
+    });
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal')).hide();
+      getAllTools();
+      showSuccess(result.message);
+    } else {
+      showError(result.message);
+    }
+  } catch (err) {
+    console.error(err);
+    showError('Failed to update tool.');
+  } finally {
+    updateBtn.disabled = false;
+    updateBtn.textContent = originalText;
+  }
+});
+
+// ==================== DELETE /tools ====================
 function attachDeleteListeners() {
   const deleteButtons = document.querySelectorAll('.delete-tool-btn');
   deleteButtons.forEach(btn => {
@@ -221,7 +293,7 @@ async function handleDelete(e) {
     showErrorNoToken("Missing authentication token. Please login first.");
     return;
   }
-  
+
   const toolId = e.currentTarget.dataset.id;
   showConfirm('You want to delete this tool?', async () => {
     showLoading();
@@ -253,4 +325,39 @@ async function handleDelete(e) {
 // ==================== Initialize Fetch on Page Load ====================
 document.addEventListener('DOMContentLoaded', () => {
   getAllTools(); // Fetch and render all tools
+});
+
+// ==================== Search Functions ====================
+// Debounce helper to limit rapid API calls
+function debounce(func, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// Triggered whenever search input or filter changes
+function updateToolTable() {
+  const searchValue = document.getElementById('toolSearch').value.trim() || undefined;
+  const statusValue = document.getElementById('toolStatus').value || undefined; // 'All Status' can map to undefined
+  getAllTools({ search: searchValue, status: statusValue });
+}
+
+// Debounce the search input to avoid flooding API requests
+const handleToolSearch = debounce(updateToolTable, 150);
+
+// Attach event listeners
+document.getElementById('toolSearch').addEventListener('input', handleToolSearch);
+document.getElementById('toolStatus').addEventListener('change', updateToolTable);
+
+document.getElementById('refreshToolBtn').addEventListener('click', () => {
+  // Reset search input
+  document.getElementById('toolSearch').value = '';
+
+  // Reset status filter
+  document.getElementById('toolStatus').value = '';
+
+  // Reload vehicle table
+  getAllTools();
 });

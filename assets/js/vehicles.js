@@ -387,7 +387,7 @@ function updateVehicleTable() {
 }
 
 // Debounce the search input to avoid flooding API requests
-const handleVehicleSearch = debounce(updateVehicleTable, 300);
+const handleVehicleSearch = debounce(updateVehicleTable, 150);
 
 // Attach event listeners
 document.getElementById('vehicleSearch').addEventListener('input', handleVehicleSearch);
