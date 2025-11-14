@@ -150,9 +150,60 @@ function populateToolsTable(tools) {
     tableBody.appendChild(row);
   });
 
+  // ✅ Update stat cards
+  updateToolStats(tools);
+
   // ✅ Safely reattach event listeners (if defined)
   if (typeof attachEditListeners === 'function') attachEditListeners();
   if (typeof attachDeleteListeners === 'function') attachDeleteListeners();
+}
+
+// Animate the counting with fade-in & scale effect
+function animateCount(el, value, duration = 1500) {
+  let start = 0;
+  const startTime = performance.now();
+
+  // Reset visual styles before animating
+  el.style.opacity = 0;
+  el.style.transform = "scale(0.9)";
+  el.style.transition = "opacity 0.4s ease-out, transform 0.4s ease-out";
+
+  // Trigger fade/scale animation
+  requestAnimationFrame(() => {
+    el.style.opacity = 1;
+    el.style.transform = "scale(1)";
+  });
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // Ease-out curve (smooth stop)
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.floor(start + (value - start) * eased);
+    el.textContent = current;
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      el.textContent = value;
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+// Update tool stats cards
+function updateToolStats(tools) {
+  const total = tools.length;
+  const available = tools.filter(v => v.status.toLowerCase() === 'available').length;
+  const inUse = tools.filter(v => v.status.toLowerCase() === 'in use').length;
+  const broken = tools.filter(v => v.status.toLowerCase() === 'broken').length;
+
+  animateCount(document.getElementById('totalTools'), total, 1800);
+  animateCount(document.getElementById('availableTools'), available, 1800);
+  animateCount(document.getElementById('inUseTools'), inUse, 1800);
+  animateCount(document.getElementById('brokenTools'), broken, 1800);
 }
 
 // ==================== POST /tools ====================
@@ -358,6 +409,7 @@ document.getElementById('refreshToolBtn').addEventListener('click', () => {
   // Reset status filter
   document.getElementById('toolStatus').value = '';
 
-  // Reload vehicle table
+  // Reload tools table
   getAllTools();
 });
+
