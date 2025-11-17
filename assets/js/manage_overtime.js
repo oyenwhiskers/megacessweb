@@ -37,16 +37,14 @@
 
     // Get status badge class
     function getStatusBadgeClass(status) {
-        switch (status) {
-            case 'approved':
-                return 'bg-success';
-            case 'pending':
-                return 'bg-warning';
-            case 'rejected':
-                return 'bg-danger';
-            default:
-                return 'bg-secondary';
-        }
+        // Since there's only "Approved" status, always return success badge
+        return 'bg-success';
+    }
+
+    // Format status for display
+    function formatStatus(status) {
+        // Since there's only "Approved" status, always return "Approved"
+        return 'Approved';
     }
 
     // Create new overtime record
@@ -62,7 +60,7 @@
                 date: overtimeData.date,
                 duration: overtimeData.duration, // Should be in minutes
                 remark: overtimeData.remark || '',
-                status: overtimeData.status || 'pending'
+                status: 'approved'
             };
 
             // Add user_id or staff_id based on user type
@@ -107,6 +105,67 @@
             return responseData;
         } catch (error) {
             console.error('Error creating overtime record:', error);
+            throw error;
+        }
+    }
+
+    // Update overtime record
+    async function updateOvertimeRecord(overtimeData) {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            // Prepare the request payload according to API specification
+            const payload = {
+                date: overtimeData.date,
+                duration: overtimeData.duration, // Should be in minutes
+                remark: overtimeData.remark || ''
+            };
+
+            // Add user_id or staff_id based on user type
+            if (overtimeData.user_id) {
+                payload.user_id = overtimeData.user_id;
+                payload.staff_id = null; // Explicitly set to null for staff
+            } else if (overtimeData.staff_id) {
+                payload.staff_id = overtimeData.staff_id;
+                payload.user_id = null; // Explicitly set to null for workers
+            } else {
+                throw new Error('Either user_id or staff_id must be provided');
+            }
+
+            console.log('Updating overtime data:', payload);
+
+            const response = await fetch(`${API_BASE_URL}/overtimes/${overtimeData.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (parseError) {
+                throw new Error('Invalid response format from server');
+            }
+
+            if (!response.ok) {
+                // Handle API errors
+                const errorMessage = responseData.message || 
+                                   responseData.error || 
+                                   `HTTP error! status: ${response.status}`;
+                throw new Error(errorMessage);
+            }
+
+            console.log('Overtime record updated successfully:', responseData);
+            return responseData;
+        } catch (error) {
+            console.error('Error updating overtime record:', error);
             throw error;
         }
     }
@@ -221,6 +280,8 @@
         const overtimeList = document.getElementById('overtimeList');
         
         if (!overtimeData || !overtimeData.data || overtimeData.data.length === 0) {
+            // Clear stored records when no data
+            window.currentOvertimeRecords = [];
             overtimeList.innerHTML = `
                 <div class="text-center py-4">
                     <i class="bi bi-clock text-muted" style="font-size: 3rem;"></i>
@@ -230,9 +291,13 @@
             return;
         }
 
+        // Store current records for edit functionality
+        window.currentOvertimeRecords = overtimeData.data;
+
         const overtimeHtml = overtimeData.data.map(record => {
             const createdByName = record.user?.user_fullname || record.staff?.staff_fullname || 'Unknown';
             const statusBadgeClass = getStatusBadgeClass(record.status);
+            const formattedStatus = formatStatus(record.status);
             const displayDate = formatDisplayDate(record.date_attendance?.date);
             const duration = formatDuration(record.duration);
             
@@ -247,7 +312,7 @@
                                     <small class="text-muted">Created by: ${createdByName}</small>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="btn btn-sm ${statusBadgeClass} text-white border-0" style="min-width: 70px; pointer-events: none;">${record.status}</span>
+                                    <span class="btn btn-sm ${statusBadgeClass} text-white border-0" style="min-width: 70px; pointer-events: none;">${formattedStatus}</span>
                                     <button class="btn btn-sm btn-outline-primary" onclick="editOvertimeRecord(${record.id})" title="Edit" style="min-width: 35px; height: 31px;">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -375,7 +440,28 @@
 
     // Edit overtime record (placeholder)
     window.editOvertimeRecord = function(recordId) {
-        alert(`Edit overtime functionality will be implemented for record ID: ${recordId}`);
+        // Find the record data from the current overtime records
+        const currentRecords = window.currentOvertimeRecords || [];
+        const record = currentRecords.find(r => r.id == recordId);
+        
+        if (!record) {
+            alert('Record not found. Please refresh the list and try again.');
+            return;
+        }
+
+        // Populate the edit form with current data
+        document.getElementById('editOvertimeId').value = record.id;
+        document.getElementById('editOvertimeDate').value = record.date_attendance?.date || '';
+        
+        // Convert duration from minutes to hours for display
+        const durationInHours = record.duration ? (record.duration / 60).toFixed(1) : '';
+        document.getElementById('editOvertimeDuration').value = durationInHours;
+        
+        document.getElementById('editOvertimeRemarks').value = record.remark || '';
+
+        // Show the edit modal
+        const editModal = new bootstrap.Modal(document.getElementById('editOvertimeModal'));
+        editModal.show();
     };
 
     // Delete overtime record with API integration
@@ -445,6 +531,7 @@
     window.filterOvertimeByMonth = filterOvertimeByMonth;
     window.showAllOvertimeRecords = showAllOvertimeRecords;
     window.createOvertimeRecord = createOvertimeRecord;
+    window.updateOvertimeRecord = updateOvertimeRecord;
     window.deleteOvertimeRecordAPI = deleteOvertimeRecord; // Export the API function with different name
 
     // Initialize event listeners when DOM is ready
