@@ -192,13 +192,18 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             <button type="button" class="btn btn-outline-primary" 
                                                     onclick="viewStaffAttendanceDetails(${record.user_id})" 
-                                                    title="View Details">
+                                                    title="View">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-secondary" 
-                                                    onclick="editStaffAttendance(${record.user_id})" 
-                                                    title="Edit">
-                                                <i class="bi bi-pencil"></i>
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="markStaffOvertime(${record.user_id})" 
+                                                    title="Overtime">
+                                                <i class="bi bi-clock"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" 
+                                                    onclick="markStaffOnLeave(${record.user_id})" 
+                                                    title="On-Leave">
+                                                <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -409,10 +414,16 @@
         alert('View staff attendance details feature will be implemented');
     };
     
-    window.editStaffAttendance = function(userId) {
-        console.log('Edit staff attendance for user ID:', userId);
-        // Implement edit attendance modal/form
-        alert('Edit staff attendance feature will be implemented');
+    window.markStaffOvertime = function(userId) {
+        console.log('Mark overtime for staff user ID:', userId);
+        // Implement overtime marking functionality
+        alert('Mark staff overtime feature will be implemented');
+    };
+    
+    window.markStaffOnLeave = function(userId) {
+        console.log('Mark on-leave for staff user ID:', userId);
+        // Implement on-leave marking functionality
+        alert('Mark staff on-leave feature will be implemented');
     };
     
     // Expose main function globally so it can be called from manage-attendance.html
