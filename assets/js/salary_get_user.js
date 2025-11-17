@@ -1,5 +1,3 @@
-// This salary_get_user.js can handle fetching all users details, displaying it, filtering, searching, and paginating users for Salary Management tab
-
 $(document).ready(function() {
   const API_URL = "https://mwms.megacess.com/api/v1/users"; 
   const token = getToken();
@@ -29,6 +27,9 @@ $(document).ready(function() {
   let lastPage = 1;
 
   function fetchUsers(page = 1) {
+    // Only fetch if Staff section is visible
+    if ($('#staffList').hasClass('d-none')) return;
+
     const roleId = $("input[name='staffFilter']:checked").attr("id") || "filterAll";
     const roleMap = { filterManager: "manager", filterChecker: "checker", filterAdmin: "admin", filterMandor: "mandor" };
     const role = roleMap[roleId] || "";
@@ -146,5 +147,7 @@ $(document).ready(function() {
 
   // Initial fetch
   fetchUsers();
-});
 
+  // Re-fetch when Staff section becomes visible
+  $('input[name="employeeType"]').on("change", () => fetchUsers(1));
+});

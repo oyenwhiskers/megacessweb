@@ -185,3 +185,57 @@ body, html {
   background-color: #6c757d;
   border-color: #6c757d;
 }
+
+/* -----------------------------
+   Employee Type Selection
+------------------------------*/
+.type-of-employee-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #e9ecef;
+  padding: 4px;
+  border-radius: 30px;
+  width: 220px;               /* Adjust width here */
+  justify-content: space-between;
+}
+
+.type-of-employee-btn input[type= "radio"] {
+  display: none;
+}
+
+.type-of-employee-btn label {
+  z-index: 2;
+  width: 50%;
+  text-align: center;
+  padding: 8px 0;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+  color: #495057;
+  transition: color 0.3s ease;
+}
+
+.type-of-employee-btn .selection-bg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background: #0d6832;          /* Bootstrap primary color */
+  border-radius: 30px;
+  transition: transform 0.3s ease;
+}
+
+/* When STAFF is selected → move slider right */
+#staff:checked ~ .selection-bg {
+  transform: translateX(100%);
+}
+
+/* Active label should turn white */
+#worker:checked + label {
+  color: white;
+}
+#staff:checked + label + input + label {
+  color: white;
+}
