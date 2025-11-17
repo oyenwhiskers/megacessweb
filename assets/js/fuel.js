@@ -49,7 +49,7 @@ async function getAllFuels({ search = '', fuel_filter = '', per_page = 15 } = {}
 
   const apiUrl = new URL('https://mwms.megacess.com/api/v1/fuels');
   if (search) apiUrl.searchParams.append('search', search);
-  if (fuel_filter) apiUrl.searchParams.append('fuel_filter', fuel_filter);
+  if (fuel_filter && fuel_filter !== 'default') apiUrl.searchParams.append('fuelFilter', fuel_filter);
   if (per_page) apiUrl.searchParams.append('per_page', per_page);
 
   const loading = document.getElementById('loading');
@@ -57,6 +57,9 @@ async function getAllFuels({ search = '', fuel_filter = '', per_page = 15 } = {}
 
   loading.style.display = 'block';
   tableBody.innerHTML = '';
+  
+  console.log('API URL:', apiUrl.toString());
+  console.log('Filter value:', fuel_filter);
 
   try {
     const res = await fetch(apiUrl, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept':'application/json' } });
@@ -305,6 +308,59 @@ function attachEditListeners() {
   });
 }
 
+// ==================== Search & Filter State ====================
+let currentSearch = '';
+let currentFilter = 'default';
+
+// ==================== Update Fuels Table ====================
+function updateFuelTable() {
+  const searchValue = document.getElementById('fuelSearch')?.value.trim() || '';
+  const sortValue = document.getElementById('fuelFilter')?.value || 'default';
+  
+  getAllFuels({ search: searchValue, fuel_filter: sortValue });
+}
+
+// ==================== Debounce Helper ====================
+function debounce(func, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// ==================== Debounced Search Input ====================
+const handleFuelSearch = debounce(updateFuelTable, 300);
+
 // ==================== Initialize Page ====================
-document.addEventListener('DOMContentLoaded', () => { getAllFuels(); });
-buyerInput.addEventListener('click', () => { showBuyerDropdown(allBuyers); });
+document.addEventListener('DOMContentLoaded', () => {
+  // Load initial data
+  getAllFuels();
+  
+  // Attach search listener
+  const fuelSearchInput = document.getElementById('fuelSearch');
+  if (fuelSearchInput) {
+    fuelSearchInput.addEventListener('input', handleFuelSearch);
+  }
+  
+  // Attach filter listener
+  const fuelFilterSelect = document.getElementById('fuelFilter');
+  if (fuelFilterSelect) {
+    fuelFilterSelect.addEventListener('change', updateFuelTable);
+  }
+  
+  // Attach refresh button
+  const refreshBtn = document.getElementById('refreshFuelBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      document.getElementById('fuelSearch').value = '';
+      document.getElementById('fuelFilter').value = 'default';
+      getAllFuels();
+    });
+  }
+  
+  // Attach buyer dropdown listener
+  if (typeof buyerInput !== 'undefined' && buyerInput) {
+    buyerInput.addEventListener('click', () => { showBuyerDropdown(allBuyers); });
+  }
+});
