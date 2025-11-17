@@ -7,6 +7,7 @@
     let currentSearch = '';
     let currentDateAttendanceId = 1;
     let currentStatusFilter = 'all';
+    let currentRecordsData = []; // Store current records for easy access
     
     // Get the workers attendance view container
     const workersAttendanceView = document.getElementById('workersAttendanceView');
@@ -145,12 +146,36 @@
             showEmpty();
             return;
         }
+
+        // Store current records data for overtime modal
+        currentRecordsData = records;
         
         const recordsHtml = records.map(record => {
             // Generate avatar placeholder from worker name
             const workerName = record.staff_name || 'Worker';
             const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(workerName)}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
-            const workerImage = record.staff_img || '';
+            
+            // Clean up the image URL to remove problematic suffixes
+            let workerImage = '';
+            if (record.staff_img && typeof record.staff_img === 'string') {
+                workerImage = record.staff_img.replace(/:\d+$/, '').trim(); // Remove :1, :2, etc. suffixes
+                workerImage = workerImage.replace(/\.jpg:.*$/, '.jpg'); // Clean up malformed jpg URLs
+                workerImage = workerImage.replace(/\.png:.*$/, '.png');
+                workerImage = workerImage.replace(/\.jpeg:.*$/, '.jpeg');
+                workerImage = workerImage.replace(/\.gif:.*$/, '.gif');
+                
+                // Check if the cleaned URL is still valid
+                if (workerImage.length < 5 || workerImage.includes('null') || workerImage.includes('undefined') || workerImage.includes('…')) {
+                    workerImage = '';
+                } else if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+                    // Construct full URL if it's just a filename
+                    workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+                } else if (workerImage.startsWith('/')) {
+                    // Add domain if it starts with /
+                    workerImage = `https://mwms.megacess.com${workerImage}`;
+                }
+            }
+            
             const imgSrc = (workerImage && workerImage.trim() !== '') ? workerImage : placeholderImage;
             
             return `
@@ -434,9 +459,41 @@
     
     window.markOvertime = function(staffId) {
         console.log('Mark overtime for staff ID:', staffId);
-        // Implement overtime marking functionality
-        alert('Mark overtime feature will be implemented');
+        
+        // Find the record data for this staff member
+        // This is a simple approach - in a real app, you might store the data differently
+        const staffData = getCurrentStaffData(staffId);
+        
+        if (staffData) {
+            // Clean up the image URL to remove any problematic suffixes
+            let cleanImageUrl = '';
+            if (staffData.staff_img && typeof staffData.staff_img === 'string') {
+                cleanImageUrl = staffData.staff_img.replace(/:\d+$/, '').trim(); // Remove :1, :2, etc. suffixes
+                // Check if the cleaned URL is still valid
+                if (cleanImageUrl.length < 5 || cleanImageUrl.includes('null') || cleanImageUrl.includes('undefined')) {
+                    cleanImageUrl = '';
+                }
+            }
+            
+            // Show the overtime modal with user data
+            window.showOvertimeModal(
+                staffId, 
+                staffData.staff_name || 'Worker', 
+                'Worker', 
+                cleanImageUrl, 
+                'worker'
+            );
+        } else {
+            // Fallback if data not found
+            window.showOvertimeModal(staffId, 'Worker', 'Worker', '', 'worker');
+        }
     };
+
+    // Helper function to get current staff data
+    function getCurrentStaffData(staffId) {
+        // Find the record in the current data
+        return currentRecordsData.find(record => record.staff_id == staffId) || null;
+    }
     
     window.markOnLeave = function(staffId) {
         console.log('Mark on-leave for staff ID:', staffId);

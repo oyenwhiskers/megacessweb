@@ -80,10 +80,85 @@
     </main>
   </div>
 
+  <!-- Manage Overtime Modal -->
+  <div class="modal fade" id="manageOvertimeModal" tabindex="-1" aria-labelledby="manageOvertimeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #d4edda; border-bottom: none;">
+          <h5 class="modal-title fw-bold text-dark" id="manageOvertimeModalLabel">Manage Overtime</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="background-color: #d4edda; padding: 0;">
+          <!-- User Info Section -->
+          <div class="mx-3 mb-3">
+            <div class="bg-white rounded p-3 d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <div style="width: 60px; height: 60px;" class="me-3">
+                  <img id="overtimeUserAvatar" src="" alt="User Avatar" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover; background-color: #333;">
+                </div>
+                <div>
+                  <h6 class="mb-1 fw-bold" id="overtimeUserName">Loading...</h6>
+                  <p class="mb-0 text-muted" id="overtimeUserRole">Loading...</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-success btn-sm" id="addOvertimeBtn">
+                <i class="bi bi-plus-circle me-1"></i>Add overtime
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="mx-3 mb-3">
+            <div class="d-flex gap-2">
+              <button class="btn btn-light active" id="overtimeFilterAll">All</button>
+              <div class="dropdown">
+                <button class="btn btn-light dropdown-toggle" type="button" id="overtimeFilterMonth" data-bs-toggle="dropdown" aria-expanded="false">
+                  Month
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="overtimeFilterMonth">
+                  <li><a class="dropdown-item" href="#" data-month="1">January</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="2">February</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="3">March</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="4">April</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="5">May</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="6">June</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="7">July</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="8">August</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="9">September</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="10">October</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="11">November</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="12">December</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overtime List Section -->
+          <div class="mx-3">
+            <h6 class="mb-3 text-dark">List of existing overtime:</h6>
+            <div id="overtimeList" class="mb-3">
+              <!-- Overtime entries will be loaded here -->
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading overtime records...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="background-color: #d4edda; border-top: none;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
-  <script src="/megacessweb/assets/js/list_workers_att.js?v=1.2"></script>
-  <script src="/megacessweb/assets/js/list_staff_att.js?v=1.1"></script>
+  <script src="/megacessweb/assets/js/manage_overtime.js?v=1.0"></script>
+  <script src="/megacessweb/assets/js/list_workers_att.js?v=1.3"></script>
+  <script src="/megacessweb/assets/js/list_staff_att.js?v=1.2"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
 
   <script>
@@ -222,6 +297,91 @@
       
       // Initial state
       show('workers');
+
+      // Overtime Modal Functions
+      window.showOvertimeModal = function(userId, userName, userRole, userImage, userType) {
+        // Store current user context for filtering
+        window.currentOvertimeUserId = userId;
+        window.currentOvertimeUserType = userType;
+        
+        // Set user information
+        document.getElementById('overtimeUserName').textContent = userName || 'Unknown User';
+        document.getElementById('overtimeUserRole').textContent = userRole || 'Unknown Role';
+        
+        // Set user avatar with comprehensive error handling
+        const avatar = document.getElementById('overtimeUserAvatar');
+        
+        // Clean and validate the image URL
+        let cleanImageUrl = '';
+        if (userImage && typeof userImage === 'string' && userImage.trim() !== '') {
+          // Remove problematic suffixes like :1, :2, etc.
+          cleanImageUrl = userImage.replace(/:\d+$/, '').trim();
+          
+          // Additional cleaning for malformed URLs
+          cleanImageUrl = cleanImageUrl.replace(/\.jpg:.*$/, '.jpg');
+          cleanImageUrl = cleanImageUrl.replace(/\.png:.*$/, '.png');
+          cleanImageUrl = cleanImageUrl.replace(/\.jpeg:.*$/, '.jpeg');
+          cleanImageUrl = cleanImageUrl.replace(/\.gif:.*$/, '.gif');
+          
+          // Check if the cleaned URL is still valid
+          if (cleanImageUrl.length < 5 || 
+              cleanImageUrl.includes('null') || 
+              cleanImageUrl.includes('undefined') ||
+              cleanImageUrl.includes('…') || // Sometimes URLs get truncated with ellipsis
+              cleanImageUrl.endsWith(':')) {
+            cleanImageUrl = '';
+          }
+        }
+        
+        if (cleanImageUrl && cleanImageUrl.trim() !== '') {
+          // Try to construct the full URL
+          let imageSrc = cleanImageUrl;
+          
+          // If it's not a full URL, construct the proper path
+          if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
+            imageSrc = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
+          } else if (cleanImageUrl.startsWith('/')) {
+            imageSrc = `https://mwms.megacess.com${cleanImageUrl}`;
+          }
+          
+          // Set the image with error fallback
+          avatar.src = imageSrc;
+          avatar.onerror = function() {
+            // Fallback to placeholder if image fails to load
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            this.src = placeholderImage;
+            this.onerror = null; // Prevent infinite loop
+          };
+        } else {
+          // Generate placeholder avatar for invalid or missing images
+          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+          avatar.src = placeholderImage;
+          avatar.onerror = null; // Clear any previous error handler
+        }
+        
+        // Reset filter buttons
+        document.getElementById('overtimeFilterAll').classList.add('active');
+        document.getElementById('overtimeFilterMonth').textContent = 'Month';
+        
+        // Load overtime data for this user using the real API
+        if (window.loadUserOvertimeData) {
+          window.loadUserOvertimeData(userId, userType);
+        }
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('manageOvertimeModal'));
+        modal.show();
+      };
+
+      // Remove the old mock data function since we're using real API now
+      // function loadUserOvertimeData(userId, userType) { ... } - removed
+
+      // Add overtime button functionality
+      document.getElementById('addOvertimeBtn').addEventListener('click', function() {
+        alert('Add overtime functionality will be implemented');
+      });
+
+      // Note: Filter functionality is now handled in manage_overtime.js
     })();
   </script>
 </body>
