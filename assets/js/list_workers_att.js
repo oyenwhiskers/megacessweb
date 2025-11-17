@@ -311,16 +311,24 @@
     
     // Main fetch function
     async function fetchWorkerAttendanceList(search = '', page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE, statusFilter = 'all') {
-        if (!workersAttendanceView) return;
+        console.log('fetchWorkerAttendanceList called with:', { search, page, dateAttendanceId, perPage, statusFilter });
+        console.log('workersAttendanceView element:', workersAttendanceView);
+        
+        if (!workersAttendanceView) {
+            console.error('workersAttendanceView not found!');
+            return;
+        }
         
         currentSearch = search;
         currentPage = page;
         currentDateAttendanceId = dateAttendanceId;
         currentStatusFilter = statusFilter;
         
+        console.log('Showing loading state...');
         showLoading();
         
         try {
+            // Try using staff-attendance endpoint for workers
             const url = new URL(`${API_BASE_URL}/staff-attendance`);
             
             // Add query parameters
@@ -350,13 +358,19 @@
             
             console.log('Fetching worker attendance from:', url.toString());
             console.log('Search parameters:', params);
+            console.log('Auth token:', getAuthToken() ? 'Present' : 'Missing');
             
             const response = await fetch(url, {
                 method: 'GET',
                 headers
             });
             
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
@@ -495,10 +509,48 @@
         return currentRecordsData.find(record => record.staff_id == staffId) || null;
     }
     
+    // Helper function to get current worker data (alias for getCurrentStaffData)
+    function getCurrentWorkerData(staffId) {
+        console.log('getCurrentWorkerData called with staffId:', staffId);
+        console.log('Available records:', currentRecordsData.length);
+        
+        // Find the record in the current data
+        const worker = currentRecordsData.find(record => record.staff_id == staffId);
+        console.log('Found worker data:', worker);
+        return worker || null;
+    }
+    
     window.markOnLeave = function(staffId) {
-        console.log('Mark on-leave for staff ID:', staffId);
-        // Implement on-leave marking functionality
-        alert('Mark on-leave feature will be implemented');
+        console.log('markOnLeave function called for staff ID:', staffId);
+        
+        // Check if showLeaveModal function exists
+        if (typeof window.showLeaveModal !== 'function') {
+            console.error('showLeaveModal function not found');
+            alert('Leave management modal not available. Please refresh the page.');
+            return;
+        }
+        
+        // Get the worker data from current records
+        const workerData = getCurrentWorkerData(staffId);
+        if (!workerData) {
+            console.error('Worker data not found for ID:', staffId);
+            alert('Worker information not found. Please refresh the attendance list.');
+            return;
+        }
+        
+        console.log('Worker data found:', workerData);
+        
+        // Extract worker information using correct property names
+        const workerId = workerData.staff_id;
+        const workerName = workerData.staff_name || 'Unknown Worker';
+        const workerRole = workerData.position || 'Worker';
+        const workerImage = workerData.staff_img || '';
+        const workerType = 'worker';
+        
+        console.log('Calling showLeaveModal with:', { workerId, workerName, workerRole, workerImage, workerType });
+        
+        // Call the leave modal function
+        window.showLeaveModal(workerId, workerName, workerRole, workerImage, workerType);
     };
     
     // Expose main function globally so it can be called from manage-attendance.html

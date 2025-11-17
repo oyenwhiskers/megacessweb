@@ -478,9 +478,36 @@
     }
     
     window.markStaffOnLeave = function(userId) {
-        console.log('Mark on-leave for staff user ID:', userId);
-        // Implement on-leave marking functionality
-        alert('Mark staff on-leave feature will be implemented');
+        console.log('markStaffOnLeave function called for user ID:', userId);
+        
+        // Check if showLeaveModal function exists
+        if (typeof window.showLeaveModal !== 'function') {
+            console.error('showLeaveModal function not found');
+            alert('Leave management modal not available. Please refresh the page.');
+            return;
+        }
+        
+        // Get the staff data from current records
+        const staffData = getCurrentStaffData(userId);
+        if (!staffData) {
+            console.error('Staff data not found for ID:', userId);
+            alert('Staff information not found. Please refresh the attendance list.');
+            return;
+        }
+        
+        console.log('Staff data found:', staffData);
+        
+        // Extract staff information
+        const staffId = staffData.user_id;
+        const staffName = staffData.name || 'Unknown Staff';
+        const staffRole = staffData.position || 'Staff';
+        const staffImage = staffData.image || '';
+        const staffType = 'staff';
+        
+        console.log('Calling showLeaveModal with:', { staffId, staffName, staffRole, staffImage, staffType });
+        
+        // Call the leave modal function
+        window.showLeaveModal(staffId, staffName, staffRole, staffImage, staffType);
     };
     
     // Expose main function globally so it can be called from manage-attendance.html
