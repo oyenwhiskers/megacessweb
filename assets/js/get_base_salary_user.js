@@ -27,7 +27,7 @@ $(document).ready(function () {
 
   // Get user ID from URL
   const params = new URLSearchParams(window.location.search);
-  const userId = params.get("user_id"); // Changed from "id" to "user_id"
+  const userId = params.get("user_id"); 
   const container = $("#userBaseSalaryContainer");
 
   if (!userId) {

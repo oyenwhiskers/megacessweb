@@ -1,4 +1,4 @@
-// get_base_salary_user.js - Fetch and edit base salary with worker info
+// get_base_salary_worker.js - Fetch and edit base salary with worker info
 
 $(document).ready(function () {
   const API_BASE = "https://mwms.megacess.com/api/v1/staff";
