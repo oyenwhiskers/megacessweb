@@ -77,12 +77,17 @@
               <div class="d-flex flex-wrap gap-3 align-items-center">
                 <!-- Search Bar -->
                 <div class="flex-grow-1">
-                  <input
-                  id="fuelSearch"
-                    type="text"
-                    class="form-control"
-                    placeholder="Search supplier/buyer/fuel bought..."
-                  >
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="fuelSearch" 
+                      class="form-control"
+                      placeholder="Search supplier/buyer/fuel bought..."
+                    >
+                    <button class="btn btn-secondary" id="refreshFuelBtn" type="button">
+                      <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Filter Dropdown -->
