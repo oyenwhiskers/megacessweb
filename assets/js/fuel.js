@@ -43,14 +43,13 @@ function getToken() {
 }
 
 // ==================== Fetch Fuels ====================
-async function getAllFuels({ supplier_name = '', date_from = '', date_to = '', per_page = 15 } = {}) {
+async function getAllFuels({ search = '', fuel_filter = '', per_page = 15 } = {}) {
   const token = getToken();
   if (!token) return showErrorNoToken();
 
   const apiUrl = new URL('https://mwms.megacess.com/api/v1/fuels');
-  if (supplier_name) apiUrl.searchParams.append('supplier_name', supplier_name);
-  if (date_from) apiUrl.searchParams.append('date_from', date_from);
-  if (date_to) apiUrl.searchParams.append('date_to', date_to);
+  if (search) apiUrl.searchParams.append('search', search);
+  if (fuel_filter) apiUrl.searchParams.append('fuel_filter', fuel_filter);
   if (per_page) apiUrl.searchParams.append('per_page', per_page);
 
   const loading = document.getElementById('loading');
