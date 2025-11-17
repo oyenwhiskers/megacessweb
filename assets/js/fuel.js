@@ -257,11 +257,21 @@ const editFuelDropdown = initBuyerDropdownGeneric(editBuyerInput, editBuyerDropd
 // ==================== Form Handlers ====================
 document.getElementById('addFuelForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!selectedBuyer) return alert("Please select a buyer.");
+  
+  // Validation: Check all fields are filled
+  const supplierName = document.getElementById('supplierName').value.trim();
+  const fuelBought = document.getElementById('fuelBought').value.trim();
+  const dateBought = document.getElementById('dateBought').value.trim();
+  
+  if (!supplierName) return showError("Please enter supplier name.");
+  if (!selectedBuyer) return showError("Please select a buyer.");
+  if (!fuelBought) return showError("Please enter fuel amount.");
+  if (!dateBought) return showError("Please select date bought.");
+  
   const payload = {
-    supplier_name: document.getElementById('supplierName').value,
-    fuel_bought: document.getElementById('fuelBought').value,
-    date_bought: document.getElementById('dateBought').value,
+    supplier_name: supplierName,
+    fuel_bought: fuelBought,
+    date_bought: dateBought,
     user_id: selectedBuyer.id
   };
   const saveBtn = document.getElementById('saveFuelBtn'); saveBtn.disabled=true; saveBtn.textContent="Adding...";
@@ -271,11 +281,21 @@ document.getElementById('addFuelForm').addEventListener('submit', async (e) => {
 document.getElementById('editFuelForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fuelId = document.getElementById('editFuelId').value;
-  if (!editSelectedBuyer) return alert("Please select a buyer.");
+  
+  // Validation: Check all fields are filled
+  const editSupplierName = document.getElementById('editSupplierName').value.trim();
+  const editFuelBought = document.getElementById('editFuelBought').value.trim();
+  const editDateBought = document.getElementById('editDateBought').value.trim();
+  
+  if (!editSupplierName) return showError("Please enter supplier name.");
+  if (!editSelectedBuyer) return showError("Please select a buyer.");
+  if (!editFuelBought) return showError("Please enter fuel amount.");
+  if (!editDateBought) return showError("Please select date bought.");
+  
   const payload = {
-    supplier_name: document.getElementById('editSupplierName').value,
-    fuel_bought: document.getElementById('editFuelBought').value,
-    date_bought: document.getElementById('editDateBought').value,
+    supplier_name: editSupplierName,
+    fuel_bought: editFuelBought,
+    date_bought: editDateBought,
     user_id: editSelectedBuyer.id
   };
   const saveBtn = document.getElementById('saveEditFuelBtn'); saveBtn.disabled=true; saveBtn.textContent="Updating...";
