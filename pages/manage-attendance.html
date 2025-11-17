@@ -80,6 +80,61 @@
     </main>
   </div>
 
+  <!-- Add Overtime Modal -->
+  <div class="modal fade" id="addOvertimeModal" tabindex="-1" aria-labelledby="addOvertimeModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #f8f9fa; border: none; border-radius: 15px;">
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1070;"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <!-- Back Arrow and Title -->
+          <div class="d-flex align-items-center mb-4">
+            <button type="button" class="btn btn-link p-0 me-3" data-bs-dismiss="modal" style="color: #6c757d;">
+              <i class="bi bi-arrow-left" style="font-size: 1.2rem;"></i>
+            </button>
+            <div>
+              <h5 class="mb-1 fw-bold text-dark">Add new Overtime Record</h5>
+              <p class="mb-0 text-muted small">Insert the required details with the correct information</p>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <form id="addOvertimeForm">
+            <!-- Overtime Date -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Overtime Date:</label>
+              <div class="position-relative">
+                <input type="date" id="overtimeDate" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding-right: 3rem;" placeholder="Select start date..">
+                <i class="bi bi-calendar3 position-absolute end-0 top-50 translate-middle-y me-3" style="color: #6c757d; pointer-events: none;"></i>
+              </div>
+            </div>
+
+            <!-- Duration -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Duration (hour):</label>
+              <input type="number" id="overtimeDuration" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;" placeholder="Enter duration.." min="0" step="0.5">
+            </div>
+
+            <!-- Remarks -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Remarks:</label>
+              <textarea id="overtimeRemarks" class="form-control" rows="5" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; resize: none;" placeholder="Enter remarks.."></textarea>
+            </div>
+
+            <!-- Save Button -->
+            <div class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-dark px-4 py-2 d-flex align-items-center" style="border-radius: 8px;">
+                <i class="bi bi-floppy me-2"></i>
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Manage Overtime Modal -->
   <div class="modal fade" id="manageOvertimeModal" tabindex="-1" aria-labelledby="manageOvertimeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -378,8 +433,123 @@
 
       // Add overtime button functionality
       document.getElementById('addOvertimeBtn').addEventListener('click', function() {
-        alert('Add overtime functionality will be implemented');
+        // Show the add overtime modal
+        const addOvertimeModal = new bootstrap.Modal(document.getElementById('addOvertimeModal'));
+        addOvertimeModal.show();
+        
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('overtimeDate').value = today;
+        
+        // Clear form fields
+        document.getElementById('overtimeDuration').value = '';
+        document.getElementById('overtimeRemarks').value = '';
       });
+
+      // Add overtime form submission
+      document.getElementById('addOvertimeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const overtimeDate = document.getElementById('overtimeDate').value;
+        const overtimeDuration = document.getElementById('overtimeDuration').value;
+        const overtimeRemarks = document.getElementById('overtimeRemarks').value;
+        
+        // Validate form
+        if (!overtimeDate) {
+          alert('Please select an overtime date');
+          return;
+        }
+        
+        if (!overtimeDuration || overtimeDuration <= 0) {
+          alert('Please enter a valid duration');
+          return;
+        }
+        
+        // Get current user context
+        const userId = window.currentOvertimeUserId;
+        const userType = window.currentOvertimeUserType;
+        
+        if (!userId || !userType) {
+          alert('User context not found. Please close and reopen the overtime modal.');
+          return;
+        }
+        
+        // Prepare data for API
+        const overtimeData = {
+          date: overtimeDate,
+          duration: parseFloat(overtimeDuration) * 60, // Convert hours to minutes
+          remark: overtimeRemarks || '',
+          status: 'pending'
+        };
+        
+        // Add user_id or staff_id based on type
+        if (userType === 'staff') {
+          overtimeData.user_id = parseInt(userId);
+        } else if (userType === 'worker') {
+          overtimeData.staff_id = parseInt(userId);
+        } else {
+          alert('Invalid user type. Please try again.');
+          return;
+        }
+        
+        console.log('Submitting overtime data:', overtimeData);
+        
+        // Call API to save overtime
+        saveOvertimeRecord(overtimeData);
+      });
+
+      // Function to save overtime record via API
+      async function saveOvertimeRecord(overtimeData) {
+        const saveButton = document.querySelector('#addOvertimeForm button[type="submit"]');
+        
+        try {
+          // Show loading state
+          const originalContent = saveButton.innerHTML;
+          saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+          saveButton.disabled = true;
+
+          // Use the API function from manage_overtime.js
+          const result = await window.createOvertimeRecord(overtimeData);
+
+          // Success feedback
+          if (result && result.data) {
+            alert(`Overtime record saved successfully!\n\nDetails:\n- Date: ${result.data.date}\n- Duration: ${result.data.duration} minutes\n- Status: ${result.data.status}`);
+          } else {
+            alert('Overtime record saved successfully!');
+          }
+          
+          // Close the add overtime modal
+          const addOvertimeModal = bootstrap.Modal.getInstance(document.getElementById('addOvertimeModal'));
+          if (addOvertimeModal) {
+            addOvertimeModal.hide();
+          }
+          
+          // Refresh the overtime list
+          if (window.loadUserOvertimeData && window.currentOvertimeUserId && window.currentOvertimeUserType) {
+            window.loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
+          }
+        } catch (error) {
+          console.error('Error saving overtime:', error);
+          
+          // Provide specific error messages
+          let errorMessage = 'Failed to save overtime record.';
+          if (error.message.includes('token')) {
+            errorMessage = 'Authentication failed. Please login again.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+          } else if (error.message) {
+            errorMessage = `Error: ${error.message}`;
+          }
+          
+          alert(errorMessage);
+        } finally {
+          // Reset button state
+          if (saveButton) {
+            saveButton.innerHTML = '<i class="bi bi-floppy me-2"></i>Save';
+            saveButton.disabled = false;
+          }
+        }
+      }
 
       // Note: Filter functionality is now handled in manage_overtime.js
     })();

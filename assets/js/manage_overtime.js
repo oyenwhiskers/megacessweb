@@ -6,7 +6,12 @@
     
     // Get auth token from localStorage
     function getAuthToken() {
-        return localStorage.getItem('authToken') || '';
+        // Check multiple possible token storage locations
+        return localStorage.getItem('authToken') || 
+               localStorage.getItem('auth_token') ||
+               sessionStorage.getItem('authToken') ||
+               sessionStorage.getItem('auth_token') ||
+               '';
     }
 
     // Format date for display (convert from YYYY-MM-DD to DD/MM/YY)
@@ -41,6 +46,68 @@
                 return 'bg-danger';
             default:
                 return 'bg-secondary';
+        }
+    }
+
+    // Create new overtime record
+    async function createOvertimeRecord(overtimeData) {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            // Prepare the request payload according to API specification
+            const payload = {
+                date: overtimeData.date,
+                duration: overtimeData.duration, // Should be in minutes
+                remark: overtimeData.remark || '',
+                status: overtimeData.status || 'pending'
+            };
+
+            // Add user_id or staff_id based on user type
+            if (overtimeData.user_id) {
+                payload.user_id = overtimeData.user_id;
+                payload.staff_id = null; // Explicitly set to null for staff
+            } else if (overtimeData.staff_id) {
+                payload.staff_id = overtimeData.staff_id;
+                payload.user_id = null; // Explicitly set to null for workers
+            } else {
+                throw new Error('Either user_id or staff_id must be provided');
+            }
+
+            console.log('Sending overtime data:', payload);
+
+            const response = await fetch(`${API_BASE_URL}/overtimes`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (parseError) {
+                throw new Error('Invalid response format from server');
+            }
+
+            if (!response.ok) {
+                // Handle API errors
+                const errorMessage = responseData.message || 
+                                   responseData.error || 
+                                   `HTTP error! status: ${response.status}`;
+                throw new Error(errorMessage);
+            }
+
+            console.log('Overtime record created successfully:', responseData);
+            return responseData;
+        } catch (error) {
+            console.error('Error creating overtime record:', error);
+            throw error;
         }
     }
 
@@ -282,6 +349,7 @@
     window.loadUserOvertimeData = loadUserOvertimeData;
     window.filterOvertimeByMonth = filterOvertimeByMonth;
     window.showAllOvertimeRecords = showAllOvertimeRecords;
+    window.createOvertimeRecord = createOvertimeRecord;
 
     // Initialize event listeners when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
