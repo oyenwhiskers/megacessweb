@@ -1,11 +1,11 @@
-// get_base_salary_user.js - Fetch and edit base salary with staff info
+// get_base_salary_user.js - Fetch and edit base salary with worker info
 
 $(document).ready(function () {
-  const API_BASE = "https://mwms.megacess.com/api/v1/users";
+  const API_BASE = "https://mwms.megacess.com/api/v1/staff";
   const token = getToken(); 
 
   if (!token) {
-    console.error("Token not found. User must be authenticated.");
+    console.error("Token not found. Staff must be authenticated.");
     Swal.fire({
       icon: "error",
       title: "Authentication Required!",
@@ -27,12 +27,12 @@ $(document).ready(function () {
 
   // Get user ID from URL
   const params = new URLSearchParams(window.location.search);
-  const userId = params.get("user_id"); // Changed from "id" to "user_id"
-  const container = $("#userBaseSalaryContainer");
+  const staffId = params.get("id");
+  const container = $("#workerBaseSalaryContainer");
 
-  if (!userId) {
-    console.error("No user ID provided in URL.");
-    container.html('<div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>No user selected.</div>');
+  if (!staffId) {
+    console.error("No worker ID provided in URL.");
+    container.html('<div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>No worker selected.</div>');
     return;
   }
 
@@ -44,7 +44,7 @@ $(document).ready(function () {
                     <div class="spinner-border text-success mb-3" role="status">
                          <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="text-muted">Loading staff base salary...</p>
+                    <p class="text-muted">Loading worker base salary...</p>
                 </div>
             </div>
         </div>
@@ -99,8 +99,8 @@ $(document).ready(function () {
       $(this).prop("disabled", true).text("Saving...");
 
       $.ajax({
-        url: `${API_BASE}/${userId}/base-salary`,
-        method: "POST", 
+        url: `${API_BASE}/${staffId}/base-salary`,
+        method: "POST",
         headers: headers,
         contentType: "application/json",
         data: JSON.stringify({ base_salary: newSalary }),
@@ -128,7 +128,7 @@ $(document).ready(function () {
   // Fetch Base Salary
   // -------------------------
   $.ajax({
-    url: `${API_BASE}/${userId}/base-salary`,
+    url: `${API_BASE}/${staffId}/base-salary`,
     method: "GET",
     headers: headers,
     success: function (data) {

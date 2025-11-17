@@ -96,7 +96,7 @@ $(document).ready(function() {
               <small class="text-muted">${role}</small>
             </div>
             <div class="d-flex flex-column ms-2">
-              <a href="/megacessweb/pages/manage-payment-rate-edit-salary.html?id=${encodeURIComponent(id)}"
+              <a href="/megacessweb/pages/manage-payment-rate-edit-salary-user.html?user_id=${encodeURIComponent(id)}"
                 class="btn btn-sm btn-outline-success mb-1" title="Edit base salary">
                 <i class="bi bi-pencil-fill"></i>
               </a>

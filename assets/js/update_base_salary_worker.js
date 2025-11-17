@@ -1,20 +1,20 @@
-// update_base_salary_user.js handles updating base salary for the selected user
+// update_base_salary_worker.js handles updating base salary for the selected worker
 
 // Base API URL
-const BASE_URL = "https://mwms.megacess.com/api/v1/users";
+const BASE_URL = "https://mwms.megacess.com/api/v1/staff";
 
-// Helper: Get user_id from URL (e.g., ?user_id=5)
-function getUserIdFromURL() {
+// Helper: Get staff_id from URL (e.g., ?staff_id=5)
+function getStaffIdFromURL() {
   const params = new URLSearchParams(window.location.search);
-  return params.get("user_id");
+  return params.get("staff_id");
 }
 
-// Render input form dynamically inside #userBaseSalaryContainer
+// Render input form dynamically inside #workerBaseSalaryContainer
 function renderBaseSalaryForm(currentSalary = "") {
-  const container = document.getElementById("userBaseSalaryContainer");
+  const container = document.getElementById("workerBaseSalaryContainer");
 
   container.innerHTML = `
-    <form id="updateUserBaseSalaryForm" class="p-3">
+    <form id="updateWorkerBaseSalaryForm" class="p-3">
       <div class="mb-3">
         <label for="baseSalaryInput" class="form-label fw-semibold">New Base Salary (RM)</label>
         <input type="number" id="baseSalaryInput" class="form-control" placeholder="Enter new base salary" value="${currentSalary}" min="0" step="0.01">
@@ -29,20 +29,20 @@ function renderBaseSalaryForm(currentSalary = "") {
 
 // Function to handle base salary update
 async function updateBaseSalary(baseSalary) {
-  const userId = getUserIdFromURL();
+  const staffId = getStaffIdFromURL();
 
-  if (!userId) {
-    console.alert(" User ID not found in URL.");
+  if (!staffId) {
+    console.alert(" Worker ID not found in URL.");
     Swal.fire({
       icon: "warning",
-      title: "User ID not found in URL."
+      title: "Worker ID not found in URL."
     });
     return;
   }
 
   try {
     const token = getToken(); // Use your existing helper
-    const response = await fetch(`${BASE_URL}/${userId}/base-salary`, {
+    const response = await fetch(`${BASE_URL}/${staffId}/base-salary`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -101,14 +101,14 @@ async function updateBaseSalary(baseSalary) {
 
 // Initialize form and attach event listener
 document.addEventListener("DOMContentLoaded", () => {
-  const userId = getUserIdFromURL();
+  const staffId = getStaffIdFromURL();
 
   // Render the form dynamically (you can optionally fetch current salary to display)
   renderBaseSalaryForm();
 
   // Handle submit
   document.addEventListener("submit", (e) => {
-    if (e.target.id === "updateUserBaseSalaryForm") { // Fixed form ID to match rendered form
+    if (e.target.id === "updateWorkerBaseSalaryForm") {
       e.preventDefault();
       const baseSalary = document.getElementById("baseSalaryInput").value.trim();
 
