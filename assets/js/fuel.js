@@ -95,12 +95,10 @@ function populateFuelsTable(fuels) {
       <div class="col">${fuel.supplier_name || 'Unnamed Fuel'}</div>
       <div class="col">
         ${fuel.user ? `<div class="person-block">
-          <strong>User:</strong><br>
-          ${fuel.user.user_fullname}<br>
-          <small>${fuel.user.user_role}</small><br>
+          <strong>${fuel.user.user_fullname}</strong><br>
           <small>(ID: ${fuel.user.id})</small>
         </div>` : ''}
-      </div>
+      </div>  
       <div class="col">
         <span class="badge ${fuelClass} px-3 py-2 fs-6">${fuel.fuel_bought || 'Unknown'}</span>
       </div>
@@ -111,7 +109,10 @@ function populateFuelsTable(fuels) {
         <button class="btn btn-sm btn-warning me-2 update-fuel-btn"
           data-id="${fuel.id}"
           data-supplier-name="${fuel.supplier_name || ''}"
-          data-user="${fuel.user?.user_fullname || ''} (ID:${fuel.user?.id || '-'})">
+          data-buyer-id="${fuel.user?.id || ''}"
+          data-buyer-name="${fuel.user?.user_fullname || ''}"
+          data-fuel-bought="${fuel.fuel_bought || ''}"
+          data-date-bought="${fuel.date_bought ? new Date(fuel.date_bought).toISOString().split('T')[0] : ''}">
           <i class="bi bi-pencil"></i> Edit
         </button>
         <button class="btn btn-sm btn-danger delete-fuel-btn" data-id="${fuel.id}">
@@ -288,19 +289,24 @@ function attachEditListeners() {
   document.querySelectorAll('.update-fuel-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const fuelId = btn.dataset.id;
-      const supplierName = btn.dataset.supplierName;
-      const userName = btn.dataset.user;
+      const supplierName = btn.dataset.supplierName || '';
+      const buyerId = btn.dataset.buyerId || '';
+      const buyerName = btn.dataset.buyerName || '';
+      const fuelBought = btn.dataset.fuelBought || '';
+      const dateBought = btn.dataset.dateBought || '';
 
       document.getElementById('editFuelId').value = fuelId;
       document.getElementById('editSupplierName').value = supplierName;
+      document.getElementById('editFuelBought').value = fuelBought;
+      document.getElementById('editDateBought').value = dateBought;
 
-      if (userName) {
-        const match = userName.match(/\(ID:(\d+)\)/);
-        if (match) {
-          const buyerId = parseInt(match[1]);
-          const buyer = editFuelDropdown.getSelected()?.id === buyerId ? editSelectedBuyer : null;
-          if (buyer) { editBuyerInput.value = buyer.fullname; editSelectedBuyer = buyer; }
-        }
+      // Prefill buyer input and selected buyer object
+      if (buyerName) {
+        editBuyerInput.value = buyerName;
+        editSelectedBuyer = buyerId ? { id: parseInt(buyerId, 10), fullname: buyerName } : null;
+      } else {
+        editBuyerInput.value = '';
+        editSelectedBuyer = null;
       }
 
       bootstrap.Modal.getOrCreateInstance(document.getElementById('editFuelModal')).show();
