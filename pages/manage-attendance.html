@@ -700,13 +700,6 @@
       window.showLeaveModal = function(userId, userName, userRole, userImage, userType) {
         console.log('showLeaveModal called with:', { userId, userName, userRole, userImage, userType });
         
-        // Restrict leave management to Workers only
-        if (userType !== 'worker') {
-          alert('Leave management is only available for Workers.');
-          console.log('Leave management blocked for userType:', userType);
-          return;
-        }
-        
         // Store current user context for filtering
         window.currentLeaveUserId = userId;
         window.currentLeaveUserType = userType;

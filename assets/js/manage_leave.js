@@ -1,4 +1,4 @@
-// Leave Management for Workers Only
+// Leave Management for Workers and Staff
 (function() {
     // Configuration
     const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
@@ -68,26 +68,31 @@
     
     // Load user leave data
     async function loadUserLeaveData(userId, userType) {
-        console.log('Loading leave data for worker with staff_id:', userId, 'userType:', userType);
-        
-        // Validate this is for a worker only
-        if (userType !== 'worker') {
-            console.error('Leave management is only available for workers, not:', userType);
-            showLeaveError('Leave management is only available for Workers.');
-            return;
-        }
+        console.log('Loading leave data for user with ID:', userId, 'userType:', userType);
         
         // Store current user context for form submission
         window.currentLeaveUserId = userId;
         window.currentLeaveUserType = userType;
         
         try {
-            // Fetch staff attendance records filtered by specific staff_id
-            const url = new URL(`${API_BASE_URL}/staff-attendance`);
+            // Choose API endpoint based on user type
+            let apiEndpoint, idParam;
+            if (userType === 'worker') {
+                apiEndpoint = 'staff-attendance';
+                idParam = 'staff_id';
+            } else if (userType === 'staff') {
+                apiEndpoint = 'user-attendance';
+                idParam = 'user_id';
+            } else {
+                throw new Error('Invalid user type: ' + userType);
+            }
             
-            // Add query parameters including staff_id filter
+            // Fetch attendance records filtered by specific user ID
+            const url = new URL(`${API_BASE_URL}/${apiEndpoint}`);
+            
+            // Add query parameters including user ID filter
             const params = {
-                staff_id: userId, // Filter by specific worker's staff_id
+                [idParam]: userId, // Filter by specific user's ID
                 date_attendance_id: 1, // Current attendance period
                 per_page: 100, // Get more records to find leaves
                 page: 1
@@ -103,6 +108,7 @@
             
             console.log('Fetching leave data from:', url.toString());
             console.log('API parameters:', params);
+            console.log('Using endpoint:', apiEndpoint, 'with ID parameter:', idParam);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -114,25 +120,25 @@
             }
             
             const result = await response.json();
-            console.log('Leave API Response for staff_id', userId, ':', result);
+            console.log('Leave API Response for', userType, 'ID', userId, ':', result);
             
             if (result.success && result.data && result.data.data) {
-                // Filter records for leave types only (since we already filtered by staff_id in API)
+                // Filter records for leave types only (since we already filtered by user ID in API)
                 const userLeaveRecords = result.data.data.filter(record => {
                     return record.status && 
                            ['annual_leave', 'sick_leave', 'unpaid_leave'].includes(record.status);
                 });
                 
-                console.log('Filtered leave records for staff_id', userId, ':', userLeaveRecords);
+                console.log('Filtered leave records for', userType, 'ID', userId, ':', userLeaveRecords);
                 renderLeaveRecords(userLeaveRecords);
             } else {
-                console.log('No leave data found for staff_id:', userId);
+                console.log('No leave data found for', userType, 'ID:', userId);
                 renderLeaveRecords([]);
             }
             
         } catch (error) {
-            console.error('Error loading leave data for staff_id', userId, ':', error);
-            showLeaveError(`Failed to load leave records for worker ID ${userId}. Please try again.`);
+            console.error('Error loading leave data for', userType, 'ID', userId, ':', error);
+            showLeaveError(`Failed to load leave records for ${userType} ID ${userId}. Please try again.`);
         }
     }
     
@@ -190,29 +196,38 @@
         `;
     }
     
-    // Mark staff as on leave (Workers only)
-    async function markStaffOnLeave(staffId, fromDate, toDate, leaveType, notes = '') {
-        console.log('Marking worker on leave - staff_id:', staffId, 'dates:', fromDate, 'to', toDate, 'type:', leaveType);
+    // Mark user as on leave (Workers and Staff)
+    async function markStaffOnLeave(userId, fromDate, toDate, leaveType, notes = '') {
+        console.log('Marking user on leave - ID:', userId, 'dates:', fromDate, 'to', toDate, 'type:', leaveType);
         
-        // Additional validation - ensure this is only used for workers
-        if (window.currentLeaveUserType !== 'worker') {
-            console.error('Leave submission is only allowed for workers');
-            return {
-                success: false,
-                message: 'Leave management is only available for Workers.'
-            };
-        }
+        const userType = window.currentLeaveUserType;
+        console.log('User type:', userType);
         
         try {
-            const url = `${API_BASE_URL}/staff-attendance/mark-leave`;
+            // Choose API endpoint and parameters based on user type
+            let apiEndpoint, requestData;
             
-            const requestData = {
-                staff_id: parseInt(staffId),
-                from_date: fromDate,
-                to_date: toDate,
-                status: leaveType,
-                notes: notes || ''
-            };
+            if (userType === 'worker') {
+                apiEndpoint = `${API_BASE_URL}/staff-attendance/mark-leave`;
+                requestData = {
+                    staff_id: parseInt(userId),
+                    from_date: fromDate,
+                    to_date: toDate,
+                    status: leaveType,
+                    notes: notes || ''
+                };
+            } else if (userType === 'staff') {
+                apiEndpoint = `${API_BASE_URL}/user-attendance/mark-leave`;
+                requestData = {
+                    user_id: parseInt(userId),
+                    from_date: fromDate,
+                    to_date: toDate,
+                    status: leaveType,
+                    notes: notes || ''
+                };
+            } else {
+                throw new Error('Invalid user type: ' + userType);
+            }
             
             const headers = {
                 'Authorization': `Bearer ${getAuthToken()}`,
@@ -220,9 +235,10 @@
                 'Accept': 'application/json'
             };
             
-            console.log('Sending leave request:', requestData);
+            console.log('Sending leave request to:', apiEndpoint);
+            console.log('Request data:', requestData);
             
-            const response = await fetch(url, {
+            const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(requestData)

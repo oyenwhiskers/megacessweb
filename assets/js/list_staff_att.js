@@ -473,8 +473,13 @@
 
     // Helper function to get current staff data
     function getCurrentStaffData(userId) {
+        console.log('getCurrentStaffData called with userId:', userId);
+        console.log('Available staff records:', currentRecordsData.length);
+        
         // Find the record in the current data
-        return currentRecordsData.find(record => record.user_id == userId) || null;
+        const staff = currentRecordsData.find(record => record.user_id == userId);
+        console.log('Found staff data:', staff);
+        return staff || null;
     }
     
     window.markStaffOnLeave = function(userId) {
@@ -497,11 +502,11 @@
         
         console.log('Staff data found:', staffData);
         
-        // Extract staff information
+        // Extract staff information using correct property names
         const staffId = staffData.user_id;
-        const staffName = staffData.name || 'Unknown Staff';
+        const staffName = staffData.user_name || 'Unknown Staff';
         const staffRole = staffData.position || 'Staff';
-        const staffImage = staffData.image || '';
+        const staffImage = staffData.user_img || '';
         const staffType = 'staff';
         
         console.log('Calling showLeaveModal with:', { staffId, staffName, staffRole, staffImage, staffType });
