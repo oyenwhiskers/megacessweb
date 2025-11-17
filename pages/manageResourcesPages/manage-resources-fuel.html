@@ -131,38 +131,6 @@
                 </div>
                 <!-- Table Body -->
                 <div id="fuelsTableBody" style="padding-bottom: 70px;"></div>
-
-                <!-- Row 1 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">Petronas Kota Kinabalu</div>
-                  <div class="col">John Tan</div>
-                  <div class="col">50 Liters</div>
-                  <div class="col">2025-11-05</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Row 2 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">Shell Inanam</div>
-                  <div class="col">Aiman Rahman</div>
-                  <div class="col">60 Liters</div>
-                  <div class="col">2025-11-08</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -275,10 +243,24 @@
                 <input type="text" class="form-control" id="supplierName" placeholder="Enter supplier name" required>
               </div>
 
-              <!-- Buyer (searchable input) -->
-              <div class="mb-3">
+              <!-- Buyer (searchable dropdown) -->
+              <div class="mb-3 position-relative">
                 <label for="assignedPerson" class="form-label">Buyer</label>
-                <input type="text" class="form-control" id="assignedPerson" placeholder="Search for person...">
+                
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="assignedPerson" 
+                  placeholder="Search for buyer..."
+                  autocomplete="off"
+                >
+
+                <!-- Dropdown container -->
+                <ul 
+                  class="dropdown-menu w-100" 
+                  id="buyerDropdown"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
               </div>
 
               <!-- Fuel Bought -->
@@ -298,7 +280,7 @@
           <!-- Modal Footer -->
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" form="addFuelForm" class="btn btn-primary">Save Fuel</button>
+            <button id='saveFuelBtn' type="submit" form="addFuelForm" class="btn btn-primary">Save Fuel</button>
           </div>
 
         </div>

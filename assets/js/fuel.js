@@ -131,7 +131,13 @@ function populateFuelsTable(fuels) {
     row.innerHTML = `
       <div class="col">${fuel.supplier_name || 'Unnamed Fuel'}</div>
       <div class="col">
-        ${fuel.user ? `${fuel.user.user_fullname}<br><small>(ID: ${fuel.user.id})</small>` : '-'}
+        ${fuel.user ? `
+          <div class="person-block">
+            <strong>User:</strong><br>
+            ${fuel.user.user_fullname}<br>
+            <small>${fuel.user.user_role}</small><br>
+            <small>(ID: ${fuel.user.id})</small>
+          </div>` : ''}
       </div>
       <div class="col">
         <span class="badge ${fuelClass} px-3 py-2 fs-6">${fuel.fuel_bought || 'Unknown'}</span>
@@ -159,6 +165,41 @@ function populateFuelsTable(fuels) {
   if (typeof attachEditListeners === 'function') attachEditListeners();
   if (typeof attachDeleteListeners === 'function') attachDeleteListeners();
 }
+
+// ==================== ADD /fuels =======================
+async function createFuelRecord(payload) {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token.");
+    return;
+  }
+
+  try {
+    const res = await fetch('https://mwms.megacess.com/api/v1/fuels', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+
+    if (res.ok && result.success) {
+      showSuccess("Fuel record added successfully!");
+    } else {
+      showError(result.message || "Failed to add fuel record.");
+    }
+
+  } catch (error) {
+    console.error("POST fuel error:", error);
+    showError("Failed to add fuel record. Try again.");
+  }
+}
+
+//
 
 // ==================== DELETE /fuels ====================
 function attachDeleteListeners() {
@@ -204,8 +245,173 @@ async function handleDelete(e) {
   });
 }
 
+// =============================================
+// 2. FETCH USERS → BUYER LIST
+// =============================================
+async function getAllBuyers() {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return [];
+  }
+
+  const usersUrl = 'https://mwms.megacess.com/api/v1/users';
+
+  try {
+    const usersRes = await fetch(usersUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    const usersData = await usersRes.json();
+    const users = usersData?.data || [];
+
+    // Normalize
+    const combined = users.map(u => ({
+      id: u.id,
+      fullname: u.user_fullname,
+      account_type: 'user'
+    }));
+
+    return combined;
+
+  } catch (err) {
+    console.error("Error fetching buyers:", err);
+    if (typeof showError === 'function') showError("Failed to load buyers.");
+    return [];
+  }
+}
+
+// =============================================
+// 3. INITIALIZE BUYER DROPDOWN
+// =============================================
+let allBuyers = [];
+let selectedBuyer = null;
+
+async function initBuyerDropdown() {
+  allBuyers = await getAllBuyers();
+}
+
+initBuyerDropdown();
+
+// =============================================
+// 4. DROPDOWN UI LOGIC
+// =============================================
+const buyerInput = document.getElementById('assignedPerson');
+const buyerDropdown = document.createElement('ul');
+buyerDropdown.className = 'dropdown-menu w-100 shadow-sm overflow-auto';
+buyerDropdown.style.position = "absolute";
+buyerDropdown.style.zIndex = "1000";
+buyerDropdown.style.maxHeight = "200px";
+buyerDropdown.style.overflowY = "auto";
+buyerDropdown.style.width = "100%";
+buyerDropdown.style.left = "0px";
+buyerDropdown.style.right = "0px";
+
+buyerInput.parentNode.appendChild(buyerDropdown);
+
+function showBuyerDropdown(list) {
+  buyerDropdown.innerHTML = '';
+
+  if (list.length === 0) {
+    const li = document.createElement('li');
+    li.classList.add('dropdown-item', 'text-muted');
+    li.textContent = "No results found";
+    buyerDropdown.appendChild(li);
+    buyerDropdown.classList.add('show');
+    return;
+  }
+
+  list.forEach(person => {
+    const li = document.createElement('li');
+    li.classList.add('dropdown-item');
+
+    li.innerHTML = `
+      ${person.fullname}
+      <small class="text-muted d-block">
+        (${person.account_type.toUpperCase()} ID: ${person.id})
+      </small>
+    `;
+
+    li.addEventListener('click', () => {
+      buyerInput.value = person.fullname;
+      selectedBuyer = person;
+      buyerDropdown.classList.remove('show');
+    });
+
+    buyerDropdown.appendChild(li);
+  });
+
+  if (list.length > 0) buyerDropdown.classList.add('show');
+  else buyerDropdown.classList.remove('show');
+}
+
+buyerInput.addEventListener('input', () => {
+  const search = buyerInput.value.toLowerCase();
+
+  const filtered = allBuyers.filter(p =>
+    p.fullname.toLowerCase().includes(search) ||
+    String(p.id).includes(search)
+  );
+
+  showBuyerDropdown(filtered);
+});
+
+document.addEventListener('click', (e) => {
+  if (!buyerInput.contains(e.target)) buyerDropdown.classList.remove('show');
+});
+
+// =============================================
+// 5. ADD FUEL FORM SUBMIT HANDLER
+// =============================================
+document.getElementById('addFuelForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  if (!selectedBuyer) {
+    alert("Please select a buyer from the dropdown.");
+    return;
+  }
+
+  const supplier_name = document.getElementById('supplierName').value;
+  const fuel_bought = document.getElementById('fuelBought').value;
+  const date_bought = document.getElementById('dateBought').value;
+
+  const payload = {
+    supplier_name,
+    fuel_bought,
+    date_bought,
+    user_id: selectedBuyer.id // Only user
+  };
+
+  const saveBtn = document.getElementById('saveFuelBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Adding...";
+
+  try {
+    await createFuelRecord(payload);
+
+    const modalEl = document.getElementById('addFuelModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+
+    if (typeof getAllFuels === 'function') getAllFuels();
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save Fuel";
+  }
+});
 
 // ==================== Initialize Fetch on Page Load ====================
 document.addEventListener('DOMContentLoaded', () => {
   getAllFuels(); // Fetch and render all fuels
 });
+
+// Show dropdown on click
+buyerInput.addEventListener('click', () => {
+  showBuyerDropdown(allBuyers);
+}); 
