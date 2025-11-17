@@ -111,6 +111,53 @@
         }
     }
 
+    // Delete overtime record
+    async function deleteOvertimeRecord(recordId) {
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            console.log('Deleting overtime record ID:', recordId);
+
+            const response = await fetch(`${API_BASE_URL}/overtimes/${recordId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (parseError) {
+                // Some DELETE APIs might not return JSON
+                if (response.ok) {
+                    responseData = { success: true, message: 'Overtime record deleted successfully' };
+                } else {
+                    throw new Error('Invalid response format from server');
+                }
+            }
+
+            if (!response.ok) {
+                // Handle API errors
+                const errorMessage = responseData.message || 
+                                   responseData.error || 
+                                   `HTTP error! status: ${response.status}`;
+                throw new Error(errorMessage);
+            }
+
+            console.log('Overtime record deleted successfully:', responseData);
+            return responseData;
+        } catch (error) {
+            console.error('Error deleting overtime record:', error);
+            throw error;
+        }
+    }
+
     // Fetch overtime data from API
     async function fetchOvertimeData(userId, userType, filters = {}) {
         try {
@@ -199,8 +246,14 @@
                                     <h6 class="mb-1 fw-bold">${displayDate}</h6>
                                     <small class="text-muted">Created by: ${createdByName}</small>
                                 </div>
-                                <div class="text-end">
-                                    <span class="badge ${statusBadgeClass} text-white">${record.status}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="btn btn-sm ${statusBadgeClass} text-white border-0" style="min-width: 70px; pointer-events: none;">${record.status}</span>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editOvertimeRecord(${record.id})" title="Edit" style="min-width: 35px; height: 31px;">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteOvertimeRecord(${record.id})" title="Delete" style="min-width: 35px; height: 31px;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                             </div>
                             <div class="row">
@@ -217,19 +270,6 @@
                                     <p class="mb-0 small">${record.remark}</p>
                                 </div>
                             ` : ''}
-                        </div>
-                        <div class="dropdown ms-2">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-three-dots-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="editOvertimeRecord(${record.id})">
-                                    <i class="bi bi-pencil me-2"></i>Edit
-                                </a></li>
-                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteOvertimeRecord(${record.id})">
-                                    <i class="bi bi-trash me-2"></i>Delete
-                                </a></li>
-                            </ul>
                         </div>
                     </div>
                 </div>
@@ -338,10 +378,65 @@
         alert(`Edit overtime functionality will be implemented for record ID: ${recordId}`);
     };
 
-    // Delete overtime record (placeholder)
-    window.deleteOvertimeRecord = function(recordId) {
-        if (confirm('Are you sure you want to delete this overtime record?')) {
-            alert(`Delete overtime functionality will be implemented for record ID: ${recordId}`);
+    // Delete overtime record with API integration
+    window.deleteOvertimeRecord = async function(recordId) {
+        // Show confirmation dialog
+        if (!confirm('Are you sure you want to delete this overtime record?\n\nThis action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            // Show loading state (you might want to add a loading indicator here)
+            const deleteButton = document.querySelector(`button[onclick="deleteOvertimeRecord(${recordId})"]`);
+            if (deleteButton) {
+                const originalContent = deleteButton.innerHTML;
+                deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                deleteButton.disabled = true;
+
+                try {
+                    // Call the API delete function
+                    const result = await window.deleteOvertimeRecordAPI(recordId);
+
+                    // Show success message
+                    alert('Overtime record deleted successfully!');
+
+                    // Refresh the overtime list to remove the deleted record
+                    if (window.loadUserOvertimeData && window.currentOvertimeUserId && window.currentOvertimeUserType) {
+                        window.loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
+                    }
+                } finally {
+                    // Restore button state
+                    deleteButton.innerHTML = originalContent;
+                    deleteButton.disabled = false;
+                }
+            } else {
+                // If button not found, still call the API
+                const result = await window.deleteOvertimeRecordAPI(recordId);
+                alert('Overtime record deleted successfully!');
+
+                // Refresh the overtime list
+                if (window.loadUserOvertimeData && window.currentOvertimeUserId && window.currentOvertimeUserType) {
+                    window.loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting overtime record:', error);
+            
+            // Provide specific error messages
+            let errorMessage = 'Failed to delete overtime record.';
+            if (error.message.includes('token')) {
+                errorMessage = 'Authentication failed. Please login again.';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            } else if (error.message.includes('404')) {
+                errorMessage = 'Overtime record not found or already deleted.';
+            } else if (error.message.includes('403')) {
+                errorMessage = 'You do not have permission to delete this overtime record.';
+            } else if (error.message) {
+                errorMessage = `Error: ${error.message}`;
+            }
+            
+            alert(errorMessage);
         }
     };
 
@@ -350,6 +445,7 @@
     window.filterOvertimeByMonth = filterOvertimeByMonth;
     window.showAllOvertimeRecords = showAllOvertimeRecords;
     window.createOvertimeRecord = createOvertimeRecord;
+    window.deleteOvertimeRecordAPI = deleteOvertimeRecord; // Export the API function with different name
 
     // Initialize event listeners when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
