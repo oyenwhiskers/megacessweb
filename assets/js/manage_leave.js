@@ -122,17 +122,29 @@
             const result = await response.json();
             console.log('Leave API Response for', userType, 'ID', userId, ':', result);
             
-            if (result.success && result.data && result.data.data) {
+            if (result.success && result.data) {
+                // Handle both paginated and non-paginated responses
+                let records = [];
+                if (result.data.data && Array.isArray(result.data.data)) {
+                    records = result.data.data;
+                } else if (Array.isArray(result.data)) {
+                    records = result.data;
+                }
+                
+                console.log('All attendance records for', userType, 'ID', userId, ':', records);
+                
                 // Filter records for leave types only (since we already filtered by user ID in API)
-                const userLeaveRecords = result.data.data.filter(record => {
-                    return record.status && 
+                const userLeaveRecords = records.filter(record => {
+                    const hasLeaveStatus = record.status && 
                            ['annual_leave', 'sick_leave', 'unpaid_leave'].includes(record.status);
+                    console.log('Record', record.id, 'status:', record.status, 'is leave:', hasLeaveStatus);
+                    return hasLeaveStatus;
                 });
                 
                 console.log('Filtered leave records for', userType, 'ID', userId, ':', userLeaveRecords);
                 renderLeaveRecords(userLeaveRecords);
             } else {
-                console.log('No leave data found for', userType, 'ID:', userId);
+                console.log('No leave data found for', userType, 'ID:', userId, 'API response:', result);
                 renderLeaveRecords([]);
             }
             
@@ -203,6 +215,55 @@
         const userType = window.currentLeaveUserType;
         console.log('User type:', userType);
         
+        // Input validation
+        if (!userId) {
+            return {
+                success: false,
+                message: 'User ID is required.'
+            };
+        }
+        
+        if (!fromDate || !toDate) {
+            return {
+                success: false,
+                message: 'From date and to date are required.'
+            };
+        }
+        
+        if (!leaveType || !['annual_leave', 'sick_leave', 'unpaid_leave'].includes(leaveType)) {
+            return {
+                success: false,
+                message: 'Valid leave type is required.'
+            };
+        }
+        
+        if (!userType || !['worker', 'staff'].includes(userType)) {
+            return {
+                success: false,
+                message: 'Invalid user type. Please refresh and try again.'
+            };
+        }
+        
+        // Date validation
+        const fromDateObj = new Date(fromDate);
+        const toDateObj = new Date(toDate);
+        
+        if (fromDateObj > toDateObj) {
+            return {
+                success: false,
+                message: 'From date cannot be later than to date.'
+            };
+        }
+        
+        // Check for authentication token
+        const authToken = getAuthToken();
+        if (!authToken) {
+            return {
+                success: false,
+                message: 'Authentication required. Please login again.'
+            };
+        }
+        
         try {
             // Choose API endpoint and parameters based on user type
             let apiEndpoint, requestData;
@@ -225,8 +286,6 @@
                     status: leaveType,
                     notes: notes || ''
                 };
-            } else {
-                throw new Error('Invalid user type: ' + userType);
             }
             
             const headers = {
@@ -265,9 +324,27 @@
             
         } catch (error) {
             console.error('Error marking staff on leave:', error);
+            
+            // Provide specific error messages based on error type
+            let errorMessage = 'Failed to submit leave request.';
+            
+            if (error.message && error.message.includes('401')) {
+                errorMessage = 'Authentication failed. Please login again.';
+            } else if (error.message && error.message.includes('403')) {
+                errorMessage = 'You do not have permission to submit leave requests.';
+            } else if (error.message && error.message.includes('404')) {
+                errorMessage = 'Leave service not found. Please contact support.';
+            } else if (error.message && error.message.includes('422')) {
+                errorMessage = 'Invalid leave request data. Please check your inputs.';
+            } else if (error.message && error.message.includes('network')) {
+                errorMessage = 'Network error. Please check your connection.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
             return {
                 success: false,
-                message: error.message || 'Failed to mark staff on leave'
+                message: errorMessage
             };
         }
     }
@@ -346,7 +423,7 @@
     
     // Expose functions globally
     window.loadUserLeaveData = loadUserLeaveData;
-    window.markStaffOnLeave = markStaffOnLeave;
+    window.submitLeaveApplication = markStaffOnLeave;  // Use different name to avoid conflict
     window.filterLeaveRecords = filterLeaveRecords;
     
     // Initialize when DOM is ready

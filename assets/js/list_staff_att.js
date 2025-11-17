@@ -226,8 +226,7 @@
                                                 <i class="bi bi-clock"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-info" 
-                                                    onclick="markStaffOnLeave(${record.user_id})" 
-                                                    title="On-Leave">
+                                                    title="On-Leave" disabled>
                                                 <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
@@ -481,39 +480,6 @@
         console.log('Found staff data:', staff);
         return staff || null;
     }
-    
-    window.markStaffOnLeave = function(userId) {
-        console.log('markStaffOnLeave function called for user ID:', userId);
-        
-        // Check if showLeaveModal function exists
-        if (typeof window.showLeaveModal !== 'function') {
-            console.error('showLeaveModal function not found');
-            alert('Leave management modal not available. Please refresh the page.');
-            return;
-        }
-        
-        // Get the staff data from current records
-        const staffData = getCurrentStaffData(userId);
-        if (!staffData) {
-            console.error('Staff data not found for ID:', userId);
-            alert('Staff information not found. Please refresh the attendance list.');
-            return;
-        }
-        
-        console.log('Staff data found:', staffData);
-        
-        // Extract staff information using correct property names
-        const staffId = staffData.user_id;
-        const staffName = staffData.user_name || 'Unknown Staff';
-        const staffRole = staffData.position || 'Staff';
-        const staffImage = staffData.user_img || '';
-        const staffType = 'staff';
-        
-        console.log('Calling showLeaveModal with:', { staffId, staffName, staffRole, staffImage, staffType });
-        
-        // Call the leave modal function
-        window.showLeaveModal(staffId, staffName, staffRole, staffImage, staffType);
-    };
     
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchStaffAttendanceList = fetchStaffAttendanceList;

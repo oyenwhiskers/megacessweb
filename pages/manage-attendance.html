@@ -848,8 +848,16 @@
         const userId = window.currentLeaveUserId;
         const userType = window.currentLeaveUserType;
         
+        console.log('Form submission - userId:', userId, 'userType:', userType);
+        
         if (!userId || !userType) {
           alert('User context not found. Please close and reopen the leave modal.');
+          return;
+        }
+        
+        // Additional validation for user types
+        if (!['worker', 'staff'].includes(userType)) {
+          alert('Invalid user type. Please refresh and try again.');
           return;
         }
         
@@ -864,16 +872,45 @@
         const submitButton = document.querySelector('#addLeaveForm button[type="submit"]');
         
         try {
+          // Validate that the submitLeaveApplication function exists
+          if (typeof window.submitLeaveApplication !== 'function') {
+            throw new Error('Leave management function not available. Please refresh the page.');
+          }
+
+          // Validate user context
+          if (!window.currentLeaveUserId || !window.currentLeaveUserType) {
+            throw new Error('User context not found. Please close and reopen the leave modal.');
+          }
+
           // Show loading state
           const originalContent = submitButton.innerHTML;
           submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
           submitButton.disabled = true;
 
+          console.log('Calling submitLeaveApplication with:', { staffId, fromDate, toDate, leaveType, notes });
+
           // Use the API function from manage_leave.js
-          const result = await window.markStaffOnLeave(staffId, fromDate, toDate, leaveType, notes);
+          const result = await window.submitLeaveApplication(staffId, fromDate, toDate, leaveType, notes);
+
+          console.log('Leave submission result:', result);
+
+          // Validate result structure - check if it's an object and has required properties
+          if (!result || typeof result !== 'object' || typeof result.success === 'undefined') {
+            throw new Error('Invalid response from leave management system.');
+          }
 
           if (result.success) {
-            alert(`Leave request submitted successfully!\n\nDetails:\n- Type: ${leaveType.replace('_', ' ').toUpperCase()}\n- From: ${fromDate}\n- To: ${toDate}\n- Status: ${result.message}`);
+            // Show success message
+            const leaveTypeDisplayName = leaveType.replace('_', ' ').toUpperCase();
+            alert(`✅ Leave Request Submitted Successfully!\n\n📋 Details:\n• Type: ${leaveTypeDisplayName}\n• From: ${fromDate}\n• To: ${toDate}\n• Status: ${result.message || 'Approved'}\n\nYour leave request has been processed.`);
+            
+            // Reset the form to initial state
+            document.getElementById('addLeaveForm').reset();
+            
+            // Set today's date as default again
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('leaveFromDate').value = today;
+            document.getElementById('leaveToDate').value = today;
             
             // Close the add leave modal
             const addLeaveModal = bootstrap.Modal.getInstance(document.getElementById('addLeaveModal'));
@@ -881,12 +918,23 @@
               addLeaveModal.hide();
             }
             
-            // Refresh the leave list
+            // Refresh the leave list immediately and also with a delay to ensure API processing
             if (window.loadUserLeaveData && window.currentLeaveUserId && window.currentLeaveUserType) {
+              console.log('Refreshing leave list for user:', window.currentLeaveUserId);
+              
+              // Immediate refresh
               window.loadUserLeaveData(window.currentLeaveUserId, window.currentLeaveUserType);
+              
+              // Also refresh after a short delay to ensure the new record is available
+              setTimeout(() => {
+                console.log('Delayed refresh of leave list');
+                window.loadUserLeaveData(window.currentLeaveUserId, window.currentLeaveUserType);
+              }, 1000);
+            } else {
+              console.error('Unable to refresh leave list - missing context or function');
             }
           } else {
-            alert(`Failed to submit leave request:\n${result.message}`);
+            alert(`❌ Failed to Submit Leave Request\n\n${result.message || 'Unknown error occurred'}\n\nPlease try again or contact support if the problem persists.`);
           }
           
         } catch (error) {

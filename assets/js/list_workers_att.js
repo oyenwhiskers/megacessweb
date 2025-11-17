@@ -219,8 +219,7 @@
                                                 <i class="bi bi-clock"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-info" 
-                                                    onclick="markOnLeave(${record.staff_id})" 
-                                                    title="On-Leave">
+                                                    title="On-Leave" disabled>
                                                 <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
@@ -519,39 +518,6 @@
         console.log('Found worker data:', worker);
         return worker || null;
     }
-    
-    window.markOnLeave = function(staffId) {
-        console.log('markOnLeave function called for staff ID:', staffId);
-        
-        // Check if showLeaveModal function exists
-        if (typeof window.showLeaveModal !== 'function') {
-            console.error('showLeaveModal function not found');
-            alert('Leave management modal not available. Please refresh the page.');
-            return;
-        }
-        
-        // Get the worker data from current records
-        const workerData = getCurrentWorkerData(staffId);
-        if (!workerData) {
-            console.error('Worker data not found for ID:', staffId);
-            alert('Worker information not found. Please refresh the attendance list.');
-            return;
-        }
-        
-        console.log('Worker data found:', workerData);
-        
-        // Extract worker information using correct property names
-        const workerId = workerData.staff_id;
-        const workerName = workerData.staff_name || 'Unknown Worker';
-        const workerRole = workerData.position || 'Worker';
-        const workerImage = workerData.staff_img || '';
-        const workerType = 'worker';
-        
-        console.log('Calling showLeaveModal with:', { workerId, workerName, workerRole, workerImage, workerType });
-        
-        // Call the leave modal function
-        window.showLeaveModal(workerId, workerName, workerRole, workerImage, workerType);
-    };
     
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchWorkerAttendanceList = fetchWorkerAttendanceList;
