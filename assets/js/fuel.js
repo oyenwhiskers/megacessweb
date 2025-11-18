@@ -93,12 +93,7 @@ function populateFuelsTable(fuels) {
 
     row.innerHTML = `
       <div class="col">${fuel.supplier_name || 'Unnamed Fuel'}</div>
-      <div class="col">
-        ${fuel.user ? `<div class="person-block">
-          <strong>${fuel.user.user_fullname}</strong><br>
-          <small>(ID: ${fuel.user.id})</small>
-        </div>` : ''}
-      </div>  
+      <div class="col">${fuel.user.user_fullname || '-'}</div> 
       <div class="col">
         <span class="badge ${fuelClass} px-3 py-2 fs-6">${fuel.fuel_bought || 'Unknown'}</span>
       </div>
