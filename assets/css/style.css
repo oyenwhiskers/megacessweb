@@ -95,3 +95,75 @@ body{
   .sidebar.open{transform:translateX(0)}
   .content{min-height:100vh;margin-left:0;}
 }
+
+/* Payroll Page Styles */
+.worker-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #e1efe7 !important;
+}
+
+.worker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 107, 79, 0.1);
+  border-color: #cfe4d6 !important;
+}
+
+.worker-avatar .bg-dark {
+  background: var(--brand-dark) !important;
+}
+
+.search-container input {
+  border-radius: 12px;
+  border: 1px solid #e1efe7;
+  padding: 12px 20px;
+  font-size: 16px;
+  background: #fff;
+}
+
+.search-container input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(15, 107, 79, 0.1);
+  outline: none;
+}
+
+.btn.rounded-pill {
+  border-radius: 25px !important;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-success.rounded-pill {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.btn-success.rounded-pill:hover {
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
+  transform: translateY(-1px);
+}
+
+.btn-outline-secondary.rounded-pill {
+  color: #6c757d;
+  border-color: #dee2e6;
+}
+
+.btn-outline-secondary.rounded-pill:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+.payroll-action .btn {
+  background: linear-gradient(45deg, #00bcd4, #26c6da);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.payroll-action .btn:hover {
+  background: linear-gradient(45deg, #0097a7, #00acc1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 188, 212, 0.3);
+}

@@ -18,9 +18,75 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Payroll content will go here.</p>
+        <!-- Tab Navigation -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="d-flex gap-2">
+              <button class="btn btn-success px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="workerTab">
+                <i class="bi bi-person-workspace"></i>
+                Worker
+              </button>
+              <button class="btn btn-outline-secondary px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="staffTab">
+                <i class="bi bi-person-badge"></i>
+                Staff
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="search-container">
+              <input type="text" class="form-control form-control-lg" placeholder="search name..." id="searchInput">
+            </div>
+          </div>
+        </div>
+
+        <!-- Worker List Header -->
+        <div class="row mb-3">
+          <div class="col-12">
+            <h3 class="h5 mb-0">List of existing worker:</h3>
+          </div>
+        </div>
+
+        <!-- Worker List -->
+        <div class="row" id="workerList">
+          <div class="col-12" id="workerContainer">
+            <!-- Loading state -->
+            <div class="text-center py-5" id="loadingWorkers">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-2 text-muted">Loading workers...</p>
+            </div>
+            <!-- Workers will be populated here -->
+          </div>
+          
+          <!-- Pagination Controls -->
+          <div class="col-12" id="paginationContainer" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mt-4">
+              <div class="pagination-info">
+                <span class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 workers</span>
+              </div>
+              <nav aria-label="Worker pagination">
+                <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                  <!-- Pagination buttons will be generated here -->
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staff List (Initially Hidden) -->
+        <div class="row d-none" id="staffList">
+          <div class="col-12">
+            <div class="text-center py-5">
+              <i class="bi bi-person-badge display-1 text-muted"></i>
+              <h4 class="text-muted mt-3">No staff members found</h4>
+              <p class="text-muted">Staff payroll information will appear here.</p>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -29,5 +95,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
+  <script src="/megacessweb/assets/js/manage_payroll.js"></script>
 </body>
 </html>
