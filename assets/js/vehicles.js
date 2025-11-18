@@ -152,8 +152,9 @@ function populateVehicleTable(vehicles) {
     tableBody.appendChild(row);
   });
 
-  // ✅ Update stat cards
-  updateVehicleStats(vehicles);
+  // NOTE: Do not update stat cards here (per-page counts).
+  // Stats are refreshed from the server via `refreshVehicleSummary()`
+  // to ensure analytics reflect global totals only.
 
   // ✅ Reattach event listeners
   attachEditListeners();
@@ -202,10 +203,122 @@ function updateVehicleStats(vehicles) {
   const inUse = vehicles.filter(v => v.status.toLowerCase() === 'in use').length;
   const maintenance = vehicles.filter(v => v.status.toLowerCase() === 'under maintenance').length;
 
-  animateCount(document.getElementById('totalVehicles'), total, 1800);
-  animateCount(document.getElementById('availableVehicles'), available, 1800);
-  animateCount(document.getElementById('inUseVehicles'), inUse, 1800);
-  animateCount(document.getElementById('maintenanceVehicles'), maintenance, 1800);
+  // update the value spans (these are per-page counts; server summary will overwrite)
+  animateCount(document.getElementById('totalVehiclesValue'), total, 1800);
+  animateCount(document.getElementById('availableVehiclesValue'), available, 1800);
+  animateCount(document.getElementById('inUseVehiclesValue'), inUse, 1800);
+  animateCount(document.getElementById('maintenanceVehiclesValue'), maintenance, 1800);
+}
+
+// Helpers to show/hide spinner indicators for analytics cards
+function setStatsLoading(isLoading) {
+  const mapping = [
+    ['totalVehiclesSpinner', 'totalVehiclesValue'],
+    ['availableVehiclesSpinner', 'availableVehiclesValue'],
+    ['inUseVehiclesSpinner', 'inUseVehiclesValue'],
+    ['maintenanceVehiclesSpinner', 'maintenanceVehiclesValue']
+  ];
+
+  mapping.forEach(([spinnerId, valueId]) => {
+    const spinner = document.getElementById(spinnerId);
+    const valueEl = document.getElementById(valueId);
+    if (!spinner || !valueEl) return;
+
+    if (isLoading) {
+      spinner.classList.remove('d-none');
+      valueEl.classList.add('opacity-50');
+    } else {
+      spinner.classList.add('d-none');
+      valueEl.classList.remove('opacity-50');
+    }
+  });
+}
+
+// -------------------- Real Analytics (Summary) --------------------
+// Try the server-provided summary endpoint first. If it's not available,
+// fall back to issuing lightweight requests per status and reading the
+// returned `meta.total` values to compute global counts.
+async function fetchVehicleSummaryFromServer() {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    const resp = await fetch('https://mwms.megacess.com/api/v1/vehicles/summary', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+    if (!resp.ok) return null;
+    const result = await resp.json();
+    if (result && result.success && result.data) return result.data;
+  } catch (err) {
+    // ignore and fall through to fallback
+    console.warn('Summary endpoint not available or failed', err);
+  }
+  return null;
+}
+
+async function fetchVehicleCountsByStatusFallback() {
+  const token = getToken();
+  if (!token) return null;
+
+  const statuses = ['Available', 'In Use', 'Under Maintenance'];
+  const baseUrl = 'https://mwms.megacess.com/api/v1/vehicles';
+
+  try {
+    // Build 4 parallel requests: total (no status) + each status with per_page=1
+    const requests = [
+      fetch(`${baseUrl}?per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }),
+      ...statuses.map(s => fetch(`${baseUrl}?status=${encodeURIComponent(s)}&per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }))
+    ];
+
+    const responses = await Promise.all(requests);
+    const jsons = await Promise.all(responses.map(r => r.ok ? r.json().catch(() => null) : null));
+
+    // Extract meta.total for each
+    const total = (jsons[0] && jsons[0].meta && Number(jsons[0].meta.total)) || 0;
+    const available = (jsons[1] && jsons[1].meta && Number(jsons[1].meta.total)) || 0;
+    const inUse = (jsons[2] && jsons[2].meta && Number(jsons[2].meta.total)) || 0;
+    const maintenance = (jsons[3] && jsons[3].meta && Number(jsons[3].meta.total)) || 0;
+
+    return { total, available, in_use: inUse, under_maintenance: maintenance };
+  } catch (err) {
+    console.warn('Fallback status-count requests failed', err);
+    return null;
+  }
+}
+
+async function refreshVehicleSummary() {
+  // Show spinner on analytics while fetching
+  setStatsLoading(true);
+
+  // Try server summary endpoint
+  const serverData = await fetchVehicleSummaryFromServer();
+  if (serverData) {
+    animateCount(document.getElementById('totalVehiclesValue'), Number(serverData.total) || 0, 1200);
+    animateCount(document.getElementById('availableVehiclesValue'), Number(serverData.available) || 0, 1200);
+    animateCount(document.getElementById('inUseVehiclesValue'), Number(serverData.in_use || serverData.inUse || 0), 1200);
+    animateCount(document.getElementById('maintenanceVehiclesValue'), Number(serverData.under_maintenance || serverData.underMaintenance || 0), 1200);
+    setStatsLoading(false);
+    return;
+  }
+
+  // Fallback: fetch counts per status using meta.total
+  const fallback = await fetchVehicleCountsByStatusFallback();
+  if (fallback) {
+    animateCount(document.getElementById('totalVehiclesValue'), Number(fallback.total) || 0, 1200);
+    animateCount(document.getElementById('availableVehiclesValue'), Number(fallback.available) || 0, 1200);
+    animateCount(document.getElementById('inUseVehiclesValue'), Number(fallback.in_use) || 0, 1200);
+    animateCount(document.getElementById('maintenanceVehiclesValue'), Number(fallback.under_maintenance) || 0, 1200);
+    setStatsLoading(false);
+    return;
+  }
+
+  // If everything fails, keep per-page numbers already rendered and log.
+  console.warn('Unable to fetch global vehicle summary; kept per-page analytics.');
+  setStatsLoading(false);
 }
 
 // ==================== Pagination Controls ====================
@@ -333,6 +446,8 @@ document.getElementById('addVehicleBtn').addEventListener('click', async () => {
       document.getElementById('plateNo').value = '';
       statusSelect.value = 'Choose status';
       getAllVehicles();
+      // Refresh global analytics after adding a vehicle
+      if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
       showSuccess('Vehicle added successfully!');
     } else {
       showError(result.message);
@@ -356,6 +471,12 @@ function attachDeleteListeners() {
 }
 
 async function handleDelete(e) {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
+  
   const vehicleId = e.currentTarget.dataset.id;
   showConfirm('You want to delete this vehicle?', async () => {
     showLoading();
@@ -372,6 +493,8 @@ async function handleDelete(e) {
       if (response.ok && result.success) {
         showSuccess(result.message);
         getAllVehicles();
+        // Refresh global analytics after deleting a vehicle
+        if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
       } else {
         showError(result.message);
       }
@@ -405,6 +528,12 @@ function handleEdit(e) {
 }
 
 document.getElementById('updateVehicleBtn').addEventListener('click', async () => {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
+
   if (!currentVehicleId) return;
 
   const name = document.getElementById('updateVehicleName').value.trim();
@@ -425,7 +554,7 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
     const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${currentVehicleId}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer 69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -440,6 +569,8 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
     if (response.ok && result.success) {
       bootstrap.Modal.getInstance(document.getElementById('updateVehicleModal')).hide();
       getAllVehicles();
+      // Refresh global analytics after updating a vehicle
+      if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
       showSuccess(result.message);
     } else {
       showError(result.message);
@@ -456,6 +587,8 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
 // ==================== DOMContentLoaded ====================
 window.addEventListener('DOMContentLoaded', () => {
   getAllVehicles();
+  // Fetch global analytics once on load
+  if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
 });
 
 // ==================== Search Functions ====================
