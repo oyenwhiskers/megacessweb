@@ -68,7 +68,7 @@ function getToken() {
 }
 
 // ==================== GET /vehicles ====================
-async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) {
+async function getAllVehicles({ search = '', status = '', per_page = 15, page = 1 } = {}) {
   const token = getToken();
   if (!token) {
     showErrorNoToken("Missing authentication token. Please login first.");  
@@ -80,6 +80,7 @@ async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) 
   if (search) apiUrl.searchParams.append('search', search);
   if (status) apiUrl.searchParams.append('status', status);
   if (per_page) apiUrl.searchParams.append('per_page', per_page);
+  if (page) apiUrl.searchParams.append('page', page);
 
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('vehicleTableBody');
@@ -99,7 +100,11 @@ async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) 
     loading.style.display = 'none';
 
     if (response.ok && result.success) {
-      if (result.data.length > 0) populateVehicleTable(result.data);
+      if (result.data.length > 0) {
+        populateVehicleTable(result.data);
+        // Update pagination info
+        updatePaginationControls(result.meta);
+      }
       else tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
     } else {
       tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message}</div>`;
@@ -201,6 +206,90 @@ function updateVehicleStats(vehicles) {
   animateCount(document.getElementById('availableVehicles'), available, 1800);
   animateCount(document.getElementById('inUseVehicles'), inUse, 1800);
   animateCount(document.getElementById('maintenanceVehicles'), maintenance, 1800);
+}
+
+// ==================== Pagination Controls ====================
+// Store pagination state
+let paginationState = {
+  currentPage: 1,
+  lastPage: 1,
+  perPage: 15,
+  total: 0,
+  search: '',
+  status: ''
+};
+
+// Update pagination controls and render Tailwind-like pagination
+function updatePaginationControls(meta) {
+  // Update pagination state
+  paginationState.currentPage = meta.current_page;
+  paginationState.lastPage = meta.last_page;
+  paginationState.perPage = meta.per_page;
+  paginationState.total = meta.total;
+
+  // Update top UI elements
+  const currentEl = document.getElementById('currentPage');
+  const totalPagesEl = document.getElementById('totalPages');
+  const totalRecordsEl = document.getElementById('totalRecords');
+  if (currentEl) currentEl.textContent = meta.current_page;
+  if (totalPagesEl) totalPagesEl.textContent = meta.last_page;
+  if (totalRecordsEl) totalRecordsEl.textContent = meta.total;
+
+  // Render pagination list
+  renderPagination(meta.current_page, meta.last_page);
+}
+
+// Render pagination HTML into #vehiclePagination with Previous / numbered pages / Next
+function renderPagination(current, last) {
+  const container = document.getElementById('vehiclePagination');
+  if (!container) return;
+
+  const maxButtons = 7; // total number of numeric page buttons to show
+  let start = Math.max(1, current - Math.floor(maxButtons / 2));
+  let end = Math.min(last, start + maxButtons - 1);
+  if (end - start + 1 < maxButtons) {
+    start = Math.max(1, end - maxButtons + 1);
+  }
+
+  // Build Bootstrap pagination markup
+  let html = '';
+
+  const prevDisabled = current <= 1;
+  html += `<li class="page-item ${prevDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.max(1, current - 1)}">Previous</a></li>`;
+
+  for (let i = start; i <= end; i++) {
+    if (i === current) {
+      html += `<li class="page-item active" aria-current="page"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    } else {
+      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    }
+  }
+
+  const nextDisabled = current >= last;
+  html += `<li class="page-item ${nextDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.min(last, current + 1)}">Next</a></li>`;
+
+  container.innerHTML = html;
+
+  // Attach click handlers to enabled items only
+  const enabledLinks = container.querySelectorAll('li.page-item:not(.disabled) a[data-page]');
+  enabledLinks.forEach(link => {
+    link.removeEventListener('click', handlePaginationClick);
+    link.addEventListener('click', handlePaginationClick);
+  });
+}
+
+function handlePaginationClick(e) {
+  e.preventDefault();
+  const page = parseInt(e.currentTarget.dataset.page, 10);
+  if (!page || page === paginationState.currentPage) return;
+
+  getAllVehicles({
+    search: paginationState.search,
+    status: paginationState.status,
+    per_page: paginationState.perPage,
+    page: page
+  });
+  window.scrollTo(0, 0);
 }
 
 // ==================== POST /vehicles ====================
@@ -381,9 +470,15 @@ function debounce(func, delay) {
 
 // Triggered whenever search input or filter changes
 function updateVehicleTable() {
-  const searchValue = document.getElementById('vehicleSearch').value.trim() || undefined;
-  const statusValue = document.getElementById('vehicleStatus').value || undefined; // 'All Status' can map to undefined
-  getAllVehicles({ search: searchValue, status: statusValue });
+  const searchValue = document.getElementById('vehicleSearch').value.trim() || '';
+  const statusValue = document.getElementById('vehicleStatus').value || '';
+  
+  // Update pagination state with search/filter values
+  paginationState.search = searchValue;
+  paginationState.status = statusValue;
+  
+  // Reset to page 1 when searching or filtering
+  getAllVehicles({ search: searchValue, status: statusValue, page: 1 });
 }
 
 // Debounce the search input to avoid flooding API requests
@@ -400,6 +495,11 @@ document.getElementById('refreshVehicleBtn').addEventListener('click', () => {
   // Reset status filter
   document.getElementById('vehicleStatus').value = '';
 
+  // Reset pagination state
+  paginationState.search = '';
+  paginationState.status = '';
+  paginationState.currentPage = 1;
+
   // Reload vehicle table
-  getAllVehicles();
+  getAllVehicles({ page: 1 });
 });

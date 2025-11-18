@@ -175,7 +175,7 @@
             </div>
 
             <!-- Row 3: Vehicle Table -->
-            <div class="mt-4 px-4">
+            <div class="mt-4 px-4" style="padding-bottom: 35px;">
               <div class="content-table mt-4">
                 <!-- Table Header -->
                 <div class="content-row content-header d-flex fw-bold border-bottom py-2">
@@ -191,8 +191,17 @@
                   </div>
                 </div>
                  <!-- Table Body (Empty, JS will populate it) -->
-                <div id="vehicleTableBody" style="padding-bottom: 70px;"></div>
-              </div>
+                <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
+
+                
+                  
+                  <!-- Pagination (Tailwind-like style requested) -->
+                  <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                    <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
+                      <!-- JS will render Previous, page numbers, Next here -->
+                    </ul>
+                  </nav>
+              </div>              
             </div>
           </div>
 
