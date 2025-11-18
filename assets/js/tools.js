@@ -68,7 +68,7 @@ function getToken() {
 }
 
 // ==================== GET /tools ====================
-async function getAllTools({ search = '', status = '', per_page = 15 } = {}) {
+async function getAllTools({ search = '', status = '', per_page = 15, page = 1 } = {}) {
   const token = getToken();
   if (!token) {
     showErrorNoToken("Missing authentication token. Please login first.");
@@ -80,6 +80,7 @@ async function getAllTools({ search = '', status = '', per_page = 15 } = {}) {
   if (search) apiUrl.searchParams.append('search', search);
   if (status) apiUrl.searchParams.append('status', status);
   if (per_page) apiUrl.searchParams.append('per_page', per_page);
+  if (page) apiUrl.searchParams.append('page', page);
 
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('toolsTableBody');
@@ -101,7 +102,11 @@ async function getAllTools({ search = '', status = '', per_page = 15 } = {}) {
     loading.style.display = 'none';
 
     if (response.ok && result.success) {
-      if (result.data.length > 0) populateToolsTable(result.data);
+      if (result.data.length > 0) {
+        populateToolsTable(result.data);
+        // Update pagination info
+        updateToolPaginationControls(result.meta);
+      }
       else tableBody.innerHTML = `<div class="text-center text-muted py-3">No tools found</div>`;
     } else {
       tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || 'Unknown error'}</div>`;
@@ -206,6 +211,82 @@ function updateToolStats(tools) {
   animateCount(document.getElementById('brokenTools'), broken, 1800);
 }
 
+// ==================== Pagination Controls ====================
+// Store pagination state
+let toolPaginationState = {
+  currentPage: 1,
+  lastPage: 1,
+  perPage: 15,
+  total: 0,
+  search: '',
+  status: ''
+};
+
+// Update pagination controls and render pagination
+function updateToolPaginationControls(meta) {
+  // Update pagination state
+  toolPaginationState.currentPage = meta.current_page;
+  toolPaginationState.lastPage = meta.last_page;
+  toolPaginationState.perPage = meta.per_page;
+  toolPaginationState.total = meta.total;
+
+  // Render pagination list
+  renderToolPagination(meta.current_page, meta.last_page);
+}
+
+// Render pagination HTML into #toolPagination with Previous / numbered pages / Next
+function renderToolPagination(current, last) {
+  const container = document.getElementById('toolPagination');
+  if (!container) return;
+
+  const maxButtons = 7; // total number of numeric page buttons to show
+  let start = Math.max(1, current - Math.floor(maxButtons / 2));
+  let end = Math.min(last, start + maxButtons - 1);
+  if (end - start + 1 < maxButtons) {
+    start = Math.max(1, end - maxButtons + 1);
+  }
+
+  // Build Bootstrap pagination markup
+  let html = '';
+
+  const prevDisabled = current <= 1;
+  html += `<li class="page-item ${prevDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.max(1, current - 1)}">Previous</a></li>`;
+
+  for (let i = start; i <= end; i++) {
+    if (i === current) {
+      html += `<li class="page-item active" aria-current="page"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    } else {
+      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    }
+  }
+
+  const nextDisabled = current >= last;
+  html += `<li class="page-item ${nextDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.min(last, current + 1)}">Next</a></li>`;
+
+  container.innerHTML = html;
+
+  // Attach click handlers to enabled items only
+  const enabledLinks = container.querySelectorAll('li.page-item:not(.disabled) a[data-page]');
+  enabledLinks.forEach(link => {
+    link.removeEventListener('click', handleToolPaginationClick);
+    link.addEventListener('click', handleToolPaginationClick);
+  });
+}
+
+function handleToolPaginationClick(e) {
+  e.preventDefault();
+  const page = parseInt(e.currentTarget.dataset.page, 10);
+  if (!page || page === toolPaginationState.currentPage) return;
+
+  getAllTools({
+    search: toolPaginationState.search,
+    status: toolPaginationState.status,
+    per_page: toolPaginationState.perPage,
+    page: page
+  });
+  window.scrollTo(0, 0);
+}
+
 // ==================== POST /tools ====================
 document.getElementById('addToolBtn').addEventListener('click', async () => {
   const token = getToken();
@@ -214,7 +295,7 @@ document.getElementById('addToolBtn').addEventListener('click', async () => {
     return;
   }
   const toolName = document.getElementById('toolName').value.trim();
-  const statusSelect = document.getElementById('toolStatus');
+  const statusSelect = document.getElementById('toolStatusModal');
   const status = statusSelect.value;
 
   if (!toolName || !status || status === 'Choose status') {
@@ -242,8 +323,12 @@ document.getElementById('addToolBtn').addEventListener('click', async () => {
     if (response.ok && result.success) {
       bootstrap.Modal.getInstance(document.getElementById('addToolsModal')).hide();
       document.getElementById('toolName').value = '';
-      statusSelect.value = 'Choose status';
-      getAllTools();
+      statusSelect.value = '';
+      getAllTools({
+        search: toolPaginationState.search,
+        status: toolPaginationState.status,
+        page: 1
+      });
       showSuccess('Tool added successfully!');
     } else {
       showError(result.message);
@@ -315,7 +400,11 @@ document.getElementById('updateToolBtn').addEventListener('click', async () => {
 
     if (response.ok && result.success) {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal')).hide();
-      getAllTools();
+      getAllTools({
+        search: toolPaginationState.search,
+        status: toolPaginationState.status,
+        page: toolPaginationState.currentPage
+      });
       showSuccess(result.message);
     } else {
       showError(result.message);
@@ -360,7 +449,11 @@ async function handleDelete(e) {
       const result = await response.json();
       if (response.ok && result.success) {
         showSuccess(result.message);
-        getAllTools();
+        getAllTools({
+          search: toolPaginationState.search,
+          status: toolPaginationState.status,
+          page: toolPaginationState.currentPage
+        });
       } else {
         showError(result.message);
       }
@@ -392,7 +485,13 @@ function debounce(func, delay) {
 function updateToolTable() {
   const searchValue = document.getElementById('toolSearch').value.trim() || undefined;
   const statusValue = document.getElementById('toolStatus').value || undefined; // 'All Status' can map to undefined
-  getAllTools({ search: searchValue, status: statusValue });
+  
+  // Update pagination state when search/filter changes
+  toolPaginationState.search = searchValue || '';
+  toolPaginationState.status = statusValue || '';
+  toolPaginationState.currentPage = 1; // Reset to first page
+  
+  getAllTools({ search: searchValue, status: statusValue, page: 1 });
 }
 
 // Debounce the search input to avoid flooding API requests
@@ -408,6 +507,11 @@ document.getElementById('refreshToolBtn').addEventListener('click', () => {
 
   // Reset status filter
   document.getElementById('toolStatus').value = '';
+
+  // Reset pagination state
+  toolPaginationState.search = '';
+  toolPaginationState.status = '';
+  toolPaginationState.currentPage = 1;
 
   // Reload tools table
   getAllTools();

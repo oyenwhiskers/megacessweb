@@ -194,6 +194,12 @@
               <!-- Table Body -->
               <div id="toolsTableBody" style="padding-bottom: 70px;"></div>
 
+              <!-- Pagination (Tailwind-like style requested) -->
+              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                <ul id="toolPagination" class="pagination justify-content-center mb-0">
+                  <!-- JS will render Previous, page numbers, Next here -->
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
@@ -335,8 +341,8 @@
 
             <!-- Status -->
             <div class="mb-3">
-              <label for="toolStatus" class="form-label fw-semibold">Status</label>
-              <select id="toolStatus" class="form-select" required>
+              <label for="toolStatusModal" class="form-label fw-semibold">Status</label>
+              <select id="toolStatusModal" class="form-select" required>
                 <option value="" selected>Choose status</option>
                 <option value="Available">Available</option>
                 <option value="In Use">In Use</option>
