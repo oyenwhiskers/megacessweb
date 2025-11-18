@@ -6,11 +6,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const staffList = document.getElementById('staffList');
     const searchInput = document.getElementById('searchInput');
     const workerContainer = document.getElementById('workerContainer');
-    const loadingWorkers = document.getElementById('loadingWorkers');
 
     // Store fetched data
     let workersData = [];
     let allWorkersData = []; // Store all workers for client-side pagination
+    let staffData = [];
+    let allStaffData = []; // Store all staff for client-side pagination
     
     // Pagination variables
     let currentPage = 1;
@@ -134,8 +135,122 @@ document.addEventListener('DOMContentLoaded', function() {
         if (page < 1 || page > totalPages || page === currentPage) return;
         
         const searchTerm = searchInput.value.trim();
-        handleClientSidePagination(searchTerm, page);
+        
+        // Check which tab is active
+        if (workerTab.classList.contains('btn-success')) {
+            handleClientSidePagination(searchTerm, page, allWorkersData);
+        } else {
+            handleStaffClientSidePagination(searchTerm, page, allStaffData);
+        }
     };
+
+    // Fetch staff data
+    async function fetchStaff(searchTerm = '', page = 1, role = 'all') {
+        try {
+            // Check if token exists
+            if (!AUTH_TOKEN) {
+                showError('Authentication required. Please log in first.');
+                return;
+            }
+
+            // If we have all data and this is just pagination/search, use client-side
+            if (allStaffData.length > 0 && !searchTerm && role === 'all') {
+                handleStaffClientSidePagination('', page);
+                return;
+            }
+
+            showLoading(true);
+            const url = new URL(`${API_BASE_URL}/users`);
+            
+            // Add parameters
+            if (searchTerm) {
+                url.searchParams.append('search', searchTerm);
+            }
+            if (role && role !== 'all') {
+                url.searchParams.append('role', role);
+            }
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                showError('Session expired. Please log in again.');
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            // Handle API response
+            let allData = [];
+            if (result.data && Array.isArray(result.data)) {
+                allData = result.data;
+                
+                // Store all data for client-side pagination
+                if (!searchTerm && role === 'all') {
+                    allStaffData = allData;
+                }
+                
+                // Always use client-side pagination for consistent behavior
+                handleStaffClientSidePagination(searchTerm, page, allData);
+            } else {
+                staffData = [];
+                totalItems = 0;
+                currentPage = 1;
+                totalPages = 1;
+                renderStaff(staffData);
+                updatePagination();
+            }
+            
+            showLoading(false);
+        } catch (error) {
+            console.error('Error fetching staff:', error);
+            
+            if (error.message.includes('fetch')) {
+                showError('Network error. Please check your connection and try again.');
+            } else {
+                showError('Failed to load staff data. Please try again.');
+            }
+            
+            showLoading(false);
+        }
+    }
+
+    // Handle staff client-side pagination
+    function handleStaffClientSidePagination(searchTerm = '', page = 1, dataSource = null) {
+        let sourceData = dataSource || allStaffData;
+        let filteredData = sourceData;
+        
+        // Filter data for search if search term exists
+        if (searchTerm) {
+            filteredData = sourceData.filter(staff => 
+                staff.user_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (staff.user_nickname && staff.user_nickname.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+        
+        // Calculate pagination
+        totalItems = filteredData.length;
+        totalPages = Math.ceil(totalItems / itemsPerPage);
+        currentPage = Math.min(page, totalPages) || 1;
+        
+        // Get only the items for current page (exactly 10 items)
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        staffData = filteredData.slice(startIndex, endIndex);
+        
+        renderStaff(staffData);
+        updatePagination();
+    }
 
     // Update pagination controls
     function updatePagination() {
@@ -143,6 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const paginationInfo = document.getElementById('paginationInfo');
         const paginationControls = document.getElementById('paginationControls');
         
+        // Show/hide pagination based on total pages
         if (totalPages <= 1) {
             paginationContainer.style.display = 'none';
             return;
@@ -153,7 +269,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update pagination info
         const startItem = (currentPage - 1) * itemsPerPage + 1;
         const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-        paginationInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} workers`;
+        const itemType = workerTab.classList.contains('btn-success') ? 'workers' : 'staff';
+        paginationInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} ${itemType}`;
         
         // Generate pagination controls
         let paginationHTML = '';
@@ -282,18 +399,114 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
+    // Render staff list
+    function renderStaff(staff) {
+        const staffContainer = document.querySelector('#staffList .col-12');
+        
+        if (staff.length === 0) {
+            staffContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-person-badge display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No staff found</h4>
+                    <p class="text-muted">No staff match your search criteria.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const staffHTML = staff.map(member => createStaffCard(member)).join('');
+        staffContainer.innerHTML = staffHTML;
+    }
+
+    // Create staff card HTML
+    function createStaffCard(staff) {
+        // Handle image path properly
+        let staffImage = staff.user_img || '';
+        
+        // Check if the cleaned URL is still valid
+        if (staffImage.length < 5 || staffImage.includes('null') || staffImage.includes('undefined') || staffImage.includes('…')) {
+            staffImage = '';
+        } else if (!staffImage.startsWith('http') && !staffImage.startsWith('/')) {
+            // Construct full URL if it's just a filename
+            staffImage = `https://mwms.megacess.com/storage/user-images/${staffImage}`;
+        } else if (staffImage.startsWith('/')) {
+            // Add domain if it starts with /
+            staffImage = `https://mwms.megacess.com${staffImage}`;
+        }
+
+        const avatarImage = staffImage 
+            ? `<img src="${staffImage}" alt="${staff.user_fullname}" class="rounded-circle" 
+                    style="width: 50px; height: 50px; object-fit: cover;" 
+                    onerror="this.outerHTML='<div class=&quot;bg-primary rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>';">`
+            : `<div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                 <i class="bi bi-person text-white"></i>
+               </div>`;
+
+        const baseSalary = staff.base_salary ? `RM${staff.base_salary.base_salary}` : 'Not set';
+        const roleCapitalized = staff.user_role.charAt(0).toUpperCase() + staff.user_role.slice(1);
+
+        return `
+            <div class="worker-card mb-3 p-3 bg-white rounded border d-flex align-items-center justify-content-between" data-staff-id="${staff.id}">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="worker-avatar">
+                        ${avatarImage}
+                    </div>
+                    <div class="worker-info">
+                        <h5 class="mb-0 fw-semibold">${staff.user_fullname}</h5>
+                        <p class="mb-0 text-muted">
+                            ${roleCapitalized} • Joined ${staff.joined_since} • ${staff.payslips_count} payslips
+                        </p>
+                        <small class="text-muted">Base Salary: ${baseSalary}</small>
+                        ${staff.user_nickname ? `<small class="text-muted d-block">Nickname: ${staff.user_nickname}</small>` : ''}
+                    </div>
+                </div>
+                <div class="payroll-action">
+                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-staff-id="${staff.id}">
+                        <i class="bi bi-calculator"></i>
+                        Payroll
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
     // Show/hide loading state
     function showLoading(show) {
         if (show) {
-            loadingWorkers.classList.remove('d-none');
+            // Show loading based on active tab
+            if (workerTab.classList.contains('btn-success')) {
+                // Worker tab is active - show loading in worker container
+                workerContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading workers...</p>
+                    </div>
+                `;
+            } else {
+                // Staff tab is active - show loading in staff container
+                const staffContainer = document.querySelector('#staffList .col-12');
+                staffContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading staff...</p>
+                    </div>
+                `;
+            }
         } else {
-            loadingWorkers.classList.add('d-none');
+            // Loading is done - content will be populated by render functions
+            // No need to hide anything as renderWorkers/renderStaff will replace content
         }
     }
 
     // Show error message
     function showError(message) {
-        workerContainer.innerHTML = `
+        const activeContainer = workerTab.classList.contains('btn-success') ? workerContainer : document.querySelector('#staffList .col-12');
+        
+        activeContainer.innerHTML = `
             <div class="text-center py-5">
                 <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
                 <h4 class="text-muted mt-3">Error</h4>
@@ -351,6 +564,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     // No data yet, fetch from API
                     fetchWorkers(searchTerm, 1);
                 }
+            } else {
+                // Currently on staff tab - use client-side pagination if we have data
+                if (allStaffData.length > 0) {
+                    handleStaffClientSidePagination(searchTerm, 1);
+                } else {
+                    // No data yet, fetch from API
+                    fetchStaff(searchTerm, 1);
+                }
             }
         }, 300); // 300ms delay
     });
@@ -392,18 +613,37 @@ document.addEventListener('DOMContentLoaded', function() {
         
         searchInput.placeholder = 'search staff name...';
         document.querySelector('.row.mb-3 h3').textContent = 'List of existing staff:';
+        
+        // Reset pagination and load staff data
+        currentPage = 1;
+        const searchTerm = searchInput.value.trim();
+        
+        // Use client-side pagination if we have data, otherwise fetch from API
+        if (allStaffData.length > 0) {
+            handleStaffClientSidePagination(searchTerm, 1);
+        } else {
+            fetchStaff(searchTerm, 1);
+        }
     });
 
     // Payroll button functionality
     document.addEventListener('click', function(e) {
         if (e.target.closest('.payroll-action button')) {
             const button = e.target.closest('.payroll-action button');
-            const workerId = button.getAttribute('data-worker-id');
             const workerCard = e.target.closest('.worker-card');
-            const workerName = workerCard.querySelector('.worker-info h5').textContent;
+            const name = workerCard.querySelector('.worker-info h5').textContent;
             
-            // Implement payroll calculation logic here
-            alert(`Opening payroll for ${workerName} (ID: ${workerId})`);
+            // Check if it's a worker or staff
+            const workerId = button.getAttribute('data-worker-id');
+            const staffId = button.getAttribute('data-staff-id');
+            
+            if (workerId) {
+                // Handle worker payroll
+                alert(`Opening payroll for Worker: ${name} (ID: ${workerId})`);
+            } else if (staffId) {
+                // Handle staff payroll
+                alert(`Opening payroll for Staff: ${name} (ID: ${staffId})`);
+            }
         }
     });
 
