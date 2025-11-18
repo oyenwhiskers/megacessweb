@@ -155,8 +155,9 @@ function populateToolsTable(tools) {
     tableBody.appendChild(row);
   });
 
-  // ✅ Update stat cards
-  updateToolStats(tools);
+    // NOTE: Do not update stat cards here (per-page counts).
+    // Stats are refreshed from the server via `refreshToolSummary()`
+    // to ensure analytics reflect global totals only.
 
   // ✅ Safely reattach event listeners (if defined)
   if (typeof attachEditListeners === 'function') attachEditListeners();
@@ -205,10 +206,122 @@ function updateToolStats(tools) {
   const inUse = tools.filter(v => v.status.toLowerCase() === 'in use').length;
   const broken = tools.filter(v => v.status.toLowerCase() === 'broken').length;
 
-  animateCount(document.getElementById('totalTools'), total, 1800);
-  animateCount(document.getElementById('availableTools'), available, 1800);
-  animateCount(document.getElementById('inUseTools'), inUse, 1800);
-  animateCount(document.getElementById('brokenTools'), broken, 1800);
+  // update the value spans (these are per-page counts; server summary will overwrite)
+  animateCount(document.getElementById('totalToolsValue'), total, 1800);
+  animateCount(document.getElementById('availableToolsValue'), available, 1800);
+  animateCount(document.getElementById('inUseToolsValue'), inUse, 1800);
+  animateCount(document.getElementById('brokenToolsValue'), broken, 1800);
+}
+
+// Helpers to show/hide spinner indicators for analytics cards
+function setStatsLoading(isLoading) {
+  const mapping = [
+    ['totalToolsSpinner', 'totalToolsValue'],
+    ['availableToolsSpinner', 'availableToolsValue'],
+    ['inUseToolsSpinner', 'inUseToolsValue'],
+    ['brokenToolsSpinner', 'brokenToolsValue']
+  ];
+
+  mapping.forEach(([spinnerId, valueId]) => {
+    const spinner = document.getElementById(spinnerId);
+    const valueEl = document.getElementById(valueId);
+    if (!spinner || !valueEl) return;
+
+    if (isLoading) {
+      spinner.classList.remove('d-none');
+      valueEl.classList.add('opacity-50');
+    } else {
+      spinner.classList.add('d-none');
+      valueEl.classList.remove('opacity-50');
+    }
+  });
+}
+
+// -------------------- Real Analytics (Summary) --------------------
+// Try the server-provided summary endpoint first. If it's not available,
+// fall back to issuing lightweight requests per status and reading the
+// returned `meta.total` values to compute global counts.
+async function fetchToolSummaryFromServer() {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    const resp = await fetch('https://mwms.megacess.com/api/v1/tools/summary', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+    if (!resp.ok) return null;
+    const result = await resp.json();
+    if (result && result.success && result.data) return result.data;
+  } catch (err) {
+    // ignore and fall through to fallback
+    console.warn('Summary endpoint not available or failed', err);
+  }
+  return null;
+}
+
+async function fetchToolCountsByStatusFallback() {
+  const token = getToken();
+  if (!token) return null;
+
+  const statuses = ['Available', 'In Use', 'Broken'];
+  const baseUrl = 'https://mwms.megacess.com/api/v1/tools';
+
+  try {
+    // Build 4 parallel requests: total (no status) + each status with per_page=1
+    const requests = [
+      fetch(`${baseUrl}?per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }),
+      ...statuses.map(s => fetch(`${baseUrl}?status=${encodeURIComponent(s)}&per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }))
+    ];
+
+    const responses = await Promise.all(requests);
+    const jsons = await Promise.all(responses.map(r => r.ok ? r.json().catch(() => null) : null));
+
+    // Extract meta.total for each
+    const total = (jsons[0] && jsons[0].meta && Number(jsons[0].meta.total)) || 0;
+    const available = (jsons[1] && jsons[1].meta && Number(jsons[1].meta.total)) || 0;
+    const inUse = (jsons[2] && jsons[2].meta && Number(jsons[2].meta.total)) || 0;
+    const broken = (jsons[3] && jsons[3].meta && Number(jsons[3].meta.total)) || 0;
+
+    return { total, available, in_use: inUse, broken };
+  } catch (err) {
+    console.warn('Fallback status-count requests failed', err);
+    return null;
+  }
+}
+
+async function refreshToolSummary() {
+  // Show spinner on analytics while fetching
+  setStatsLoading(true);
+
+  // Try server summary endpoint
+  const serverData = await fetchToolSummaryFromServer();
+  if (serverData) {
+    animateCount(document.getElementById('totalToolsValue'), Number(serverData.total) || 0, 1200);
+    animateCount(document.getElementById('availableToolsValue'), Number(serverData.available) || 0, 1200);
+    animateCount(document.getElementById('inUseToolsValue'), Number(serverData.in_use || serverData.inUse || 0), 1200);
+    animateCount(document.getElementById('brokenToolsValue'), Number(serverData.broken) || 0, 1200);
+    setStatsLoading(false);
+    return;
+  }
+
+  // Fallback: fetch counts per status using meta.total
+  const fallback = await fetchToolCountsByStatusFallback();
+  if (fallback) {
+    animateCount(document.getElementById('totalToolsValue'), Number(fallback.total) || 0, 1200);
+    animateCount(document.getElementById('availableToolsValue'), Number(fallback.available) || 0, 1200);
+    animateCount(document.getElementById('inUseToolsValue'), Number(fallback.in_use) || 0, 1200);
+    animateCount(document.getElementById('brokenToolsValue'), Number(fallback.broken) || 0, 1200);
+    setStatsLoading(false);
+    return;
+  }
+
+  // If everything fails, keep per-page numbers already rendered and log.
+  console.warn('Unable to fetch global tool summary; kept per-page analytics.');
+  setStatsLoading(false);
 }
 
 // ==================== Pagination Controls ====================
@@ -329,6 +442,8 @@ document.getElementById('addToolBtn').addEventListener('click', async () => {
         status: toolPaginationState.status,
         page: 1
       });
+        // Refresh global analytics after adding a tool
+        if (typeof refreshToolSummary === 'function') refreshToolSummary();
       showSuccess('Tool added successfully!');
     } else {
       showError(result.message);
@@ -405,6 +520,8 @@ document.getElementById('updateToolBtn').addEventListener('click', async () => {
         status: toolPaginationState.status,
         page: toolPaginationState.currentPage
       });
+      // Refresh global analytics after updating a tool
+      if (typeof refreshToolSummary === 'function') refreshToolSummary();
       showSuccess(result.message);
     } else {
       showError(result.message);
@@ -454,6 +571,8 @@ async function handleDelete(e) {
           status: toolPaginationState.status,
           page: toolPaginationState.currentPage
         });
+        // Refresh global analytics after deleting a tool
+        if (typeof refreshToolSummary === 'function') refreshToolSummary();
       } else {
         showError(result.message);
       }
@@ -469,6 +588,8 @@ async function handleDelete(e) {
 // ==================== Initialize Fetch on Page Load ====================
 document.addEventListener('DOMContentLoaded', () => {
   getAllTools(); // Fetch and render all tools
+  // Fetch global analytics once on load
+  if (typeof refreshToolSummary === 'function') refreshToolSummary();
 });
 
 // ==================== Search Functions ====================
