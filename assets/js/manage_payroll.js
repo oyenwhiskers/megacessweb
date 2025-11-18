@@ -778,11 +778,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             Generate Payslip
                         </button>
                     </div>
-                    
                     <div class="card shadow-sm">
                         <div class="card-body p-4">
                             <h3 class="mb-4">Name: ${realEmployeeData.name}${realEmployeeData.nickname ? ` (${realEmployeeData.nickname})` : ''}</h3>
-                            
                             <div class="row mb-4">
                                 <div class="col-md-4">
                                     <div class="info-card bg-light-green rounded p-3 text-center">
@@ -803,9 +801,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                 </div>
                             </div>
-                            
                             <h4 class="mb-3">Payslip Record:</h4>
-                            
                             <div class="payslip-records" id="payslipRecords">
                                 ${generatePayslipRecordsFromAPI(payslipsData)}
                             </div>
@@ -821,20 +817,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('backToList').addEventListener('click', function() {
                 location.reload(); // Simple way to go back to the list
             });
-            
-            // Add event listener for generate payslip button
-            document.getElementById('generatePayslip').addEventListener('click', function() {
-                generateNewPayslip(realEmployeeData.id, isWorker);
-            });
-            
-            // Add event listeners for payslip view buttons
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('[data-payslip-id]')) {
-                    const button = e.target.closest('[data-payslip-id]');
-                    const payslipId = button.getAttribute('data-payslip-id');
-                    viewPayslip(payslipId);
-                }
-            });
+            // The Generate Payslip button remains in the HTML, but no event listener is attached
             
         } catch (error) {
             console.error('Error loading employment overview:', error);
@@ -980,25 +963,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('updatePayslipRecords is deprecated - using generatePayslipRecordsFromAPI instead');
     }
     
-    // Generate new payslip
-    function generateNewPayslip(employeeId, isWorker) {
-        // Placeholder for payslip generation
-        alert(`Generating new payslip for ${isWorker ? 'worker' : 'staff'} ID: ${employeeId}`);
-    }
-    
-    // View existing payslip
-    function viewPayslip(payslipId) {
-        // Placeholder for viewing payslip
-        alert(`Viewing payslip ID: ${payslipId}`);
-        // You can implement navigation to a payslip detail page here
-    }
-    
-    // Generate payslip for specific month
-    function generatePayslipForMonth(employeeId, month, year, isWorker) {
-        // Placeholder for generating payslip for specific month
-        alert(`Generating payslip for month ${month}/${year} for ${isWorker ? 'worker' : 'staff'} ID: ${employeeId}`);
-    }
-
     // Payroll button functionality
     document.addEventListener('click', function(e) {
         if (e.target.closest('.payroll-action button')) {
@@ -1039,6 +1003,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     showEmploymentOverview(employeeData, false);
                 }
             }
+        } else if (e.target && e.target.id === 'generatePayslip') {
+            // Modal logic for Generate Payslip (client-side, static data)
+            // Ensure modal exists in HTML (as in your manage-payroll.html)
+
+            // Helper to fill modal with static data
+            function fillPayslipModalStatic() {
+                document.getElementById('payslipName').textContent = 'Ethan Miller';
+                // Month options
+                const payslipMonth = document.getElementById('payslipMonth');
+                payslipMonth.innerHTML = '<option selected>11/25</option>';
+                // Income table
+                document.getElementById('incomeTableBody').innerHTML = `
+                    <tr><td>Prunning</td><td>100.00</td></tr>
+                    <tr><td>Manuring</td><td>100.00</td></tr>
+                    <tr><td>Planting</td><td>100.00</td></tr>
+                    <tr><td>Sanitation</td><td>100.00</td></tr>
+                    <tr><td>Harvesting</td><td>100.00</td></tr>
+                `;
+                document.getElementById('totalSalary').textContent = '500.00';
+                // Deductions table
+                document.getElementById('deductionTableBody').innerHTML = `
+                    <tr><td>Early Out</td><td>67.75</td></tr>
+                    <tr><td>Lateness</td><td>30.75</td></tr>
+                `;
+                document.getElementById('totalDeductions').textContent = '98.50';
+                // Advance
+                document.getElementById('advanceAmount').textContent = '250.00';
+                document.getElementById('advanceRemarks').textContent = 'Essentials equipment: boots, shcyte, and machete';
+            }
+
+            fillPayslipModalStatic();
+            var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
+            payslipModal.show();
         }
     });
 
