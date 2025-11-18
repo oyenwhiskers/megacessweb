@@ -76,10 +76,9 @@ async function getAllVehicles({ search = '', status = '', per_page = 15, page = 
   }
 
   const apiUrl = new URL('https://mwms.megacess.com/api/v1/vehicles');
-
   if (search) apiUrl.searchParams.append('search', search);
   if (status) apiUrl.searchParams.append('status', status);
-  if (per_page) apiUrl.searchParams.append('per_page', per_page);
+  //if (per_page) apiUrl.searchParams.append('per_page', per_page);
   if (page) apiUrl.searchParams.append('page', page);
 
   const loading = document.getElementById('loading');
@@ -88,6 +87,8 @@ async function getAllVehicles({ search = '', status = '', per_page = 15, page = 
   tableBody.innerHTML = '';
 
   try {
+    console.log('Fetching vehicles from:', apiUrl.toString()); // debug
+
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -96,27 +97,44 @@ async function getAllVehicles({ search = '', status = '', per_page = 15, page = 
         'Accept': 'application/json'
       }
     });
+
+    console.log('Response status:', response.status); // debug
     const result = await response.json();
+    console.log('Result:', result); // debug
+
     loading.style.display = 'none';
 
     if (response.ok && result.success) {
-      if (result.data.length > 0) {
+      if (result.data && result.data.length > 0) {
         populateVehicleTable(result.data);
-        // Update pagination info
-        updatePaginationControls(result.meta);
+
+        // Only update pagination if meta exists
+        if (result.meta) {
+          updatePaginationControls(result.meta);
+        } else {
+          console.warn('No pagination meta received.');
+          document.getElementById('currentPage').textContent = 1;
+          document.getElementById('totalPages').textContent = 1;
+          document.getElementById('totalRecords').textContent = result.data.length;
+          renderPagination(1, 1);
+        }
+
+      } else {
+        tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
       }
-      else tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
     } else {
-      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message}</div>`;
-      showError(result.message);
+      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result?.message || 'Unknown error'}</div>`;
+      showError(result?.message || 'Failed to load vehicles.');
     }
+
   } catch (error) {
     loading.style.display = 'none';
     tableBody.innerHTML = `<div class="text-center text-danger py-3">Failed to load vehicles</div>`;
-    showError('Failed to load vehicles. Please try again.');
     console.error('Fetch error:', error);
+    showError('Failed to load vehicles. Please try again.');
   }
 }
+
 
 // ==================== Populate Table ====================
 function populateVehicleTable(vehicles) {
@@ -196,20 +214,6 @@ function animateCount(el, value, duration = 1500) {
   requestAnimationFrame(update);
 }
 
-// Update vehicle stats cards
-function updateVehicleStats(vehicles) {
-  const total = vehicles.length;
-  const available = vehicles.filter(v => v.status.toLowerCase() === 'available').length;
-  const inUse = vehicles.filter(v => v.status.toLowerCase() === 'in use').length;
-  const maintenance = vehicles.filter(v => v.status.toLowerCase() === 'under maintenance').length;
-
-  // update the value spans (these are per-page counts; server summary will overwrite)
-  animateCount(document.getElementById('totalVehiclesValue'), total, 1800);
-  animateCount(document.getElementById('availableVehiclesValue'), available, 1800);
-  animateCount(document.getElementById('inUseVehiclesValue'), inUse, 1800);
-  animateCount(document.getElementById('maintenanceVehiclesValue'), maintenance, 1800);
-}
-
 // Helpers to show/hide spinner indicators for analytics cards
 function setStatsLoading(isLoading) {
   const mapping = [
@@ -238,88 +242,50 @@ function setStatsLoading(isLoading) {
 // Try the server-provided summary endpoint first. If it's not available,
 // fall back to issuing lightweight requests per status and reading the
 // returned `meta.total` values to compute global counts.
-async function fetchVehicleSummaryFromServer() {
+async function fetchResourcesUsageAnalytics() {
   const token = getToken();
   if (!token) return null;
 
   try {
-    const resp = await fetch('https://mwms.megacess.com/api/v1/vehicles/summary', {
+    const resp = await fetch('https://mwms.megacess.com/api/v1/analytics/resources-usage', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
       }
     });
-    if (!resp.ok) return null;
+
     const result = await resp.json();
-    if (result && result.success && result.data) return result.data;
+    if (result?.success && result?.data) {
+      return result.data;
+    }
   } catch (err) {
-    // ignore and fall through to fallback
-    console.warn('Summary endpoint not available or failed', err);
+    console.error("Failed to fetch analytics:", err);
   }
+
   return null;
 }
 
-async function fetchVehicleCountsByStatusFallback() {
-  const token = getToken();
-  if (!token) return null;
-
-  const statuses = ['Available', 'In Use', 'Under Maintenance'];
-  const baseUrl = 'https://mwms.megacess.com/api/v1/vehicles';
-
-  try {
-    // Build 4 parallel requests: total (no status) + each status with per_page=1
-    const requests = [
-      fetch(`${baseUrl}?per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }),
-      ...statuses.map(s => fetch(`${baseUrl}?status=${encodeURIComponent(s)}&per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }))
-    ];
-
-    const responses = await Promise.all(requests);
-    const jsons = await Promise.all(responses.map(r => r.ok ? r.json().catch(() => null) : null));
-
-    // Extract meta.total for each
-    const total = (jsons[0] && jsons[0].meta && Number(jsons[0].meta.total)) || 0;
-    const available = (jsons[1] && jsons[1].meta && Number(jsons[1].meta.total)) || 0;
-    const inUse = (jsons[2] && jsons[2].meta && Number(jsons[2].meta.total)) || 0;
-    const maintenance = (jsons[3] && jsons[3].meta && Number(jsons[3].meta.total)) || 0;
-
-    return { total, available, in_use: inUse, under_maintenance: maintenance };
-  } catch (err) {
-    console.warn('Fallback status-count requests failed', err);
-    return null;
-  }
-}
-
 async function refreshVehicleSummary() {
-  // Show spinner on analytics while fetching
   setStatsLoading(true);
 
-  // Try server summary endpoint
-  const serverData = await fetchVehicleSummaryFromServer();
-  if (serverData) {
-    animateCount(document.getElementById('totalVehiclesValue'), Number(serverData.total) || 0, 1200);
-    animateCount(document.getElementById('availableVehiclesValue'), Number(serverData.available) || 0, 1200);
-    animateCount(document.getElementById('inUseVehiclesValue'), Number(serverData.in_use || serverData.inUse || 0), 1200);
-    animateCount(document.getElementById('maintenanceVehiclesValue'), Number(serverData.under_maintenance || serverData.underMaintenance || 0), 1200);
+  const analytics = await fetchResourcesUsageAnalytics();
+  if (!analytics || !analytics.vehicle_analytics) {
+    console.warn("Unable to fetch vehicle analytics.");
     setStatsLoading(false);
     return;
   }
 
-  // Fallback: fetch counts per status using meta.total
-  const fallback = await fetchVehicleCountsByStatusFallback();
-  if (fallback) {
-    animateCount(document.getElementById('totalVehiclesValue'), Number(fallback.total) || 0, 1200);
-    animateCount(document.getElementById('availableVehiclesValue'), Number(fallback.available) || 0, 1200);
-    animateCount(document.getElementById('inUseVehiclesValue'), Number(fallback.in_use) || 0, 1200);
-    animateCount(document.getElementById('maintenanceVehiclesValue'), Number(fallback.under_maintenance) || 0, 1200);
-    setStatsLoading(false);
-    return;
-  }
+  const vehicles = analytics.vehicle_analytics;
 
-  // If everything fails, keep per-page numbers already rendered and log.
-  console.warn('Unable to fetch global vehicle summary; kept per-page analytics.');
+  animateCount(document.getElementById('totalVehiclesValue'), Number(vehicles.total_vehicles) || 0, 1200);
+  animateCount(document.getElementById('availableVehiclesValue'), Number(vehicles.available) || 0, 1200);
+  animateCount(document.getElementById('inUseVehiclesValue'), Number(vehicles.in_use) || 0, 1200);
+  animateCount(document.getElementById('maintenanceVehiclesValue'), Number(vehicles.under_maintenance) || 0, 1200);
+
   setStatsLoading(false);
 }
+
 
 // ==================== Pagination Controls ====================
 // Store pagination state

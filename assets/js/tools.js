@@ -241,88 +241,50 @@ function setStatsLoading(isLoading) {
 // Try the server-provided summary endpoint first. If it's not available,
 // fall back to issuing lightweight requests per status and reading the
 // returned `meta.total` values to compute global counts.
-async function fetchToolSummaryFromServer() {
+async function fetchResourcesUsageAnalytics() {
   const token = getToken();
   if (!token) return null;
 
   try {
-    const resp = await fetch('https://mwms.megacess.com/api/v1/tools/summary', {
+    const resp = await fetch('https://mwms.megacess.com/api/v1/analytics/resources-usage', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
       }
     });
-    if (!resp.ok) return null;
+
     const result = await resp.json();
-    if (result && result.success && result.data) return result.data;
+    if (result?.success && result?.data) {
+      return result.data;
+    }
   } catch (err) {
-    // ignore and fall through to fallback
-    console.warn('Summary endpoint not available or failed', err);
+    console.error("Failed to fetch analytics:", err);
   }
+
   return null;
 }
 
-async function fetchToolCountsByStatusFallback() {
-  const token = getToken();
-  if (!token) return null;
-
-  const statuses = ['Available', 'In Use', 'Broken'];
-  const baseUrl = 'https://mwms.megacess.com/api/v1/tools';
-
-  try {
-    // Build 4 parallel requests: total (no status) + each status with per_page=1
-    const requests = [
-      fetch(`${baseUrl}?per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }),
-      ...statuses.map(s => fetch(`${baseUrl}?status=${encodeURIComponent(s)}&per_page=1`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } }))
-    ];
-
-    const responses = await Promise.all(requests);
-    const jsons = await Promise.all(responses.map(r => r.ok ? r.json().catch(() => null) : null));
-
-    // Extract meta.total for each
-    const total = (jsons[0] && jsons[0].meta && Number(jsons[0].meta.total)) || 0;
-    const available = (jsons[1] && jsons[1].meta && Number(jsons[1].meta.total)) || 0;
-    const inUse = (jsons[2] && jsons[2].meta && Number(jsons[2].meta.total)) || 0;
-    const broken = (jsons[3] && jsons[3].meta && Number(jsons[3].meta.total)) || 0;
-
-    return { total, available, in_use: inUse, broken };
-  } catch (err) {
-    console.warn('Fallback status-count requests failed', err);
-    return null;
-  }
-}
-
 async function refreshToolSummary() {
-  // Show spinner on analytics while fetching
   setStatsLoading(true);
 
-  // Try server summary endpoint
-  const serverData = await fetchToolSummaryFromServer();
-  if (serverData) {
-    animateCount(document.getElementById('totalToolsValue'), Number(serverData.total) || 0, 1200);
-    animateCount(document.getElementById('availableToolsValue'), Number(serverData.available) || 0, 1200);
-    animateCount(document.getElementById('inUseToolsValue'), Number(serverData.in_use || serverData.inUse || 0), 1200);
-    animateCount(document.getElementById('brokenToolsValue'), Number(serverData.broken) || 0, 1200);
+  const analytics = await fetchResourcesUsageAnalytics();
+  if (!analytics || !analytics.tools_analytics) {
+    console.warn("Unable to fetch tools analytics.");
     setStatsLoading(false);
     return;
   }
 
-  // Fallback: fetch counts per status using meta.total
-  const fallback = await fetchToolCountsByStatusFallback();
-  if (fallback) {
-    animateCount(document.getElementById('totalToolsValue'), Number(fallback.total) || 0, 1200);
-    animateCount(document.getElementById('availableToolsValue'), Number(fallback.available) || 0, 1200);
-    animateCount(document.getElementById('inUseToolsValue'), Number(fallback.in_use) || 0, 1200);
-    animateCount(document.getElementById('brokenToolsValue'), Number(fallback.broken) || 0, 1200);
-    setStatsLoading(false);
-    return;
-  }
+  const tools = analytics.tools_analytics;
 
-  // If everything fails, keep per-page numbers already rendered and log.
-  console.warn('Unable to fetch global tool summary; kept per-page analytics.');
+  animateCount(document.getElementById('totalToolsValue'), Number(tools.total_tools) || 0, 1200);
+  animateCount(document.getElementById('availableToolsValue'), Number(tools.available) || 0, 1200);
+  animateCount(document.getElementById('inUseToolsValue'), Number(tools.in_use) || 0, 1200);
+  animateCount(document.getElementById('brokenToolsValue'), Number(tools.under_maintenance) || 0, 1200);
+
   setStatsLoading(false);
 }
+
 
 // ==================== Pagination Controls ====================
 // Store pagination state
