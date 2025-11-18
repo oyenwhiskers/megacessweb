@@ -6,6 +6,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const staffList = document.getElementById('staffList');
     const searchInput = document.getElementById('searchInput');
     const workerContainer = document.getElementById('workerContainer');
+    const roleFilterContainer = document.getElementById('roleFilterContainer');
+    
+    // Role filter buttons
+    const roleFilterButtons = {
+        all: document.getElementById('roleFilterAll'),
+        mandor: document.getElementById('roleFilterMandor'),
+        checker: document.getElementById('roleFilterChecker'),
+        admin: document.getElementById('roleFilterAdmin')
+    };
+    
+    // Current selected role
+    let currentRole = 'all';
+
+    // Helper function to set active role filter button
+    function setActiveRoleFilter(role) {
+        currentRole = role;
+        
+        // Reset all buttons to inactive state
+        Object.values(roleFilterButtons).forEach(button => {
+            if (button) {
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }
+        });
+        
+        // Set the selected button to active state
+        if (roleFilterButtons[role]) {
+            roleFilterButtons[role].classList.remove('btn-outline-secondary');
+            roleFilterButtons[role].classList.add('btn-success');
+        }
+    }
 
     // Store fetched data
     let workersData = [];
@@ -140,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (workerTab.classList.contains('btn-success')) {
             handleClientSidePagination(searchTerm, page, allWorkersData);
         } else {
-            handleStaffClientSidePagination(searchTerm, page, allStaffData);
+            handleStaffClientSidePagination(searchTerm, page, allStaffData, currentRole);
         }
     };
 
@@ -201,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Always use client-side pagination for consistent behavior
-                handleStaffClientSidePagination(searchTerm, page, allData);
+                handleStaffClientSidePagination(searchTerm, page, allData, role);
             } else {
                 staffData = [];
                 totalItems = 0;
@@ -226,13 +257,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle staff client-side pagination
-    function handleStaffClientSidePagination(searchTerm = '', page = 1, dataSource = null) {
+    function handleStaffClientSidePagination(searchTerm = '', page = 1, dataSource = null, role = 'all') {
         let sourceData = dataSource || allStaffData;
         let filteredData = sourceData;
         
+        // Filter by role first if not 'all'
+        if (role && role !== 'all') {
+            filteredData = sourceData.filter(staff => staff.user_role === role);
+        }
+        
         // Filter data for search if search term exists
         if (searchTerm) {
-            filteredData = sourceData.filter(staff => 
+            filteredData = filteredData.filter(staff => 
                 staff.user_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (staff.user_nickname && staff.user_nickname.toLowerCase().includes(searchTerm.toLowerCase()))
             );
@@ -541,6 +577,19 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('authToken');
         sessionStorage.removeItem('authToken');
         location.reload();
+    };
+
+    // Helper function to test staff API (for debugging)
+    window.testStaffAPI = async function(staffId) {
+        try {
+            console.log('Testing staff API for ID:', staffId);
+            const result = await fetchStaffPayrollOverview(staffId);
+            console.log('Staff API result:', result);
+            return result;
+        } catch (error) {
+            console.error('Staff API test failed:', error);
+            return null;
+        }
     };;
 
     // Search functionality with debouncing
@@ -567,13 +616,38 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Currently on staff tab - use client-side pagination if we have data
                 if (allStaffData.length > 0) {
-                    handleStaffClientSidePagination(searchTerm, 1);
+                    handleStaffClientSidePagination(searchTerm, 1, allStaffData, currentRole);
                 } else {
                     // No data yet, fetch from API
-                    fetchStaff(searchTerm, 1);
+                    fetchStaff(searchTerm, 1, currentRole);
                 }
             }
         }, 300); // 300ms delay
+    });
+
+    // Role filter functionality
+    Object.entries(roleFilterButtons).forEach(([role, button]) => {
+        if (button) {
+            button.addEventListener('click', function() {
+                const selectedRole = this.getAttribute('data-role');
+                const searchTerm = searchInput.value.trim();
+                
+                // Update active button state
+                setActiveRoleFilter(selectedRole);
+                
+                // Reset to page 1 when filtering
+                currentPage = 1;
+                
+                // Only handle this for staff tab
+                if (staffTab.classList.contains('btn-success')) {
+                    if (allStaffData.length > 0) {
+                        handleStaffClientSidePagination(searchTerm, 1, allStaffData, selectedRole);
+                    } else {
+                        fetchStaff(searchTerm, 1, selectedRole);
+                    }
+                }
+            });
+        }
     });
 
     // Switch to Worker tab
@@ -585,6 +659,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         workerList.classList.remove('d-none');
         staffList.classList.add('d-none');
+        
+        // Hide role filter for worker tab
+        if (roleFilterContainer) {
+            roleFilterContainer.style.display = 'none';
+        }
         
         searchInput.placeholder = 'search name...';
         document.querySelector('.row.mb-3 h3').textContent = 'List of existing worker:';
@@ -611,6 +690,13 @@ document.addEventListener('DOMContentLoaded', function() {
         staffList.classList.remove('d-none');
         workerList.classList.add('d-none');
         
+        // Show role filter for staff tab
+        if (roleFilterContainer) {
+            roleFilterContainer.style.display = 'block';
+            // Reset to "All" when switching to staff tab
+            setActiveRoleFilter('all');
+        }
+        
         searchInput.placeholder = 'search staff name...';
         document.querySelector('.row.mb-3 h3').textContent = 'List of existing staff:';
         
@@ -620,11 +706,298 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Use client-side pagination if we have data, otherwise fetch from API
         if (allStaffData.length > 0) {
-            handleStaffClientSidePagination(searchTerm, 1);
+            handleStaffClientSidePagination(searchTerm, 1, allStaffData, currentRole);
         } else {
-            fetchStaff(searchTerm, 1);
+            fetchStaff(searchTerm, 1, currentRole);
         }
     });
+
+    // Show Employment Overview
+    async function showEmploymentOverview(employeeData, isWorker = true) {
+        const container = document.querySelector('.container-fluid');
+        
+        // Show loading first
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading employment overview...</p>
+            </div>
+        `;
+        
+        try {
+            // Fetch real payroll data for both workers and staff
+            let realEmployeeData = employeeData;
+            let payslipsData = [];
+            let baseSalary = null;
+            
+            if (isWorker) {
+                const overviewData = await fetchWorkerPayrollOverview(employeeData.id);
+                if (overviewData) {
+                    // Update employee data with real API data
+                    realEmployeeData = {
+                        id: overviewData.staff.id,
+                        name: overviewData.staff.staff_fullname,
+                        joinedSince: overviewData.staff.joined_since,
+                        role: 'Worker',
+                        age: overviewData.staff.age
+                    };
+                    payslipsData = overviewData.payslips || [];
+                }
+            } else {
+                // Fetch staff payroll data
+                const overviewData = await fetchStaffPayrollOverview(employeeData.id);
+                
+                if (overviewData) {
+                    // Update employee data with real API data
+                    realEmployeeData = {
+                        id: overviewData.user.id,
+                        name: overviewData.user.user_fullname,
+                        joinedSince: overviewData.user.joined_since,
+                        role: overviewData.user.user_role.charAt(0).toUpperCase() + overviewData.user.user_role.slice(1),
+                        age: overviewData.user.age,
+                        nickname: overviewData.user.user_nickname
+                    };
+                    payslipsData = overviewData.payslips || [];
+                    baseSalary = overviewData.base_salary;
+                }
+            }
+            
+            // Create the employment overview HTML
+            const overviewHTML = `
+                <div id="employmentOverview" class="employment-overview">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <button class="btn btn-outline-secondary btn-sm" id="backToList">
+                                <i class="bi bi-arrow-left"></i> Employment Overview
+                            </button>
+                        </div>
+                        <button class="btn btn-primary d-flex align-items-center gap-2" id="generatePayslip">
+                            <i class="bi bi-plus-circle"></i>
+                            Generate Payslip
+                        </button>
+                    </div>
+                    
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <h3 class="mb-4">Name: ${realEmployeeData.name}${realEmployeeData.nickname ? ` (${realEmployeeData.nickname})` : ''}</h3>
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="info-card bg-light-green rounded p-3 text-center">
+                                        <div class="fw-semibold text-success mb-1">Joined Since</div>
+                                        <div class="h6 mb-0">${realEmployeeData.joinedSince}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-card bg-light-green rounded p-3 text-center">
+                                        <div class="fw-semibold text-success mb-1">Role</div>
+                                        <div class="h6 mb-0">${realEmployeeData.role}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-card bg-light-green rounded p-3 text-center">
+                                        <div class="fw-semibold text-success mb-1">Age</div>
+                                        <div class="h6 mb-0">${realEmployeeData.age || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h4 class="mb-3">Payslip Record:</h4>
+                            
+                            <div class="payslip-records" id="payslipRecords">
+                                ${generatePayslipRecordsFromAPI(payslipsData)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Show the employment overview
+            container.innerHTML = overviewHTML;
+            
+            // Add event listener for back button
+            document.getElementById('backToList').addEventListener('click', function() {
+                location.reload(); // Simple way to go back to the list
+            });
+            
+            // Add event listener for generate payslip button
+            document.getElementById('generatePayslip').addEventListener('click', function() {
+                generateNewPayslip(realEmployeeData.id, isWorker);
+            });
+            
+            // Add event listeners for payslip view buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('[data-payslip-id]')) {
+                    const button = e.target.closest('[data-payslip-id]');
+                    const payslipId = button.getAttribute('data-payslip-id');
+                    viewPayslip(payslipId);
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error loading employment overview:', error);
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                    <h4 class="text-muted mt-3">Error Loading Data</h4>
+                    <p class="text-muted">Failed to load employment overview. Please try again.</p>
+                    <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Retry
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    // Fetch worker payroll overview data
+    async function fetchWorkerPayrollOverview(workerId) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+
+            const url = new URL(`${API_BASE_URL}/staff/${workerId}/overview`);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.data) {
+                return result.data;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error fetching worker payroll overview:', error);
+            throw error;
+        }
+    }
+    
+    // Fetch staff payroll overview data
+    async function fetchStaffPayrollOverview(staffId) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+
+            const url = new URL(`${API_BASE_URL}/users/${staffId}/overview`);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.data) {
+                return result.data;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error fetching staff payroll overview:', error);
+            throw error;
+        }
+    }
+    
+    // Generate payslip records HTML from API data
+    function generatePayslipRecordsFromAPI(payslips) {
+        if (!payslips || payslips.length === 0) {
+            return `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-file-earmark-text display-4"></i>
+                    <h5 class="mt-2">No payslip records found</h5>
+                    <p>Generate a payslip to get started.</p>
+                </div>
+            `;
+        }
+        
+        let recordsHTML = '';
+        payslips.forEach(payslip => {
+            // Check if it's worker data (has total_income/total_deduction) or staff data (only net_salary)
+            const hasDetailedBreakdown = payslip.hasOwnProperty('total_income') && payslip.hasOwnProperty('total_deduction');
+            
+            recordsHTML += `
+                <div class="payslip-record-item d-flex justify-content-between align-items-center p-3 mb-2 border rounded">
+                    <div class="payslip-details">
+                        <div class="payslip-month">
+                            <span class="fw-medium">${payslip.payslip_month}</span>
+                        </div>
+                        <div class="payslip-summary text-muted small">
+                            ${hasDetailedBreakdown ? `
+                                <span class="me-3">Income: RM${payslip.total_income.toLocaleString()}</span>
+                                <span class="me-3">Deduction: RM${payslip.total_deduction.toLocaleString()}</span>
+                            ` : ''}
+                            <span class="text-success fw-semibold">Net: RM${payslip.net_salary.toLocaleString()}</span>
+                            ${payslip.status ? `<span class="ms-3 badge bg-secondary">${payslip.status}</span>` : ''}
+                        </div>
+                        ${payslip.created_at ? `<div class="text-muted small">Created: ${new Date(payslip.created_at).toLocaleDateString()}</div>` : ''}
+                    </div>
+                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-payslip-id="${payslip.id}">
+                        <i class="bi bi-eye"></i>
+                        View
+                    </button>
+                </div>
+            `;
+        });
+        
+        return recordsHTML;
+    }
+    
+    // Update payslip records with actual data (legacy function - now handled in generatePayslipRecordsFromAPI)
+    function updatePayslipRecords(payslips) {
+        // This function is kept for compatibility but not used anymore
+        // Real payslip data is now handled in generatePayslipRecordsFromAPI
+        console.log('updatePayslipRecords is deprecated - using generatePayslipRecordsFromAPI instead');
+    }
+    
+    // Generate new payslip
+    function generateNewPayslip(employeeId, isWorker) {
+        // Placeholder for payslip generation
+        alert(`Generating new payslip for ${isWorker ? 'worker' : 'staff'} ID: ${employeeId}`);
+    }
+    
+    // View existing payslip
+    function viewPayslip(payslipId) {
+        // Placeholder for viewing payslip
+        alert(`Viewing payslip ID: ${payslipId}`);
+        // You can implement navigation to a payslip detail page here
+    }
+    
+    // Generate payslip for specific month
+    function generatePayslipForMonth(employeeId, month, year, isWorker) {
+        // Placeholder for generating payslip for specific month
+        alert(`Generating payslip for month ${month}/${year} for ${isWorker ? 'worker' : 'staff'} ID: ${employeeId}`);
+    }
 
     // Payroll button functionality
     document.addEventListener('click', function(e) {
@@ -638,15 +1011,40 @@ document.addEventListener('DOMContentLoaded', function() {
             const staffId = button.getAttribute('data-staff-id');
             
             if (workerId) {
-                // Handle worker payroll
-                alert(`Opening payroll for Worker: ${name} (ID: ${workerId})`);
+                // Find worker data
+                const workerData = allWorkersData.find(worker => worker.id == workerId);
+                if (workerData) {
+                    const employeeData = {
+                        id: workerId,
+                        name: workerData.staff_fullname,
+                        joinedSince: workerData.joined_since,
+                        role: 'Worker',
+                        age: workerData.age || 'N/A'
+                    };
+                    // Use the new async function for workers
+                    showEmploymentOverview(employeeData, true);
+                }
             } else if (staffId) {
-                // Handle staff payroll
-                alert(`Opening payroll for Staff: ${name} (ID: ${staffId})`);
+                // Find staff data
+                const staffData = allStaffData.find(staff => staff.id == staffId);
+                if (staffData) {
+                    const employeeData = {
+                        id: staffId,
+                        name: staffData.user_fullname,
+                        joinedSince: staffData.joined_since,
+                        role: staffData.user_role.charAt(0).toUpperCase() + staffData.user_role.slice(1),
+                        age: staffData.age || 'N/A'
+                    };
+                    // Use the new async function for staff with real API data
+                    showEmploymentOverview(employeeData, false);
+                }
             }
         }
     });
 
     // Initial load of workers data
     fetchWorkers('', 1);
+    
+    // Initialize role filter state
+    setActiveRoleFilter('all');
 });
