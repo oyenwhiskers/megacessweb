@@ -157,13 +157,7 @@ function populateVehicleBookingTable(bookings) {
         ${booking.datetime_return ? new Date(booking.datetime_return).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '-'}
       </div>
       <div class="col text-center">
-        <button class="btn btn-sm btn-warning me-2 edit-vehicle_booking-btn"
-            data-id="${booking.id}"
-            data-vehicleName="${booking.vehicle.vehicle_name}"
-            data-plate="${booking.vehicle.plate_number}"
-            data-person="${booking.user ? booking.user.user_fullname : booking.staff ? booking.staff.staff_fullname : ''}"
-            data-bookingDate="${booking.datetime_booking ? new Date(booking.datetime_booking).toISOString().split('T')[0] : ''}"
-            data-returnDate="${booking.datetime_return ? new Date(booking.datetime_return).toISOString().split('T')[0] : ''}">
+        <button class="btn btn-sm btn-warning me-2 edit-vehicle_booking-btn">
           <i class="bi bi-pencil"></i> Edit
         </button>
         <button class="btn btn-sm btn-danger delete-vehicle_booking-btn" data-id="${booking.id}" data-vehicle-id="${booking.vehicle_id}">
@@ -171,17 +165,20 @@ function populateVehicleBookingTable(bookings) {
         </button>
       </div>
     `;
+
     tableBody.appendChild(row);
+
+    // ✅ Attach click event to Edit button for opening update modal
+    const editBtn = row.querySelector('.edit-vehicle_booking-btn');
+    editBtn.addEventListener('click', () => {
+      openUpdateVehicleBookingModal(booking); // Pass booking object
+    });
   });
 
-  // NOTE: Do not update stat cards here (per-page counts).
-  // Stats are refreshed from the server via `refreshVehicleSummary()`
-  // to ensure analytics reflect global totals only.
-
-  // ✅ Reattach event listeners
-  attachEditListeners();
-  attachDeleteListeners();
+  // Reattach delete listeners
+  attachDeleteBookingListeners();
 }
+
 
 // Global storage for autocomplete
 let allVehicles = [];
@@ -509,7 +506,7 @@ document.getElementById("addVehicleBookingForm").addEventListener("submit", asyn
 });
 
 // Attach delete button listeners
-function attachDeleteListeners() {
+function attachDeleteBookingListeners() {
   const deleteButtons = document.querySelectorAll('.delete-vehicle_booking-btn');
   
   deleteButtons.forEach(btn => {
@@ -557,11 +554,235 @@ function attachDeleteListeners() {
   });
 }
 
+// ==================== Update Vehicle Booking ====================
+async function updateVehicleBooking(bookingId, payload) {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
 
+  try {
+    const response = await fetch(`https://mwms.megacess.com/api/v1/vehicle-bookings/${bookingId}`, {
+      method: 'PUT', // assuming backend uses PUT for updates
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      showError(result.message || "Failed to update booking.");
+      return;
+    }
+
+    showSuccess(result.message || "Booking updated successfully!");
+    // Refresh bookings table after update
+    await getAllVehicleBookings();
+
+  } catch (error) {
+    console.error("💥 Error updating booking:", error);
+    showError("Something went wrong while updating the booking.");
+  }
+}
+
+function openUpdateVehicleBookingModal(booking) {
+  const modalEl = document.getElementById('updateVehicleBookingModal');
+  const modal = new bootstrap.Modal(modalEl);
+  
+  // Prefill inputs
+  document.getElementById('updateBookingVehicleInput').value = `${booking.vehicle.vehicle_name} (${booking.vehicle.plate_number})`;
+  document.getElementById('updateUsedBy').value = booking.user ? booking.user.user_fullname : booking.staff ? booking.staff.staff_fullname : '';
+  
+  // Prefill datetime-local (requires format yyyy-MM-ddThh:mm)
+  if (booking.datetime_booking) {
+    document.getElementById('updateBookingDateInput').value = new Date(booking.datetime_booking).toISOString().slice(0,16);
+  } else {
+    document.getElementById('updateBookingDateInput').value = '';
+  }
+  if (booking.datetime_return) {
+    document.getElementById('updateReturnDateInput').value = new Date(booking.datetime_return).toISOString().slice(0,16);
+  } else {
+    document.getElementById('updateReturnDateInput').value = '';
+  }
+
+  // Store booking ID for update
+  document.getElementById('updateVehicleBookingForm').dataset.bookingId = booking.id;
+
+  modal.show();
+}
+
+document.getElementById('updateVehicleBookingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const bookingId = e.target.dataset.bookingId;
+  const bookingDate = document.getElementById('updateBookingDateInput').value;
+  const returnDate = document.getElementById('updateReturnDateInput').value;
+
+  if (returnDate && new Date(bookingDate) >= new Date(returnDate)) {
+    showError("Return date must be after booking date.");
+    return;
+  }
+
+  const payload = {
+    datetime_booking: bookingDate,
+    datetime_return: returnDate || null
+  };
+
+  try {
+    const token = getToken();
+    if (!token) return showErrorNoToken();
+
+    const response = await fetch(`https://mwms.megacess.com/api/v1/vehicle-bookings/${bookingId}`, {
+      method: 'PATCH',
+      headers: { 
+        "Authorization": `Bearer ${token}`, 
+        "Content-Type": "application/json" 
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) return showError(result.message || "Failed to update booking.");
+
+    showSuccess(result.message || "Booking updated successfully!");
+    await getAllVehicleBookings();
+
+    bootstrap.Modal.getInstance(document.getElementById('updateVehicleBookingModal')).hide();
+
+  } catch (error) {
+    console.error("💥 Error updating booking:", error);
+    showError("Something went wrong while updating the booking.");
+  }
+});
+
+let updateVehicleAutocompleteInitialized = false;
+
+function setupUpdateVehicleAutocomplete() {
+  if (updateVehicleAutocompleteInitialized) return;
+  updateVehicleAutocompleteInitialized = true;
+
+  const input = document.getElementById("updateBookingVehicleInput");
+  const dropdown = document.getElementById("updateVehicleDropdown");
+  if (!input || !dropdown) return;
+
+  input.addEventListener("focus", () => {
+    updateVehicleDropdownList(input.value, dropdown, input);
+    dropdown.classList.add("show");
+  });
+
+  input.addEventListener("input", () => {
+    updateVehicleDropdownList(input.value, dropdown, input);
+    dropdown.classList.add("show");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove("show");
+    }
+  });
+}
+
+function updateVehicleDropdownList(filterText, dropdown, input) {
+  dropdown.innerHTML = "";
+
+  const filtered = allVehicles.filter(v =>
+    v.vehicle_name.toLowerCase().includes(filterText.toLowerCase()) ||
+    v.plate_number.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  filtered.forEach(vehicle => {
+    const li = document.createElement("li");
+    li.classList.add("dropdown-item");
+    li.textContent = `${vehicle.vehicle_name} (${vehicle.plate_number})`;
+    li.dataset.id = vehicle.id;
+
+    li.addEventListener("click", () => {
+      input.value = li.textContent;
+      input.dataset.selectedId = li.dataset.id;
+      dropdown.classList.remove("show");
+    });
+
+    dropdown.appendChild(li);
+  });
+
+  if (filtered.length === 0) {
+    const li = document.createElement("li");
+    li.classList.add("dropdown-item", "text-muted");
+    li.textContent = "No matching vehicles";
+    li.style.pointerEvents = "none";
+    dropdown.appendChild(li);
+  }
+}
+
+
+let updateUsedByAutocompleteInitialized = false;
+
+function setupUpdateUsedByAutocomplete() {
+  if (updateUsedByAutocompleteInitialized) return;
+  updateUsedByAutocompleteInitialized = true;
+
+  const input = document.getElementById("updateUsedBy");
+  const dropdown = document.getElementById("updateUsedByDropdown");
+  if (!input || !dropdown) return;
+
+  input.addEventListener("focus", () => {
+    updateUsedByDropdownList(input.value, dropdown, input);
+    dropdown.classList.add("show");
+  });
+
+  input.addEventListener("input", () => {
+    updateUsedByDropdownList(input.value, dropdown, input);
+    dropdown.classList.add("show");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove("show");
+    }
+  });
+}
+
+function updateUsedByDropdownList(filterText, dropdown, input) {
+  dropdown.innerHTML = "";
+
+  const filtered = allUsersAndStaff.filter(item =>
+    item.fullname.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  filtered.forEach(item => {
+    const li = document.createElement("li");
+    li.classList.add("dropdown-item");
+    li.textContent = `${item.fullname} (${item.user_id || item.staff_id}) - ${item.role}`;
+    li.dataset.userId = item.user_id;
+    li.dataset.staffId = item.staff_id;
+
+    li.addEventListener("click", () => {
+      input.value = li.textContent;
+      input.dataset.selectedUserId = item.user_id;
+      input.dataset.selectedStaffId = item.staff_id;
+      dropdown.classList.remove("show");
+    });
+
+    dropdown.appendChild(li);
+  });
+
+  if (filtered.length === 0) {
+    const li = document.createElement("li");
+    li.classList.add("dropdown-item", "text-muted");
+    li.textContent = "No matching users/staff";
+    li.style.pointerEvents = "none";
+    dropdown.appendChild(li);
+  }
+}
 
 // ==================== DOMContentLoaded ====================
 window.addEventListener('DOMContentLoaded', () => {
   getAllVehicleBookings();
   fetchUserAndStaff();
   fetchVehicle();
+  setupUpdateVehicleAutocomplete();
+  setupUpdateUsedByAutocomplete();
 });
