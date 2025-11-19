@@ -945,10 +945,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         ${payslip.created_at ? `<div class="text-muted small">Created: ${new Date(payslip.created_at).toLocaleDateString()}</div>` : ''}
                     </div>
-                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-payslip-id="${payslip.id}">
-                        <i class="bi bi-eye"></i>
-                        View
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-payslip-id="${payslip.id}">
+                            <i class="bi bi-eye"></i>
+                            View
+                        </button>
+                        <button class="btn btn-danger btn-sm d-flex align-items-center gap-2" data-payslip-id="${payslip.id}" style="background-color:#dc3545;border-color:#dc3545;">
+                            <i class="bi bi-trash"></i>
+                            Delete
+                        </button>
+                    </div>
                 </div>
             `;
         });
@@ -1056,6 +1062,79 @@ let currentPayslipWorkerData = null;
                 var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
                 payslipModal.show();
             }
+        } else if (e.target.closest('button[data-payslip-id]')) {
+            const btn = e.target.closest('button[data-payslip-id]');
+            const payslipId = btn.getAttribute('data-payslip-id');
+            // Check if this is the Delete button
+            if (btn.classList.contains('btn-danger')) {
+                // Only allow delete for Worker or Staff option
+                if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
+                    if (!payslipId) return;
+                    if (!confirm('Are you sure you want to delete this payslip? This action cannot be undone.')) return;
+                    (async function() {
+                        try {
+                            const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+                            if (!AUTH_TOKEN) throw new Error('No auth token');
+                            let url;
+                            if (workerTab.classList.contains('btn-success')) {
+                                url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
+                            } else {
+                                url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
+                            }
+                            const res = await fetch(url, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            const result = await res.json();
+                            if (res.ok && result.success) {
+                                alert('Payslip deleted successfully!');
+                                // Refresh the employment overview to update the list
+                                if (currentPayslipWorkerData) {
+                                    const employeeData = {
+                                        id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                                        name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                                        joinedSince: currentPayslipWorkerData.joined_since,
+                                        role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                        age: currentPayslipWorkerData.age || 'N/A',
+                                        staff_fullname: currentPayslipWorkerData.staff_fullname,
+                                        nickname: currentPayslipWorkerData.user_nickname || ''
+                                    };
+                                    showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
+                                } else {
+                                    location.reload();
+                                }
+                            } else {
+                                let msg = result.message || 'Unknown error';
+                                alert('Delete failed: ' + msg);
+                            }
+                        } catch (err) {
+                            alert('Error: ' + err.message);
+                        }
+                    })();
+                }
+            } else {
+                // Handle View button for payslip record (worker only)
+                const payslipId = e.target.closest('button[data-payslip-id]').getAttribute('data-payslip-id');
+                console.log('Payslip View button clicked, payslipId:', payslipId); // DEBUG
+                if (payslipId) {
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewPayslipModal'));
+                    const modalBody = document.getElementById('viewPayslipModalBody');
+                    modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div>Loading payslip details...</div></div>';
+                    viewModal.show();
+                    fetchWorkerPayslipDetails(payslipId)
+                      .then(payslipData => {
+                        console.log('Payslip API data:', payslipData); // DEBUG
+                        renderPayslipDetailsModal(payslipData);
+                      })
+                      .catch(err => {
+                        modalBody.innerHTML = `<div class='text-danger text-center'>${err.message || err}</div>`;
+                      });
+                }
+            }
         }
     });
 
@@ -1133,6 +1212,131 @@ let currentPayslipWorkerData = null;
                 alert('Error: ' + err.message);
             }
         };
+    }
+
+    // Helper: fetch payslip details by payslip id (for worker)
+    async function fetchWorkerPayslipDetails(payslipId) {
+        try {
+            if (!AUTH_TOKEN) throw new Error('Authentication required');
+            const url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}?view=html`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            if (!response.ok) throw new Error('Failed to fetch payslip details');
+            const result = await response.json();
+            if (result.success && result.data) return result.data;
+            throw new Error(result.message || 'No payslip data');
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Helper: render payslip details in modal
+    function renderPayslipDetailsModal(data) {
+        const modalBody = document.getElementById('viewPayslipModalBody');
+        if (!data) {
+            modalBody.innerHTML = '<div class="text-center text-danger">No payslip data found.</div>';
+            return;
+        }
+        // Prepare income and deduction breakdowns
+        let incomeRows = '';
+        let totalIncome = 0;
+        if (data.breakdown && typeof data.breakdown === 'object') {
+            for (const [key, value] of Object.entries(data.breakdown)) {
+                if (value > 0) {
+                    incomeRows += `<tr><td>${key}</td><td class='text-end'>${Number(value).toFixed(2)}</td></tr>`;
+                    totalIncome += Number(value);
+                }
+            }
+        } else {
+            incomeRows += `<tr><td>Basic Salary</td><td class='text-end'>${Number(data.base_salary).toFixed(2)}</td></tr>`;
+            totalIncome = Number(data.base_salary);
+        }
+        // Deductions
+        let deductionRows = '';
+        let totalDeduction = 0;
+        if (Array.isArray(data.deductions)) {
+            data.deductions.forEach(ded => {
+                deductionRows += `<tr><td>${ded.type || ded.name || ''}</td><td class='text-end'>${Number(ded.amount || ded.value || 0).toFixed(2)}</td></tr>`;
+                totalDeduction += Number(ded.amount || ded.value || 0);
+            });
+        } else if (data.deductions && typeof data.deductions === 'object') {
+            for (const [key, value] of Object.entries(data.deductions)) {
+                deductionRows += `<tr><td>${key}</td><td class='text-end'>${Number(value).toFixed(2)}</td></tr>`;
+                totalDeduction += Number(value);
+            }
+        }
+        // If no breakdown, fallback to base_salary
+        if (!incomeRows) {
+            incomeRows = `<tr><td>Basic Salary</td><td class='text-end'>${Number(data.base_salary).toFixed(2)}</td></tr>`;
+            totalIncome = Number(data.base_salary);
+        }
+        // If no deduction, show empty row
+        if (!deductionRows) {
+            deductionRows = `<tr><td colspan='2' class='text-center text-muted'>-</td></tr>`;
+        }
+        // HTML layout
+        modalBody.innerHTML = `
+      <div class="container-fluid">
+        <div class="text-center mb-2">
+          <h2 class="fw-bold">MEGACESS Sdn Bhd</h2>
+        </div>
+        <div class="mb-2"><span class="fw-bold text-success">Month of Payroll:</span> ${data.payslip_month || ''}</div>
+        <div class="mb-2 fw-bold text-success">Employee Details</div>
+        <div class="mb-2"><b>Name:</b> ${data.staff?.staff_fullname || ''}</div>
+        <div class="mb-2"><b>Document No:</b> ${data.staff?.staff_doc || ''}</div>
+        <div class="mb-2"><b>Bank:</b> ${data.staff?.staff_bank_name || ''}</div>
+        <div class="mb-2"><b>Bank Acc. Number:</b> ${data.staff?.staff_bank_number || ''}</div>
+        <div class="mb-2"><b>KWSP Number:</b> ${data.staff?.staff_kwsp_number || ''}</div>
+        <div class="fw-bold text-success mt-3 mb-2">Salary Amount</div>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="text-center">INCOME</th>
+                <th class="text-center">DEDUCTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="vertical-align:top; padding:0;">
+                  <table class="table table-borderless mb-0">
+                    ${incomeRows}
+                    <tr class="fw-bold"><td>Total Income</td><td class='text-end'>${Number(data.total_income || totalIncome).toFixed(2)}</td></tr>
+                  </table>
+                </td>
+                <td style="vertical-align:top; padding:0;">
+                  <table class="table table-borderless mb-0">
+                    ${deductionRows}
+                    <tr class="fw-bold"><td>Total Deduction</td><td class='text-end'>${Number(data.total_deduction || totalDeduction).toFixed(2)}</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2" class="fw-bold">Net Salary: <span class="text-primary">${Number(data.net_salary).toFixed(2)}</span></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="row mt-4">
+          <div class="col-6 text-center">
+            <div class="mb-5">Approved By:</div>
+            <div style="border-bottom:1px solid #333; width:80%; margin:0 auto;"></div>
+          </div>
+          <div class="col-6 text-center">
+            <div class="mb-5">Received By:</div>
+            <div style="border-bottom:1px solid #333; width:80%; margin:0 auto;"></div>
+          </div>
+        </div>
+      </div>
+    `;
     }
 
     // Initial load of workers data
