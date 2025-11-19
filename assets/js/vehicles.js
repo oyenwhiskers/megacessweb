@@ -68,7 +68,7 @@ function getToken() {
 }
 
 // ==================== GET /vehicles ====================
-async function getAllVehicles({ search = '', status = '', per_page = 15, page = 1 } = {}) {
+async function getAllVehicles({ search = '', status = '', page = 1 } = {}) {
   const token = getToken();
   if (!token) {
     showErrorNoToken("Missing authentication token. Please login first.");  

@@ -204,8 +204,6 @@
                 </div>
                  <!-- Table Body (Empty, JS will populate it) -->
                 <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
-
-                
                   
                   <!-- Pagination (Tailwind-like style requested) -->
                   <nav aria-label="Page navigation" style="padding-bottom: 35px;">
@@ -242,12 +240,9 @@
                   </select>
                 </div>
 
-                <!-- Add Booking Button -->
-                <div>
-                  <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addVehicleBookingModal">
-                    <i class="bi bi-plus-circle me-2"></i> Add Booking
-                  </button>
-                </div>
+                <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
+                  <i class="bi bi-plus-circle me-2"></i> Add Booking
+                </button>
               </div>
             </div>
 
@@ -264,6 +259,11 @@
                   <div class="col text-center">Action</div>
                 </div>
 
+                <div id="loadingBooking" class="text-center my-3" style="display: none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
                 <!-- Table Body -->
                 <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
               </div>
@@ -395,10 +395,11 @@
     <!-- Add Vehicle Booking Modal -->
     <div class="modal fade" id="addVehicleBookingModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
+
         <div class="modal-content">
 
           <!-- Modal Header -->
-          <div class="modal-header">
+          <div class="modal-header bg-success text-white">
             <h5 class="modal-title">Add Vehicle Booking</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
@@ -407,23 +408,46 @@
           <form id="addVehicleBookingForm">
             <div class="modal-body">
 
-              <!-- Vehicle Input / Dropdown -->
-              <div class="mb-3">
+              <!-- Vehicle -->
+              <div class="mb-3 position-relative">
                 <label class="form-label">Vehicle</label>
-                <input list="vehiclesList" class="form-control" id="bookingVehicleInput" placeholder="Enter or select a vehicle" required>
-                <datalist id="vehiclesList">
-                  <!-- Options loaded dynamically from API -->
-                </datalist>
+                <input 
+                  type="text"
+                  class="form-control"
+                  id="bookingVehicleInput"
+                  placeholder="Enter or select a vehicle"
+                  required
+                  autocomplete="off"
+                >
+
+                <!-- DROPDOWN -->
+                <ul 
+                  class="dropdown-menu w-100" 
+                  id="vehicleDropdown"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
               </div>
 
-              <!-- Used By (User or Staff) -->
-              <div class="mb-3">
+              <!-- Used By -->
+              <div class="mb-3 position-relative">
                 <label for="usedBy" class="form-label fw-semibold">Used By</label>
-                <input list="usersList" class="form-control" id="usedBy" placeholder="Enter or search user/staff" required>
-                <datalist id="usersList">
-                  <!-- Options loaded dynamically -->
-                </datalist>
+                <input 
+                  type="text"
+                  class="form-control"
+                  id="usedBy"
+                  placeholder="Enter or search user/staff"
+                  required
+                  autocomplete="off"
+                >
+
+                <!-- DROPDOWN -->
+                <ul 
+                  class="dropdown-menu w-100" 
+                  id="usedByDropdown"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
               </div>
+
 
               <!-- Booking Date -->
               <div class="mb-3">
