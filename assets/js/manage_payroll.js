@@ -965,8 +965,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Helper to fill modal with real worker data (always use selected worker, never static)
     async function fillPayslipModal(workerData) {
-        // Set name from selected worker
-        document.getElementById('payslipName').textContent = workerData.staff_fullname || '';
+        // Detect if staff or worker
+        const isStaff = !!workerData.user_fullname;
+        // Set name
+        document.getElementById('payslipName').textContent = isStaff ? (workerData.user_fullname || '') : (workerData.staff_fullname || '');
         // Populate month options (last 6 months)
         const payslipMonth = document.getElementById('payslipMonth');
         payslipMonth.innerHTML = '<option selected disabled>select month</option>';
@@ -981,12 +983,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         // Clear all fields for new entry
         document.getElementById('incomeTableBody').innerHTML = '';
-        document.getElementById('totalSalary').textContent = '0.00';
         document.getElementById('deductionTableBody').innerHTML = '';
         document.getElementById('totalDeductions').textContent = '0.00';
         document.getElementById('advanceAmount').textContent = '0.00';
         document.getElementById('advanceRemarks').textContent = '';
-        // Optionally, you can fetch and suggest previous payslip data for this worker, but do not auto-fill it
+        const incomeTableHead = document.getElementById('incomeTableHead');
+        if (isStaff) {
+            // For staff, only show base salary as income row, no task, and remove table head
+            const baseSalary = workerData.base_salary?.base_salary ? parseFloat(workerData.base_salary.base_salary).toFixed(2) : '0.00';
+            document.getElementById('incomeTableBody').innerHTML = `<tr><td>Base Salary</td><td>RM ${baseSalary}</td></tr>`;
+            document.getElementById('totalSalary').textContent = baseSalary;
+            if (incomeTableHead) incomeTableHead.innerHTML = '';
+        } else {
+            // For worker, reset total salary and show headers
+            document.getElementById('totalSalary').textContent = '0.00';
+            if (incomeTableHead) incomeTableHead.innerHTML = '<tr><th>Task</th><th>Salary</th></tr>';
+        }
+        // Optionally, you can fetch and suggest previous payslip data for this worker/staff, but do not auto-fill it
     }
 
     // Payroll button functionality
@@ -999,8 +1012,8 @@ let currentPayslipWorkerData = null;
     document.addEventListener('click', function(e) {
         if (e.target.closest('.payroll-action button')) {
             const button = e.target.closest('.payroll-action button');
-            const workerCard = e.target.closest('.worker-card');
             const workerId = button.getAttribute('data-worker-id');
+            const staffId = button.getAttribute('data-staff-id');
             if (workerId) {
                 const workerData = allWorkersData.find(worker => worker.id == workerId);
                 if (workerData) {
@@ -1017,6 +1030,23 @@ let currentPayslipWorkerData = null;
                     // Store for later use in modal
                     currentPayslipWorkerId = workerId;
                     currentPayslipWorkerData = workerData;
+                }
+            } else if (staffId) {
+                const staffDataObj = allStaffData.find(staff => staff.id == staffId);
+                if (staffDataObj) {
+                    // Show employment overview for staff
+                    const employeeData = {
+                        id: staffId,
+                        name: staffDataObj.user_fullname,
+                        joinedSince: staffDataObj.joined_since,
+                        role: staffDataObj.user_role.charAt(0).toUpperCase() + staffDataObj.user_role.slice(1),
+                        age: staffDataObj.age || 'N/A',
+                        nickname: staffDataObj.user_nickname || ''
+                    };
+                    showEmploymentOverview(employeeData, false);
+                    // Optionally store for payslip modal if needed
+                    currentPayslipWorkerId = staffId;
+                    currentPayslipWorkerData = staffDataObj;
                 }
             }
         } else if (e.target && e.target.id === 'generatePayslip') {
@@ -1060,11 +1090,24 @@ let currentPayslipWorkerData = null;
                 payload.advance_repayment_amount = advanceAmount;
                 payload.advance_repayment_remarks = advanceRemarks || '';
             }
+            // Detect if staff or worker
+            const isStaff = !!currentPayslipWorkerData.user_fullname;
+            if (isStaff) {
+                // For staff, add base_salary and use /users/{id}/generate endpoint
+                payload.base_salary = currentPayslipWorkerData.base_salary?.base_salary || 0;
+            }
             // API call
             try {
                 const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
                 if (!AUTH_TOKEN) throw new Error('No auth token');
-                const url = `https://mwms.megacess.com/api/v1/payroll/staff/${currentPayslipWorkerId}/generate`;
+                let url;
+                if (isStaff) {
+                    // Use user_id for staff
+                    const staffUserId = currentPayslipWorkerData.user_id || currentPayslipWorkerId;
+                    url = `https://mwms.megacess.com/api/v1/payroll/users/${staffUserId}/generate`;
+                } else {
+                    url = `https://mwms.megacess.com/api/v1/payroll/staff/${currentPayslipWorkerId}/generate`;
+                }
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: {
