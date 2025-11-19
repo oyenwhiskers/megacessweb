@@ -508,6 +508,56 @@ document.getElementById("addVehicleBookingForm").addEventListener("submit", asyn
   }
 });
 
+// Attach delete button listeners
+function attachDeleteListeners() {
+  const deleteButtons = document.querySelectorAll('.delete-vehicle_booking-btn');
+  
+  deleteButtons.forEach(btn => {
+    // Remove previous listeners to avoid duplicates
+    btn.replaceWith(btn.cloneNode(true));
+  });
+
+  // Re-select buttons after cloning
+  const freshButtons = document.querySelectorAll('.delete-vehicle_booking-btn');
+
+  freshButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bookingId = btn.dataset.id;
+
+      showConfirm("This will permanently delete the booking. Are you sure?", async () => {
+        try {
+          const token = getToken();
+          if (!token) return showErrorNoToken("Missing authentication token.");
+
+          const response = await fetch(`https://mwms.megacess.com/api/v1/vehicle-bookings/${bookingId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            return showError(result.message || "Failed to delete booking.");
+          }
+
+          showSuccess(result.message || "Booking deleted successfully!");
+
+          // Refresh table
+          await getAllVehicleBookings();
+
+        } catch (error) {
+          console.error("💥 Error deleting booking:", error);
+          showError("Something went wrong while deleting the booking.");
+        }
+      });
+    });
+  });
+}
+
+
 
 // ==================== DOMContentLoaded ====================
 window.addEventListener('DOMContentLoaded', () => {
