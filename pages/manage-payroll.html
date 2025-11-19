@@ -123,7 +123,7 @@
         <div class="modal-body">
           <div class="mb-3 d-flex align-items-center gap-3">
             <span class="fw-bold fs-5" style="color:#226644;">Name:</span>
-            <span id="payslipName" class="fw-semibold fs-5">Ethan Miller</span>
+            <span id="payslipName" class="fw-semibold fs-5"></span>
           </div>
           <div class="mb-4 d-flex align-items-center gap-3">
             <span class="fw-bold fs-5" style="color:#226644;">Month Selection:</span>
@@ -145,16 +145,11 @@
                 </thead>
                 <tbody id="incomeTableBody">
                   <!-- Income rows will be populated dynamically -->
-                  <tr><td>Prunning</td><td>100.00</td></tr>
-                  <tr><td>Manuring</td><td>100.00</td></tr>
-                  <tr><td>Planting</td><td>100.00</td></tr>
-                  <tr><td>Sanitation</td><td>100.00</td></tr>
-                  <tr><td>Harvesting</td><td>100.00</td></tr>
                 </tbody>
                 <tfoot>
                   <tr>
                     <td class="fw-bold">Total Salary</td>
-                    <td class="fw-bold" id="totalSalary">500.00</td>
+                    <td class="fw-bold" id="totalSalary">0.00</td>
                   </tr>
                 </tfoot>
               </table>
@@ -178,13 +173,12 @@
             <div class="table-responsive mt-3">
               <table class="table table-bordered align-middle mb-0">
                 <tbody id="deductionTableBody">
-                  <tr><td>Early Out</td><td>67.75</td></tr>
-                  <tr><td>Lateness</td><td>30.75</td></tr>
+                  <!-- Deductions will be populated dynamically -->
                 </tbody>
                 <tfoot>
                   <tr>
                     <td class="fw-bold">Total Deductions</td>
-                    <td class="fw-bold" id="totalDeductions">98.50</td>
+                    <td class="fw-bold" id="totalDeductions">0.00</td>
                   </tr>
                 </tfoot>
               </table>
@@ -194,10 +188,10 @@
           <div class="mb-4">
             <span class="fw-bold fs-5" style="color:#226644;">Advance:</span>
             <div class="row g-0 align-items-center border rounded p-3 mb-2">
-              <div class="col-md-3 text-center fs-4 fw-bold" id="advanceAmount">250.00</div>
+              <div class="col-md-3 text-center fs-4 fw-bold" id="advanceAmount">0.00</div>
               <div class="col-md-9">
                 <div class="text-muted">Remarks:</div>
-                <div id="advanceRemarks" class="text-secondary">Essentials equipment: boots, shcyte, and machete</div>
+                <div id="advanceRemarks" class="text-secondary"></div>
               </div>
             </div>
             <div class="text-center text-muted" style="font-size: 0.95em;">(change or leave it as it is)</div>

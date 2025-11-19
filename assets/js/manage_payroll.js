@@ -963,81 +963,134 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('updatePayslipRecords is deprecated - using generatePayslipRecordsFromAPI instead');
     }
     
+    // Helper to fill modal with real worker data (always use selected worker, never static)
+    async function fillPayslipModal(workerData) {
+        // Set name from selected worker
+        document.getElementById('payslipName').textContent = workerData.staff_fullname || '';
+        // Populate month options (last 6 months)
+        const payslipMonth = document.getElementById('payslipMonth');
+        payslipMonth.innerHTML = '<option selected disabled>select month</option>';
+        const now = new Date();
+        let monthOptions = [];
+        for (let i = 0; i < 6; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const val = `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().slice(-2)}`;
+            const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+            payslipMonth.innerHTML += `<option value="${val}">${label}</option>`;
+            monthOptions.push(val);
+        }
+        // Clear all fields for new entry
+        document.getElementById('incomeTableBody').innerHTML = '';
+        document.getElementById('totalSalary').textContent = '0.00';
+        document.getElementById('deductionTableBody').innerHTML = '';
+        document.getElementById('totalDeductions').textContent = '0.00';
+        document.getElementById('advanceAmount').textContent = '0.00';
+        document.getElementById('advanceRemarks').textContent = '';
+        // Optionally, you can fetch and suggest previous payslip data for this worker, but do not auto-fill it
+    }
+
     // Payroll button functionality
+    // Store current worker id for payslip generation
+let currentPayslipWorkerId = null;
+let currentPayslipWorkerData = null;
+
+// Payroll button functionality
+// Only show employment overview on Payroll button
     document.addEventListener('click', function(e) {
         if (e.target.closest('.payroll-action button')) {
             const button = e.target.closest('.payroll-action button');
             const workerCard = e.target.closest('.worker-card');
-            const name = workerCard.querySelector('.worker-info h5').textContent;
-            
-            // Check if it's a worker or staff
             const workerId = button.getAttribute('data-worker-id');
-            const staffId = button.getAttribute('data-staff-id');
-            
             if (workerId) {
-                // Find worker data
                 const workerData = allWorkersData.find(worker => worker.id == workerId);
                 if (workerData) {
+                    // Show employment overview only
                     const employeeData = {
                         id: workerId,
                         name: workerData.staff_fullname,
                         joinedSince: workerData.joined_since,
                         role: 'Worker',
-                        age: workerData.age || 'N/A'
+                        age: workerData.age || 'N/A',
+                        staff_fullname: workerData.staff_fullname // for modal
                     };
-                    // Use the new async function for workers
                     showEmploymentOverview(employeeData, true);
-                }
-            } else if (staffId) {
-                // Find staff data
-                const staffData = allStaffData.find(staff => staff.id == staffId);
-                if (staffData) {
-                    const employeeData = {
-                        id: staffId,
-                        name: staffData.user_fullname,
-                        joinedSince: staffData.joined_since,
-                        role: staffData.user_role.charAt(0).toUpperCase() + staffData.user_role.slice(1),
-                        age: staffData.age || 'N/A'
-                    };
-                    // Use the new async function for staff with real API data
-                    showEmploymentOverview(employeeData, false);
+                    // Store for later use in modal
+                    currentPayslipWorkerId = workerId;
+                    currentPayslipWorkerData = workerData;
                 }
             }
         } else if (e.target && e.target.id === 'generatePayslip') {
-            // Modal logic for Generate Payslip (client-side, static data)
-            // Ensure modal exists in HTML (as in your manage-payroll.html)
-
-            // Helper to fill modal with static data
-            function fillPayslipModalStatic() {
-                document.getElementById('payslipName').textContent = 'Ethan Miller';
-                // Month options
-                const payslipMonth = document.getElementById('payslipMonth');
-                payslipMonth.innerHTML = '<option selected>11/25</option>';
-                // Income table
-                document.getElementById('incomeTableBody').innerHTML = `
-                    <tr><td>Prunning</td><td>100.00</td></tr>
-                    <tr><td>Manuring</td><td>100.00</td></tr>
-                    <tr><td>Planting</td><td>100.00</td></tr>
-                    <tr><td>Sanitation</td><td>100.00</td></tr>
-                    <tr><td>Harvesting</td><td>100.00</td></tr>
-                `;
-                document.getElementById('totalSalary').textContent = '500.00';
-                // Deductions table
-                document.getElementById('deductionTableBody').innerHTML = `
-                    <tr><td>Early Out</td><td>67.75</td></tr>
-                    <tr><td>Lateness</td><td>30.75</td></tr>
-                `;
-                document.getElementById('totalDeductions').textContent = '98.50';
-                // Advance
-                document.getElementById('advanceAmount').textContent = '250.00';
-                document.getElementById('advanceRemarks').textContent = 'Essentials equipment: boots, shcyte, and machete';
+            // Only open payslip modal here, using stored worker data
+            if (currentPayslipWorkerData) {
+                fillPayslipModal(currentPayslipWorkerData);
+                var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
+                payslipModal.show();
             }
-
-            fillPayslipModalStatic();
-            var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
-            payslipModal.show();
         }
     });
+
+    // Payslip modal: handle GENERATE button
+    const payslipModalEl = document.getElementById('payslipModal');
+    if (payslipModalEl) {
+        payslipModalEl.addEventListener('shown.bs.modal', function() {
+            // Reset form fields if needed
+        });
+        document.getElementById('generatePayslipBtn').onclick = async function() {
+            if (!currentPayslipWorkerId) return;
+            const payslipMonth = document.getElementById('payslipMonth').value;
+            if (!payslipMonth || payslipMonth === 'select month') {
+                alert('Please select a payslip month.');
+                return;
+            }
+            // Gather deductions from deductionTableBody
+            const deductionRows = document.querySelectorAll('#deductionTableBody tr');
+            const deductions = [];
+            deductionRows.forEach(row => {
+                const type = row.children[0]?.textContent?.trim();
+                if (type) deductions.push(type);
+            });
+            let payload = {
+                payslip_month: payslipMonth,
+                deductions: deductions
+            };
+            // Only include advance fields if filled and valid
+            const advanceAmount = document.getElementById('advanceAmount').textContent.trim();
+            const advanceRemarks = document.getElementById('advanceRemarks').textContent.trim();
+            if (advanceAmount && !isNaN(parseFloat(advanceAmount)) && parseFloat(advanceAmount) > 0) {
+                payload.advance_repayment_amount = advanceAmount;
+                payload.advance_repayment_remarks = advanceRemarks || '';
+            }
+            // API call
+            try {
+                const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+                if (!AUTH_TOKEN) throw new Error('No auth token');
+                const url = `https://mwms.megacess.com/api/v1/payroll/staff/${currentPayslipWorkerId}/generate`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AUTH_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if (res.ok && result.success) {
+                    alert('Payslip generated successfully!');
+                    var modal = bootstrap.Modal.getInstance(payslipModalEl);
+                    modal.hide();
+                } else {
+                    let msg = result.message || 'Unknown error';
+                    if (result.errors) {
+                        msg += '\n' + JSON.stringify(result.errors);
+                    }
+                    alert('Failed to generate payslip: ' + msg);
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        };
+    }
 
     // Initial load of workers data
     fetchWorkers('', 1);
