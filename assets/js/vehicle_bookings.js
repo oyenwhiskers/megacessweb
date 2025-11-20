@@ -67,6 +67,23 @@ function getToken() {
   return null;
 }
 
+// Helper function to format a Date object into the YYYY-MM-DDTHH:MM string
+function formatForDateTimeLocal(dateString) {
+    if (!dateString) return "";
+
+    const d = new Date(dateString);
+
+    // Get components in local time
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+
+    // Manually build the required format
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 // --- Global State for Booking Pagination ---
 let bookingPaginationState = {
   currentPage: 1,
@@ -258,10 +275,24 @@ function populateVehicleBookingTable(bookings) {
       </div>
       <div class="col">${booking.user ? booking.user.user_fullname : booking.staff ? booking.staff.staff_fullname : '-'}</div>
       <div class="col">
-        ${booking.datetime_booking ? new Date(booking.datetime_booking).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '-'}
+          ${booking.datetime_booking ? new Date(booking.datetime_booking).toLocaleString('en-GB', { 
+              day:'2-digit', 
+              month:'short', 
+              year:'numeric', 
+              hour: '2-digit',      
+              minute: '2-digit',
+              hour12: true     
+          }) : '-'}
       </div>
       <div class="col">
-        ${booking.datetime_return ? new Date(booking.datetime_return).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '-'}
+          ${booking.datetime_return ? new Date(booking.datetime_return).toLocaleString('en-GB', { 
+              day:'2-digit', 
+              month:'short', 
+              year:'numeric', 
+              hour: '2-digit',      
+              minute: '2-digit',
+              hour12: true     
+          }) : '-'}
       </div>
       <div class="col text-center">
         <button class="btn btn-sm btn-warning me-2 edit-vehicle_booking-btn">
@@ -729,10 +760,10 @@ function openUpdateVehicleBookingModal(booking) {
 
   // Pre-fill dates
   document.getElementById('updateBookingDateInput').value =
-    booking.datetime_booking ? new Date(booking.datetime_booking).toISOString().slice(0, 16) : "";
+    booking.datetime_booking ? formatForDateTimeLocal(booking.datetime_booking) : "";
 
   document.getElementById('updateReturnDateInput').value =
-    booking.datetime_return ? new Date(booking.datetime_return).toISOString().slice(0, 16) : "";
+    booking.datetime_return ? formatForDateTimeLocal(booking.datetime_return) : "";
 
   // Save booking ID for submission
   document.getElementById('updateVehicleBookingForm').dataset.bookingId = booking.id;
