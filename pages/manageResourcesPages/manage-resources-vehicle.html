@@ -148,47 +148,45 @@
               <!-- Title -->
               <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
               
-              <!-- Search Bar -->
-              <div class="flex-grow-1">
-                <div class="input-group">
-                  <input
-                    type="text"
-                    id="vehicleSearch" 
-                    class="form-control"
-                    placeholder="Search vehicle/plate number..."
-                  >
-                  <button class="btn btn-secondary" id="refreshVehicleBtn" type="button">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                  </button>
+              <!-- Search Bar + Filter + Add button -->
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <!-- Search Bar -->
+                <div class="flex-grow-1">
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="vehicleSearch" 
+                      class="form-control"
+                      placeholder="Search vehicle/plate number..."
+                    >
+                    <button class="btn btn-secondary" id="refreshVehicleBtn" type="button">
+                      <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <!-- Row 2: Vehicle List Header -->
-            <div class="d-flex flex-wrap gap-3 align-items-center px-4 mb-4">
-              <!-- Filter Dropdown -->
-              <div class="me-2">
-                <select id="vehicleStatus" class="form-select shadow-sm rounded" style="min-width: 160px;">
-                  <option selected value="">All Status</option>
-                  <option value="Available">Available</option>
-                  <option value="In Use">In Use</option>
-                  <option value="Under Maintenance">Under Maintenance</option>
-                </select>
-              </div>
+                
+                 <!-- Filter Dropdown -->
+                <div>
+                  <select id="vehicleStatus" class="form-select shadow-sm rounded" style="min-width: 160px;">
+                    <option selected value="">All Status</option>
+                    <option value="Available">Available</option>
+                    <option value="In Use">In Use</option>
+                    <option value="Under Maintenance">Under Maintenance</option>
+                  </select>
+                </div>
 
-              <!-- Add Vehicle Button -->
-              <div>
+                <!-- Add Vehicle Button -->
                 <button
-                  type="button" 
-                  class="btn btn-primary d-flex align-items-center"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addVehicleModal"
-                >
-                  <i class="bi bi-plus-circle me-2"></i>
-                  Add Vehicle
+                    type="button" 
+                    class="btn btn-primary d-flex align-items-center"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addVehicleModal"
+                  >
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Add Vehicle
                 </button>
               </div>
             </div>
-
             <!-- Row 3: Vehicle Table -->
             <div class="mt-4 px-4" style="padding-bottom: 35px;">
               <div class="content-table mt-4">
@@ -253,6 +251,7 @@
                   </select>
                 </div>
 
+                <!-- Add Vehicle Button -->
                 <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
                   <i class="bi bi-plus-circle me-2"></i> Add Booking
                 </button>
