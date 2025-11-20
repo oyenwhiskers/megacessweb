@@ -280,7 +280,7 @@ async function refreshToolSummary() {
   animateCount(document.getElementById('totalToolsValue'), Number(tools.total_tools) || 0, 1200);
   animateCount(document.getElementById('availableToolsValue'), Number(tools.available) || 0, 1200);
   animateCount(document.getElementById('inUseToolsValue'), Number(tools.in_use) || 0, 1200);
-  animateCount(document.getElementById('brokenToolsValue'), Number(tools.under_maintenance) || 0, 1200);
+  animateCount(document.getElementById('brokenToolsValue'), Number(tools.broken) || 0, 1200);
 
   setStatsLoading(false);
 }

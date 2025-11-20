@@ -1,11 +1,19 @@
-// This salary_get_user.js can handle fetching all users details, displaying it, filtering, searching, and paginating users for Salary Management tab
-
 $(document).ready(function() {
   const API_URL = "https://mwms.megacess.com/api/v1/users"; 
   const token = getToken();
 
   if (!token) {
     console.error("Token not found. Please ensure user is authenticated.");
+    Swal.fire({
+      icon: "error",
+      title: "Authentication Required!",
+      text: "Please login first before proceeding.",
+      confirmButtonText: "Log in now."
+    }).then((result) => {
+      if (result.isConfirmed){
+        window.location.href = "/megacessweb/assets/pages/log-in.html"
+      }
+    });
     return;
   }
 
@@ -19,6 +27,9 @@ $(document).ready(function() {
   let lastPage = 1;
 
   function fetchUsers(page = 1) {
+    // Only fetch if Staff section is visible
+    if ($('#staffList').hasClass('d-none')) return;
+
     const roleId = $("input[name='staffFilter']:checked").attr("id") || "filterAll";
     const roleMap = { filterManager: "manager", filterChecker: "checker", filterAdmin: "admin", filterMandor: "mandor" };
     const role = roleMap[roleId] || "";
@@ -85,7 +96,7 @@ $(document).ready(function() {
               <small class="text-muted">${role}</small>
             </div>
             <div class="d-flex flex-column ms-2">
-              <a href="/megacessweb/pages/manage-payment-rate-edit-salary.html?id=${encodeURIComponent(id)}"
+              <a href="/megacessweb/pages/manage-payment-rate-edit-salary-user.html?user_id=${encodeURIComponent(id)}"
                 class="btn btn-sm btn-outline-success mb-1" title="Edit base salary">
                 <i class="bi bi-pencil-fill"></i>
               </a>
@@ -136,5 +147,7 @@ $(document).ready(function() {
 
   // Initial fetch
   fetchUsers();
-});
 
+  // Re-fetch when Staff section becomes visible
+  $('input[name="employeeType"]').on("change", () => fetchUsers(1));
+});
