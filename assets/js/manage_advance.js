@@ -23,22 +23,37 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     advanceList.innerHTML = data.map((item, idx) => {
-      const person = item.staff;
-      const name = person ? (person.staff_fullname || person.user_fullname || '-') : '-';
-      const role = type === 'worker' ? 'Worker' : (item.role || 'Staff');
-      let avatar = '';
-      if (type === 'worker' && person && person.staff_img) {
-        let workerImage = person.staff_img;
-        if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
-          workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
-        } else if (workerImage.startsWith('/')) {
-          workerImage = `https://mwms.megacess.com${workerImage}`;
+      let person, name, role, avatar = '';
+      if (type === 'worker') {
+        person = item.staff;
+        name = person ? (person.staff_fullname || '-') : '-';
+        role = 'Worker';
+        if (person && person.staff_img) {
+          let workerImage = person.staff_img;
+          if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+            workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+          } else if (workerImage.startsWith('/')) {
+            workerImage = `https://mwms.megacess.com${workerImage}`;
+          }
+          avatar = `<img src='${workerImage}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
+        } else {
+          avatar = `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bi bi-person text-white" style="font-size:2.5rem;"></i></div>`;
         }
-        avatar = `<img src='${workerImage}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
-      } else if (person && person.staff_img) {
-        avatar = `<img src='${person.staff_img}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
       } else {
-        avatar = `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bi bi-person text-white" style="font-size:2.5rem;"></i></div>`;
+        person = item.user;
+        name = person ? (person.user_fullname || '-') : '-';
+        role = person ? (person.user_role || 'Staff') : 'Staff';
+        if (person && person.user_img) {
+          let staffImage = person.user_img;
+          if (!staffImage.startsWith('http') && !staffImage.startsWith('/')) {
+            staffImage = `https://mwms.megacess.com/storage/user-images/${staffImage}`;
+          } else if (staffImage.startsWith('/')) {
+            staffImage = `https://mwms.megacess.com${staffImage}`;
+          }
+          avatar = `<img src='${staffImage}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
+        } else {
+          avatar = `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bi bi-person text-white" style="font-size:2.5rem;"></i></div>`;
+        }
       }
       // Use advance record id for View button
       const viewId = item.id || item.loan_id;
@@ -67,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
       advanceList.innerHTML = `<div class='text-center text-danger py-5'>Not authenticated</div>`;
       return;
     }
+    // Fix: Use correct type for API
     const type = currentType === 'worker' ? 'staff' : 'user';
     const search = searchInput.value.trim();
     let url = `https://mwms.megacess.com/api/v1/advances?type=${type}`;
@@ -128,18 +144,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const content = document.getElementById('advanceDetailsContent');
     if (content) {
-      // Avatar logic
+      // Determine if this is a worker or staff advance
+      let isWorker = !!data.staff && !data.user;
+      let person = isWorker ? data.staff : data.user;
+      let name = person ? (isWorker ? (person.staff_fullname || '-') : (person.user_fullname || '-')) : '-';
+      let role = person ? (isWorker ? (person.staff_role || 'Worker') : (person.user_role || 'Staff')) : (isWorker ? 'Worker' : 'Staff');
       let avatar = `<span class='bg-dark rounded-circle d-flex align-items-center justify-content-center' style='width:48px;height:48px;'><i class='bi bi-person text-white' style='font-size:2rem;'></i></span>`;
-      let name = data.staff?.staff_fullname || data.staff?.user_fullname || '-';
-      let role = data.staff?.user_role || data.staff?.staff_role || data.role || '';
-      if (data.staff?.staff_img) {
-        let img = data.staff.staff_img;
-        if (!img.startsWith('http') && !img.startsWith('/')) {
-          img = `https://mwms.megacess.com/storage/user-images/${img}`;
-        } else if (img.startsWith('/')) {
-          img = `https://mwms.megacess.com${img}`;
+      if (person) {
+        let img = isWorker ? person.staff_img : person.user_img;
+        if (img) {
+          if (!img.startsWith('http') && !img.startsWith('/')) {
+            img = `https://mwms.megacess.com/storage/user-images/${img}`;
+          } else if (img.startsWith('/')) {
+            img = `https://mwms.megacess.com${img}`;
+          }
+          avatar = `<img src='${img}' class='rounded-circle' style='width:48px;height:48px;object-fit:cover;' alt='${name}'>`;
         }
-        avatar = `<img src='${img}' class='rounded-circle' style='width:48px;height:48px;object-fit:cover;' alt='${name}'>`;
       }
       // Format date as DD/MM/YYYY
       function formatDisplayDate(dateStr) {
@@ -205,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
           alert('Not authenticated');
           return;
         }
-        // Determine type for API endpoint
+        // Fix: Use correct type for API endpoint
         const type = currentType === 'worker' ? 'staff' : 'user';
         let url = `https://mwms.megacess.com/api/v1/advances/${type}/${advanceId}`;
         try {

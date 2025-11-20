@@ -81,7 +81,7 @@
               </div>
               <div class="mb-2">
                 <label class="form-label fw-semibold mb-1" for="userSearch">Search:</label>
-                <input type="text" class="form-control" id="userSearch" placeholder="">
+                <input type="text" class="form-control" id="userSearch" placeholder="Search Worker/Staff Name">
               </div>
               <div class="d-flex gap-2 mb-2 d-none" id="staffFilterRow">
                 <button type="button" class="btn btn-light border flex-fill">All</button>
@@ -296,9 +296,11 @@
       }
       if (workerBtn && staffBtn && filterRow) {
         workerBtn.addEventListener('click', function() {
+          userSearch.placeholder = 'Search Worker Name';
           fetchWorkerList(userSearch.value);
         });
         staffBtn.addEventListener('click', function() {
+          userSearch.placeholder = 'Search Staff Name';
           fetchStaffList(userSearch.value, staffRoleFilter);
         });
         filterRow.querySelectorAll('button').forEach(btn => {
@@ -309,6 +311,12 @@
             fetchStaffList(userSearch.value, staffRoleFilter);
           });
         });
+        // Set initial placeholder
+        if(workerBtn.classList.contains('btn-success')) {
+          userSearch.placeholder = 'Search Worker Name';
+        } else {
+          userSearch.placeholder = 'Search Staff Name';
+        }
       }
     });
   </script>
@@ -391,8 +399,7 @@
           } else {
             payload.user_id = user_id;
           }
-          // Ensure correct endpoint and method
-          const res = await fetch('https://mwms.megacess.com/api/v1/advances', {
+          const response = await fetch('https://mwms.megacess.com/api/v1/advances/store', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -401,29 +408,22 @@
             },
             body: JSON.stringify(payload)
           });
-          const result = await res.json();
+          const result = await response.json();
           if (result.success) {
-            alert('Record added successfully.');
-            // Optionally, you can reset the form or close the modal
-            document.getElementById('advanceDate').value = '';
-            document.getElementById('advanceAmount').value = '';
-            document.getElementById('advanceRemarks').value = '';
-            document.getElementById('selectedPerson').value = 'No one selected';
-            document.getElementById('staffFilterRow').querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            document.getElementById('modalWorkerBtn').classList.add('btn-success');
-            document.getElementById('modalWorkerBtn').classList.remove('btn-light');
-            document.getElementById('modalWorkerBtn').style.background = '#11634b';
-            document.getElementById('modalStaffBtn').classList.remove('btn-success');
-            document.getElementById('modalStaffBtn').classList.add('btn-light');
-            document.getElementById('modalStaffBtn').style.background = '';
-            // Refresh the advances list if needed
-            // location.reload(); // Caution: This will reload the entire page
+            alert('Record added successfully!');
+            // Optionally, reset the form or close the modal
+            addAdvanceModal.querySelector('form').reset();
+            selectedInput.value = 'No one selected';
+            selectedInput.dataset.id = '';
+            selectedInput.dataset.type = '';
+            fetchWorkerList('');
+            fetchStaffList('', staffRoleFilter);
           } else {
             alert('Failed to add record: ' + (result.message || 'Unknown error'));
           }
         } catch (error) {
           console.error('Error adding record:', error);
-          alert('Error adding record. Please try again later.');
+          alert('An error occurred while adding the record. Please try again later.');
         }
       });
     });
