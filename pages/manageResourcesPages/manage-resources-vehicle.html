@@ -144,8 +144,10 @@
         <div class="tab-content">
           <!-- Vehicle Tab -->
           <div class="tab-pane" data-name="vehicle">
-            <!-- Row 2: Vehicle List Header -->
-            <div class="d-flex flex-wrap gap-3 align-items-center px-4 mb-4">
+            <div class="px-4 mb-4">
+              <!-- Title -->
+              <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
+              
               <!-- Search Bar -->
               <div class="flex-grow-1">
                 <div class="input-group">
@@ -160,7 +162,9 @@
                   </button>
                 </div>
               </div>
-
+            </div>
+            <!-- Row 2: Vehicle List Header -->
+            <div class="d-flex flex-wrap gap-3 align-items-center px-4 mb-4">
               <!-- Filter Dropdown -->
               <div class="me-2">
                 <select id="vehicleStatus" class="form-select shadow-sm rounded" style="min-width: 160px;">
@@ -170,7 +174,6 @@
                   <option value="Under Maintenance">Under Maintenance</option>
                 </select>
               </div>
-
 
               <!-- Add Vehicle Button -->
               <div>
@@ -225,18 +228,28 @@
               <div class="d-flex flex-wrap gap-3 align-items-center">
                 <!-- Search Bar -->
                 <div class="flex-grow-1">
-                  <input type="text" class="form-control" placeholder="Search vehicle/plate number/assigned person...">
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="vehicleBookingSearch" 
+                      class="form-control"
+                      placeholder="Search vehicle/plate number..."
+                    >
+                    <button class="btn btn-secondary" id="refreshVehicleBookingBtn" type="button">
+                      <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Filter Dropdown -->
                 <div>
-                  <select class="form-select">
-                    <option selected>Sort by...</option>
+                  <select id='vehicleBookingSortBy' class="form-select">
+                    <option selected value="">Sort by...</option>
                     <!-- Date sorting -->
-                    <option value="booking-date-asc">Booking Date ↑ (asc)</option>
-                    <option value="booking-date-desc">Booking Date ↓ (desc)</option>
-                    <option value="return-date-asc">Return Date ↑ (asc)</option>
-                    <option value="return-date-desc">Return Date ↓ (desc)</option>
+                    <option value="booking-asc">Booking Date ↑ (asc)</option>
+                    <option value="booking-desc">Booking Date ↓ (desc)</option>
+                    <option value="return-asc">Return Date ↑ (asc)</option>
+                    <option value="return-desc">Return Date ↓ (desc)</option>
                   </select>
                 </div>
 
@@ -266,6 +279,13 @@
                 </div>
                 <!-- Table Body -->
                 <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
+
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                    <ul id="vehicleBookingPagination" class="pagination justify-content-center mb-0">
+                      <!-- JS will render Previous, page numbers, Next here -->
+                    </ul>
+                </nav>
               </div>
             </div>
           </div>
@@ -466,7 +486,7 @@
             <!-- Modal Footer -->
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-primary">Create Booking</button>
+              <button id="createBookingBtn" type="submit" class="btn btn-primary">Create Booking</button>
             </div>
 
           </form>
@@ -554,7 +574,7 @@
           <!-- Footer -->
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-warning">Update Booking</button>
+            <button id="updateBookingBtn" type="submit" class="btn btn-warning">Update Booking</button>
           </div>
 
         </form>
