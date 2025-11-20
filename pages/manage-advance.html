@@ -44,32 +44,7 @@
         <div class="mb-3 fw-semibold">List of existing advance:</div>
         <div class="bg-white rounded p-3" style="min-height:200px;">
           <div class="advance-list">
-            <div class="advance-card d-flex align-items-center justify-content-between border rounded mb-3 p-2" style="background:#fff;">
-              <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;">
-                  <i class="bi bi-person text-white" style="font-size:2.5rem;"></i>
-                </div>
-                <div>
-                  <div class="fw-bold fs-5">Ethan Muller</div>
-                  <div class="text-muted">Checker</div>
-                </div>
-              </div>
-              <div class="border-start" style="height:60px;"></div>
-              <button class="btn btn-link p-0 ms-3" style="font-size:2rem;"><i class="bi bi-eye"></i></button>
-            </div>
-            <div class="advance-card d-flex align-items-center justify-content-between border rounded mb-3 p-2" style="background:#fff;">
-              <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;">
-                  <i class="bi bi-person text-white" style="font-size:2.5rem;"></i>
-                </div>
-                <div>
-                  <div class="fw-bold fs-5">Oikawa Yamaguchi</div>
-                  <div class="text-muted">Manager</div>
-                </div>
-              </div>
-              <div class="border-start" style="height:60px;"></div>
-              <button class="btn btn-link p-0 ms-3" style="font-size:2rem;"><i class="bi bi-eye"></i></button>
-            </div>
+            <!-- List items will be rendered by JS. View button removed. -->
           </div>
         </div>
       </div>
@@ -153,7 +128,10 @@
             </div>
             <div class="mb-3">
               <label for="advanceAmount" class="form-label fw-semibold">Amount:</label>
-              <input type="number" class="form-control" id="advanceAmount" placeholder="Enter amount..">
+              <div class="input-group">
+                <span class="input-group-text">RM</span>
+                <input type="number" class="form-control" id="advanceAmount" placeholder="Enter amount..">
+              </div>
             </div>
             <div class="mb-3">
               <label for="advanceRemarks" class="form-label fw-semibold">Remarks:</label>
@@ -349,7 +327,15 @@
         btn.addEventListener('click', function() {
           const name = this.querySelector('.fw-bold')?.textContent?.trim() || '';
           const id = this.dataset.id || '';
-          setSelectedPerson(name, id);
+          // Also store type for correct API usage
+          const selectedInput = document.getElementById('selectedPerson');
+          if (selectedInput) {
+            selectedInput.value = name;
+            selectedInput.dataset.id = id;
+            // Store type: 'worker' or 'staff' (for Add Advance form logic)
+            const workerBtn = document.getElementById('modalWorkerBtn');
+            selectedInput.dataset.type = workerBtn && workerBtn.classList.contains('btn-success') ? 'worker' : 'staff';
+          }
         });
       });
     }
@@ -374,31 +360,24 @@
         const selectedInput = document.getElementById('selectedPerson');
         const selectedName = selectedInput.value;
         const selectedDataId = selectedInput.dataset.id;
+        const selectedType = selectedInput.dataset.type; // 'worker' or 'staff'
         const date = document.getElementById('advanceDate').value;
         const amount = document.getElementById('advanceAmount').value;
         const remarks = document.getElementById('advanceRemarks').value;
-        const workerBtn = document.getElementById('modalWorkerBtn');
-        const isWorker = workerBtn.classList.contains('btn-success');
-        let type = isWorker ? 'staff' : 'user';
+        let type = selectedType === 'worker' ? 'staff' : 'user';
         let staff_id = null, user_id = null;
-        if (selectedName && selectedDataId) {
-          if (isWorker) {
-            staff_id = parseInt(selectedDataId);
+        if(selectedDataId) {
+          if(selectedType === 'worker') {
+            staff_id = selectedDataId;
           } else {
-            user_id = parseInt(selectedDataId);
+            user_id = selectedDataId;
           }
         }
-        if (!selectedName || (!staff_id && !user_id) || !date || !amount) {
-          alert('Please select a worker/staff and fill all required fields.');
-          return;
+        if(!date || !amount || !remarks || !selectedDataId) {
+          return alert('Please fill in all fields and select a worker/staff.');
         }
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        if (!token) {
-          alert('Not authenticated.');
-          return;
-        }
-        addRecordBtn.disabled = true;
-        addRecordBtn.textContent = 'Adding...';
+        if (!token) return;
         try {
           const payload = {
             type,
@@ -407,11 +386,12 @@
             loan_remarks: remarks,
             loan_status: 'not_paid'
           };
-          if (isWorker) {
+          if (selectedType === 'worker') {
             payload.staff_id = staff_id;
           } else {
             payload.user_id = user_id;
           }
+          // Ensure correct endpoint and method
           const res = await fetch('https://mwms.megacess.com/api/v1/advances', {
             method: 'POST',
             headers: {
@@ -422,21 +402,28 @@
             body: JSON.stringify(payload)
           });
           const result = await res.json();
-          if (res.ok && result.success) {
-            alert('Advance record created successfully!');
-            // Optionally close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addAdvanceModal'));
-            if (modal) modal.hide();
-            // Refresh advances list if function available
-            if (typeof fetchAdvances === 'function') fetchAdvances();
+          if (result.success) {
+            alert('Record added successfully.');
+            // Optionally, you can reset the form or close the modal
+            document.getElementById('advanceDate').value = '';
+            document.getElementById('advanceAmount').value = '';
+            document.getElementById('advanceRemarks').value = '';
+            document.getElementById('selectedPerson').value = 'No one selected';
+            document.getElementById('staffFilterRow').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            document.getElementById('modalWorkerBtn').classList.add('btn-success');
+            document.getElementById('modalWorkerBtn').classList.remove('btn-light');
+            document.getElementById('modalWorkerBtn').style.background = '#11634b';
+            document.getElementById('modalStaffBtn').classList.remove('btn-success');
+            document.getElementById('modalStaffBtn').classList.add('btn-light');
+            document.getElementById('modalStaffBtn').style.background = '';
+            // Refresh the advances list if needed
+            // location.reload(); // Caution: This will reload the entire page
           } else {
-            alert(result.message || 'Failed to add record.');
+            alert('Failed to add record: ' + (result.message || 'Unknown error'));
           }
-        } catch (err) {
-          alert(err.message || 'Error adding record.');
-        } finally {
-          addRecordBtn.disabled = false;
-          addRecordBtn.textContent = 'Add Record';
+        } catch (error) {
+          console.error('Error adding record:', error);
+          alert('Error adding record. Please try again later.');
         }
       });
     });

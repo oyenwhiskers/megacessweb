@@ -15,105 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
   }
 
-  // Helper: create or get modal
-  function getAdvanceModal() {
-    let modal = document.getElementById('advanceViewModal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'advanceViewModal';
-      modal.innerHTML = `
-        <div class="modal fade" tabindex="-1" id="advanceModal" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered" style="max-width:600px;">
-            <div class="modal-content" style="background:#d2f5d7;">
-              <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">View Existing Advance & Expense Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body" id="advanceModalBody"></div>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-    return modal;
-  }
-
-  // Helper: show modal with content (optionally show immediately)
-  function showAdvanceModal(html, showNow = true) {
-    getAdvanceModal();
-    document.getElementById('advanceModalBody').innerHTML = html;
-    const modalInstance = new bootstrap.Modal(document.getElementById('advanceModal'));
-    // Remove modal from DOM on close to fix lingering backdrop
-    document.getElementById('advanceModal').addEventListener('hidden.bs.modal', function() {
-      const modalEl = document.getElementById('advanceViewModal');
-      if (modalEl) modalEl.remove();
-    }, { once: true });
-    if (showNow) modalInstance.show();
-    return modalInstance;
-  }
-
-  // Helper: fetch and show advance details
-  async function viewAdvance(item, type) {
-    const token = getAuthToken();
-    if (!token) return;
-    let id, url;
-    if (type === 'worker') {
-      // Worker: use staff_id or staff.id
-      id = item.staff_id || (item.staff && item.staff.id);
-      url = `https://mwms.megacess.com/api/v1/advances/staff/${id}`;
-    } else if (type === 'staff') {
-      // Staff: use user_id or staff.id
-      id = item.user_id || (item.staff && item.staff.id);
-      url = `https://mwms.megacess.com/api/v1/advances/user/${id}`;
-    } else {
-      document.getElementById('advanceModalBody').innerHTML = `<div class='text-danger py-4'>Invalid type.</div>`;
-      return;
-    }
-    // Show modal immediately with spinner
-    const spinnerHtml = `<div class='d-flex justify-content-center align-items-center' style='min-height:200px;'><div class='spinner-border text-success'></div></div>`;
-    const modalInstance = showAdvanceModal(spinnerHtml, true);
-    try {
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        const d = result.data;
-        const person = d.staff;
-        const creator = d.creator;
-        const avatar = person && person.staff_img ?
-          `<img src='${person.staff_img}' class='rounded-circle me-2' style='width:50px;height:50px;object-fit:cover;' alt='${person.staff_fullname}'>` :
-          `<span class='rounded-circle bg-dark d-inline-flex align-items-center justify-content-center me-2' style='width:50px;height:50px;'><i class='bi bi-person text-white' style='font-size:2rem;'></i></span>`;
-        document.getElementById('advanceModalBody').innerHTML = `
-          <div class='mb-2 fw-semibold'>Made for:</div>
-          <div class='d-flex align-items-center border rounded p-2 mb-3 bg-white'>
-            ${avatar}
-            <div>
-              <div class='fw-bold fs-5'>${person.staff_fullname || person.user_fullname || '-'}</div>
-              <div class='text-muted'>${type === 'worker' ? 'Worker' : (d.role || 'Staff')}</div>
-            </div>
-          </div>
-          <div class='row mb-2'>
-            <div class='col-6'><span class='text-muted'>Date:</span><br>${d.loan_date ? new Date(d.loan_date).toLocaleDateString('en-GB') : '-'}</div>
-            <div class='col-6'><span class='text-muted'>Created by:</span><br>${creator && creator.user_fullname ? creator.user_fullname : '-'}</div>
-          </div>
-          <div class='mb-2'><span class='text-muted'>Amount:</span><br>RM ${d.loan_amount || '-'}</div>
-          <div class='mb-2'><span class='text-muted'>Remarks:</span><br>${d.loan_remarks || '-'}</div>
-        `;
-      } else {
-        document.getElementById('advanceModalBody').innerHTML = `<div class='text-danger py-4'>${result.message || 'Failed to load details.'}</div>`;
-      }
-    } catch (err) {
-      document.getElementById('advanceModalBody').innerHTML = `<div class='text-danger py-4'>${err.message || 'Error loading details.'}</div>`;
-    }
-  }
-
   // Helper: render advances
   function renderAdvances(data, type) {
     if (!advanceList) return;
@@ -125,9 +26,22 @@ document.addEventListener('DOMContentLoaded', function() {
       const person = item.staff;
       const name = person ? (person.staff_fullname || person.user_fullname || '-') : '-';
       const role = type === 'worker' ? 'Worker' : (item.role || 'Staff');
-      const avatar = person && person.staff_img ?
-        `<img src='${person.staff_img}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>` :
-        `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bi bi-person text-white" style="font-size:2.5rem;"></i></div>`;
+      let avatar = '';
+      if (type === 'worker' && person && person.staff_img) {
+        let workerImage = person.staff_img;
+        if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+          workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+        } else if (workerImage.startsWith('/')) {
+          workerImage = `https://mwms.megacess.com${workerImage}`;
+        }
+        avatar = `<img src='${workerImage}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
+      } else if (person && person.staff_img) {
+        avatar = `<img src='${person.staff_img}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
+      } else {
+        avatar = `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bi bi-person text-white" style="font-size:2.5rem;"></i></div>`;
+      }
+      // Use advance record id for View button
+      const viewId = item.id || item.loan_id;
       return `
         <div class="advance-card d-flex align-items-center justify-content-between border rounded mb-3 p-2" style="background:#fff;">
           <div class="d-flex align-items-center gap-3">
@@ -137,21 +51,13 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="text-muted">${role}</div>
             </div>
           </div>
-          <div class="border-start" style="height:60px;"></div>
-          <button class="btn btn-success d-flex align-items-center gap-2 px-3 py-1 ms-3 view-advance-btn" data-idx="${idx}" style="background:#11634b;border:none;">
-            <i class="bi bi-eye"></i>
-            <span>View</span>
-          </button>
+          <div class="d-flex align-items-center gap-3">
+            <div class="border-start" style="height:60px;"></div>
+            <button type="button" class="btn btn-outline-success view-advance-btn" data-id="${viewId}"><i class="bi bi-eye"></i> View</button>
+          </div>
         </div>
       `;
     }).join('');
-    // Add event listeners for view buttons
-    document.querySelectorAll('.view-advance-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const idx = this.getAttribute('data-idx');
-        viewAdvance(data[idx], type);
-      });
-    });
   }
 
   // Fetch advances from API
@@ -187,6 +93,148 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {
       advanceList.innerHTML = `<div class='text-center text-danger py-5'>${err.message || 'Error loading advances.'}</div>`;
     }
+  }
+
+  // Helper: format date to YYYY-MM-DD
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    return d.toISOString().slice(0, 10);
+  }
+
+  // Helper: show advance details in modal
+  function showAdvanceDetails(data) {
+    let modal = document.getElementById('viewAdvanceModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'modal fade';
+      modal.id = 'viewAdvanceModal';
+      modal.tabIndex = -1;
+      modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered" style="max-width:700px;">
+          <div class="modal-content" style="background:#d2f5d7;">
+            <div class="modal-header border-0 pb-0">
+              <h5 class="modal-title fw-bold" style="color:#11634b;">View Existing Advance & Expense Details</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div id="advanceDetailsContent"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    const content = document.getElementById('advanceDetailsContent');
+    if (content) {
+      // Avatar logic
+      let avatar = `<span class='bg-dark rounded-circle d-flex align-items-center justify-content-center' style='width:48px;height:48px;'><i class='bi bi-person text-white' style='font-size:2rem;'></i></span>`;
+      let name = data.staff?.staff_fullname || data.staff?.user_fullname || '-';
+      let role = data.staff?.user_role || data.staff?.staff_role || data.role || '';
+      if (data.staff?.staff_img) {
+        let img = data.staff.staff_img;
+        if (!img.startsWith('http') && !img.startsWith('/')) {
+          img = `https://mwms.megacess.com/storage/user-images/${img}`;
+        } else if (img.startsWith('/')) {
+          img = `https://mwms.megacess.com${img}`;
+        }
+        avatar = `<img src='${img}' class='rounded-circle' style='width:48px;height:48px;object-fit:cover;' alt='${name}'>`;
+      }
+      // Format date as DD/MM/YYYY
+      function formatDisplayDate(dateStr) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        return d.toLocaleDateString('en-GB');
+      }
+      content.innerHTML = `
+        <div class="p-3" style="background:#fff;border-radius:12px;">
+          <div class="mb-3">
+            <div class="fw-semibold text-secondary mb-1">Made for:</div>
+            <div class="d-flex align-items-center gap-3 border rounded p-2" style="background:#fff;">
+              ${avatar}
+              <div>
+                <div class="fw-bold fs-5">${name}</div>
+                <div class="text-muted">${role}</div>
+              </div>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-6">
+              <div class="fw-semibold text-secondary">Date:</div>
+              <div>${formatDisplayDate(data.loan_date)}</div>
+            </div>
+            <div class="col-6">
+              <div class="fw-semibold text-secondary">Created by:</div>
+              <div>${data.creator?.user_fullname || '-'}</div>
+            </div>
+          </div>
+          <div class="mb-2">
+            <div class="fw-semibold text-secondary">Amount:</div>
+            <div>RM ${data.loan_amount || '-'}</div>
+          </div>
+          <div class="mb-2">
+            <div class="fw-semibold text-secondary">Loan status:</div>
+            <div>${data.loan_status || '-'}</div>
+          </div>
+          <div class="mb-2">
+            <div class="fw-semibold text-secondary">Remarks:</div>
+            <div>${data.loan_remarks || '-'}</div>
+          </div>
+        </div>
+      `;
+    }
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+  }
+
+  // Attach event listeners to View buttons
+  function attachViewButtonHandlers() {
+    document.querySelectorAll('.view-advance-btn').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        let advanceId = this.getAttribute('data-id');
+        if (!advanceId) return;
+        advanceId = parseInt(advanceId, 10); // Ensure integer
+        if (isNaN(advanceId)) {
+          alert('Invalid advance ID');
+          return;
+        }
+        const token = getAuthToken();
+        if (!token) {
+          alert('Not authenticated');
+          return;
+        }
+        // Determine type for API endpoint
+        const type = currentType === 'worker' ? 'staff' : 'user';
+        let url = `https://mwms.megacess.com/api/v1/advances/${type}/${advanceId}`;
+        try {
+          const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          const result = await res.json();
+          if (res.ok && result.success) {
+            showAdvanceDetails(result.data);
+          } else {
+            alert(result.message || 'Failed to fetch details.');
+          }
+        } catch (err) {
+          alert(err.message || 'Error fetching details.');
+        }
+      });
+    });
+  }
+
+  // Patch renderAdvances to attach handlers after rendering
+  const origRenderAdvances = renderAdvances;
+  renderAdvances = function(data, type) {
+    origRenderAdvances(data, type);
+    attachViewButtonHandlers();
   }
 
   // Tab switching
