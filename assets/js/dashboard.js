@@ -32,6 +32,7 @@ function hideLoading(container) {
 document.addEventListener('DOMContentLoaded', function() {
     // Populate year and month dropdowns
     populateYearMonthDropdowns();
+    populateChartDropdowns();
 
     // Get current month and year
     const currentDate = new Date();
@@ -42,18 +43,39 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('dashboard-year').value = year;
     document.getElementById('dashboard-month').value = month;
 
+    const yearChart = document.getElementById('dashboard-year-chart');
+    const monthChart = document.getElementById('dashboard-month-chart');
+    if (yearChart) yearChart.value = year;
+    if (monthChart) monthChart.value = month;
+
     // Initialize chart
     initializeChart();
 
-    // Fetch dashboard data
+    // Fetch dashboard data (top cards)
     fetchDashboardData(month, year);
 
-    // Fetch chart data
+    // Fetch chart data (block chart)
     fetchTasksByBlocks(year, month);
 
-    // Listen for filter changes
-    document.getElementById('dashboard-year').addEventListener('change', onFilterChange);
-    document.getElementById('dashboard-month').addEventListener('change', onFilterChange);
+    // Listen for top dashboard filter changes (independent)
+    document.getElementById('dashboard-year').addEventListener('change', function() {
+        const year = parseInt(document.getElementById('dashboard-year').value, 10);
+        const month = parseInt(document.getElementById('dashboard-month').value, 10);
+        fetchDashboardData(month, year);
+    });
+    document.getElementById('dashboard-month').addEventListener('change', function() {
+        const year = parseInt(document.getElementById('dashboard-year').value, 10);
+        const month = parseInt(document.getElementById('dashboard-month').value, 10);
+        fetchDashboardData(month, year);
+    });
+
+    // Listen for chart filter changes (independent)
+    const yearSelect = document.getElementById('dashboard-year-chart');
+    const monthSelect = document.getElementById('dashboard-month-chart');
+    const weekSelect = document.getElementById('dashboard-week');
+    if (yearSelect) yearSelect.addEventListener('change', onChartFilterChange);
+    if (monthSelect) monthSelect.addEventListener('change', onChartFilterChange);
+    if (weekSelect) weekSelect.addEventListener('change', onChartFilterChange);
 });
 
 function populateYearMonthDropdowns() {
@@ -83,13 +105,80 @@ function populateYearMonthDropdowns() {
         opt.textContent = monthNames[m - 1];
         monthSelect.appendChild(opt);
     }
+
+    // Weeks: 1-53
+    const weekSelect = document.getElementById('dashboard-week');
+    if (weekSelect) {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'All';
+        weekSelect.appendChild(defaultOpt);
+        for (let w = 1; w <= 53; w++) {
+            const opt = document.createElement('option');
+            opt.value = w;
+            opt.textContent = 'Week ' + w;
+            weekSelect.appendChild(opt);
+        }
+    }
 }
 
+function populateChartDropdowns() {
+    // Populate year, month, and week for the chart filters
+    const yearSelect = document.getElementById('dashboard-year-chart');
+    const monthSelect = document.getElementById('dashboard-month-chart');
+    const weekSelect = document.getElementById('dashboard-week');
+    if (!yearSelect || !monthSelect || !weekSelect) return;
+
+    // Years: from 2022 to current year
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 2022; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+    }
+
+    // Months: January-December
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = monthNames[m - 1];
+        monthSelect.appendChild(opt);
+    }
+
+    // Weeks: 1-53
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'All';
+    weekSelect.appendChild(defaultOpt);
+    for (let w = 1; w <= 53; w++) {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = 'Week ' + w;
+        weekSelect.appendChild(opt);
+    }
+}
+
+// Update event listeners to include week filter
 function onFilterChange() {
     const year = parseInt(document.getElementById('dashboard-year').value, 10);
     const month = parseInt(document.getElementById('dashboard-month').value, 10);
+    const weekValue = document.getElementById('dashboard-week').value;
+    const week = weekValue ? parseInt(weekValue, 10) : null;
     fetchDashboardData(month, year);
-    fetchTasksByBlocks(year, month);
+    fetchTasksByBlocks(year, month, week);
+}
+
+function onChartFilterChange() {
+    const year = parseInt(document.getElementById('dashboard-year-chart').value, 10);
+    const month = parseInt(document.getElementById('dashboard-month-chart').value, 10);
+    const weekValue = document.getElementById('dashboard-week').value;
+    const week = weekValue ? parseInt(weekValue, 10) : null;
+    fetchTasksByBlocks(year, month, week);
 }
 
 async function fetchDashboardData(month, year) {
