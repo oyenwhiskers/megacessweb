@@ -338,7 +338,7 @@ async function openAddVehicleBookingModal() {
   modal.show();
 }
 
-// Fetch all vehicles (handle pagination)
+// Fetch all vehicles for dropdown (unlimited per page)
 async function fetchVehicle() {
   console.log("🔍 Starting fetchVehicle()...");
 
