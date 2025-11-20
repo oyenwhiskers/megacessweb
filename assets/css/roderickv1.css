@@ -208,3 +208,23 @@
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
+
+/* Analytics Card Spinner Styles */
+.stat-card .spinner-border-sm {
+  width: 1rem !important;
+  height: 1rem !important;
+  border-width: 0.15em !important;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card .spinner-border-sm.d-none {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* Opacity modifier for values while loading */
+.stat-card h3 span.opacity-50 {
+  opacity: 0.65;
+  transition: opacity 0.3s ease;
+}

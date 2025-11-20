@@ -19,10 +19,12 @@
                      sessionStorage.getItem('authToken');
         
         if (!token) {
-            console.warn('No authentication token found. Please ensure user is logged in.');
+            console.error('No authentication token found. Please log in.');
+            window.location.href = '/megacessweb/pages/log-in.html';
+            return null;
         }
         
-        return token || 'YOUR_TOKEN';
+        return token;
     }
     
     // Format date for display
@@ -152,15 +154,21 @@
         }
         
         const recordsHtml = records.map(record => {
+            // Generate avatar placeholder from user name
+            const userName = record.user_name || 'Staff';
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
+            const userImage = record.user_img || '';
+            const imgSrc = (userImage && userImage.trim() !== '') ? userImage : placeholderImage;
+            
             return `
                 <div class="list-group-item staff-attendance-item">
                     <div class="d-flex align-items-center">
                         <div style="width:50px;height:50px;flex:0 0 50px;">
-                            <img src="${record.user_img || 'https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png'}" 
-                                 alt="${record.user_name}" 
+                            <img src="${imgSrc}" 
+                                 alt="${userName}" 
                                  class="rounded-circle" 
                                  style="width:50px;height:50px;object-fit:cover" 
-                                 onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/oyenwhiskers/megacessweb/assets/img/user-placeholder.png'">
+                                 onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <div class="d-flex justify-content-between align-items-start">

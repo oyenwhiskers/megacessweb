@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="/megacessweb/assets/css/roderickv1.css">
     <!-- Links to Roderick's CSS style -->
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
 
@@ -50,7 +51,8 @@
             <i class="bi bi-arrow-left me-2"></i>
             Back to Manage Resources
           </a>
-
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
           <!-- Tab Selection -->
           <div class="btn-group" role="group">
             <a href="#" class="tab-btn active d-flex align-items-center" data-target="fuel">
@@ -63,7 +65,7 @@
             </a>
           </div>
         </div>
-
+          
         <!-- Tab Content for Fuel and Booking-->
         <div class="tab-content">
           <!-- Fuel Tab -->
@@ -76,11 +78,17 @@
               <div class="d-flex flex-wrap gap-3 align-items-center">
                 <!-- Search Bar -->
                 <div class="flex-grow-1">
-                  <input
-                    type="text"
-                    class="form-control"
-                    placeholder="Search supplier/buyer/fuel bought..."
-                  >
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="fuelSearch" 
+                      class="form-control"
+                      placeholder="Search supplier/buyer/fuel bought..."
+                    >
+                    <button class="btn btn-secondary" id="refreshFuelBtn" type="button">
+                      <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Filter Dropdown -->
@@ -93,7 +101,6 @@
                     <option value="date-desc">Date Bought (Newest → Oldest)</option>
                   </select>
                 </div>
-
 
                 <!-- Add Fuel Button -->
                 <div>
@@ -117,42 +124,19 @@
                 <div class="content-row content-header d-flex fw-bold border-bottom py-2">
                   <div class="col">Supplier Name</div>
                   <div class="col">Buyer</div>
-                  <div class="col">Fuel Bought</div>
+                  <div class="col">Fuel Bought (ℓ)</div>
                   <div class="col">Date Bought</div>
                   <div class="col text-center">Action</div>
                 </div>
 
-                <!-- Row 1 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">Petronas Kota Kinabalu</div>
-                  <div class="col">John Tan</div>
-                  <div class="col">50 Liters</div>
-                  <div class="col">2025-11-05</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
+                <!-- 🔄 Loading indicator -->
+                <div id="loading" class="text-center my-3" style="display: none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
                   </div>
                 </div>
-
-                <!-- Row 2 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">Shell Inanam</div>
-                  <div class="col">Aiman Rahman</div>
-                  <div class="col">60 Liters</div>
-                  <div class="col">2025-11-08</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
+                <!-- Table Body -->
+                <div id="fuelsTableBody" style="padding-bottom: 70px;"></div>
               </div>
             </div>
           </div>
@@ -262,25 +246,39 @@
               <!-- Supplier Name -->
               <div class="mb-3">
                 <label for="supplierName" class="form-label fw-semibold">Supplier Name</label>
-                <input type="text" class="form-control" id="supplierName" placeholder="Enter supplier name" required>
+                <input type="text" class="form-control" id="supplierName" placeholder="Enter supplier name">
               </div>
 
-              <!-- Buyer (searchable input) -->
-              <div class="mb-3">
+              <!-- Buyer (searchable dropdown) -->
+              <div class="mb-3 position-relative">
                 <label for="assignedPerson" class="form-label">Buyer</label>
-                <input type="text" class="form-control" id="assignedPerson" placeholder="Search for person...">
+                
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="assignedPerson" 
+                  placeholder="Search for buyer..."
+                  autocomplete="off"
+                >
+
+                <!-- Dropdown container -->
+                <ul 
+                  class="dropdown-menu w-100" 
+                  id="buyerDropdown"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
               </div>
 
               <!-- Fuel Bought -->
               <div class="mb-3">
                 <label for="fuelBought" class="form-label fw-semibold">Fuel Bought (Liters)</label>
-                <input type="number" min="0" class="form-control" id="fuelBought" placeholder="Enter fuel amount" required>
+                <input type="number" min="0" class="form-control" id="fuelBought" placeholder="Enter fuel amount">
               </div>
 
               <!-- Date Bought -->
               <div class="mb-3">
                 <label for="dateBought" class="form-label fw-semibold">Date Bought</label>
-                <input type="date" class="form-control" id="dateBought" required>
+                <input type="date" class="form-control" id="dateBought">
               </div>
             </form>
           </div>
@@ -288,7 +286,7 @@
           <!-- Modal Footer -->
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" form="addFuelForm" class="btn btn-primary">Save Fuel</button>
+            <button id='saveFuelBtn' type="submit" form="addFuelForm" class="btn btn-primary">Save Fuel</button>
           </div>
 
         </div>
@@ -350,10 +348,58 @@
         </div>
       </div>
     </div>
+
+    <!-- ==================== EDIT FUEL MODAL ==================== -->
+    <div class="modal fade" id="editFuelModal" tabindex="-1" aria-labelledby="editFuelModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="editFuelForm">
+            <div class="modal-header bg-warning text-white">
+              <h5 class="modal-title" id="editFuelModalLabel">Edit Fuel Record</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <!-- Hidden field to store fuel ID -->
+              <input type="hidden" id="editFuelId">
+
+              <!-- Supplier Name -->
+              <div class="mb-3">
+                <label for="editSupplierName" class="form-label">Supplier Name</label>
+                <input type="text" class="form-control" id="editSupplierName" required>
+              </div>
+
+              <!-- User Dropdown -->
+              <div class="mb-3 position-relative">
+                <label for="editAssignedPerson" class="form-label">User</label>
+                <input type="text" class="form-control" id="editAssignedPerson" placeholder="Select user..." autocomplete="off" required>
+                <ul id="editBuyerDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto" style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
+              </div>
+
+              <!-- Fuel Bought -->
+              <div class="mb-3">
+                <label for="editFuelBought" class="form-label">Fuel Bought</label>
+                <input type="number" step="0.01" class="form-control" id="editFuelBought" required>
+              </div>
+
+              <!-- Date Bought -->
+              <div class="mb-3">
+                <label for="editDateBought" class="form-label">Date Bought</label>
+                <input type="date" class="form-control" id="editDateBought" required>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-warning" id="saveEditFuelBtn">Update Fuel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/megacessweb/assets/js/main.js"></script>
-    <script src="/megacessweb/assets/js/roderick.js"></script>
+    <script src="/megacessweb/assets/js/fuel.js"></script>
     <script>
       $(document).ready(function () {
         // Show the first tab content by default
@@ -375,5 +421,11 @@
         });
       });
     </script>
+    <!-- Loading overlay spinner at the very end of body -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+      <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    </div>
   </body>
 </html>

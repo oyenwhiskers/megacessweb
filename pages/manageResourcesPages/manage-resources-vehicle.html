@@ -44,7 +44,7 @@
           </button>
         </div>
 
-        <!-- Row 1: Back Button & Stats Cards -->
+        <!-- Row 1: Back Button -->
         <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
           <!-- Back Button -->
           <a
@@ -65,7 +65,10 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                   <div>
                     <h6 class="card-title mb-1">Total Vehicles</h6>
-                    <h3 id="totalVehicles" class="mb-0">-</h3>
+                    <h3 class="mb-0">
+                      <span id="totalVehiclesValue">-</span>
+                      <span id="totalVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
+                    </h3>
                   </div>
                   <i class="bi bi-truck fs-1"></i>
                 </div>
@@ -78,7 +81,10 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                   <div>
                     <h6 class="card-title mb-1">Available</h6>
-                    <h3 id="availableVehicles" class="mb-0">-</h3>
+                    <h3 class="mb-0">
+                      <span id="availableVehiclesValue">-</span>
+                      <span id="availableVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
+                    </h3>
                   </div>
                   <i class="bi bi-check-circle fs-1"></i>
                 </div>
@@ -91,7 +97,10 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                   <div>
                     <h6 class="card-title mb-1">In Use</h6>
-                    <h3 id="inUseVehicles" class="mb-0">-</h3>
+                    <h3 class="mb-0">
+                      <span id="inUseVehiclesValue">-</span>
+                      <span id="inUseVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
+                    </h3>
                   </div>
                   <i class="bi bi-gear fs-1"></i>
                 </div>
@@ -104,7 +113,10 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                   <div>
                     <h6 class="card-title mb-1">Under Maintenance</h6>
-                    <h3 id="maintenanceVehicles" class="mb-0">-</h3>
+                    <h3 class="mb-0">
+                      <span id="maintenanceVehiclesValue">-</span>
+                      <span id="maintenanceVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
+                    </h3>
                   </div>
                   <i class="bi bi-tools fs-1"></i>
                 </div>
@@ -113,7 +125,7 @@
           </div>
         </div>
 
-        <!-- Row 3: Back Button & Tabs -->
+        <!-- Row 3: Tabs -->
         <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
           <!-- Tab Selection -->
           <div class="btn-group" role="group">
@@ -175,7 +187,7 @@
             </div>
 
             <!-- Row 3: Vehicle Table -->
-            <div class="mt-4 px-4">
+            <div class="mt-4 px-4" style="padding-bottom: 35px;">
               <div class="content-table mt-4">
                 <!-- Table Header -->
                 <div class="content-row content-header d-flex fw-bold border-bottom py-2">
@@ -191,8 +203,15 @@
                   </div>
                 </div>
                  <!-- Table Body (Empty, JS will populate it) -->
-                <div id="vehicleTableBody" style="padding-bottom: 70px;"></div>
-              </div>
+                <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
+                  
+                  <!-- Pagination (Tailwind-like style requested) -->
+                  <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                    <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
+                      <!-- JS will render Previous, page numbers, Next here -->
+                    </ul>
+                  </nav>
+              </div>              
             </div>
           </div>
 
@@ -221,12 +240,9 @@
                   </select>
                 </div>
 
-                <!-- Add Booking Button -->
-                <div>
-                  <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addBookingModal">
-                    <i class="bi bi-plus-circle me-2"></i> Add Booking
-                  </button>
-                </div>
+                <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
+                  <i class="bi bi-plus-circle me-2"></i> Add Booking
+                </button>
               </div>
             </div>
 
@@ -237,76 +253,19 @@
                 <!-- Table Header -->
                 <div class="content-row content-header d-flex fw-bold border-bottom py-2">
                   <div class="col">Vehicle Name</div>
-                  <div class="col">Plate No.</div>
-                  <div class="col">Status</div>
                   <div class="col">Assigned Person</div>
                   <div class="col">Booking Date</div>
                   <div class="col">Return Date</div>
                   <div class="col text-center">Action</div>
                 </div>
 
+                <div id="loadingBooking" class="text-center my-3" style="display: none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
                 <!-- Table Body -->
-                <div id="vehicleBookingsList" style="padding-bottom: 70px;"></div>
-
-                <!-- Table Row 1 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">Toyota Hilux</div>
-                  <div class="col">SAA 1234 X</div>
-                  <div class="col">
-                    <span class="badge bg-warning text-dark">In Use</span>
-                  </div>
-                  <div class="col">John Doe</div>
-                  <div class="col">2025-11-07</div>
-                  <div class="col">2025-11-10</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Table Row 2 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">Nissan Navara</div>
-                  <div class="col">SAB 5678 A</div>
-                  <div class="col">
-                    <span class="badge bg-warning text-dark">In Use</span>
-                  </div>
-                  <div class="col">Jane Smith</div>
-                  <div class="col">2025-11-06</div>
-                  <div class="col">2025-11-09</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Table Row 3 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">Ford Ranger</div>
-                  <div class="col">SAC 9988 T</div>
-                  <div class="col">
-                    <span class="badge bg-warning text-dark">In Use</span>
-                  </div>
-                  <div class="col">Mike Johnson</div>
-                  <div class="col">2025-11-05</div>
-                  <div class="col">2025-11-08</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
+                <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
               </div>
             </div>
           </div>
@@ -390,60 +349,6 @@
       </div>
     </div>
 
-    <!-- Add Booking Modal -->
-    <div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            
-            <!-- Modal Header -->
-            <div class="modal-header bg-success text-white">
-              <h5 class="modal-title" id="addBookingModalLabel">Add New Booking</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            
-            <!-- Modal Body -->
-            <div class="modal-body">
-              <form>
-                <!-- Vehicle Dropdown -->
-                <div class="mb-3">
-                  <label for="vehicleSelect" class="form-label">Select Available Vehicle</label>
-                  <select class="form-select" id="vehicleSelect">
-                    <option selected>Choose a vehicle...</option>
-                    <option value="toyota-hilux">Toyota Hilux (SAA 6787)</option>
-                    <option value="nissan-navara">Nissan Navara (SBA 1234)</option>
-                    <option value="ford-ranger">Ford Ranger (SBP 1399)</option>
-                  </select>
-                </div>
-                
-                <!-- Assigned Person (searchable input) -->
-                <div class="mb-3">
-                  <label for="assignedPerson" class="form-label">Assigned Person</label>
-                  <input type="text" class="form-control" id="assignedPerson" placeholder="Search for person...">
-                </div>
-                
-                <!-- Booking Date (required) -->
-                <div class="mb-3">
-                  <label for="bookingDate" class="form-label">Booking Date</label>
-                  <input type="date" class="form-control" id="bookingDate" required>
-                </div>
-                
-                <!-- Return Date (optional) -->
-                <div class="mb-3">
-                  <label for="returnDate" class="form-label">Return Date (optional)</label>
-                  <input type="date" class="form-control" id="returnDate">
-                </div>
-              </form>
-            </div>
-            
-            <!-- Modal Footer -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-primary">Add Booking</button>
-            </div>
-          </div>
-        </div>
-    </div>
-
     <!-- Update Vehicle Modal -->
     <div class="modal fade" id="updateVehicleModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog">
@@ -486,6 +391,177 @@
         </div>
       </div>
     </div>
+
+    <!-- Add Vehicle Booking Modal -->
+    <div class="modal fade" id="addVehicleBookingModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+
+        <div class="modal-content">
+
+          <!-- Modal Header -->
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">Add Vehicle Booking</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <!-- Modal Form -->
+          <form id="addVehicleBookingForm">
+            <div class="modal-body">
+
+              <!-- Vehicle -->
+              <div class="mb-3 position-relative">
+                <label class="form-label">Vehicle</label>
+                <input 
+                  type="text"
+                  class="form-control"
+                  id="bookingVehicleInput"
+                  placeholder="Enter or select a vehicle"
+                  required
+                  autocomplete="off"
+                >
+
+                <!-- DROPDOWN -->
+                <ul 
+                  class="dropdown-menu w-100" 
+                  id="vehicleDropdown"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
+              </div>
+
+              <!-- Used By -->
+              <div class="mb-3 position-relative">
+                <label for="usedBy" class="form-label fw-semibold">Used By</label>
+                <input 
+                  type="text"
+                  class="form-control"
+                  id="usedBy"
+                  placeholder="Enter or search user/staff"
+                  required
+                  autocomplete="off"
+                >
+
+                <!-- DROPDOWN -->
+                <ul 
+                  class="dropdown-menu w-100" 
+                  id="usedByDropdown"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
+              </div>
+
+
+              <!-- Booking Date -->
+              <div class="mb-3">
+                <label class="form-label">Booking Date</label>
+                <input type="datetime-local" id="bookingDateInput" class="form-control" required>
+              </div>
+
+              <!-- Return Date -->
+              <div class="mb-3">
+                <label class="form-label">Return Date</label>
+                <input type="datetime-local" id="returnDateInput" class="form-control" required>
+              </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Booking</button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Vehicle Booking Modal -->
+    <div class="modal fade" id="updateVehicleBookingModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <form id="updateVehicleBookingForm" class="modal-content">
+
+          <!-- Header -->
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title">Edit Vehicle Booking</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <!-- Body -->
+          <div class="modal-body">
+
+            <!-- Vehicle Input -->
+            <div class="mb-3 position-relative">
+              <label class="form-label">Vehicle</label>
+              <input 
+                list="updateVehiclesList" 
+                class="form-control"
+                id="updateBookingVehicleInput"
+                placeholder="Enter or select a vehicle"
+                required
+              >
+              <datalist id="updateVehiclesList"></datalist>
+
+              <!-- Dropdown container (same as ADD modal structure) -->
+              <ul 
+                class="dropdown-menu w-100"
+                id="updateVehicleDropdown"
+                style="max-height: 200px; overflow-y: auto;"
+              ></ul>
+            </div>
+
+            <!-- Used By -->
+            <div class="mb-3 position-relative">
+              <label class="form-label">Used By</label>
+              <input 
+                list="updateUsersList"
+                class="form-control"
+                id="updateUsedBy"
+                placeholder="Search staff or user"
+                required
+              >
+              <datalist id="updateUsersList"></datalist>
+
+              <!-- Dropdown container -->
+              <ul 
+                class="dropdown-menu w-100"
+                id="updateUsedByDropdown"
+                style="max-height: 200px; overflow-y: auto;"
+              ></ul>
+            </div>
+
+            <!-- Booking Date -->
+            <div class="mb-3">
+              <label class="form-label">Booking Date</label>
+              <input 
+                type="datetime-local" 
+                class="form-control" 
+                id="updateBookingDateInput" 
+                required
+              >
+            </div>
+
+            <!-- Return Date -->
+            <div class="mb-3">
+              <label class="form-label">Return Date</label>
+              <input 
+                type="datetime-local" 
+                class="form-control" 
+                id="updateReturnDateInput"
+              >
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-warning">Update Booking</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

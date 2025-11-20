@@ -9,6 +9,16 @@ function showSuccess(msg) {
   });
 }
 
+function showErrorNoToken(msg) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Missing authentication token',
+    text: 'Please login first',
+  }).then(() => {
+    window.location.replace('../log-in.html');
+  });
+}
+
 function showError(msg) {
   Swal.fire({
     icon: 'error',
@@ -46,14 +56,30 @@ function hideLoading() {
   if (overlay) overlay.classList.add('d-none');
 }
 
-// ==================== GET /vehicles ====================
-async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) {
-  const token = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
-  const apiUrl = new URL('https://mwms.megacess.com/api/v1/vehicles');
+/* -------------------- Token Helper -------------------- */
+function getToken() {
+  const keys = ['authToken', 'auth_token', 'token', 'access_token'];
+  for (const k of keys) {
+    const v = localStorage.getItem(k) || sessionStorage.getItem(k);
+    if (v) return v;
+  }
+  console.warn(" No token found in storage");
+  return null;
+}
 
+// ==================== GET /vehicles ====================
+async function getAllVehicles({ search = '', status = '', page = 1 } = {}) {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");  
+    return;
+  }
+
+  const apiUrl = new URL('https://mwms.megacess.com/api/v1/vehicles');
   if (search) apiUrl.searchParams.append('search', search);
   if (status) apiUrl.searchParams.append('status', status);
-  if (per_page) apiUrl.searchParams.append('per_page', per_page);
+  //if (per_page) apiUrl.searchParams.append('per_page', per_page);
+  if (page) apiUrl.searchParams.append('page', page);
 
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('vehicleTableBody');
@@ -61,6 +87,8 @@ async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) 
   tableBody.innerHTML = '';
 
   try {
+    console.log('Fetching vehicles from:', apiUrl.toString()); // debug
+
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -69,23 +97,44 @@ async function getAllVehicles({ search = '', status = '', per_page = 15 } = {}) 
         'Accept': 'application/json'
       }
     });
+
+    console.log('Response status:', response.status); // debug
     const result = await response.json();
+    console.log('Result:', result); // debug
+
     loading.style.display = 'none';
 
     if (response.ok && result.success) {
-      if (result.data.length > 0) populateVehicleTable(result.data);
-      else tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
+      if (result.data && result.data.length > 0) {
+        populateVehicleTable(result.data);
+
+        // Only update pagination if meta exists
+        if (result.meta) {
+          updatePaginationControls(result.meta);
+        } else {
+          console.warn('No pagination meta received.');
+          document.getElementById('currentPage').textContent = 1;
+          document.getElementById('totalPages').textContent = 1;
+          document.getElementById('totalRecords').textContent = result.data.length;
+          renderPagination(1, 1);
+        }
+
+      } else {
+        tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
+      }
     } else {
-      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message}</div>`;
-      showError(result.message);
+      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result?.message || 'Unknown error'}</div>`;
+      showError(result?.message || 'Failed to load vehicles.');
     }
+
   } catch (error) {
     loading.style.display = 'none';
     tableBody.innerHTML = `<div class="text-center text-danger py-3">Failed to load vehicles</div>`;
-    showError('Failed to load vehicles. Please try again.');
     console.error('Fetch error:', error);
+    showError('Failed to load vehicles. Please try again.');
   }
 }
+
 
 // ==================== Populate Table ====================
 function populateVehicleTable(vehicles) {
@@ -121,8 +170,9 @@ function populateVehicleTable(vehicles) {
     tableBody.appendChild(row);
   });
 
-  // ✅ Update stat cards
-  updateVehicleStats(vehicles);
+  // NOTE: Do not update stat cards here (per-page counts).
+  // Stats are refreshed from the server via `refreshVehicleSummary()`
+  // to ensure analytics reflect global totals only.
 
   // ✅ Reattach event listeners
   attachEditListeners();
@@ -164,22 +214,171 @@ function animateCount(el, value, duration = 1500) {
   requestAnimationFrame(update);
 }
 
-// Update vehicle stats cards
-function updateVehicleStats(vehicles) {
-  const total = vehicles.length;
-  const available = vehicles.filter(v => v.status.toLowerCase() === 'available').length;
-  const inUse = vehicles.filter(v => v.status.toLowerCase() === 'in use').length;
-  const maintenance = vehicles.filter(v => v.status.toLowerCase() === 'under maintenance').length;
+// Helpers to show/hide spinner indicators for analytics cards
+function setStatsLoading(isLoading) {
+  const mapping = [
+    ['totalVehiclesSpinner', 'totalVehiclesValue'],
+    ['availableVehiclesSpinner', 'availableVehiclesValue'],
+    ['inUseVehiclesSpinner', 'inUseVehiclesValue'],
+    ['maintenanceVehiclesSpinner', 'maintenanceVehiclesValue']
+  ];
 
-  animateCount(document.getElementById('totalVehicles'), total, 1800);
-  animateCount(document.getElementById('availableVehicles'), available, 1800);
-  animateCount(document.getElementById('inUseVehicles'), inUse, 1800);
-  animateCount(document.getElementById('maintenanceVehicles'), maintenance, 1800);
+  mapping.forEach(([spinnerId, valueId]) => {
+    const spinner = document.getElementById(spinnerId);
+    const valueEl = document.getElementById(valueId);
+    if (!spinner || !valueEl) return;
+
+    if (isLoading) {
+      spinner.classList.remove('d-none');
+      valueEl.classList.add('opacity-50');
+    } else {
+      spinner.classList.add('d-none');
+      valueEl.classList.remove('opacity-50');
+    }
+  });
+}
+
+// -------------------- Real Analytics (Summary) --------------------
+// Try the server-provided summary endpoint first. If it's not available,
+// fall back to issuing lightweight requests per status and reading the
+// returned `meta.total` values to compute global counts.
+async function fetchResourcesUsageAnalytics() {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    const resp = await fetch('https://mwms.megacess.com/api/v1/analytics/resources-usage', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      }
+    });
+
+    const result = await resp.json();
+    if (result?.success && result?.data) {
+      return result.data;
+    }
+  } catch (err) {
+    console.error("Failed to fetch analytics:", err);
+  }
+
+  return null;
+}
+
+async function refreshVehicleSummary() {
+  setStatsLoading(true);
+
+  const analytics = await fetchResourcesUsageAnalytics();
+  if (!analytics || !analytics.vehicle_analytics) {
+    console.warn("Unable to fetch vehicle analytics.");
+    setStatsLoading(false);
+    return;
+  }
+
+  const vehicles = analytics.vehicle_analytics;
+
+  animateCount(document.getElementById('totalVehiclesValue'), Number(vehicles.total_vehicles) || 0, 1200);
+  animateCount(document.getElementById('availableVehiclesValue'), Number(vehicles.available) || 0, 1200);
+  animateCount(document.getElementById('inUseVehiclesValue'), Number(vehicles.in_use) || 0, 1200);
+  animateCount(document.getElementById('maintenanceVehiclesValue'), Number(vehicles.under_maintenance) || 0, 1200);
+
+  setStatsLoading(false);
+}
+
+
+// ==================== Pagination Controls ====================
+// Store pagination state
+let paginationState = {
+  currentPage: 1,
+  lastPage: 1,
+  perPage: 15,
+  total: 0,
+  search: '',
+  status: ''
+};
+
+// Update pagination controls and render Tailwind-like pagination
+function updatePaginationControls(meta) {
+  // Update pagination state
+  paginationState.currentPage = meta.current_page;
+  paginationState.lastPage = meta.last_page;
+  paginationState.perPage = meta.per_page;
+  paginationState.total = meta.total;
+
+  // Update top UI elements
+  const currentEl = document.getElementById('currentPage');
+  const totalPagesEl = document.getElementById('totalPages');
+  const totalRecordsEl = document.getElementById('totalRecords');
+  if (currentEl) currentEl.textContent = meta.current_page;
+  if (totalPagesEl) totalPagesEl.textContent = meta.last_page;
+  if (totalRecordsEl) totalRecordsEl.textContent = meta.total;
+
+  // Render pagination list
+  renderPagination(meta.current_page, meta.last_page);
+}
+
+// Render pagination HTML into #vehiclePagination with Previous / numbered pages / Next
+function renderPagination(current, last) {
+  const container = document.getElementById('vehiclePagination');
+  if (!container) return;
+
+  const maxButtons = 7; // total number of numeric page buttons to show
+  let start = Math.max(1, current - Math.floor(maxButtons / 2));
+  let end = Math.min(last, start + maxButtons - 1);
+  if (end - start + 1 < maxButtons) {
+    start = Math.max(1, end - maxButtons + 1);
+  }
+
+  // Build Bootstrap pagination markup
+  let html = '';
+
+  const prevDisabled = current <= 1;
+  html += `<li class="page-item ${prevDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.max(1, current - 1)}">Previous</a></li>`;
+
+  for (let i = start; i <= end; i++) {
+    if (i === current) {
+      html += `<li class="page-item active" aria-current="page"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    } else {
+      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    }
+  }
+
+  const nextDisabled = current >= last;
+  html += `<li class="page-item ${nextDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.min(last, current + 1)}">Next</a></li>`;
+
+  container.innerHTML = html;
+
+  // Attach click handlers to enabled items only
+  const enabledLinks = container.querySelectorAll('li.page-item:not(.disabled) a[data-page]');
+  enabledLinks.forEach(link => {
+    link.removeEventListener('click', handlePaginationClick);
+    link.addEventListener('click', handlePaginationClick);
+  });
+}
+
+function handlePaginationClick(e) {
+  e.preventDefault();
+  const page = parseInt(e.currentTarget.dataset.page, 10);
+  if (!page || page === paginationState.currentPage) return;
+
+  getAllVehicles({
+    search: paginationState.search,
+    status: paginationState.status,
+    per_page: paginationState.perPage,
+    page: page
+  });
+  window.scrollTo(0, 0);
 }
 
 // ==================== POST /vehicles ====================
 document.getElementById('addVehicleBtn').addEventListener('click', async () => {
-  const token = '69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0';
+  const token = getToken();
+  if (!token) {
+    showError("Missing authentication token. Please login first.");
+    return;
+  }
+
   const vehicleName = document.getElementById('vehicleName').value.trim();
   const plateNo = document.getElementById('plateNo').value.trim();
   const statusSelect = document.getElementById('addVehicleStatus');
@@ -213,6 +412,8 @@ document.getElementById('addVehicleBtn').addEventListener('click', async () => {
       document.getElementById('plateNo').value = '';
       statusSelect.value = 'Choose status';
       getAllVehicles();
+      // Refresh global analytics after adding a vehicle
+      if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
       showSuccess('Vehicle added successfully!');
     } else {
       showError(result.message);
@@ -236,6 +437,12 @@ function attachDeleteListeners() {
 }
 
 async function handleDelete(e) {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
+  
   const vehicleId = e.currentTarget.dataset.id;
   showConfirm('You want to delete this vehicle?', async () => {
     showLoading();
@@ -243,7 +450,7 @@ async function handleDelete(e) {
       const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${vehicleId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer 69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
@@ -252,6 +459,8 @@ async function handleDelete(e) {
       if (response.ok && result.success) {
         showSuccess(result.message);
         getAllVehicles();
+        // Refresh global analytics after deleting a vehicle
+        if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
       } else {
         showError(result.message);
       }
@@ -285,6 +494,12 @@ function handleEdit(e) {
 }
 
 document.getElementById('updateVehicleBtn').addEventListener('click', async () => {
+  const token = getToken();
+  if (!token) {
+    showErrorNoToken("Missing authentication token. Please login first.");
+    return;
+  }
+
   if (!currentVehicleId) return;
 
   const name = document.getElementById('updateVehicleName').value.trim();
@@ -305,7 +520,7 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
     const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${currentVehicleId}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer 69|Pqml1FrUSJP2y2LbluqZH826kI3hb8RtwOajuPos9e9fd0f0`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -320,6 +535,8 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
     if (response.ok && result.success) {
       bootstrap.Modal.getInstance(document.getElementById('updateVehicleModal')).hide();
       getAllVehicles();
+      // Refresh global analytics after updating a vehicle
+      if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
       showSuccess(result.message);
     } else {
       showError(result.message);
@@ -336,10 +553,11 @@ document.getElementById('updateVehicleBtn').addEventListener('click', async () =
 // ==================== DOMContentLoaded ====================
 window.addEventListener('DOMContentLoaded', () => {
   getAllVehicles();
+  // Fetch global analytics once on load
+  if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
 });
 
 // ==================== Search Functions ====================
-
 // Debounce helper to limit rapid API calls
 function debounce(func, delay) {
   let timer;
@@ -351,13 +569,19 @@ function debounce(func, delay) {
 
 // Triggered whenever search input or filter changes
 function updateVehicleTable() {
-  const searchValue = document.getElementById('vehicleSearch').value.trim() || undefined;
-  const statusValue = document.getElementById('vehicleStatus').value || undefined; // 'All Status' can map to undefined
-  getAllVehicles({ search: searchValue, status: statusValue });
+  const searchValue = document.getElementById('vehicleSearch').value.trim() || '';
+  const statusValue = document.getElementById('vehicleStatus').value || '';
+  
+  // Update pagination state with search/filter values
+  paginationState.search = searchValue;
+  paginationState.status = statusValue;
+  
+  // Reset to page 1 when searching or filtering
+  getAllVehicles({ search: searchValue, status: statusValue, page: 1 });
 }
 
 // Debounce the search input to avoid flooding API requests
-const handleVehicleSearch = debounce(updateVehicleTable, 300);
+const handleVehicleSearch = debounce(updateVehicleTable, 150);
 
 // Attach event listeners
 document.getElementById('vehicleSearch').addEventListener('input', handleVehicleSearch);
@@ -370,6 +594,11 @@ document.getElementById('refreshVehicleBtn').addEventListener('click', () => {
   // Reset status filter
   document.getElementById('vehicleStatus').value = '';
 
+  // Reset pagination state
+  paginationState.search = '';
+  paginationState.status = '';
+  paginationState.currentPage = 1;
+
   // Reload vehicle table
-  getAllVehicles();
+  getAllVehicles({ page: 1 });
 });
