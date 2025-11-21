@@ -8,14 +8,14 @@ let selectedUsageUser = null;     // For Add Modal
 let editSelectedUsageUser = null; // For Edit Modal
 
 // ==================== Fetch Fuel Usages ====================
-async function getAllFuelUsages({ search = '', filter = '', per_page = 15 } = {}) {
+async function getAllFuelUsages({ search = '', usageFilter = '', per_page = 15 } = {}) {
     const token = getToken();
     if (!token) return showErrorNoToken();
 
     // Build URL
     const apiUrl = new URL('https://mwms.megacess.com/api/v1/fuel-usages');
     if (search) apiUrl.searchParams.append('search', search);
-    if (filter && filter !== 'default') apiUrl.searchParams.append('sort', filter); // Assuming 'sort' param, check backend if needed
+    if (usageFilter && usageFilter !== 'default') apiUrl.searchParams.append('usageFilter', usageFilter);
     if (per_page) apiUrl.searchParams.append('per_page', per_page);
 
     const loading = document.getElementById('usageLoading');
@@ -131,7 +131,7 @@ async function createFuelUsage(payload) {
         const result = await res.json();
 
         if (res.ok && result.success) {
-            showSuccess("Fuel usage recorded successfully!");
+            showSuccess("Success!", "Fuel usage recorded successfully!");
             return true;
         } else {
             showError(result.message || "Failed to add fuel usage.");
@@ -162,7 +162,7 @@ async function updateFuelUsage(id, payload) {
         const result = await res.json();
 
         if (res.ok && result.success) {
-            showSuccess("Fuel usage updated successfully!");
+            showSuccess("Success!", "Fuel usage updated successfully!");
             return true;
         } else {
             showError(result.message || "Failed to update fuel usage.");
@@ -193,8 +193,8 @@ async function deleteFuelUsage(id) {
             const result = await res.json();
 
             if (res.ok && result.success) {
-                showSuccess(result.message || "Deleted successfully");
-                getAllFuelUsages({ search: currentUsageSearch, filter: currentUsageFilter });
+                showSuccess("Success!", result.message || "Deleted successfully");
+                getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
             } else {
                 showError(result.message || "Failed to delete usage.");
             }
@@ -286,7 +286,7 @@ if (editUsageForm) {
 
         if (success) {
             bootstrap.Modal.getInstance(document.getElementById('editUsageModal')).hide();
-            getAllFuelUsages({ search: currentUsageSearch, filter: currentUsageFilter });
+            getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
         }
     });
 }
@@ -356,14 +356,14 @@ const usageFilterSelect = document.getElementById('usageFilter');
 if (usageSearchInput) {
     usageSearchInput.addEventListener('input', debounce(() => {
         currentUsageSearch = usageSearchInput.value.trim();
-        getAllFuelUsages({ search: currentUsageSearch, filter: currentUsageFilter });
+        getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
     }, 300));
 }
 
 if (usageFilterSelect) {
     usageFilterSelect.addEventListener('change', () => {
         currentUsageFilter = usageFilterSelect.value;
-        getAllFuelUsages({ search: currentUsageSearch, filter: currentUsageFilter });
+        getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
     });
 }
 
