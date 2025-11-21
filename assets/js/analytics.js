@@ -59,6 +59,177 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch audited summary data
     fetchAuditedSummary(year, 10); // Default to October
+
+    // --- Block Chart Filter Controls ---
+    const blockFilterYear = document.getElementById('blockFilterYear');
+    const blockFilterMonth = document.getElementById('blockFilterMonth');
+    const blockFilterWeek = document.getElementById('blockFilterWeek');
+    const blockFilterForm = document.getElementById('blockFilterForm');
+
+    if (blockFilterYear && blockFilterMonth && blockFilterWeek && blockFilterForm) {
+        // Populate year dropdown (5 years back and 2 years ahead)
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear - 5; y <= currentYear + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            blockFilterYear.appendChild(opt);
+        }
+        // Populate month dropdown
+        const monthNames = ["All", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        for (let m = 1; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = monthNames[m];
+            blockFilterMonth.appendChild(opt);
+        }
+        // Populate week dropdown (1-53)
+        for (let w = 1; w <= 53; w++) {
+            const opt = document.createElement('option');
+            opt.value = w;
+            opt.textContent = `Week ${w}`;
+            blockFilterWeek.appendChild(opt);
+        }
+        // Reset week if month changes
+        blockFilterMonth.addEventListener('change', function() {
+            blockFilterWeek.value = '';
+        });
+        // On filter change (any select), update chart
+        function triggerBlockChartUpdate() {
+            const year = parseInt(blockFilterYear.value);
+            const month = blockFilterMonth.value ? parseInt(blockFilterMonth.value) : undefined;
+            const week = blockFilterWeek.value ? parseInt(blockFilterWeek.value) : undefined;
+            fetchBlockTaskCompletion(year, month, week);
+        }
+        blockFilterYear.addEventListener('change', triggerBlockChartUpdate);
+        blockFilterMonth.addEventListener('change', triggerBlockChartUpdate);
+        blockFilterWeek.addEventListener('change', triggerBlockChartUpdate);
+        // Initial load with default values
+        triggerBlockChartUpdate();
+    }
+
+    // --- Resource Usage Toggle Buttons ---
+    const btnManuring = document.getElementById('btnManuring');
+    const btnSpraying = document.getElementById('btnSpraying');
+    const resourceSectionTitle = document.getElementById('resourceSectionTitle');
+    // Add filter controls
+    const sanitationTypeFilter = document.getElementById('sanitationTypeFilter');
+    const resourceStartDate = document.getElementById('resourceStartDate');
+    const resourceEndDate = document.getElementById('resourceEndDate');
+    const resourceLocation = document.getElementById('resourceLocation');
+
+    // --- Populate Block (resourceLocation) dropdown dynamically ---
+    async function populateResourceLocationDropdown() {
+        if (!resourceLocation) return;
+        // Clear existing options
+        resourceLocation.innerHTML = '<option value="" disabled selected>Loading...</option>';
+        const token = localStorage.getItem('authToken');
+        try {
+            const response = await fetch('https://mwms.megacess.com/api/v1/locations', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            resourceLocation.innerHTML = '';
+            if (data.success && Array.isArray(data.data)) {
+                data.data.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc.id;
+                    opt.textContent = loc.name;
+                    resourceLocation.appendChild(opt);
+                });
+            } else {
+                resourceLocation.innerHTML = '<option value="" disabled selected>No locations found</option>';
+            }
+        } catch (err) {
+            resourceLocation.innerHTML = '<option value="" disabled selected>Error loading</option>';
+        }
+    }
+    // Call on DOMContentLoaded
+    populateResourceLocationDropdown();
+
+    function setActiveResourceButton(selected) {
+        if (btnManuring && btnSpraying) {
+            if (selected === 'manuring') {
+                btnManuring.classList.add('btn-success');
+                btnManuring.classList.remove('btn-outline-success');
+                btnManuring.classList.add('active');
+                btnSpraying.classList.remove('btn-success');
+                btnSpraying.classList.add('btn-outline-success');
+                btnSpraying.classList.remove('active');
+            } else {
+                btnSpraying.classList.add('btn-success');
+                btnSpraying.classList.remove('btn-outline-success');
+                btnSpraying.classList.add('active');
+                btnManuring.classList.remove('btn-success');
+                btnManuring.classList.add('btn-outline-success');
+                btnManuring.classList.remove('active');
+            }
+        }
+        // Show sanitation type filter only for spraying
+        const sanitationTypeFilterContainer = document.getElementById('sanitationTypeFilterContainer');
+        if (sanitationTypeFilterContainer) {
+            if (selected === 'spraying') {
+                sanitationTypeFilterContainer.style.display = '';
+                document.getElementById('sanitationTypeFilter').value = '';
+            } else {
+                sanitationTypeFilterContainer.style.display = 'none';
+            }
+        }
+        // Show fertilizer type filter only for manuring
+        const fertilizerTypeFilterContainer = document.getElementById('fertilizerTypeFilterContainer');
+        if (fertilizerTypeFilterContainer) {
+            if (selected === 'manuring') {
+                fertilizerTypeFilterContainer.style.display = '';
+            } else {
+                fertilizerTypeFilterContainer.style.display = 'none';
+            }
+        }
+    }
+
+    async function handleResourceButtonClick(type) {
+        setActiveResourceButton(type);
+        if (resourceSectionTitle) {
+            resourceSectionTitle.textContent =
+                type === 'manuring' ? 'Resources Used for Fertilizing:' : 'Resources Used for Spraying:';
+        }
+        await fetchResourceUsage(type);
+    }
+
+    if (btnManuring && btnSpraying) {
+        btnManuring.addEventListener('click', function() {
+            handleResourceButtonClick('manuring');
+        });
+        btnSpraying.addEventListener('click', function() {
+            handleResourceButtonClick('spraying');
+        });
+        // Set default active button and load data
+        handleResourceButtonClick('manuring');
+    } else {
+        // Fallback: load manuring if buttons not found
+        fetchResourceUsage('manuring');
+    }
+
+    // Add filter event listeners
+    if (sanitationTypeFilter) {
+        sanitationTypeFilter.addEventListener('change', function() {
+            if (btnSpraying && btnSpraying.classList.contains('active')) {
+                fetchResourceUsage('spraying');
+            }
+        });
+    }
+    if (resourceStartDate) resourceStartDate.addEventListener('change', function() { fetchResourceUsage(getActiveResourceType()); });
+    if (resourceEndDate) resourceEndDate.addEventListener('change', function() { fetchResourceUsage(getActiveResourceType()); });
+    if (resourceLocation) resourceLocation.addEventListener('change', function() { fetchResourceUsage(getActiveResourceType()); });
+
+    function getActiveResourceType() {
+        if (btnSpraying && btnSpraying.classList.contains('active')) return 'spraying';
+        return 'manuring';
+    }
 });
 
 async function fetchMonthlyTaskCompletion(year, locationId = 1) {
@@ -222,7 +393,7 @@ function updateMonthlyChart(apiData) {
     console.log('Chart updated successfully');
 }
 
-async function fetchBlockTaskCompletion(year) {
+async function fetchBlockTaskCompletion(year, month, week) {
     try {
         // Get token from localStorage
         const token = localStorage.getItem('authToken');
@@ -232,7 +403,10 @@ async function fetchBlockTaskCompletion(year) {
             return;
         }
 
-        console.log('Fetching block task completion for year:', year);
+        let url = `https://mwms.megacess.com/api/v1/analytics/tasks-by-blocks?year=${year}`;
+        if (month) url += `&month=${month}`;
+        if (week) url += `&week=${week}`;
+        console.log('Fetching block task completion:', { year, month, week });
         
         // Show loading state
         const chartCanvas = document.getElementById('taskCompletionChartBlock');
@@ -241,17 +415,14 @@ async function fetchBlockTaskCompletion(year) {
             showLoading(card);
         }
 
-        const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/tasks-by-blocks?year=${year}`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        );
+        });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -261,15 +432,14 @@ async function fetchBlockTaskCompletion(year) {
         console.log('Block API Response:', result);
         
         if (result.data && result.data.data) {
-            console.log('Updating block chart with data:', result.data.data);
-            console.log('Total completed tasks:', result.data.total_completed);
             updateBlockChart(result.data.data);
         } else {
+            updateBlockChart([]);
             console.warn('No data found in API response for blocks');
         }
     } catch (error) {
         console.error('Error fetching block task completion:', error);
-        // Keep the default chart data if API fails
+        updateBlockChart([]);
     } finally {
         // Hide loading state
         const chartCanvas = document.getElementById('taskCompletionChartBlock');
@@ -369,80 +539,85 @@ function updateBlockChart(apiData) {
         console.error('Block chart not initialized');
         return;
     }
-    
-    console.log('Updating block chart with API data:', apiData);
-    
     // Extract location names and counts from API data
     const labels = apiData.map(item => item.location_name);
     const values = apiData.map(item => item.count);
-    
-    console.log('Block Labels:', labels);
-    console.log('Block Values:', values);
-    
-    // Find the maximum value to set appropriate scale
-    const maxValue = Math.max(...values);
-    const yAxisMax = Math.ceil(maxValue / 10) * 10 + 10; // Round up and add padding
-    
     // Update chart with API data
     taskCompletionChartBlock.data.labels = labels;
     taskCompletionChartBlock.data.datasets[0].data = values;
-    taskCompletionChartBlock.options.scales.y.max = yAxisMax;
+    // Dynamically set y-axis max if there is data, else default to 1
+    if (values.length > 0) {
+        const maxValue = Math.max(...values);
+        taskCompletionChartBlock.options.scales.y.max = Math.ceil(maxValue / 10) * 10 + 10;
+    } else {
+        taskCompletionChartBlock.options.scales.y.max = 1;
+    }
     taskCompletionChartBlock.update();
-    
-    console.log('Block chart updated successfully');
+    // Optionally show a message if no data
+    const chartCanvas = document.getElementById('taskCompletionChartBlock');
+    let noDataMsg = document.getElementById('block-no-data-msg');
+    if (values.length === 0) {
+        if (!noDataMsg && chartCanvas) {
+            noDataMsg = document.createElement('div');
+            noDataMsg.id = 'block-no-data-msg';
+            noDataMsg.className = 'text-muted text-center py-4';
+            noDataMsg.textContent = 'No data available for the selected filter.';
+            chartCanvas.parentNode.appendChild(noDataMsg);
+        }
+    } else if (noDataMsg) {
+        noDataMsg.remove();
+    }
 }
 
-async function fetchResourceUsage() {
+async function fetchResourceUsage(type = 'manuring') {
     try {
         // Get token from localStorage
         const token = localStorage.getItem('authToken');
-        
         if (!token) {
             console.error('No authentication token found');
             return;
         }
-
-        // Set date range for current year
-        const currentDate = new Date();
-        const year = currentDate.getFullYear();
-        const startDate = `${year}-01-01`;
-        const endDate = `${year}-12-31`;
-        
-        console.log('Fetching resource usage data...');
-        
+        // Get filter values
+        const sanitationType = document.getElementById('sanitationTypeFilter')?.value || 'spraying';
+        const startDate = document.getElementById('resourceStartDate')?.value || `${new Date().getFullYear()}-01-01`;
+        const endDate = document.getElementById('resourceEndDate')?.value || `${new Date().getFullYear()}-12-31`;
+        const locationId = document.getElementById('resourceLocation')?.value || 1;
         // Show loading state
         const resourceList = document.querySelector('.resources-list');
         if (resourceList) {
             showLoading(resourceList.closest('.card-body'));
         }
-
-        const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/resource-usage?task_type=manuring&sanitation_type=spraying&start_date=${startDate}&end_date=${endDate}&location_id=1`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+        // Build API URL based on type and filters
+        let url = `https://mwms.megacess.com/api/v1/analytics/resource-usage?start_date=${startDate}&end_date=${endDate}&location_id=${locationId}`;
+        if (type === 'manuring') {
+            url += `&task_type=manuring`;
+        } else if (type === 'spraying') {
+            url += `&task_type=sanitation`;
+            if (sanitationType) url += `&sanitation_type=${encodeURIComponent(sanitationType)}`;
+        }
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        );
-
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const result = await response.json();
         console.log('Resource Usage API Response:', result);
-        
         if (result.data && result.data.records) {
             console.log('Updating resource list with data:', result.data.records);
             updateResourceList(result.data);
         } else {
+            updateResourceList({ records: [] });
             console.warn('No resource usage data found in API response');
         }
     } catch (error) {
         console.error('Error fetching resource usage:', error);
+        updateResourceList({ records: [] });
     } finally {
         // Hide loading state
         const resourceList = document.querySelector('.resources-list');
@@ -529,44 +704,25 @@ function renderResourceItems(records, resourceType, unit) {
 
 function setupResourceFilters() {
     const estateOfficerSearch = document.getElementById('resourceEstateOfficerSearch');
-    const dateFilter = document.getElementById('resourceDateFilter');
-    
-    if (!estateOfficerSearch || !dateFilter) return;
-    
-    // Remove existing event listeners
+    // Removed dateFilter
+    if (!estateOfficerSearch) return;
+    // Remove existing event listener
     estateOfficerSearch.removeEventListener('input', handleResourceFilter);
-    dateFilter.removeEventListener('change', handleResourceFilter);
-    
-    // Add event listeners
+    // Add event listener
     estateOfficerSearch.addEventListener('input', handleResourceFilter);
-    dateFilter.addEventListener('change', handleResourceFilter);
 }
 
 function handleResourceFilter() {
     if (!window.resourceUsageData) return;
-    
     const estateOfficerSearch = document.getElementById('resourceEstateOfficerSearch');
-    const dateFilter = document.getElementById('resourceDateFilter');
-    
     const searchTerm = estateOfficerSearch.value.toLowerCase().trim();
-    const filterDate = dateFilter.value;
-    
     let filteredRecords = window.resourceUsageData.records;
-    
     // Filter by estate officer name
     if (searchTerm !== '') {
         filteredRecords = filteredRecords.filter(record => 
             record.estate_officer.toLowerCase().includes(searchTerm)
         );
     }
-    
-    // Filter by date
-    if (filterDate) {
-        filteredRecords = filteredRecords.filter(record => 
-            record.date === filterDate
-        );
-    }
-    
     // Render filtered results
     renderResourceItems(
         filteredRecords, 
