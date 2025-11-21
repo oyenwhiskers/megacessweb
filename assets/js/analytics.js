@@ -76,22 +76,32 @@ document.addEventListener('DOMContentLoaded', function() {
             if (y === currentYear) opt.selected = true;
             blockFilterYear.appendChild(opt);
         }
-        // Populate month dropdown
-        const monthNames = ["All", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        // Populate month dropdown (1-12, no 'All')
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         for (let m = 1; m <= 12; m++) {
             const opt = document.createElement('option');
             opt.value = m;
-            opt.textContent = monthNames[m];
+            opt.textContent = monthNames[m-1];
             blockFilterMonth.appendChild(opt);
         }
-        // Populate week dropdown (1-53)
-        for (let w = 1; w <= 53; w++) {
+        // Set default to current month
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        blockFilterMonth.value = currentMonth;
+        // Populate week dropdown (add 'All' option, then 1-5)
+        blockFilterWeek.innerHTML = '';
+        const allWeekOpt = document.createElement('option');
+        allWeekOpt.value = '';
+        allWeekOpt.textContent = 'All';
+        blockFilterWeek.appendChild(allWeekOpt);
+        for (let w = 1; w <= 5; w++) {
             const opt = document.createElement('option');
             opt.value = w;
             opt.textContent = `Week ${w}`;
             blockFilterWeek.appendChild(opt);
         }
-        // Reset week if month changes
+        blockFilterWeek.value = '';
+        // Reset week to 'All' if month changes
         blockFilterMonth.addEventListener('change', function() {
             blockFilterWeek.value = '';
         });
@@ -282,8 +292,56 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (err) {
             monthlyFilterLocation.innerHTML = '<option value="" disabled selected>Error loading</option>';
         }
+        // After location is loaded, set default task type and fetch data
+        if (monthlyFilterTaskType) {
+            const taskTypes = [
+                { value: 'manuring', label: 'Manuring' },
+                { value: 'sanitation', label: 'Sanitation' },
+                { value: 'pruning', label: 'Pruning' },
+                { value: 'harvesting', label: 'Harvesting' },
+                { value: 'planting', label: 'Planting' }
+            ];
+            monthlyFilterTaskType.innerHTML = '';
+            taskTypes.forEach(type => {
+                const opt = document.createElement('option');
+                opt.value = type.value;
+                opt.textContent = type.label;
+                monthlyFilterTaskType.appendChild(opt);
+            });
+            if (taskTypes.length > 0) {
+                monthlyFilterTaskType.value = taskTypes[0].value;
+                const year = monthlyFilterYear ? monthlyFilterYear.value : '';
+                const locationId = monthlyFilterLocation ? monthlyFilterLocation.value : 1;
+                fetchMonthlyTaskCompletion(year, locationId, taskTypes[0].value);
+            }
+        }
     }
     populateMonthlyLocationDropdown();
+
+    // Populate task type dropdown (remove 'All' option)
+    if (monthlyFilterTaskType) {
+        const taskTypes = [
+            { value: 'manuring', label: 'Manuring' },
+            { value: 'sanitation', label: 'Sanitation' },
+            { value: 'pruning', label: 'Pruning' },
+            { value: 'harvesting', label: 'Harvesting' },
+            { value: 'planting', label: 'Planting' }
+        ];
+        monthlyFilterTaskType.innerHTML = '';
+        taskTypes.forEach(type => {
+            const opt = document.createElement('option');
+            opt.value = type.value;
+            opt.textContent = type.label;
+            monthlyFilterTaskType.appendChild(opt);
+        });
+        // Set default to first task type and fetch data for it
+        if (taskTypes.length > 0) {
+            monthlyFilterTaskType.value = taskTypes[0].value;
+            const year = monthlyFilterYear ? monthlyFilterYear.value : '';
+            const locationId = monthlyFilterLocation ? monthlyFilterLocation.value : 1;
+            fetchMonthlyTaskCompletion(year, locationId, taskTypes[0].value);
+        }
+    }
 
     // Helper to get current filter values
     function getMonthlyFilterValues() {
@@ -445,6 +503,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         // Initial load with default values
         triggerAbsentUpdate();
+    }
+
+    // --- Audited Summary Filter Controls ---
+    const auditedYear = document.getElementById('auditedYear');
+    const auditedMonth = document.getElementById('auditedMonth');
+    if (auditedYear && auditedMonth) {
+        // Populate year dropdown (All + 5 years back and 2 years ahead)
+        const currentYear = new Date().getFullYear();
+        const allYearOpt = document.createElement('option');
+        allYearOpt.value = '';
+        allYearOpt.textContent = 'All Years';
+        auditedYear.appendChild(allYearOpt);
+        for (let y = currentYear - 5; y <= currentYear + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            auditedYear.appendChild(opt);
+        }
+        // Populate month dropdown (All + 1-12)
+        const monthNames = ["All Months", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        for (let m = 0; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = m === 0 ? '' : m;
+            opt.textContent = monthNames[m];
+            if (m === (new Date().getMonth() + 1)) opt.selected = true;
+            auditedMonth.appendChild(opt);
+        }
+        // --- Enforce filter dependency: month requires year ---
+        auditedYear.addEventListener('change', function() {
+            if (auditedYear.value === '') {
+                auditedMonth.value = '';
+            }
+            triggerAuditedUpdate();
+        });
+        auditedMonth.addEventListener('change', function() {
+            if (auditedMonth.value !== '' && auditedYear.value === '') {
+                alert('Please select a year before selecting a month.');
+                auditedMonth.value = '';
+                return;
+            }
+            triggerAuditedUpdate();
+        });
+        // On filter change, update audited summary only
+        function triggerAuditedUpdate() {
+            const year = auditedYear.value;
+            const month = auditedMonth.value;
+            fetchAuditedSummary(year, month);
+        }
+        // Initial load with default values
+        triggerAuditedUpdate();
     }
 });
 

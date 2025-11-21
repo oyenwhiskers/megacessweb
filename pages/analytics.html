@@ -80,11 +80,11 @@
                     <select id="blockFilterYear" class="form-select form-select-sm w-auto"></select>
                     <label for="blockFilterMonth" class="form-label mb-0 ms-3 me-2">Month:</label>
                     <select id="blockFilterMonth" class="form-select form-select-sm w-auto">
-                      <option value="">All</option>
+                      <!-- Month options will be loaded dynamically by JS -->
                     </select>
                     <label for="blockFilterWeek" class="form-label mb-0 ms-3 me-2">Week:</label>
                     <select id="blockFilterWeek" class="form-select form-select-sm w-auto">
-                      <option value="">All</option>
+                      <!-- Week options will be loaded dynamically by JS -->
                     </select>
                   </form>
                 </div>
@@ -240,6 +240,12 @@
         <div class="row g-3 mt-3">
           <div class="col-12">
             <h4 class="fw-bold mb-3">Audited Summary</h4>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+              <label for="auditedYear" class="form-label mb-0 me-2">Year:</label>
+              <select id="auditedYear" class="form-select form-select-sm w-auto"></select>
+              <label for="auditedMonth" class="form-label mb-0 ms-3 me-2">Month:</label>
+              <select id="auditedMonth" class="form-select form-select-sm w-auto"></select>
+            </div>
           </div>
         </div>
 
