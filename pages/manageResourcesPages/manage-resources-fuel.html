@@ -1,431 +1,427 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MegaCess Web • Manage Resources</title>
 
-    <!-- Bootstrap & Icons -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    >
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
-      rel="stylesheet"
-    >
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaCess Web • Manage Resources</title>
 
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
-    <link rel="stylesheet" href="/megacessweb/assets/css/roderickv1.css">
-    <!-- Links to Roderick's CSS style -->
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  </head>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="/megacessweb/assets/css/roderickv1.css">
+  <!-- Links to Roderick's CSS style -->
 
-  <body data-page="manage-resources">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body data-page="manage-resources">
+  <!-- Main Content -->
+  <div class="app d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar p-3" id="sidebar-root"></aside>
+
     <!-- Main Content -->
-    <div class="app d-flex">
-      <!-- Sidebar -->
-      <aside class="sidebar p-3" id="sidebar-root"></aside>
+    <main class="content flex-grow-1">
 
-      <!-- Main Content -->
-      <main class="content flex-grow-1">
-        
-        <!-- Topbar -->
-        <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
-          <h1 class="page-title h5 mb-0">Manage Resources (Fuel)</h1>
-          <button class="btn btn-outline-light d-lg-none" id="sidebarToggle">
-            <i class="bi bi-list"></i>
-          </button>
-        </div>
+      <!-- Topbar -->
+      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+        <h1 class="page-title h5 mb-0">Manage Resources (Fuel)</h1>
+        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
 
-        <!-- Row 1: Back Button & Tabs -->
-        <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
-          <!-- Back Button -->
-          <a
-            href="/megacessweb/pages/manage-resources.html"
-            class="btn back-btn d-flex align-items-center"
-          >
-            <i class="bi bi-arrow-left me-2"></i>
-            Back to Manage Resources
+      <!-- Row 1: Back Button & Tabs -->
+      <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
+        <!-- Back Button -->
+        <a href="/megacessweb/pages/manage-resources.html" class="btn back-btn d-flex align-items-center">
+          <i class="bi bi-arrow-left me-2"></i>
+          Back to Manage Resources
+        </a>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
+        <!-- Tab Selection -->
+        <div class="btn-group" role="group">
+          <a href="#" class="tab-btn active d-flex align-items-center" data-target="fuel">
+            <i class="bi bi-fuel-pump me-2"></i>
+            Fuel
+          </a>
+          <a href="#" class="tab-btn d-flex align-items-center" data-target="usage">
+            <i class="bi bi-graph-up me-2"></i>
+            Usage
           </a>
         </div>
-        <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
-          <!-- Tab Selection -->
-          <div class="btn-group" role="group">
-            <a href="#" class="tab-btn active d-flex align-items-center" data-target="fuel">
-              <i class="bi bi-fuel-pump me-2"></i>
-              Fuel
-            </a>
-            <a href="#" class="tab-btn d-flex align-items-center" data-target="usage">
-              <i class="bi bi-graph-up me-2"></i>
-              Usage
-            </a>
-          </div>
-        </div>
-          
-        <!-- Tab Content for Fuel and Booking-->
-        <div class="tab-content">
-          <!-- Fuel Tab -->
-          <div class="tab-pane" data-name="fuel">
-            <!-- Row 2: Fuel List Header -->
-            <div class="px-4 mb-4">
-              <h5 class="fw-semibold mb-3">Past Fuel Top Up :</h5>
+      </div>
 
-              <!-- Search Bar + Filter + Add Button -->
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <!-- Search Bar -->
-                <div class="flex-grow-1">
-                  <div class="input-group">
-                    <input
-                      type="text"
-                      id="fuelSearch" 
-                      class="form-control"
-                      placeholder="Search supplier/buyer/fuel bought..."
-                    >
-                    <button class="btn btn-secondary" id="refreshFuelBtn" type="button">
-                      <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                  </div>
-                </div>
+      <!-- Tab Content for Fuel and Booking-->
+      <div class="tab-content">
+        <!-- Fuel Tab -->
+        <div class="tab-pane" data-name="fuel">
+          <!-- Row 2: Fuel List Header -->
+          <div class="px-4 mb-4">
+            <h5 class="fw-semibold mb-3">Past Fuel Top Up :</h5>
 
-                <!-- Filter Dropdown -->
-                <div>
-                  <select id="fuelFilter" class="form-select">
-                    <option selected value="default">Sort By</option>
-                    <option value="fuel-asc">Fuel Bought ↑ (asc)</option>
-                    <option value="fuel-desc">Fuel Bought ↓ (desc)</option>
-                    <option value="date-asc">Date Bought (Oldest → Newest)</option>
-                    <option value="date-desc">Date Bought (Newest → Oldest)</option>
-                  </select>
-                </div>
-
-                <!-- Add Fuel Button -->
-                <div>
-                  <button
-                    class="btn btn-primary d-flex align-items-center"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addFuelModal"
-                  >
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Add Fuel
+            <!-- Search Bar + Filter + Add Button -->
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+              <!-- Search Bar -->
+              <div class="flex-grow-1">
+                <div class="input-group">
+                  <input type="text" id="fuelSearch" class="form-control"
+                    placeholder="Search supplier/buyer/fuel bought...">
+                  <button class="btn btn-secondary" id="refreshFuelBtn" type="button">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
                   </button>
                 </div>
               </div>
-            </div>
 
-            <!-- Row 3: Fuel Table -->
-            <div class="mt-4 px-4">
-              <div class="content-table mt-4">
-                <!-- Table Header -->
-                <!-- Header -->
-                <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                  <div class="col">Supplier Name</div>
-                  <div class="col">Buyer</div>
-                  <div class="col">Fuel Bought (ℓ)</div>
-                  <div class="col">Date Bought</div>
-                  <div class="col text-center">Action</div>
-                </div>
+              <!-- Filter Dropdown -->
+              <div>
+                <select id="fuelFilter" class="form-select">
+                  <option selected value="default">Sort By</option>
+                  <option value="fuel-asc">Fuel Bought ↑ (asc)</option>
+                  <option value="fuel-desc">Fuel Bought ↓ (desc)</option>
+                  <option value="date-asc">Date Bought (Oldest → Newest)</option>
+                  <option value="date-desc">Date Bought (Newest → Oldest)</option>
+                </select>
+              </div>
 
-                <!-- 🔄 Loading indicator -->
-                <div id="loading" class="text-center my-3" style="display: none;">
-                  <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-                <!-- Table Body -->
-                <div id="fuelsTableBody" style="padding-bottom: 70px;"></div>
+              <!-- Add Fuel Button -->
+              <div>
+                <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                  data-bs-target="#addFuelModal">
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Add Fuel
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Booking Tab -->
-          <div class="tab-pane" data-name="usage">
-            <div class="px-4 mb-4">
-              <!-- Title -->
-              <h5 class="fw-semibold mb-3">List of Fuel Usage :</h5>
+          <!-- Row 3: Fuel Table -->
+          <div class="mt-4 px-4">
+            <div class="content-table mt-4">
+              <!-- Table Header -->
+              <!-- Header -->
+              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                <div class="col">Supplier Name</div>
+                <div class="col">Buyer</div>
+                <div class="col">Fuel Bought (ℓ)</div>
+                <div class="col">Date Bought</div>
+                <div class="col text-center">Action</div>
+              </div>
 
-              <!-- Search Bar + Filter + Add Button -->
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <!-- Search Bar -->
-                <div class="flex-grow-1">
-                  <input type="text" class="form-control" placeholder="Search fuel usage/used by...">
-                </div>
-
-                <!-- Filter Dropdown -->
-                <div>
-                  <select class="form-select">
-                    <option selected>Sort by...</option>
-                    <!-- Date sorting -->
-                    <option value="booking-date-asc">Usage Quantity ↑ (asc)</option>
-                    <option value="booking-date-desc">Usage Quantity ↓ (desc)</option>
-                    <option value="return-date-asc">Usage Date ↑ (asc)</option>
-                    <option value="return-date-desc">Usage Date ↓ (desc)</option>
-                  </select>
-                </div>
-
-                <!-- Add Usage Button -->
-                <div>
-                  <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addUsageModal">
-                    <i class="bi bi-plus-circle me-2"></i> Add Usage
-                  </button>
+              <!-- 🔄 Loading indicator -->
+              <div id="loading" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
                 </div>
               </div>
-            </div>
-
-            <div class="mt-4 px-4">
-              <!-- Fuel Table-like Div -->
-              <div class="content-table mt-4">
-
-                <!-- Table Header -->
-                <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                  <div class="col">Usage Quantity</div>
-                  <div class="col">Used By</div>
-                  <div class="col">Usage Date</div>
-                  <div class="col">Usage Description</div>
-                  <div class="col text-center">Action</div>
-                </div>
-
-                <!-- Row 1 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">20 Liters</div>
-                  <div class="col">Aiman Rahman</div>
-                  <div class="col">2025-11-07</div>
-                  <div class="col">Refueled company generator</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Row 2 -->
-                <div class="content-row d-flex align-items-center border-bottom py-2">
-                  <div class="col">35 Liters</div>
-                  <div class="col">John Tan</div>
-                  <div class="col">2025-11-09</div>
-                  <div class="col">Used for Toyota Hilux business trip to Kudat</div>
-                  <div class="col text-center">
-                    <button class="btn btn-sm btn-outline-primary me-2">
-                      <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
-
-              </div>
+              <!-- Table Body -->
+              <div id="fuelsTableBody" style="padding-bottom: 70px;"></div>
             </div>
           </div>
         </div>
-        
-      </main>
-      <!-- End of Main Content -->
-    </div>
 
-    <!-- Add Fuel Modal -->
-    <div class="modal fade" id="addFuelModal" tabindex="-1" aria-labelledby="addFuelModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <!-- Booking Tab -->
+        <div class="tab-pane" data-name="usage">
+          <div class="px-4 mb-4">
+            <!-- Title -->
+            <h5 class="fw-semibold mb-3">List of Fuel Usage :</h5>
 
-          <!-- Modal Header -->
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title" id="addFuelModalLabel">Add Fuel Record</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!-- Search Bar + Filter + Add Button -->
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+              <!-- Search Bar -->
+              <div class="flex-grow-1">
+                <input type="text" id="usageSearch" class="form-control" placeholder="Search fuel usage/used by...">
+              </div>
+
+              <!-- Filter Dropdown -->
+              <div>
+                <select id="usageFilter" class="form-select">
+                  <option selected value="default">Sort by...</option>
+                  <!-- Date sorting -->
+                  <option value="quantity-asc">Usage Quantity ↑ (asc)</option>
+                  <option value="quantity-desc">Usage Quantity ↓ (desc)</option>
+                  <option value="date-asc">Usage Date ↑ (asc)</option>
+                  <option value="date-desc">Usage Date ↓ (desc)</option>
+                </select>
+              </div>
+
+              <!-- Add Usage Button -->
+              <div>
+                <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                  data-bs-target="#addUsageModal">
+                  <i class="bi bi-plus-circle me-2"></i> Add Usage
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- Modal Body -->
-          <div class="modal-body">
-            <form id="addFuelForm">
-              <!-- Supplier Name -->
-              <div class="mb-3">
-                <label for="supplierName" class="form-label fw-semibold">Supplier Name</label>
-                <input type="text" class="form-control" id="supplierName" placeholder="Enter supplier name">
+          <div class="mt-4 px-4">
+            <!-- Fuel Table-like Div -->
+            <div class="content-table mt-4">
+
+              <!-- Table Header -->
+              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                <div class="col">Usage Quantity</div>
+                <div class="col">Used By</div>
+                <div class="col">Usage Date</div>
+                <div class="col">Usage Description</div>
+                <div class="col text-center">Action</div>
               </div>
 
-              <!-- Buyer (searchable dropdown) -->
-              <div class="mb-3 position-relative">
-                <label for="assignedPerson" class="form-label">Buyer</label>
-                
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  id="assignedPerson" 
-                  placeholder="Search for buyer..."
-                  autocomplete="off"
-                >
-
-                <!-- Dropdown container -->
-                <ul 
-                  class="dropdown-menu w-100" 
-                  id="buyerDropdown"
-                  style="max-height: 200px; overflow-y: auto;"
-                ></ul>
+              <!-- 🔄 Loading indicator -->
+              <div id="usageLoading" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
               </div>
 
-              <!-- Fuel Bought -->
-              <div class="mb-3">
-                <label for="fuelBought" class="form-label fw-semibold">Fuel Bought (Liters)</label>
-                <input type="number" min="0" class="form-control" id="fuelBought" placeholder="Enter fuel amount">
-              </div>
+              <!-- Table Body -->
+              <div id="fuelUsageTableBody" style="padding-bottom: 70px;"></div>
 
-              <!-- Date Bought -->
-              <div class="mb-3">
-                <label for="dateBought" class="form-label fw-semibold">Date Bought</label>
-                <input type="date" class="form-control" id="dateBought">
-              </div>
-            </form>
+            </div>
           </div>
-
-          <!-- Modal Footer -->
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button id='saveFuelBtn' type="submit" form="addFuelForm" class="btn btn-primary">Save Fuel</button>
-          </div>
-
         </div>
       </div>
+
+    </main>
+    <!-- End of Main Content -->
+  </div>
+
+  <!-- Add Fuel Modal -->
+  <div class="modal fade" id="addFuelModal" tabindex="-1" aria-labelledby="addFuelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="addFuelModalLabel">Add Fuel Record</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <form id="addFuelForm">
+            <!-- Supplier Name -->
+            <div class="mb-3">
+              <label for="supplierName" class="form-label fw-semibold">Supplier Name</label>
+              <input type="text" class="form-control" id="supplierName" placeholder="Enter supplier name">
+            </div>
+
+            <!-- Buyer (searchable dropdown) -->
+            <div class="mb-3 position-relative">
+              <label for="assignedPerson" class="form-label">Buyer</label>
+
+              <input type="text" class="form-control" id="assignedPerson" placeholder="Search for buyer..."
+                autocomplete="off">
+
+              <!-- Dropdown container -->
+              <ul class="dropdown-menu w-100" id="buyerDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
+            </div>
+
+            <!-- Fuel Bought -->
+            <div class="mb-3">
+              <label for="fuelBought" class="form-label fw-semibold">Fuel Bought (Liters)</label>
+              <input type="number" min="0" class="form-control" id="fuelBought" placeholder="Enter fuel amount">
+            </div>
+
+            <!-- Date Bought -->
+            <div class="mb-3">
+              <label for="dateBought" class="form-label fw-semibold">Date Bought</label>
+              <input type="date" class="form-control" id="dateBought">
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button id='saveFuelBtn' type="submit" form="addFuelForm" class="btn btn-primary">Save Fuel</button>
+        </div>
+
+      </div>
     </div>
+  </div>
 
-    <!-- Add Usage Modal -->
-    <div class="modal fade" id="addUsageModal" tabindex="-1" aria-labelledby="addUsageModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+  <!-- Add Usage Modal -->
+  <div class="modal fade" id="addUsageModal" tabindex="-1" aria-labelledby="addUsageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
 
-          <!-- Modal Header -->
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title" id="addUsageModalLabel">Add Usage Record</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
+        <!-- Modal Header -->
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="addUsageModalLabel">Add Usage Record</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-          <!-- Modal Body -->
-          <div class="modal-body">
-            <form id="addUsageForm">
-              <!-- Usage Quantity -->
-              <div class="mb-3">
-                <label for="usageQuantity" class="form-label fw-semibold">Usage Quantity (Liters)</label>
-                <input type="number" min="0" class="form-control" id="usageQuantity" placeholder="Enter quantity" required>
-              </div>
-
-              <!-- Used By -->
-              <div class="mb-3">
-                <label for="usedBy" class="form-label fw-semibold">Used By</label>
-                <input list="usersList" class="form-control" id="usedBy" placeholder="Enter or search user" required>
-                <datalist id="usersList">
-                  <option value="John Tan">
-                  <option value="Aiman Rahman">
-                  <option value="Siti Azizah">
-                  <option value="Faridah Binti Omar">
-                </datalist>
-              </div>
-
-              <!-- Usage Date -->
-              <div class="mb-3">
-                <label for="usageDate" class="form-label fw-semibold">Usage Date</label>
-                <input type="date" class="form-control" id="usageDate" required>
-              </div>
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <form id="addUsageForm">
+            <!-- Usage Quantity -->
+            <div class="mb-3">
 
               <!-- Description (Optional) -->
               <div class="mb-3">
                 <label for="usageDescription" class="form-label fw-semibold">Description (Optional)</label>
                 <input type="text" class="form-control" id="usageDescription" placeholder="Enter description">
               </div>
-            </form>
-          </div>
-
-          <!-- Modal Footer -->
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" form="addUsageForm" class="btn btn-success">Save Usage</button>
-          </div>
-
+          </form>
         </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" form="addUsageForm" class="btn btn-success">Save Usage</button>
+        </div>
+
       </div>
     </div>
+  </div>
 
-    <!-- ==================== EDIT FUEL MODAL ==================== -->
-    <div class="modal fade" id="editFuelModal" tabindex="-1" aria-labelledby="editFuelModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form id="editFuelForm">
-            <div class="modal-header bg-warning text-white">
-              <h5 class="modal-title" id="editFuelModalLabel">Edit Fuel Record</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <!-- ==================== EDIT USAGE MODAL ==================== -->
+  <div class="modal fade" id="editUsageModal" tabindex="-1" aria-labelledby="editUsageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header bg-warning text-white">
+          <h5 class="modal-title" id="editUsageModalLabel">Edit Usage Record</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <form id="editUsageForm">
+            <!-- Hidden ID -->
+            <input type="hidden" id="editUsageId">
+
+            <!-- Usage Quantity -->
+            <div class="mb-3">
+              <label for="editUsageQuantity" class="form-label fw-semibold">Usage Quantity (Liters)</label>
+              <input type="number" min="0" class="form-control" id="editUsageQuantity" placeholder="Enter quantity"
+                required>
             </div>
-            <div class="modal-body">
-              <!-- Hidden field to store fuel ID -->
-              <input type="hidden" id="editFuelId">
 
-              <!-- Supplier Name -->
-              <div class="mb-3">
-                <label for="editSupplierName" class="form-label">Supplier Name</label>
-                <input type="text" class="form-control" id="editSupplierName" required>
-              </div>
-
-              <!-- User Dropdown -->
-              <div class="mb-3 position-relative">
-                <label for="editAssignedPerson" class="form-label">User</label>
-                <input type="text" class="form-control" id="editAssignedPerson" placeholder="Select user..." autocomplete="off" required>
-                <ul id="editBuyerDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto" style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
-              </div>
-
-              <!-- Fuel Bought -->
-              <div class="mb-3">
-                <label for="editFuelBought" class="form-label">Fuel Bought</label>
-                <input type="number" step="0.01" class="form-control" id="editFuelBought" required>
-              </div>
-
-              <!-- Date Bought -->
-              <div class="mb-3">
-                <label for="editDateBought" class="form-label">Date Bought</label>
-                <input type="date" class="form-control" id="editDateBought" required>
-              </div>
+            <!-- Used By -->
+            <div class="mb-3 position-relative">
+              <label for="editUsedBy" class="form-label fw-semibold">Used By</label>
+              <input type="text" class="form-control" id="editUsedBy" placeholder="Search user..." autocomplete="off"
+                required>
+              <ul id="editUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
+                style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-warning" id="saveEditFuelBtn">Update Fuel</button>
+
+            <!-- Usage Date -->
+            <div class="mb-3">
+              <label for="editUsageDate" class="form-label fw-semibold">Usage Date</label>
+              <input type="date" class="form-control" id="editUsageDate" required>
+            </div>
+
+            <!-- Description (Optional) -->
+            <div class="mb-3">
+              <label for="editUsageDescription" class="form-label fw-semibold">Description (Optional)</label>
+              <input type="text" class="form-control" id="editUsageDescription" placeholder="Enter description">
             </div>
           </form>
         </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" form="editUsageForm" class="btn btn-warning" id="saveEditUsageBtn">Update Usage</button>
+        </div>
+
       </div>
     </div>
+  </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/megacessweb/assets/js/main.js"></script>
-    <script src="/megacessweb/assets/js/fuel.js"></script>
-    <script>
-      $(document).ready(function () {
-        // Show the first tab content by default
-        $(".tab-pane").first().show();
+  <!-- ==================== EDIT FUEL MODAL ==================== -->
+  <div class="modal fade" id="editFuelModal" tabindex="-1" aria-labelledby="editFuelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editFuelForm">
+          <div class="modal-header bg-warning text-white">
+            <h5 class="modal-title" id="editFuelModalLabel">Edit Fuel Record</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Hidden field to store fuel ID -->
+            <input type="hidden" id="editFuelId">
 
-        // Tab Button Click Handler
-        $(".tab-btn").click(function () {
-          const target = $(this).data("target"); // Get target tab name
+            <!-- Supplier Name -->
+            <div class="mb-3">
+              <label for="editSupplierName" class="form-label">Supplier Name</label>
+              <input type="text" class="form-control" id="editSupplierName" required>
+            </div>
 
-          // Hide all panes
-          $(".tab-pane").hide();
+            <!-- User Dropdown -->
+            <div class="mb-3 position-relative">
+              <label for="editAssignedPerson" class="form-label">User</label>
+              <input type="text" class="form-control" id="editAssignedPerson" placeholder="Select user..."
+                autocomplete="off" required>
+              <ul id="editBuyerDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
+                style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
+            </div>
 
-          // Show the selected one
-          $(`.tab-pane[data-name="${target}"]`).show();
+            <!-- Fuel Bought -->
+            <div class="mb-3">
+              <label for="editFuelBought" class="form-label">Fuel Bought</label>
+              <input type="number" step="0.01" class="form-control" id="editFuelBought" required>
+            </div>
 
-          // Update active button
-          $(".tab-btn").removeClass("active");
-          $(this).addClass("active");
-        });
+            <!-- Date Bought -->
+            <div class="mb-3">
+              <label for="editDateBought" class="form-label">Date Bought</label>
+              <input type="date" class="form-control" id="editDateBought" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-warning" id="saveEditFuelBtn">Update Fuel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="/megacessweb/assets/js/utils.js"></script>
+  <script src="/megacessweb/assets/js/fuel.js"></script>
+  <script src="/megacessweb/assets/js/fuel_usage.js"></script>
+  <script>
+    $(document).ready(function () {
+      // Show the first tab content by default
+      $(".tab-pane").first().show();
+
+      // Tab Button Click Handler
+      $(".tab-btn").click(function () {
+        const target = $(this).data("target"); // Get target tab name
+
+        // Hide all panes
+        $(".tab-pane").hide();
+
+        // Show the selected one
+        $(`.tab-pane[data-name="${target}"]`).show();
+
+        // Update active button
+        $(".tab-btn").removeClass("active");
+        $(this).addClass("active");
       });
-    </script>
-    <!-- Loading overlay spinner at the very end of body -->
-    <div id="loadingOverlay" class="loading-overlay d-none">
-      <div class="spinner-border text-primary" role="status">
+    });
+  </script>
+  <!-- Loading overlay spinner at the very end of body -->
+  <div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
-    </div>
-  </body>
+  </div>
+</body>
+
 </html>
