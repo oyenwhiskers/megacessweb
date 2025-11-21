@@ -85,6 +85,12 @@ $(document).ready(function() {
       const img = user.user_img
         ? (user.user_img.startsWith("http") ? user.user_img : `https://mwms.megacess.com${user.user_img}`)
         : "https://via.placeholder.com/64";
+      
+      // Safely access nested base_salary property
+      let userBaseSalary = "Not set";
+      if (user.base_salary && user.base_salary.base_salary != null) {
+        userBaseSalary = user.base_salary.base_salary;
+      }
 
       const $col = $("<div>").addClass("col-12 col-sm-6 col-md-4");
       const $card = $(`
@@ -93,11 +99,12 @@ $(document).ready(function() {
             <img src="${img}" alt="${name}" class="rounded-circle" width="64" height="64">
             <div class="flex-grow-1">
               <h6 class="mb-1">${name}</h6>
-              <small class="text-muted">${role}</small>
+              <small class="text-muted d-block">${role}</small>
+              <small class="text-muted d-block mt-1">Base Salary: <strong>${userBaseSalary}</strong></small>
             </div>
-            <div class="d-flex flex-column ms-2">
+            <div class="d-flex flex-column ms-auto">
               <a href="/megacessweb/pages/manage-payment-rate-edit-salary-user.html?user_id=${encodeURIComponent(id)}"
-                class="btn btn-sm btn-outline-success mb-1" title="Edit base salary">
+                class="btn btn-sm btn-outline-success" title="Edit base salary">
                 <i class="bi bi-pencil-fill"></i>
               </a>
             </div>

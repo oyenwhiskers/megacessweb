@@ -24,6 +24,9 @@
     }
   }
 
+  function initTabs(){
+  }
+
   function loadSidebar(){
     var root = document.getElementById('sidebar-root');
     if(!root){
