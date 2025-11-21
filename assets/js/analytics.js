@@ -582,6 +582,14 @@ async function fetchResourceUsage(type = 'manuring') {
         const startDate = document.getElementById('resourceStartDate')?.value || `${new Date().getFullYear()}-01-01`;
         const endDate = document.getElementById('resourceEndDate')?.value || `${new Date().getFullYear()}-12-31`;
         const locationId = document.getElementById('resourceLocation')?.value || 1;
+        // If sanitationType is 'slashing', show message and skip API call
+        if (type === 'spraying' && sanitationType === 'slashing') {
+            const resourceList = document.querySelector('.resources-list');
+            if (resourceList) {
+                resourceList.innerHTML = '<p class="text-danger text-center py-4">No data available for Slashing.</p>';
+            }
+            return;
+        }
         // Show loading state
         const resourceList = document.querySelector('.resources-list');
         if (resourceList) {
@@ -593,7 +601,10 @@ async function fetchResourceUsage(type = 'manuring') {
             url += `&task_type=manuring`;
         } else if (type === 'spraying') {
             url += `&task_type=sanitation`;
-            if (sanitationType) url += `&sanitation_type=${encodeURIComponent(sanitationType)}`;
+            // Always add sanitation_type if a real value is selected (not empty and not 'Select type')
+            if (sanitationType && sanitationType !== '' && sanitationType !== 'Select type') {
+                url += `&sanitation_type=${encodeURIComponent(sanitationType)}`;
+            }
         }
         const response = await fetch(url, {
             method: 'GET',
@@ -700,6 +711,17 @@ function renderResourceItems(records, resourceType, unit) {
         `;
         resourceListContainer.appendChild(resourceItem);
     });
+    
+    // After rendering resource items, check if scroll is needed
+    const resourceList = document.querySelector('.resources-list');
+    if (resourceList) {
+        const items = resourceList.querySelectorAll('.resource-item');
+        if (items.length > 5) {
+            resourceList.classList.add('scrollable-resource-list');
+        } else {
+            resourceList.classList.remove('scrollable-resource-list');
+        }
+    }
 }
 
 function setupResourceFilters() {
