@@ -1,6 +1,3 @@
-// ==================== GLOBAL STATE & CONSTANTS ====================
-const BASE_URL = 'https://mwms.megacess.com/api/v1';
-
 let toolState = {
     currentPage: 1,
     lastPage: 1,
@@ -9,87 +6,6 @@ let toolState = {
     search: '',
     status: ''
 };
-
-// ==================== HELPER FUNCTIONS ====================
-function getToken() {
-    return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
-}
-
-function showSuccess(msg) {
-    Swal.fire({ icon: 'success', title: 'Success!', text: msg, timer: 2000, showConfirmButton: false });
-}
-
-function showError(msg) {
-    Swal.fire({ icon: 'error', title: 'Error', text: msg, timer: 3000, showConfirmButton: true });
-}
-
-function showErrorNoToken(msg) {
-    Swal.fire({ icon: 'error', title: 'Authentication Error', text: msg }).then(() => {
-        window.location.replace('../log-in.html');
-    });
-}
-
-function showConfirm(message, callbackYes) {
-    Swal.fire({
-        title: 'Are you sure?', text: message, icon: 'warning', showCancelButton: true,
-        confirmButtonColor: '#3085d6', cancelButtonColor: '#d33', confirmButtonText: 'Yes, do it!'
-    }).then((result) => {
-        if (result.isConfirmed) callbackYes();
-    });
-}
-
-function showLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.remove('d-none');
-}
-
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.add('d-none');
-}
-
-function debounce(func, delay) {
-    let timer;
-    return function (...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => func.apply(this, args), delay);
-    };
-}
-
-/**
- * Generic API Fetch Wrapper
- */
-async function apiFetch(endpoint, options = {}) {
-    const token = getToken();
-    if (!token) {
-        showErrorNoToken("Please login first.");
-        throw new Error("No token");
-    }
-
-    const defaultHeaders = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    };
-
-    try {
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
-            ...options,
-            headers: { ...defaultHeaders, ...options.headers }
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || (result && result.success === false)) {
-            throw new Error(result.message || `API Error: ${response.status}`);
-        }
-
-        return result;
-    } catch (error) {
-        console.error(`API Error (${endpoint}):`, error);
-        throw error;
-    }
-}
 
 // ==================== MAIN TABLE LOGIC ====================
 
