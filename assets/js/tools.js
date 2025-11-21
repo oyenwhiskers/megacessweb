@@ -98,6 +98,7 @@ function updateToolPaginationControls(meta) {
     toolState.lastPage = meta.last_page;
     toolState.total = meta.total;
     renderToolPagination(meta.current_page, meta.last_page);
+    console.log(meta.current_page, meta.last_page);
 }
 
 function renderToolPagination(current, last) {

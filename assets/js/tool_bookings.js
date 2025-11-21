@@ -332,13 +332,6 @@ function openUpdateToolBookingModal(toolbooking) {
     console.warn("Attempted to open update modal for:", toolbooking);
 }
 
-// Required for the pagination logic
-function updateToolPaginationControls(meta) {
-    // Implement logic to update pagination buttons based on meta data (meta.current_page, meta.last_page, etc.)
-    console.log("Pagination update required:", meta);
-}
-
-
 // ==================== Initializer ====================
 
 document.addEventListener('DOMContentLoaded', () => {
