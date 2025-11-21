@@ -230,55 +230,166 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btnSpraying && btnSpraying.classList.contains('active')) return 'spraying';
         return 'manuring';
     }
+
+    // --- Monthly Chart Filter Controls ---
+    const monthlyFilterYear = document.getElementById('monthlyFilterYear');
+    const monthlyFilterLocation = document.getElementById('monthlyFilterLocation');
+    const monthlyFilterTaskType = document.getElementById('monthlyFilterTaskType');
+    const monthlyFilterForm = document.getElementById('monthlyFilterForm');
+
+    // Populate year dropdown (All + 5 years back and 2 years ahead)
+    if (monthlyFilterYear) {
+        const currentYear = new Date().getFullYear();
+        const allOpt = document.createElement('option');
+        allOpt.value = '';
+        allOpt.textContent = 'All Years';
+        monthlyFilterYear.appendChild(allOpt);
+        for (let y = currentYear - 5; y <= currentYear + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            monthlyFilterYear.appendChild(opt);
+        }
+    }
+    // Populate location dropdown dynamically
+    async function populateMonthlyLocationDropdown() {
+        if (!monthlyFilterLocation) return;
+        monthlyFilterLocation.innerHTML = '<option value="" disabled selected>Loading...</option>';
+        const token = localStorage.getItem('authToken');
+        try {
+            const response = await fetch('https://mwms.megacess.com/api/v1/locations', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            monthlyFilterLocation.innerHTML = '';
+            if (data.success && Array.isArray(data.data)) {
+                data.data.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc.id;
+                    opt.textContent = loc.name;
+                    monthlyFilterLocation.appendChild(opt);
+                });
+                // Default to first location if available
+                if (data.data.length > 0) monthlyFilterLocation.value = data.data[0].id;
+            } else {
+                monthlyFilterLocation.innerHTML = '<option value="" disabled selected>No locations found</option>';
+            }
+        } catch (err) {
+            monthlyFilterLocation.innerHTML = '<option value="" disabled selected>Error loading</option>';
+        }
+    }
+    populateMonthlyLocationDropdown();
+
+    // Helper to get current filter values
+    function getMonthlyFilterValues() {
+        const year = monthlyFilterYear ? monthlyFilterYear.value : '';
+        const locationId = monthlyFilterLocation ? monthlyFilterLocation.value : 1;
+        const taskType = monthlyFilterTaskType ? monthlyFilterTaskType.value : '';
+        return { year, locationId, taskType };
+    }
+
+    // On filter change, update chart
+    if (monthlyFilterForm) {
+        monthlyFilterForm.addEventListener('change', function() {
+            const { year, locationId, taskType } = getMonthlyFilterValues();
+            fetchMonthlyTaskCompletion(year, locationId, taskType);
+        });
+    }
+
+    // Initial load for monthly chart (after locations loaded)
+    setTimeout(() => {
+        const { year, locationId, taskType } = getMonthlyFilterValues();
+        fetchMonthlyTaskCompletion(year, locationId, taskType);
+    }, 500);
+
+    // --- Estate Officer Task Filter Controls ---
+    const estateOfficerYear = document.getElementById('estateOfficerYear');
+    const estateOfficerMonth = document.getElementById('estateOfficerMonth');
+    if (estateOfficerYear && estateOfficerMonth) {
+        // Populate year dropdown (All + 5 years back and 2 years ahead)
+        const currentYear = new Date().getFullYear();
+        const allYearOpt = document.createElement('option');
+        allYearOpt.value = '';
+        allYearOpt.textContent = 'All Years';
+        estateOfficerYear.appendChild(allYearOpt);
+        for (let y = currentYear - 5; y <= currentYear + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            estateOfficerYear.appendChild(opt);
+        }
+        // Populate month dropdown (All + 1-12)
+        const monthNames = ["All Months", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        for (let m = 0; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = m === 0 ? '' : m;
+            opt.textContent = monthNames[m];
+            if (m === (new Date().getMonth() + 1)) opt.selected = true;
+            estateOfficerMonth.appendChild(opt);
+        }
+        // On filter change, update list
+        function triggerEstateOfficerUpdate() {
+            const year = estateOfficerYear.value;
+            const month = estateOfficerMonth.value;
+            fetchEstateOfficerTasks(year, month);
+            fetchAttendanceByMandors(year, month);
+        }
+        estateOfficerYear.addEventListener('change', triggerEstateOfficerUpdate);
+        estateOfficerMonth.addEventListener('change', triggerEstateOfficerUpdate);
+        // Initial load with default values
+        triggerEstateOfficerUpdate();
+    }
 });
 
-async function fetchMonthlyTaskCompletion(year, locationId = 1) {
+// Update fetchMonthlyTaskCompletion to accept taskType and allow all years/months
+async function fetchMonthlyTaskCompletion(year, locationId = 1, taskType = '') {
     try {
         // Get token from localStorage (using 'authToken' key)
         const token = localStorage.getItem('authToken');
-        
         if (!token) {
             console.error('No authentication token found');
             return;
         }
-
-        console.log('Fetching monthly task completion for year:', year, 'location:', locationId);
-        
+        // Build API URL
+        let url = `https://mwms.megacess.com/api/v1/analytics/task-completion?location_id=${locationId}`;
+        if (year && year !== '') {
+            url += `&year=${year}`;
+        }
+        if (taskType && taskType !== '') {
+            url += `&task_type=${encodeURIComponent(taskType)}`;
+        }
         // Show loading state
         const chartCanvas = document.getElementById('taskCompletionChartMonth');
         if (chartCanvas) {
             const card = chartCanvas.closest('.card-body');
             showLoading(card);
         }
-
-        const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/task-completion?year=${year}&location_id=${locationId}`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        );
-
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const result = await response.json();
-        console.log('API Response:', result);
-        
         if (result.data && result.data.data) {
-            console.log('Updating chart with data:', result.data.data);
             updateMonthlyChart(result.data.data);
         } else {
-            console.warn('No data found in API response');
+            updateMonthlyChart([]);
         }
     } catch (error) {
         console.error('Error fetching monthly task completion:', error);
-        // Keep the default chart data if API fails
+        updateMonthlyChart([]);
     } finally {
         // Hide loading state
         const chartCanvas = document.getElementById('taskCompletionChartMonth');
@@ -771,17 +882,19 @@ async function fetchEstateOfficerTasks(year, month) {
             showLoading(officerList.closest('.card-body'));
         }
 
-        const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/tasks-by-mandors?year=${year}&month=${month}`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+        let url = `https://mwms.megacess.com/api/v1/analytics/tasks-by-mandors?`;
+        if (year && year !== '') url += `year=${year}&`;
+        if (month && month !== '') url += `month=${month}&`;
+        url = url.replace(/&$/, '');
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        );
+        });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -858,26 +971,10 @@ function renderEstateOfficers(records) {
         officerCard.className = 'card border rounded-3 mb-3 estate-officer-item';
         officerCard.setAttribute('data-officer-name', record.estate_officer_name.toLowerCase());
         
-        // Check if profile image exists, otherwise use default icon
-        const profileImageHTML = record.profile_image || record.avatar || record.image_url
-            ? `<img src="${record.profile_image || record.avatar || record.image_url}" 
-                    alt="${record.estate_officer_name}" 
-                    class="rounded-circle" 
-                    style="width: 60px; height: 60px; object-fit: cover;"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-               <div class="rounded-circle bg-dark d-none align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                   <i class="bi bi-person-fill text-white fs-3"></i>
-               </div>`
-            : `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                   <i class="bi bi-person-fill text-white fs-3"></i>
-               </div>`;
-        
+        // Remove profile image/icon beside name
         officerCard.innerHTML = `
             <div class="card-body p-3">
                 <div class="row align-items-center">
-                    <div class="col-auto">
-                        ${profileImageHTML}
-                    </div>
                     <div class="col">
                         <h6 class="mb-0 fw-bold">${record.estate_officer_name}</h6>
                     </div>
@@ -938,17 +1035,19 @@ async function fetchAttendanceByMandors(year, month) {
             showLoading(attendanceList.closest('.card-body'));
         }
 
-        const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/attendance-by-mandors?year=${year}&month=${month}`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+        let url = `https://mwms.megacess.com/api/v1/analytics/attendance-by-mandors?`;
+        if (year && year !== '') url += `year=${year}&`;
+        if (month && month !== '') url += `month=${month}&`;
+        url = url.replace(/&$/, '');
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        );
+        });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1032,17 +1131,19 @@ async function fetchAbsentWorkers(year, month) {
             showLoading(absentList.closest('.card-body'));
         }
 
-        const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/absent-workers?year=${year}&month=${month}`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+        let url = `https://mwms.megacess.com/api/v1/analytics/absent-workers?`;
+        if (year && year !== '') url += `year=${year}&`;
+        if (month && month !== '') url += `month=${month}&`;
+        url = url.replace(/&$/, '');
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        );
+        });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1133,17 +1234,19 @@ async function fetchAuditedSummary(year, month) {
             `;
         }
 
-        const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/audited-summary?year=${year}&month=${month}`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+        let url = `https://mwms.megacess.com/api/v1/analytics/audited-summary?`;
+        if (year && year !== '') url += `year=${year}&`;
+        if (month && month !== '') url += `month=${month}&`;
+        url = url.replace(/&$/, '');
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-        );
+        });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
