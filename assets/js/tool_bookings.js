@@ -45,7 +45,7 @@ function showConfirm(message, callbackYes) {
   });
 }
 
-// ==================== Loading Overlay ====================
+// ==================== Loading Overlay That Covers Entire Screen in HTML ====================
 function showLoading() {
   const overlay = document.getElementById('loadingOverlay');
   if (overlay) overlay.classList.remove('d-none');
@@ -141,7 +141,7 @@ async function getAllToolBookings({ search = '', sortBy = '', page = 1 } = {}) {
 }
 
 function populateToolBookingTable(toolbookings){
-const tableBody = document.getElementById('toolBookingTableBody');
+  const tableBody = document.getElementById('toolBookingTableBody');
   tableBody.innerHTML = '';
 
   toolbookings.forEach(toolbooking => {
@@ -172,7 +172,7 @@ const tableBody = document.getElementById('toolBookingTableBody');
           }) : '-'}
       </div>
       <div class="col text-center">
-        <button class="btn btn-sm btn-warning me-2 update-tool-booking-btn" 
+        <button class="btn btn-sm btn-warning me-2 update-tool-booking-btn" data-id="${toolbooking.id}">
           <i class="bi bi-pencil"></i> Edit
         </button>
         <button class="btn btn-sm btn-danger delete-tool-booking-btn" data-id="${toolbooking.id}">
@@ -182,12 +182,50 @@ const tableBody = document.getElementById('toolBookingTableBody');
     `;
     tableBody.appendChild(row);
 
-    // ✅ Attach click event to Edit button for opening update modal
+    // ✅ FIX: Attach click event to Edit button and pass the correct 'toolbooking' object
     const editBtn = row.querySelector('.update-tool-booking-btn');
     editBtn.addEventListener('click', () => {
-      openUpdateVehicleBookingModal(booking); // Pass booking object
+      openUpdateToolBookingModal(toolbooking); // ***CORRECTED FUNCTION NAME AND VARIABLE***
+    });
+    
+    // ✅ Next Step: Attach click event to Delete button
+    const deleteBtn = row.querySelector('.delete-tool-booking-btn');
+    deleteBtn.addEventListener('click', (e) => {
+      const toolBookingId = e.currentTarget.dataset.id;
+      const message = `You are about to delete the booking for tool: ${toolbooking.tool.tool_name}. This action cannot be undone.`;
+
+      // *** REFACTORED TO USE showConfirm ***
+      showConfirm(message, () => {
+        deleteToolBooking(toolBookingId); 
+      });
     });
   });
+}
+
+// Function 1: To open and populate the update modal
+function openUpdateToolBookingModal(toolbooking) {
+    console.log('Opening update modal for Tool Booking ID:', toolbooking.id);
+    // You must implement the logic to:
+    // 1. Find the modal element (e.g., using Bootstrap or a custom solution).
+    // 2. Populate its form fields (Tool Name, User, Booking Date, Return Date) 
+    //    using the data from the 'toolbooking' object.
+    // 3. Display the modal.
+}
+
+// Function 2: To handle the deletion of a booking
+async function deleteToolBooking(id) {
+    const path = `/tool-bookings/${id}`;
+    showLoading();
+    try {
+        const result = await apiFetch(path, { method: 'DELETE' });
+        hideLoading();
+        showSuccess('Tool booking deleted !')
+        // Refresh the table after successful deletion
+        getAllToolBookings(); 
+    } catch (error) {
+        hideLoading();
+        showError(error.message || 'Failed to delete tool booking.');
+    }
 }
 
 

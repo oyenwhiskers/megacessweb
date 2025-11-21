@@ -175,6 +175,7 @@
               <!-- Add Tools Button -->
               <div>
                 <button
+                  id="addToolBookingBtn"
                   type="button"
                   class="btn btn-primary d-flex align-items-center"
                   data-bs-toggle="modal"
@@ -243,7 +244,7 @@
 
                 <!-- Add Booking Button -->
                 <div>
-                  <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                  <button id="addToolBookingBtn" class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addToolBookingModal">
                     <i class="bi bi-plus-circle me-2"></i> Add Booking
                   </button>
                 </div>
@@ -332,7 +333,7 @@
   </div>
 
   <!-- Add booking Modal -->
-  <div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
+  <div class="modal fade" id="addToolBookingModal" tabindex="-1" aria-labelledby="addToolBookingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <!-- Modal Header -->
@@ -379,7 +380,7 @@
         <!-- Modal Footer -->
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" form="toolBookingForm" class="btn btn-success">Save Booking</button>
+          <button id="saveToolBookingBtn" type="submit" form="toolBookingForm" class="btn btn-success">Save Booking</button>
         </div>
       </div>
     </div>
