@@ -244,7 +244,7 @@
 
                 <!-- Add Booking Button -->
                 <div>
-                  <button id="addToolBookingBtn" class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addToolBookingModal">
+                  <button id="addNewToolBookingBtn" class="btn btn-primary d-flex align-items-center">
                     <i class="bi bi-plus-circle me-2"></i> Add Booking
                   </button>
                 </div>
@@ -332,56 +332,68 @@
     </div>
   </div>
 
-  <!-- Add booking Modal -->
-  <div class="modal fade" id="addToolBookingModal" tabindex="-1" aria-labelledby="addToolBookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+  <!-- Add tool booking Modal -->
+  <div class="modal fade" id="createToolBookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+
       <div class="modal-content">
-        <!-- Modal Header -->
+        
+        <!-- Header -->
         <div class="modal-header bg-success text-white">
-          <h5 class="modal-title" id="addToolBookingModalLabel">Add Tool Booking</h5>
+          <h5 class="modal-title" id="createToolBookingModalLabel">Add New Tool Booking</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <!-- Modal Body -->
-        <div class="modal-body">
-          <form id="toolBookingForm">
-            <!-- Select Tool -->
-            <div class="mb-3">
-              <label for="toolSelect" class="form-label">Select Available Tool</label>
-              <select class="form-select" id="toolSelect" required>
-                <option selected disabled>Choose a tool...</option>
-                <option value="drill">Drill Machine</option>
-                <option value="hammer">Hammer</option>
-                <option value="wrench">Wrench Set</option>
-                <option value="screwdriver">Screwdriver Kit</option>
-              </select>
+        <!-- Body -->
+        <form id="createToolBookingForm">
+          <div class="modal-body">
+            <!-- Tool -->
+            <div class="mb-3 position-relative">
+              <label for="toolSearchInput" class="form-label">Tool</label>
+              <input type="hidden" id="create_tool_id" name="create_tool_id" required>
+              <input type="text" class="form-control" id="toolSearchInput" placeholder="Start typing the tool name..." autocomplete="off">
+              <ul 
+                id="toolSearchResults" 
+                class="dropdown-menu w-100" 
+                style="max-height: 200px; overflow-y: auto;"
+              >
+              </ul>
             </div>
 
-            <!-- Person Name -->
-            <div class="mb-3">
-              <label for="personName" class="form-label">Person Name</label>
-              <input type="text" class="form-control" id="personName" placeholder="Enter name" required>
+            <!-- Assigned Person -->
+            <div class="mb-3 position-relative">
+              <label for="userSearchInput" class="form-label">Assigned Person</label>
+              <input type="hidden" id="create_user_id" name="create_user_id" required>
+              <input type="text" class="form-control" id="userSearchInput" placeholder="Start typing the person's name..." autocomplete="off">
+              <ul 
+                id="userSearchResults" 
+                class="dropdown-menu w-100" 
+                style="max-height: 200px; overflow-y: auto;"
+              >
+              </ul>
             </div>
 
-            <!-- Booking Date -->
+            <!-- Date time booking -->
             <div class="mb-3">
-              <label for="bookingDate" class="form-label">Booking Date</label>
-              <input type="date" class="form-control" id="bookingDate" required>
+              <label for="create_datetime_booking" class="form-label">Booking Date/Time</label>
+              <input type="datetime-local" class="form-control" id="create_datetime_booking" name="create_datetime_booking" required>
             </div>
 
-            <!-- Return Date -->
+            <!-- Date time return -->
             <div class="mb-3">
-              <label for="returnDate" class="form-label">Return Date (Optional)</label>
-              <input type="date" class="form-control" id="returnDate" required>
+              <label for="create_datetime_return" class="form-label">Expected Return Date/Time</label>
+              <input type="datetime-local" class="form-control" id="create_datetime_return" name="create_datetime_return">
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
+        
 
-        <!-- Modal Footer -->
+        <!-- Footer -->
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button id="saveToolBookingBtn" type="submit" form="toolBookingForm" class="btn btn-success">Save Booking</button>
+          <button id="saveToolBookingBtn" type="submit" form="createToolBookingForm" class="btn btn-success">Save Booking</button>
         </div>
+        
       </div>
     </div>
   </div>
