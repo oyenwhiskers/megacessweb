@@ -1,3 +1,4 @@
+// GLOBAL DECLARATION
 let ALL_TOOLS = [];
 let ALL_USERS_STAFF = [];
 
@@ -57,6 +58,7 @@ function showConfirm(message, callbackYes) {
   });
 }
 
+// ==================== LOADING OVERLAY ====================
 function showLoading() {
   const overlay = document.getElementById('loadingOverlay');
   if (overlay) overlay.classList.remove('d-none');
@@ -78,6 +80,7 @@ function getToken() {
   return null;
 }
 
+/* -------------------- API FETCH -------------------- */
 async function apiFetch(path, options = {}) {
   const BASE_URL = 'https://mwms.megacess.com/api/v1';
   const token = getToken();
