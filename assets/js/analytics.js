@@ -333,17 +333,118 @@ document.addEventListener('DOMContentLoaded', function() {
             if (m === (new Date().getMonth() + 1)) opt.selected = true;
             estateOfficerMonth.appendChild(opt);
         }
-        // On filter change, update list
+        // On filter change, update ONLY estate officer list
         function triggerEstateOfficerUpdate() {
             const year = estateOfficerYear.value;
             const month = estateOfficerMonth.value;
             fetchEstateOfficerTasks(year, month);
-            fetchAttendanceByMandors(year, month);
         }
         estateOfficerYear.addEventListener('change', triggerEstateOfficerUpdate);
         estateOfficerMonth.addEventListener('change', triggerEstateOfficerUpdate);
         // Initial load with default values
         triggerEstateOfficerUpdate();
+    }
+
+    // --- Attendance Rate Filter Controls (independent) ---
+    const attendanceYear = document.getElementById('attendanceYear');
+    const attendanceMonth = document.getElementById('attendanceMonth');
+    if (attendanceYear && attendanceMonth) {
+        // Populate year dropdown (All + 5 years back and 2 years ahead)
+        const currentYear = new Date().getFullYear();
+        const allYearOpt = document.createElement('option');
+        allYearOpt.value = '';
+        allYearOpt.textContent = 'All Years';
+        attendanceYear.appendChild(allYearOpt);
+        for (let y = currentYear - 5; y <= currentYear + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            attendanceYear.appendChild(opt);
+        }
+        // Populate month dropdown (All + 1-12)
+        const monthNames = ["All Months", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        for (let m = 0; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = m === 0 ? '' : m;
+            opt.textContent = monthNames[m];
+            if (m === (new Date().getMonth() + 1)) opt.selected = true;
+            attendanceMonth.appendChild(opt);
+        }
+        // --- Enforce filter dependency: month requires year ---
+        attendanceYear.addEventListener('change', function() {
+            if (attendanceYear.value === '') {
+                attendanceMonth.value = '';
+            }
+            triggerAttendanceUpdate();
+        });
+        attendanceMonth.addEventListener('change', function() {
+            if (attendanceMonth.value !== '' && attendanceYear.value === '') {
+                alert('Please select a year before selecting a month.');
+                attendanceMonth.value = '';
+                return;
+            }
+            triggerAttendanceUpdate();
+        });
+        // On filter change, update attendance list only
+        function triggerAttendanceUpdate() {
+            const year = attendanceYear.value;
+            const month = attendanceMonth.value;
+            fetchAttendanceByMandors(year, month);
+        }
+        // Initial load with default values
+        triggerAttendanceUpdate();
+    }
+
+    // --- Absent Workers Filter Controls ---
+    const absentYear = document.getElementById('absentYear');
+    const absentMonth = document.getElementById('absentMonth');
+    if (absentYear && absentMonth) {
+        // Populate year dropdown (All + 5 years back and 2 years ahead)
+        const currentYear = new Date().getFullYear();
+        const allYearOpt = document.createElement('option');
+        allYearOpt.value = '';
+        allYearOpt.textContent = 'All Years';
+        absentYear.appendChild(allYearOpt);
+        for (let y = currentYear - 5; y <= currentYear + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            absentYear.appendChild(opt);
+        }
+        // Populate month dropdown (All + 1-12)
+        const monthNames = ["All Months", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        for (let m = 0; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = m === 0 ? '' : m;
+            opt.textContent = monthNames[m];
+            if (m === (new Date().getMonth() + 1)) opt.selected = true;
+            absentMonth.appendChild(opt);
+        }
+        // --- Enforce filter dependency: month requires year ---
+        absentYear.addEventListener('change', function() {
+            if (absentYear.value === '') {
+                absentMonth.value = '';
+            }
+            triggerAbsentUpdate();
+        });
+        absentMonth.addEventListener('change', function() {
+            if (absentMonth.value !== '' && absentYear.value === '') {
+                alert('Please select a year before selecting a month.');
+                absentMonth.value = '';
+                return;
+            }
+            triggerAbsentUpdate();
+        });
+        // On filter change, update absent list only
+        function triggerAbsentUpdate() {
+            const year = absentYear.value;
+            const month = absentMonth.value;
+            fetchAbsentWorkers(year, month);
+        }
+        // Initial load with default values
+        triggerAbsentUpdate();
     }
 });
 
