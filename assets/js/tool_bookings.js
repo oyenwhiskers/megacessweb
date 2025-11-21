@@ -1,6 +1,91 @@
 // GLOBAL DECLARATION
 let ALL_TOOLS = [];
 let ALL_USERS_STAFF = [];
+const TOOL_BOOKING_RESULTS_LIMIT = 8;
+
+const toolBookingState = {
+  search: '',
+  sortBy: '',
+  currentPage: 1,
+  lastPage: 1,
+  perPage: 10,
+  total: 0,
+};
+
+async function loadBookingReferenceData({ force = false } = {}) {
+  if (!force && ALL_TOOLS.length && ALL_USERS_STAFF.length) return;
+
+  const [combinedRawData, toolsList] = await Promise.all([
+    fetchUsersStaff(),
+    fetchTools(),
+  ]);
+
+  ALL_TOOLS = toolsList.map(t => ({
+    id: t.id,
+    tool_name: t.tool_name,
+    searchField: (t.tool_name || '').toLowerCase(),
+  }));
+
+  ALL_USERS_STAFF = combinedRawData.map(entity => {
+    const isUser = entity.role === 'user';
+    const type = isUser ? 'user' : 'staff';
+    const idKey = isUser ? 'user_id' : 'staff_id';
+    const typeLabel = isUser ? '(User)' : '(Staff)';
+    const fullname = entity.fullname || entity.user_fullname || entity.staff_fullname || '';
+
+    return {
+      id: `${type}-${entity[idKey]}`,
+      name: `${fullname} ${typeLabel}`.trim(),
+      searchField: fullname.toLowerCase(),
+    };
+  }).filter(item => item.id && item.searchField);
+}
+
+function handleBookingSearch(inputElement, resultsListElement, sourceData, displayKey, type) {
+  if (!inputElement || !resultsListElement || !Array.isArray(sourceData)) return;
+
+  const query = inputElement.value.trim().toLowerCase();
+  let filtered = sourceData;
+  if (query) {
+    filtered = sourceData.filter(item => (item.searchField || '').includes(query));
+  }
+
+  renderResults(
+    inputElement,
+    resultsListElement,
+    filtered.slice(0, TOOL_BOOKING_RESULTS_LIMIT),
+    displayKey,
+    type
+  );
+}
+
+function attachAutocomplete(inputElement, resultsListElement, sourceData, displayKey, type) {
+  if (!inputElement || !resultsListElement) return;
+
+  const debouncedSearch = debounce(() => handleBookingSearch(inputElement, resultsListElement, sourceData, displayKey, type), 300);
+  inputElement.oninput = debouncedSearch;
+  inputElement.onfocus = () => {
+    if (inputElement.value.trim() === '') {
+      handleBookingSearch(inputElement, resultsListElement, sourceData, displayKey, type);
+    }
+  };
+}
+
+function registerAutocompleteOutsideClick(modalElement, pairs = []) {
+  if (!modalElement) return;
+  modalElement.onclick = (e) => {
+    pairs.forEach(({ input, results }) => {
+      if (
+        results &&
+        input &&
+        !e.target.closest(`#${results.id}`) &&
+        !e.target.closest(`#${input.id}`)
+      ) {
+        results.style.display = 'none';
+      }
+    });
+  };
+}
 
 // ==================== Data Fetching Functions ====================
 
@@ -40,7 +125,18 @@ async function fetchTools() {
 // ==================== CRUD: Read & Render ====================
 
 async function getAllToolBookings({ search = '', sortBy = '', page = 1 } = {}) {
-  const path = `/tool-bookings?search=${search}&statusFilter=${sortBy}&page=${page}`;
+  toolBookingState.search = search;
+  toolBookingState.sortBy = sortBy;
+  toolBookingState.currentPage = page;
+
+  const queryParams = new URLSearchParams({
+    search,
+    statusFilter: sortBy,
+    page,
+    per_page: toolBookingState.perPage,
+  });
+
+  const path = `/tool-bookings?${queryParams.toString()}`;
   const loading = document.getElementById('loadingToolBooking');
   const tableBody = document.getElementById('toolBookingTableBody');
 
@@ -52,16 +148,19 @@ async function getAllToolBookings({ search = '', sortBy = '', page = 1 } = {}) {
 
     if (result.data && result.data.length > 0) {
       populateToolBookingTable(result.data);
+    } else if (tableBody) {
+      tableBody.innerHTML = `<div class="text-center text-muted py-3">No tool bookings found</div>`;
+    }
 
-      if (result.meta) {
-        updateToolPaginationControls(result.meta);
-      }
+    if (result.meta) {
+      updateToolBookingPaginationControls(result.meta);
     } else {
-      if (tableBody) tableBody.innerHTML = `<div class="text-center text-muted py-3">No tool bookings found</div>`;
+      renderToolBookingPagination(toolBookingState.currentPage, toolBookingState.lastPage);
     }
   } catch (error) {
     showError(error.message);
     if (tableBody) tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${error.message}</div>`;
+    renderToolBookingPagination(toolBookingState.currentPage, toolBookingState.lastPage);
   } finally {
     if (loading) loading.style.display = 'none';
   }
@@ -112,6 +211,64 @@ function populateToolBookingTable(toolbookings) {
   });
 }
 
+// ==================== Pagination ====================
+
+function updateToolBookingPaginationControls(meta) {
+  if (!meta) return;
+
+  toolBookingState.currentPage = meta.current_page || toolBookingState.currentPage;
+  toolBookingState.lastPage = meta.last_page || 1;
+  toolBookingState.total = meta.total || 0;
+
+  renderToolBookingPagination(toolBookingState.currentPage, toolBookingState.lastPage);
+}
+
+function renderToolBookingPagination(current, last) {
+  const container = document.getElementById('toolBookingPagination');
+  if (!container) return;
+
+  if (!last || last <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  const prevDisabled = current <= 1 ? 'disabled' : '';
+  html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current - 1}">Previous</a></li>`;
+
+  const maxButtons = 5;
+  let start = Math.max(1, current - 2);
+  let end = Math.min(last, start + maxButtons - 1);
+
+  if (end - start < maxButtons) {
+    start = Math.max(1, end - maxButtons + 1);
+  }
+
+  for (let page = start; page <= end; page++) {
+    html += `<li class="page-item ${page === current ? 'active' : ''}"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`;
+  }
+
+  const nextDisabled = current >= last ? 'disabled' : '';
+  html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current + 1}">Next</a></li>`;
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('a.page-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = parseInt(e.currentTarget.dataset.page, 10);
+      if (!page || page === current || page < 1 || page > last) return;
+
+      getAllToolBookings({
+        search: toolBookingState.search,
+        sortBy: toolBookingState.sortBy,
+        page,
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
 // ==================== CRUD: Delete ====================
 
 async function deleteToolBooking(id) {
@@ -121,7 +278,11 @@ async function deleteToolBooking(id) {
     await apiFetch(path, { method: 'DELETE' });
     hideLoading();
     showSuccess('Tool booking deleted !');
-    getAllToolBookings();
+    getAllToolBookings({
+      search: toolBookingState.search,
+      sortBy: toolBookingState.sortBy,
+      page: toolBookingState.currentPage,
+    });
   } catch (error) {
     hideLoading();
     showError(error.message || 'Failed to delete tool booking.');
@@ -166,10 +327,17 @@ function selectItem(inputElement, resultsListElement, selectedItem, type) {
     let hiddenInputId;
     if (type === 'tool') {
         hiddenInputId = 'create_tool_id';
-        document.getElementById(hiddenInputId).value = selectedItem.id;
-    } else { 
+    } else if (type === 'user-staff') { 
         hiddenInputId = 'create_user_id';
-        document.getElementById(hiddenInputId).value = selectedItem.id; 
+    } else if (type === 'update-tool') {
+        hiddenInputId = 'update_tool_id';
+    } else if (type === 'update-user-staff') {
+        hiddenInputId = 'update_user_id';
+    }
+    
+    if (hiddenInputId) {
+        const hiddenInput = document.getElementById(hiddenInputId);
+        if (hiddenInput) hiddenInput.value = selectedItem.id;
     }
     
     // 3. Hide the results list
@@ -186,34 +354,14 @@ async function openCreateToolBookingModal() {
   console.log('Opening create modal for new Tool Booking');
 
   // 1. Fetch required data and store it globally for search
-  const [combinedRawData, toolsList] = await Promise.all([
-    fetchUsersStaff(),
-    fetchTools()
-  ]);
+  try {
+    await loadBookingReferenceData({ force: true });
+  } catch (error) {
+    showError(error.message || 'Failed to load reference data.');
+    return;
+  }
 
-  // 2. Store and Transform Data Globally for Search
-  ALL_TOOLS = toolsList.map(t => ({
-    id: t.id,
-    tool_name: t.tool_name,
-    searchField: t.tool_name.toLowerCase()
-  }));
-
-  ALL_USERS_STAFF = combinedRawData.map(entity => {
-    // Transform API response structure into standardized objects for search/display
-    const isUser = entity.role === 'user';
-    const type = isUser ? 'user' : 'staff';
-    const idKey = isUser ? 'user_id' : 'staff_id';
-    const typeLabel = isUser ? '(User)' : '(Staff)';
-
-    return {
-      // Value submitted: "type-ID" (e.g., "user-1", "staff-5")
-      id: `${type}-${entity[idKey]}`,
-      name: `${entity.fullname} ${typeLabel}`,
-      searchField: entity.fullname.toLowerCase()
-    };
-  });
-
-  // 3. Get Modal/Form Elements and Reset
+  // 2. Get Modal/Form Elements and Reset
   const createModalElement = document.getElementById('createToolBookingModal');
   if (!createModalElement) return showError("Modal element 'createToolBookingModal' not found.");
 
@@ -240,28 +388,14 @@ async function openCreateToolBookingModal() {
 
 
   // 5. Attach Debounced Search and Focus Listeners
-  
-  // Debounced search for Tools
-  const debouncedToolSearch = debounce(() => handleSearch(toolInput, toolResults, ALL_TOOLS, 'tool_name', 'tool'), 300);
-  if (toolInput) {
-    toolInput.oninput = debouncedToolSearch;
-    // Show all results if input is empty when focused
-    toolInput.onfocus = () => { if (toolInput.value.trim() === '') handleSearch(toolInput, toolResults, ALL_TOOLS, 'tool_name', 'tool'); };
-  }
-
-  // Debounced search for Users/Staff
-  const debouncedUserSearch = debounce(() => handleSearch(userInput, userResults, ALL_USERS_STAFF, 'name', 'user-staff'), 300);
-  if (userInput) {
-    userInput.oninput = debouncedUserSearch;
-    // Show all results if input is empty when focused
-    userInput.onfocus = () => { if (userInput.value.trim() === '') handleSearch(userInput, userResults, ALL_USERS_STAFF, 'name', 'user-staff'); };
-  }
+  attachAutocomplete(toolInput, toolResults, ALL_TOOLS, 'tool_name', 'tool');
+  attachAutocomplete(userInput, userResults, ALL_USERS_STAFF, 'name', 'user-staff');
 
   // Hide results when clicking outside the input/results area
-  createModalElement.onclick = (e) => {
-    if (toolResults && toolInput && !e.target.closest('#toolSearchResults') && !e.target.closest('#toolSearchInput')) toolResults.style.display = 'none';
-    if (userResults && userInput && !e.target.closest('#userSearchResults') && !e.target.closest('#userSearchInput')) userResults.style.display = 'none';
-  };
+  registerAutocompleteOutsideClick(createModalElement, [
+    { input: toolInput, results: toolResults },
+    { input: userInput, results: userResults },
+  ]);
 
   // 6. Set default date/time values
   const now = new Date();
@@ -315,7 +449,11 @@ async function handleCreateToolBookingSubmit(event) {
       createModalInstance.hide();
     }
 
-    getAllToolBookings();
+    getAllToolBookings({
+      search: toolBookingState.search,
+      sortBy: toolBookingState.sortBy,
+      page: 1,
+    });
 
   } catch (error) {
     btn.disabled = false;
@@ -324,12 +462,198 @@ async function handleCreateToolBookingSubmit(event) {
   }
 }
 
-// ==================== Placeholder Functions ====================
+// ==================== CRUD: Update Modal & Logic ====================
 
-// Required for the edit button handler
-function openUpdateToolBookingModal(toolbooking) {
-    showError("Update Modal functionality is not yet implemented.");
-    console.warn("Attempted to open update modal for:", toolbooking);
+function ensureUpdateToolBookingModalExists() {
+  if (document.getElementById('updateToolBookingModal')) return;
+
+  const template = `
+    <div class="modal fade" id="updateToolBookingModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-white">
+            <h5 class="modal-title" id="updateToolBookingModalLabel">Update Tool Booking</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <form id="updateToolBookingForm">
+            <div class="modal-body">
+              <input type="hidden" id="update_tool_booking_id" name="update_tool_booking_id">
+              <div class="mb-3 position-relative">
+                <label for="updateToolSearchInput" class="form-label">Tool</label>
+                <input type="hidden" id="update_tool_id" name="update_tool_id" required>
+                <input type="text" class="form-control" id="updateToolSearchInput" placeholder="Start typing the tool name..." autocomplete="off">
+                <ul 
+                  id="updateToolSearchResults"
+                  class="dropdown-menu w-100"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
+              </div>
+
+              <div class="mb-3 position-relative">
+                <label for="updateUserSearchInput" class="form-label">Assigned Person</label>
+                <input type="hidden" id="update_user_id" name="update_user_id" required>
+                <input type="text" class="form-control" id="updateUserSearchInput" placeholder="Start typing the person's name..." autocomplete="off">
+                <ul 
+                  id="updateUserSearchResults"
+                  class="dropdown-menu w-100"
+                  style="max-height: 200px; overflow-y: auto;"
+                ></ul>
+              </div>
+
+              <div class="mb-3">
+                <label for="update_datetime_booking" class="form-label">Booking Date/Time</label>
+                <input type="datetime-local" class="form-control" id="update_datetime_booking" name="update_datetime_booking" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="update_datetime_return" class="form-label">Expected Return Date/Time</label>
+                <input type="datetime-local" class="form-control" id="update_datetime_return" name="update_datetime_return">
+              </div>
+            </div>
+          </form>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="updateToolBookingBtn" type="submit" form="updateToolBookingForm" class="btn btn-warning">Update Booking</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', template);
+}
+
+async function openUpdateToolBookingModal(toolbooking) {
+  if (!toolbooking) return;
+
+  try {
+    await loadBookingReferenceData();
+  } catch (error) {
+    showError(error.message || 'Failed to load reference data for update.');
+    return;
+  }
+
+  ensureUpdateToolBookingModalExists();
+
+  const modalElement = document.getElementById('updateToolBookingModal');
+  const form = document.getElementById('updateToolBookingForm');
+  const modalInstance = new bootstrap.Modal(modalElement);
+  if (!form) return showError("Form element 'updateToolBookingForm' not found.");
+
+  form.reset();
+  form.dataset.bookingId = toolbooking.id;
+  const bookingIdInput = document.getElementById('update_tool_booking_id');
+  if (bookingIdInput) bookingIdInput.value = toolbooking.id;
+
+  const toolInput = document.getElementById('updateToolSearchInput');
+  const toolResults = document.getElementById('updateToolSearchResults');
+  const userInput = document.getElementById('updateUserSearchInput');
+  const userResults = document.getElementById('updateUserSearchResults');
+
+  const toolId = toolbooking.tool_id || toolbooking.tool?.id || toolbooking.tool?.tool_id;
+  const toolName = toolbooking.tool?.tool_name || 'Unnamed Tool';
+  const toolHiddenInput = document.getElementById('update_tool_id');
+  if (toolHiddenInput && toolId) toolHiddenInput.value = toolId;
+  if (toolInput) toolInput.value = toolName;
+
+  let assignedType = '';
+  let assignedId = '';
+  let assignedName = '';
+  if (toolbooking.user) {
+    assignedType = 'user';
+    assignedId = toolbooking.user.id || toolbooking.user.user_id;
+    assignedName = toolbooking.user.user_fullname || toolbooking.user.fullname || '';
+  } else if (toolbooking.staff) {
+    assignedType = 'staff';
+    assignedId = toolbooking.staff.id || toolbooking.staff.staff_id;
+    assignedName = toolbooking.staff.staff_fullname || toolbooking.staff.fullname || '';
+  }
+
+  const userHiddenInput = document.getElementById('update_user_id');
+  if (userHiddenInput) userHiddenInput.value = assignedType && assignedId ? `${assignedType}-${assignedId}` : '';
+  if (userInput) userInput.value = assignedName;
+
+  const bookingInput = document.getElementById('update_datetime_booking');
+  const returnInput = document.getElementById('update_datetime_return');
+  if (bookingInput) bookingInput.value = formatForDateTimeLocal(toolbooking.datetime_booking);
+  if (returnInput) returnInput.value = formatForDateTimeLocal(toolbooking.datetime_return);
+
+  attachAutocomplete(toolInput, toolResults, ALL_TOOLS, 'tool_name', 'update-tool');
+  attachAutocomplete(userInput, userResults, ALL_USERS_STAFF, 'name', 'update-user-staff');
+  registerAutocompleteOutsideClick(modalElement, [
+    { input: toolInput, results: toolResults },
+    { input: userInput, results: userResults },
+  ]);
+
+  form.onsubmit = handleUpdateToolBookingSubmit;
+
+  modalInstance.show();
+}
+
+async function handleUpdateToolBookingSubmit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const bookingId = form?.dataset?.bookingId;
+  if (!bookingId) {
+    showError('Missing booking identifier.');
+    return;
+  }
+
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+  const btn = document.getElementById('updateToolBookingBtn');
+  if (!btn) {
+    showError("Update button not found.");
+    return;
+  }
+
+  const combinedUserId = data.update_user_id;
+  if (!combinedUserId) {
+    showError('Please select a user or staff member.');
+    return;
+  }
+
+  const [type, id] = combinedUserId.split('-');
+  const payload = {
+    tool_id: data.update_tool_id,
+    datetime_booking: data.update_datetime_booking,
+    datetime_return: data.update_datetime_return || null,
+    ...(type === 'user' && { user_id: id }),
+    ...(type === 'staff' && { staff_id: id }),
+  };
+
+  if (!payload.tool_id) {
+    showError('Please select a tool.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Updating...';
+
+  try {
+    await apiFetch(`/tool-bookings/${bookingId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+
+    showSuccess('Booking Updated!', `Tool booking has been updated successfully.`);
+
+    const updateModalInstance = bootstrap.Modal.getInstance(document.getElementById('updateToolBookingModal'));
+    if (updateModalInstance) updateModalInstance.hide();
+
+    getAllToolBookings({
+      search: toolBookingState.search,
+      sortBy: toolBookingState.sortBy,
+      page: toolBookingState.currentPage,
+    });
+  } catch (error) {
+    showError(error.message || 'Failed to update tool booking. Please check your inputs.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Update Booking';
+  }
 }
 
 // ==================== Initializer ====================
@@ -340,6 +664,38 @@ document.addEventListener('DOMContentLoaded', () => {
     addButton.addEventListener('click', openCreateToolBookingModal);
   }
 
+  const bookingTab = document.querySelector('.tab-pane[data-name="booking"]');
+  const searchInput = bookingTab ? bookingTab.querySelector('input.form-control[placeholder="Search tools..."]') : null;
+  const sortSelect = bookingTab ? bookingTab.querySelector('select.form-select') : null;
+
+  if (searchInput) {
+    const handleSearchInput = debounce(() => {
+      toolBookingState.search = searchInput.value.trim();
+      getAllToolBookings({
+        search: toolBookingState.search,
+        sortBy: toolBookingState.sortBy,
+        page: 1,
+      });
+    }, 400);
+    searchInput.addEventListener('input', handleSearchInput);
+  }
+
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      const value = !sortSelect.value || sortSelect.value.toLowerCase().includes('sort by') ? '' : sortSelect.value;
+      toolBookingState.sortBy = value;
+      getAllToolBookings({
+        search: toolBookingState.search,
+        sortBy: toolBookingState.sortBy,
+        page: 1,
+      });
+    });
+  }
+
   // Load the initial table data when the page loads
-  getAllToolBookings();
+  getAllToolBookings({
+    search: toolBookingState.search,
+    sortBy: toolBookingState.sortBy,
+    page: toolBookingState.currentPage,
+  });
 });
