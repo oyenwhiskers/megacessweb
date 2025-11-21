@@ -416,12 +416,14 @@ async function openCreateToolBookingModal() {
   // 7. Display the modal
   createModal.show();
 }
+
 async function handleCreateToolBookingSubmit(event) {
   event.preventDefault();
 
   const form = event.currentTarget;
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
+  const btn = document.getElementById("saveToolBookingBtn");
 
   const combinedUserId = data.create_user_id;
 
@@ -441,14 +443,16 @@ async function handleCreateToolBookingSubmit(event) {
     ...(type === 'staff' && { staff_id: id }),
   };
 
-  showLoading();
+  btn.disabled = true;
+  btn.textContent = "Creating..."
   try {
     await apiFetch(`/tool-bookings`, {
       method: 'POST',
       body: JSON.stringify(payload)
     });
 
-    hideLoading();
+    btn.disabled = false;
+    btn.textContent = "Save Booking";
     showSuccess('Booking Created!', `New tool booking has been successfully recorded.`);
 
     const createModalInstance = bootstrap.Modal.getInstance(document.getElementById('createToolBookingModal'));
@@ -459,7 +463,8 @@ async function handleCreateToolBookingSubmit(event) {
     getAllToolBookings();
 
   } catch (error) {
-    hideLoading();
+    btn.disabled = false;
+    btn.textContent = "Save Booking";
     showError(error.message || 'Failed to create tool booking. Please check your inputs.');
   }
 }
