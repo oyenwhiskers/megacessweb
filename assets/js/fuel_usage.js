@@ -67,39 +67,50 @@ function populateFuelUsageTable(usages) {
         // Usage Quantity Badge Color
         let badgeClass = 'bg-primary text-white';
 
+        // Handle Long Description
+        const fullDesc = usage.usage_description || '-';
+        let descHtml = fullDesc;
+        if (fullDesc.length > 30) {
+            descHtml = `
+                ${fullDesc.substring(0, 30)}...
+                <a href="javascript:void(0)" class="text-decoration-none small view-desc-btn" data-desc="${encodeURIComponent(fullDesc)}">Read More</a>
+            `;
+        }
+
         row.innerHTML = `
-      <div class="col">
-        <span class="badge ${badgeClass} px-3 py-2 fs-6">${usage.quantity || 0} Liters</span>
-      </div>
-      <div class="col">${usage.user ? usage.user.user_fullname : (usage.used_by_name || '-')}</div>
-      <div class="col">
-        ${usage.usage_date ? new Date(usage.usage_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
-      </div>
-      <div class="col text-truncate" title="${usage.description || ''}">
-        ${usage.description || '-'}
-      </div>
-      <div class="col text-center">
-        <button class="btn btn-sm btn-outline-primary me-2 update-usage-btn"
-          data-id="${usage.id}"
-          data-quantity="${usage.quantity || ''}"
-          data-user-id="${usage.user ? usage.user.id : ''}"
-          data-user-name="${usage.user ? usage.user.user_fullname : ''}"
-          data-date="${usage.usage_date ? new Date(usage.usage_date).toISOString().split('T')[0] : ''}"
-          data-description="${usage.description || ''}"
-        >
-          <i class="bi bi-pencil me-1"></i> Edit
-        </button>
-        <button class="btn btn-sm btn-outline-danger delete-usage-btn" data-id="${usage.id}">
-          <i class="bi bi-trash me-1"></i> Delete
-        </button>
-      </div>
-    `;
+            <div class="col">
+                <span class="badge ${badgeClass} px-3 py-2 fs-6">${usage.usage_quantity || 0} Liters</span>
+            </div>
+            <div class="col">${usage.user ? usage.user.user_fullname : (usage.used_by_name || '-')}</div>
+            <div class="col">
+                ${usage.usage_date ? new Date(usage.usage_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+            </div>
+            <div class="col">
+                ${descHtml}
+            </div>
+            <div class="col text-center">
+                <button class="btn btn-sm btn-outline-primary me-2 update-usage-btn"
+                data-id="${usage.id}"
+                data-quantity="${usage.usage_quantity || ''}"
+                data-user-id="${usage.user ? usage.user.id : ''}"
+                data-user-name="${usage.user ? usage.user.user_fullname : ''}"
+                data-date="${usage.usage_date ? new Date(usage.usage_date).toISOString().split('T')[0] : ''}"
+                data-description="${usage.usage_description || ''}"
+                >
+                <i class="bi bi-pencil me-1"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-usage-btn" data-id="${usage.id}">
+                <i class="bi bi-trash me-1"></i> Delete
+                </button>
+            </div>
+        `;
 
         tableBody.appendChild(row);
     });
 
     attachUsageEditListeners();
     attachUsageDeleteListeners();
+    attachDescriptionViewListeners();
 }
 
 // ==================== Create Usage ====================
@@ -316,6 +327,24 @@ function attachUsageDeleteListeners() {
         btn.addEventListener('click', (e) => {
             const id = e.currentTarget.dataset.id;
             deleteFuelUsage(id);
+        });
+    });
+}
+
+function attachDescriptionViewListeners() {
+    document.querySelectorAll('.view-desc-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const desc = decodeURIComponent(btn.dataset.desc);
+            Swal.fire({
+                title: 'Usage Description',
+                text: desc,
+                icon: 'info',
+                confirmButtonText: 'Close',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                }
+            });
         });
     });
 }
