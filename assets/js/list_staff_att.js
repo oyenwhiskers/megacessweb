@@ -7,6 +7,7 @@
     let currentSearch = '';
     let currentDateAttendanceId = 1;
     let currentStatusFilter = 'all';
+    let currentRecordsData = []; // Store current records for easy access
     
     // Get the staff attendance view container
     const staffAttendanceView = document.getElementById('staffAttendanceView');
@@ -152,12 +153,36 @@
             showEmpty();
             return;
         }
+
+        // Store current records data for overtime modal
+        currentRecordsData = records;
         
         const recordsHtml = records.map(record => {
             // Generate avatar placeholder from user name
             const userName = record.user_name || 'Staff';
             const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
-            const userImage = record.user_img || '';
+            
+            // Clean up the image URL to remove problematic suffixes
+            let userImage = '';
+            if (record.user_img && typeof record.user_img === 'string') {
+                userImage = record.user_img.replace(/:\d+$/, '').trim(); // Remove :1, :2, etc. suffixes
+                userImage = userImage.replace(/\.jpg:.*$/, '.jpg'); // Clean up malformed jpg URLs
+                userImage = userImage.replace(/\.png:.*$/, '.png');
+                userImage = userImage.replace(/\.jpeg:.*$/, '.jpeg');
+                userImage = userImage.replace(/\.gif:.*$/, '.gif');
+                
+                // Check if the cleaned URL is still valid
+                if (userImage.length < 5 || userImage.includes('null') || userImage.includes('undefined') || userImage.includes('…')) {
+                    userImage = '';
+                } else if (!userImage.startsWith('http') && !userImage.startsWith('/')) {
+                    // Construct full URL if it's just a filename
+                    userImage = `https://mwms.megacess.com/storage/user-images/${userImage}`;
+                } else if (userImage.startsWith('/')) {
+                    // Add domain if it starts with /
+                    userImage = `https://mwms.megacess.com${userImage}`;
+                }
+            }
+            
             const imgSrc = (userImage && userImage.trim() !== '') ? userImage : placeholderImage;
             
             return `
@@ -192,13 +217,17 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             <button type="button" class="btn btn-outline-primary" 
                                                     onclick="viewStaffAttendanceDetails(${record.user_id})" 
-                                                    title="View Details">
+                                                    title="View">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-secondary" 
-                                                    onclick="editStaffAttendance(${record.user_id})" 
-                                                    title="Edit">
-                                                <i class="bi bi-pencil"></i>
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="markStaffOvertime(${record.user_id})" 
+                                                    title="Overtime">
+                                                <i class="bi bi-clock"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" 
+                                                    title="On-Leave" disabled>
+                                                <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -409,11 +438,48 @@
         alert('View staff attendance details feature will be implemented');
     };
     
-    window.editStaffAttendance = function(userId) {
-        console.log('Edit staff attendance for user ID:', userId);
-        // Implement edit attendance modal/form
-        alert('Edit staff attendance feature will be implemented');
+    window.markStaffOvertime = function(userId) {
+        console.log('Mark overtime for staff user ID:', userId);
+        
+        // Find the record data for this staff member
+        const staffData = getCurrentStaffData(userId);
+        
+        if (staffData) {
+            // Clean up the image URL to remove any problematic suffixes
+            let cleanImageUrl = '';
+            // Use user_img for staff (not staff_img)
+            if (staffData.user_img && typeof staffData.user_img === 'string') {
+                cleanImageUrl = staffData.user_img.replace(/:\d+$/, '').trim(); // Remove :1, :2, etc. suffixes
+                // Check if the cleaned URL is still valid
+                if (cleanImageUrl.length < 5 || cleanImageUrl.includes('null') || cleanImageUrl.includes('undefined')) {
+                    cleanImageUrl = '';
+                }
+            }
+            
+            // Show the overtime modal with user data
+            window.showOvertimeModal(
+                userId, 
+                staffData.user_name || 'Staff Member', 
+                'Staff', 
+                cleanImageUrl, 
+                'staff'
+            );
+        } else {
+            // Fallback if data not found
+            window.showOvertimeModal(userId, 'Staff Member', 'Staff', '', 'staff');
+        }
     };
+
+    // Helper function to get current staff data
+    function getCurrentStaffData(userId) {
+        console.log('getCurrentStaffData called with userId:', userId);
+        console.log('Available staff records:', currentRecordsData.length);
+        
+        // Find the record in the current data
+        const staff = currentRecordsData.find(record => record.user_id == userId);
+        console.log('Found staff data:', staff);
+        return staff || null;
+    }
     
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchStaffAttendanceList = fetchStaffAttendanceList;

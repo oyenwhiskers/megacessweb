@@ -30,20 +30,156 @@ function hideLoading(container) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Populate year and month dropdowns
+    populateYearMonthDropdowns();
+    populateChartDropdowns();
+
     // Get current month and year
     const currentDate = new Date();
     const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
     const year = currentDate.getFullYear();
-    
+
+    // Set dropdowns to current year and month
+    document.getElementById('dashboard-year').value = year;
+    document.getElementById('dashboard-month').value = month;
+
+    const yearChart = document.getElementById('dashboard-year-chart');
+    const monthChart = document.getElementById('dashboard-month-chart');
+    if (yearChart) yearChart.value = year;
+    if (monthChart) monthChart.value = month;
+
     // Initialize chart
     initializeChart();
-    
-    // Fetch dashboard data
+
+    // Fetch dashboard data (top cards)
     fetchDashboardData(month, year);
-    
-    // Fetch chart data
+
+    // Fetch chart data (block chart)
     fetchTasksByBlocks(year, month);
+
+    // Listen for top dashboard filter changes (independent)
+    document.getElementById('dashboard-year').addEventListener('change', function() {
+        const year = parseInt(document.getElementById('dashboard-year').value, 10);
+        const month = parseInt(document.getElementById('dashboard-month').value, 10);
+        fetchDashboardData(month, year);
+    });
+    document.getElementById('dashboard-month').addEventListener('change', function() {
+        const year = parseInt(document.getElementById('dashboard-year').value, 10);
+        const month = parseInt(document.getElementById('dashboard-month').value, 10);
+        fetchDashboardData(month, year);
+    });
+
+    // Listen for chart filter changes (independent)
+    const yearSelect = document.getElementById('dashboard-year-chart');
+    const monthSelect = document.getElementById('dashboard-month-chart');
+    const weekSelect = document.getElementById('dashboard-week');
+    if (yearSelect) yearSelect.addEventListener('change', onChartFilterChange);
+    if (monthSelect) monthSelect.addEventListener('change', onChartFilterChange);
+    if (weekSelect) weekSelect.addEventListener('change', onChartFilterChange);
 });
+
+function populateYearMonthDropdowns() {
+    console.log('populateYearMonthDropdowns called');
+    const yearSelect = document.getElementById('dashboard-year');
+    const monthSelect = document.getElementById('dashboard-month');
+    console.log('yearSelect:', yearSelect, 'monthSelect:', monthSelect);
+    if (!yearSelect || !monthSelect) return;
+
+    // Years: from 2022 to current year
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 2022; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+    }
+
+    // Months: January-December
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = monthNames[m - 1];
+        monthSelect.appendChild(opt);
+    }
+
+    // Weeks: 1-53
+    const weekSelect = document.getElementById('dashboard-week');
+    if (weekSelect) {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'All';
+        weekSelect.appendChild(defaultOpt);
+        for (let w = 1; w <= 53; w++) {
+            const opt = document.createElement('option');
+            opt.value = w;
+            opt.textContent = 'Week ' + w;
+            weekSelect.appendChild(opt);
+        }
+    }
+}
+
+function populateChartDropdowns() {
+    // Populate year, month, and week for the chart filters
+    const yearSelect = document.getElementById('dashboard-year-chart');
+    const monthSelect = document.getElementById('dashboard-month-chart');
+    const weekSelect = document.getElementById('dashboard-week');
+    if (!yearSelect || !monthSelect || !weekSelect) return;
+
+    // Years: from 2022 to current year
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 2022; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+    }
+
+    // Months: January-December
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = monthNames[m - 1];
+        monthSelect.appendChild(opt);
+    }
+
+    // Weeks: 1-53
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'All';
+    weekSelect.appendChild(defaultOpt);
+    for (let w = 1; w <= 53; w++) {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = 'Week ' + w;
+        weekSelect.appendChild(opt);
+    }
+}
+
+// Update event listeners to include week filter
+function onFilterChange() {
+    const year = parseInt(document.getElementById('dashboard-year').value, 10);
+    const month = parseInt(document.getElementById('dashboard-month').value, 10);
+    const weekValue = document.getElementById('dashboard-week').value;
+    const week = weekValue ? parseInt(weekValue, 10) : null;
+    fetchDashboardData(month, year);
+    fetchTasksByBlocks(year, month, week);
+}
+
+function onChartFilterChange() {
+    const year = parseInt(document.getElementById('dashboard-year-chart').value, 10);
+    const month = parseInt(document.getElementById('dashboard-month-chart').value, 10);
+    const weekValue = document.getElementById('dashboard-week').value;
+    const week = weekValue ? parseInt(weekValue, 10) : null;
+    fetchTasksByBlocks(year, month, week);
+}
 
 async function fetchDashboardData(month, year) {
     try {
@@ -110,6 +246,34 @@ async function fetchDashboardData(month, year) {
 }
 
 function updateDashboard(data) {
+    // Check if all main data is missing or zero
+    const noData =
+        (data.pending_leave === undefined && data.number_of_absence === undefined && data.pending_payroll === undefined) &&
+        (!data.total_yield_harvested || data.total_yield_harvested.total === undefined) &&
+        (!data.total_equipment_used || (data.total_equipment_used.bags === undefined && data.total_equipment_used.liters === undefined));
+
+    if (noData) {
+        // Hide all dashboard cards and show a message
+        document.querySelector('.row.g-3.mb-4').style.display = 'none';
+        document.querySelector('.row.g-3').style.display = 'none';
+        document.querySelector('.row.g-3.mt-3').style.display = 'none';
+        if (!document.getElementById('no-data-message')) {
+            const msg = document.createElement('div');
+            msg.id = 'no-data-message';
+            msg.className = 'alert alert-warning text-center my-4';
+            msg.textContent = 'There is no data during this period';
+            document.querySelector('.container-fluid.p-4').appendChild(msg);
+        }
+        return;
+    } else {
+        // Show dashboard cards and remove message if present
+        document.querySelector('.row.g-3.mb-4').style.display = '';
+        document.querySelector('.row.g-3').style.display = '';
+        document.querySelector('.row.g-3.mt-3').style.display = '';
+        const msg = document.getElementById('no-data-message');
+        if (msg) msg.remove();
+    }
+
     // Update pending leave
     const pendingLeaveElement = document.getElementById('pending-leave');
     if (pendingLeaveElement && data.pending_leave !== undefined) {

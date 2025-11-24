@@ -533,11 +533,6 @@
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-1 small">Nickname:</label>
-                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_nickname)}" readonly>
-                            </div>
-                            
-                            <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">Full Name:</label>
                                 <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_fullname)}" readonly>
                             </div>
@@ -675,8 +670,6 @@
             
             if (label.includes('IC / Document ID')) {
                 input.setAttribute('name', 'staff_ic');
-            } else if (label.includes('Nickname')) {
-                input.setAttribute('name', 'staff_nickname');
             } else if (label.includes('Full Name')) {
                 input.setAttribute('name', 'staff_fullname');
             } else if (label.includes('Phone Number')) {
@@ -729,42 +722,6 @@
                 input.value = '';
             }
         });
-        
-        // Add password field in edit mode
-        const lastRow = modalBody.querySelector('.row.g-2');
-        if (lastRow && !modalBody.querySelector('input[name="staff_password"]')) {
-            const passwordFieldHTML = `
-                <div class="col-md-6" id="passwordFieldContainer">
-                    <label class="form-label fw-semibold mb-1 small">Password (optional):</label>
-                    <div class="input-group input-group-sm">
-                        <input type="password" class="form-control form-control-sm border-primary" id="passwordField" name="staff_password" placeholder="Enter new password (leave blank to keep current)">
-                        <button class="btn btn-outline-secondary" type="button" id="togglePassword" title="Show/Hide Password">
-                            <i class="bi bi-eye" id="togglePasswordIcon"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            lastRow.insertAdjacentHTML('beforeend', passwordFieldHTML);
-            
-            // Add password toggle functionality
-            const togglePasswordBtn = modalBody.querySelector('#togglePassword');
-            const passwordField = modalBody.querySelector('#passwordField');
-            const togglePasswordIcon = modalBody.querySelector('#togglePasswordIcon');
-            
-            if (togglePasswordBtn && passwordField && togglePasswordIcon) {
-                togglePasswordBtn.addEventListener('click', function() {
-                    if (passwordField.type === 'password') {
-                        passwordField.type = 'text';
-                        togglePasswordIcon.classList.remove('bi-eye');
-                        togglePasswordIcon.classList.add('bi-eye-slash');
-                    } else {
-                        passwordField.type = 'password';
-                        togglePasswordIcon.classList.remove('bi-eye-slash');
-                        togglePasswordIcon.classList.add('bi-eye');
-                    }
-                });
-            }
-        }
         
         // Add "Change Photo" button in edit mode
         const imageContainer = modalBody.querySelector('.col-md-3.text-center');

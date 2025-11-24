@@ -21,6 +21,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let allUnassignedWorkers = []; // Store all unassigned workers for filtering
     let selectedWorkerIds = []; // Store selected worker IDs
 
+    // Pagination state
+    let mandorCurrentPage = 1;
+    let mandorTotalPages = 1;
+    let mandorListData = [];
+    let workerCurrentPage = 1;
+    let workerTotalPages = 1;
+    let workerListData = [];
+    const ROWS_PER_PAGE = 10;
+
     // Fetch mandor list
     function fetchMandorList(searchQuery = '') {
         const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -82,57 +91,67 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Display mandor list
+    // Display mandor list with pagination
     function displayMandorList(mandorList) {
-        if (mandorList.length === 0) {
+        mandorListData = mandorList;
+        mandorTotalPages = Math.ceil(mandorList.length / ROWS_PER_PAGE) || 1;
+        renderMandorPage();
+    }
+
+    function renderMandorPage() {
+        const startIdx = (mandorCurrentPage - 1) * ROWS_PER_PAGE;
+        const endIdx = startIdx + ROWS_PER_PAGE;
+        const pageMandors = mandorListData.slice(startIdx, endIdx);
+        const mandorListContainer = document.getElementById('mandorList');
+        if (pageMandors.length === 0) {
             mandorListContainer.innerHTML = `
                 <div class="alert alert-info">
                     No mandor found.
                 </div>
             `;
-            return;
-        }
+        } else {
+            mandorListContainer.innerHTML = pageMandors.map(mandor => {
+                const workerCount = mandor.staff_count || 0;
+                
+                // Handle image URL - prepend base URL if path is relative
+                let imageUrl = mandor.user_img;
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+                }
 
-        mandorListContainer.innerHTML = mandorList.map(mandor => {
-            const workerCount = mandor.staff_count || 0;
-            
-            // Handle image URL - prepend base URL if path is relative
-            let imageUrl = mandor.user_img;
-            if (imageUrl && !imageUrl.startsWith('http')) {
-                imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
-            }
-
-            const profileImage = imageUrl 
-                ? `<img src="${imageUrl}" 
-                        alt="${mandor.user_fullname}" 
-                        class="rounded-circle" 
-                        style="width: 60px; height: 60px; object-fit: cover;"
-                        onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E';">`
-                : `<img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E" 
+                const profileImage = imageUrl 
+                    ? `<img src="${imageUrl}" 
+                            alt="${mandor.user_fullname}" 
+                            class="rounded-circle" 
+                            style="width: 60px; height: 60px; object-fit: cover;"
+                            onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E';">`
+                    : `<img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E" 
                      alt="${mandor.user_fullname}" 
                      class="rounded-circle" 
                      style="width: 60px; height: 60px; object-fit: cover;">`;
 
-            return `
-                <div class="card mb-3 mandor-card" style="cursor: pointer;" data-mandor-id="${mandor.id}" data-mandor-name="${mandor.user_fullname}">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-3">
-                                ${profileImage}
-                                <div>
-                                    <h5 class="mb-0 fw-bold">${mandor.user_fullname}</h5>
-                                    <p class="mb-0 text-muted">Mandor</p>
+                return `
+                    <div class="card mb-3 mandor-card" style="cursor: pointer;" data-mandor-id="${mandor.id}" data-mandor-name="${mandor.user_fullname}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    ${profileImage}
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">${mandor.user_fullname}</h5>
+                                        <p class="mb-0 text-muted">Mandor</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="bg-light px-4 py-2 rounded">
-                                <span class="text-dark">Worker : <strong>${workerCount}</strong></span>
+                                <div class="bg-light px-4 py-2 rounded">
+                                    <span class="text-dark">Worker : <strong>${workerCount}</strong></span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-        }).join('');
-
+                `;
+            }).join('');
+        }
+        // Pagination controls
+        renderMandorPagination();
         // Add click event listeners to mandor cards
         document.querySelectorAll('.mandor-card').forEach(card => {
             card.addEventListener('click', function() {
@@ -143,17 +162,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Show worker detail view
-    function showWorkerDetail(mandorId, mandorName) {
-        selectedMandor = { id: mandorId, name: mandorName };
-        selectedMandorNameSpan.textContent = `(${mandorName})`;
-        
-        // Hide mandor list view and show worker detail view
-        mandorListView.style.display = 'none';
-        workerDetailView.style.display = 'block';
-        
-        // Fetch workers for this mandor (placeholder for now)
-        fetchWorkersByMandor(mandorId);
+    function renderMandorPagination() {
+        const container = document.getElementById('mandorList');
+        const paginationDiv = document.createElement('div');
+        paginationDiv.className = 'd-flex justify-content-center my-3';
+        let html = '';
+        html += `<nav><ul class="pagination">`;
+        html += `<li class="page-item${mandorCurrentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="prev">Previous</a></li>`;
+        for (let i = 1; i <= mandorTotalPages; i++) {
+            html += `<li class="page-item${mandorCurrentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+        }
+        html += `<li class="page-item${mandorCurrentPage === mandorTotalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="next">Next</a></li>`;
+        html += `</ul></nav>`;
+        paginationDiv.innerHTML = html;
+        container.appendChild(paginationDiv);
+        paginationDiv.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('data-page');
+                if (page === 'prev' && mandorCurrentPage > 1) {
+                    mandorCurrentPage--;
+                } else if (page === 'next' && mandorCurrentPage < mandorTotalPages) {
+                    mandorCurrentPage++;
+                } else if (!isNaN(parseInt(page))) {
+                    mandorCurrentPage = parseInt(page);
+                }
+                renderMandorPage();
+            });
+        });
     }
 
     // Fetch workers by mandor (placeholder function)
@@ -236,49 +272,140 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Display worker list
+    // Display worker list with pagination
     function displayWorkerList(workerList) {
-        if (workerList.length === 0) {
+        workerListData = workerList;
+        workerTotalPages = Math.ceil(workerList.length / ROWS_PER_PAGE) || 1;
+        renderWorkerPage();
+    }
+
+    function renderWorkerPage() {
+        const startIdx = (workerCurrentPage - 1) * ROWS_PER_PAGE;
+        const endIdx = startIdx + ROWS_PER_PAGE;
+        const pageWorkers = workerListData.slice(startIdx, endIdx);
+        const workerListContainer = document.getElementById('workerList');
+        if (pageWorkers.length === 0) {
             workerListContainer.innerHTML = `
                 <div class="text-center py-5">
                     <p class="text-muted">No assigned worker</p>
                 </div>
             `;
-            return;
-        }
+        } else {
+            workerListContainer.innerHTML = pageWorkers.map(worker => {
+                // Handle image URL - prepend base URL if path is relative
+                let imageUrl = worker.staff_img;
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+                }
 
-        workerListContainer.innerHTML = workerList.map(worker => {
-            // Handle image URL - prepend base URL if path is relative
-            let imageUrl = worker.staff_img;
-            if (imageUrl && !imageUrl.startsWith('http')) {
-                imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
-            }
-
-            const profileImage = imageUrl 
-                ? `<img src="${imageUrl}" 
-                        alt="${worker.staff_fullname}" 
-                        class="rounded-circle" 
-                        style="width: 60px; height: 60px; object-fit: cover;"
-                        onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E';">`
-                : `<img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E" 
+                const profileImage = imageUrl 
+                    ? `<img src="${imageUrl}" 
+                            alt="${worker.staff_fullname}" 
+                            class="rounded-circle" 
+                            style="width: 60px; height: 60px; object-fit: cover;"
+                            onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E';">`
+                    : `<img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%23212529%22/%3E%3Cpath d=%22M30 28c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6zm0 3c-4.42 0-8 3.58-8 8v3h16v-3c0-4.42-3.58-8-8-8z%22 fill=%22white%22/%3E%3C/svg%3E" 
                      alt="${worker.staff_fullname}" 
                      class="rounded-circle" 
                      style="width: 60px; height: 60px; object-fit: cover;">`;
 
-            return `
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            ${profileImage}
-                            <div>
-                                <h5 class="mb-0 fw-bold">${worker.staff_fullname}</h5>
-                                <p class="mb-0 text-muted small">${worker.staff_phone || 'No phone number'}</p>
+                return `
+                    <div class="card mb-3 worker-card" data-worker-id="${worker.id}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-3">
+                                ${profileImage}
+                                <div>
+                                    <h5 class="mb-0 fw-bold">${worker.staff_fullname}</h5>
+                                    <p class="mb-0 text-muted small">${worker.staff_phone || 'No phone number'}</p>
+                                </div>
+                                <button class="btn btn-outline-danger ms-auto remove-worker-btn" type="button">Remove</button>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+        }
+        // Pagination controls
+        renderWorkerPagination();
+        // Add event listeners for Remove buttons
+        setTimeout(() => {
+            document.querySelectorAll('.remove-worker-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const workerCard = e.target.closest('.worker-card');
+                    const staffId = workerCard.getAttribute('data-worker-id');
+                    if (!staffId || !selectedMandor) return;
+                    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+                    if (!token) {
+                        alert('Please log in to remove workers.');
+                        return;
+                    }
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Removing...';
+                    fetch(`https://mwms.megacess.com/api/v1/staff/${staffId}/unclaim`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('authToken');
+                            window.location.href = '/megacessweb/pages/log-in.html';
+                            return null;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Remove';
+                        if (data && data.success) {
+                            fetchWorkersByMandor(selectedMandor.id);
+                            alert('Staff unassigned successfully');
+                        } else {
+                            alert(data && data.message ? data.message : 'Failed to remove worker.');
+                        }
+                    })
+                    .catch(error => {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Remove';
+                        alert('Failed to remove worker. Please try again.');
+                    });
+                });
+            });
+        }, 0);
+    }
+
+    function renderWorkerPagination() {
+        const container = document.getElementById('workerList');
+        const paginationDiv = document.createElement('div');
+        paginationDiv.className = 'd-flex justify-content-center my-3';
+        let html = '';
+        html += `<nav><ul class="pagination">`;
+        html += `<li class="page-item${workerCurrentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="prev">Previous</a></li>`;
+        for (let i = 1; i <= workerTotalPages; i++) {
+            html += `<li class="page-item${workerCurrentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+        }
+        html += `<li class="page-item${workerCurrentPage === workerTotalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="next">Next</a></li>`;
+        html += `</ul></nav>`;
+        paginationDiv.innerHTML = html;
+        container.appendChild(paginationDiv);
+        paginationDiv.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('data-page');
+                if (page === 'prev' && workerCurrentPage > 1) {
+                    workerCurrentPage--;
+                } else if (page === 'next' && workerCurrentPage < workerTotalPages) {
+                    workerCurrentPage++;
+                } else if (!isNaN(parseInt(page))) {
+                    workerCurrentPage = parseInt(page);
+                }
+                renderWorkerPage();
+            });
+        });
     }
 
     // Display unassigned workers in modal
@@ -555,4 +682,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial load
     fetchMandorList();
+
+    function showWorkerDetail(mandorId, mandorName) {
+        selectedMandor = { id: mandorId, name: mandorName };
+        selectedMandorNameSpan.textContent = `(${mandorName})`;
+        mandorListView.style.display = 'none';
+        workerDetailView.style.display = 'block';
+        workerCurrentPage = 1; // Reset worker page to 1 when switching mandor
+        fetchWorkersByMandor(mandorId);
+    }
 });

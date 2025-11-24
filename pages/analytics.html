@@ -8,6 +8,26 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Make resources-list scrollable if more than 5 items */
+    .resources-list {
+      max-height: 420px; /* Approx height for 5 resource items */
+      overflow-y: auto;
+    }
+    /* Equal size for task type buttons and badge */
+    .task-type-btn {
+      width: 110px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 0.5rem;
+      padding: 0 !important;
+      box-sizing: border-box;
+    }
+  </style>
 </head>
 <body data-page="analytics">
   <div class="app d-flex">
@@ -24,7 +44,24 @@
           <div class="col-12">
             <div class="card shadow-sm border-0 rounded-4">
               <div class="card-body p-4">
-                <h5 class="mb-4 fw-bold">Number of Completed Tasks per Month</h5>
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+                  <h5 class="mb-0 fw-bold">Number of Completed Tasks per Month</h5>
+                  <form id="monthlyFilterForm" class="d-flex flex-wrap align-items-center gap-2 mb-0">
+                    <label for="monthlyFilterYear" class="form-label mb-0 me-2">Year:</label>
+                    <select id="monthlyFilterYear" class="form-select form-select-sm w-auto"></select>
+                    <label for="monthlyFilterLocation" class="form-label mb-0 ms-3 me-2">Location:</label>
+                    <select id="monthlyFilterLocation" class="form-select form-select-sm w-auto"></select>
+                    <label for="monthlyFilterTaskType" class="form-label mb-0 ms-3 me-2">Task Type:</label>
+                    <select id="monthlyFilterTaskType" class="form-select form-select-sm w-auto">
+                      <option value="">All</option>
+                      <option value="manuring">Manuring</option>
+                      <option value="sanitation">Sanitation</option>
+                      <option value="pruning">Pruning</option>
+                      <option value="harvesting">Harvesting</option>
+                      <option value="planting">Planting</option>
+                    </select>
+                  </form>
+                </div>
                 <canvas id="taskCompletionChartMonth" style="max-height: 400px;"></canvas>
               </div>
             </div>
@@ -36,7 +73,21 @@
           <div class="col-12">
             <div class="card shadow-sm border-0 rounded-4">
               <div class="card-body p-4">
-                <h5 class="mb-4 fw-bold">Number of Completed Tasks by Block</h5>
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+                  <h5 class="mb-0 fw-bold">Number of completed task by blocks</h5>
+                  <form id="blockFilterForm" class="d-flex flex-wrap align-items-center gap-2 mb-0">
+                    <label for="blockFilterYear" class="form-label mb-0 me-2">Year:</label>
+                    <select id="blockFilterYear" class="form-select form-select-sm w-auto"></select>
+                    <label for="blockFilterMonth" class="form-label mb-0 ms-3 me-2">Month:</label>
+                    <select id="blockFilterMonth" class="form-select form-select-sm w-auto">
+                      <!-- Month options will be loaded dynamically by JS -->
+                    </select>
+                    <label for="blockFilterWeek" class="form-label mb-0 ms-3 me-2">Week:</label>
+                    <select id="blockFilterWeek" class="form-select form-select-sm w-auto">
+                      <!-- Week options will be loaded dynamically by JS -->
+                    </select>
+                  </form>
+                </div>
                 <canvas id="taskCompletionChartBlock" style="max-height: 400px;"></canvas>
               </div>
             </div>
@@ -49,16 +100,15 @@
             <div class="card shadow-sm border-0 rounded-4">
               <div class="card-body p-4">
                 <div class="d-flex align-items-center gap-3 mb-4">
-                  <span class="badge bg-success text-white px-3 py-2 fs-6">Task type:</span>
-                  <span class="badge bg-success text-white px-3 py-2 fs-6">Manuring</span>
-                  <span class="badge bg-success text-white px-3 py-2 fs-6">Sanitation (Spraying)</span>
+                  <span class="badge bg-success text-white task-type-btn">Task type:</span>
+                  <button type="button" id="btnManuring" class="btn btn-success task-type-btn">Manuring</button>
+                  <button type="button" id="btnSpraying" class="btn btn-outline-success task-type-btn">Sanitation</button>
                 </div>
-                
-                <h5 class="mb-4 fw-bold">Resources Used for Fertilizing:</h5>
-                
-                <!-- Filter Section -->
-                <div class="row g-3 mb-3">
-                  <div class="col-md-8">
+                <h5 class="mb-4 fw-bold" id="resourceSectionTitle">Resources Used for Fertilizing:</h5>
+                <!-- Resource Usage Filters -->
+                <div class="row g-2 mb-3 align-items-end" style="max-width:100%;">
+                  <div class="col-lg-4 col-12">
+                    <label for="resourceEstateOfficerSearch" class="form-label mb-1">Estate Officer</label>
                     <input 
                       type="text" 
                       id="resourceEstateOfficerSearch" 
@@ -66,13 +116,33 @@
                       placeholder="Search by estate officer name..."
                     >
                   </div>
-                  <div class="col-md-4">
-                    <input 
-                      type="date" 
-                      id="resourceDateFilter" 
-                      class="form-control" 
-                      placeholder="Filter by Date"
-                    >
+                  <div class="col-lg-2 col-md-3 col-6">
+                    <label for="resourceStartDate" class="form-label mb-1">Start Date</label>
+                    <input type="date" class="form-control" id="resourceStartDate">
+                  </div>
+                  <div class="col-lg-2 col-md-3 col-6">
+                    <label for="resourceEndDate" class="form-label mb-1">End Date</label>
+                    <input type="date" class="form-control" id="resourceEndDate">
+                  </div>
+                  <div class="col-lg-2 col-md-3 col-6">
+                    <label for="resourceLocation" class="form-label mb-1">Block</label>
+                    <select class="form-select" id="resourceLocation">
+                      <!-- Options will be loaded dynamically by JS -->
+                    </select>
+                  </div>
+                  <div class="col-lg-2 col-md-3 col-6" id="fertilizerTypeFilterContainer" style="display:none">
+                    <label for="fertilizerTypeFilter" class="form-label mb-1">Fertilizer Type</label>
+                    <select class="form-select" id="fertilizerTypeFilter">
+                      <option value="" selected>All</option>
+                      <!-- Options to be added dynamically later -->
+                    </select>
+                  </div>
+                  <div class="col-lg-2 col-md-3 col-6" id="sanitationTypeFilterContainer" style="display:none">
+                    <label for="sanitationTypeFilter" class="form-label mb-1">Sanitation Type</label>
+                    <select class="form-select" id="sanitationTypeFilter">
+                      <option value="" disabled selected>Select type</option>
+                      <option value="spraying">Spraying</option>
+                    </select>
                   </div>
                 </div>
                 
@@ -94,6 +164,12 @@
                   <span class="text-muted">October 2025</span>
                 </div>
                 
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                  <label for="estateOfficerYear" class="form-label mb-0 me-2">Year:</label>
+                  <select id="estateOfficerYear" class="form-select form-select-sm w-auto"></select>
+                  <label for="estateOfficerMonth" class="form-label mb-0 ms-3 me-2">Month:</label>
+                  <select id="estateOfficerMonth" class="form-select form-select-sm w-auto"></select>
+                </div>
                 <!-- Search Bar -->
                 <div class="mb-3">
                   <input 
@@ -123,6 +199,12 @@
                   <span class="text-muted attendance-period">October 2025</span>
                 </div>
                 
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                  <label for="attendanceYear" class="form-label mb-0 me-2">Year:</label>
+                  <select id="attendanceYear" class="form-select form-select-sm w-auto"></select>
+                  <label for="attendanceMonth" class="form-label mb-0 ms-3 me-2">Month:</label>
+                  <select id="attendanceMonth" class="form-select form-select-sm w-auto"></select>
+                </div>
                 <!-- Attendance List -->
                 <div class="attendance-list" style="max-height: 500px; overflow-y: auto;">
                   <!-- Data will be loaded from API -->
@@ -139,6 +221,12 @@
                   <span class="text-muted absent-period">October 2025</span>
                 </div>
                 
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                  <label for="absentYear" class="form-label mb-0 me-2">Year:</label>
+                  <select id="absentYear" class="form-select form-select-sm w-auto"></select>
+                  <label for="absentMonth" class="form-label mb-0 ms-3 me-2">Month:</label>
+                  <select id="absentMonth" class="form-select form-select-sm w-auto"></select>
+                </div>
                 <!-- Absent Workers List -->
                 <div class="absent-list" style="max-height: 500px; overflow-y: auto;">
                   <!-- Data will be loaded from API -->
@@ -152,6 +240,12 @@
         <div class="row g-3 mt-3">
           <div class="col-12">
             <h4 class="fw-bold mb-3">Audited Summary</h4>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+              <label for="auditedYear" class="form-label mb-0 me-2">Year:</label>
+              <select id="auditedYear" class="form-select form-select-sm w-auto"></select>
+              <label for="auditedMonth" class="form-label mb-0 ms-3 me-2">Month:</label>
+              <select id="auditedMonth" class="form-select form-select-sm w-auto"></select>
+            </div>
           </div>
         </div>
 
