@@ -140,10 +140,16 @@
 
             <!-- Search Bar + Filter + Add Button -->
             <div class="d-flex flex-wrap gap-3 align-items-center">
-              <!-- Search Bar -->
+              <!-- Search Bar + Refresh button -->
               <div class="flex-grow-1">
-                <input type="text" id="usageSearch" class="form-control" placeholder="Search fuel usage/used by...">
-              </div>
+                <div class="input-group">
+                  <input type="text" id="usageSearch" class="form-control"
+                    placeholder="Search fuel usage/used by...">
+                  <button class="btn btn-secondary" id="refreshUsageBtn" type="button">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                  </button>
+                </div>
+              </div>          
 
               <!-- Filter Dropdown -->
               <div>

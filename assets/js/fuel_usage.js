@@ -89,7 +89,7 @@ function populateFuelUsageTable(usages) {
                 ${descHtml}
             </div>
             <div class="col text-center">
-                <button class="btn btn-sm btn-outline-primary me-2 update-usage-btn"
+                <button class="btn btn-sm btn-warning me-2 update-usage-btn"
                 data-id="${usage.id}"
                 data-quantity="${usage.usage_quantity || ''}"
                 data-user-id="${usage.user ? usage.user.id : ''}"
@@ -97,10 +97,10 @@ function populateFuelUsageTable(usages) {
                 data-date="${usage.usage_date ? new Date(usage.usage_date).toISOString().split('T')[0] : ''}"
                 data-description="${usage.usage_description || ''}"
                 >
-                <i class="bi bi-pencil me-1"></i> Edit
+                <i class="bi bi-pencil"></i> Edit
                 </button>
-                <button class="btn btn-sm btn-outline-danger delete-usage-btn" data-id="${usage.id}">
-                <i class="bi bi-trash me-1"></i> Delete
+                <button class="btn btn-sm btn-danger delete-usage-btn" data-id="${usage.id}">
+                <i class="bi bi-trash"></i> Delete
                 </button>
             </div>
         `;
@@ -364,6 +364,17 @@ if (usageFilterSelect) {
     usageFilterSelect.addEventListener('change', () => {
         currentUsageFilter = usageFilterSelect.value;
         getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
+    });
+}
+
+const refreshUsageBtn = document.getElementById('refreshUsageBtn');
+if (refreshUsageBtn) {
+    refreshUsageBtn.addEventListener('click', () => {
+        if (usageSearchInput) usageSearchInput.value = '';
+        if (usageFilterSelect) usageFilterSelect.value = 'default';
+        currentUsageSearch = '';
+        currentUsageFilter = 'default';
+        getAllFuelUsages();
     });
 }
 
