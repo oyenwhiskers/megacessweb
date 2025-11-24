@@ -231,7 +231,7 @@ if (addUsageForm) {
             usage_description: description
         };
 
-        const saveBtn = addUsageForm.querySelector('button[type="submit"]');
+        const saveBtn = document.getElementById('saveUsageBtn');
         const originalText = saveBtn.textContent;
         saveBtn.disabled = true;
         saveBtn.textContent = "Saving...";
