@@ -1,15 +1,18 @@
 // ==================== Fetch Fuels ====================
-async function getAllFuels({ search = '', fuel_filter = '', per_page = 15 } = {}) {
+async function getAllFuels({ search = '', fuel_filter = '', page = 1, per_page = 10 } = {}) {
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('fuelsTableBody');
+  const paginationEl = document.getElementById('fuelsPagination');
 
   if (loading) loading.style.display = 'block';
   if (tableBody) tableBody.innerHTML = '';
+  if (paginationEl) paginationEl.innerHTML = '';
 
   const params = new URLSearchParams();
   if (search) params.append('search', search);
   if (fuel_filter && fuel_filter !== 'default') params.append('fuelFilter', fuel_filter);
-  if (per_page) params.append('per_page', per_page);
+  params.append('page', page);
+  params.append('per_page', per_page);
 
   try {
     const result = await apiFetch(`/fuels?${params.toString()}`, { method: 'GET' });
@@ -17,7 +20,43 @@ async function getAllFuels({ search = '', fuel_filter = '', per_page = 15 } = {}
     if (loading) loading.style.display = 'none';
 
     if (result.success) {
-      result.data.length ? populateFuelsTable(result.data) : tableBody.innerHTML = `<div class="text-center text-muted py-3">No fuels found</div>`;
+      let data = [];
+      let meta = {};
+
+      // Option A: Root Meta (User's confirmed structure)
+      if (result.meta) {
+        data = result.data;
+        meta = result.meta;
+      }
+      // Option C: Laravel Default (Nested in data)
+      else if (result.data && Array.isArray(result.data.data) && result.data.current_page) {
+        data = result.data.data;
+        meta = result.data;
+      }
+      // Fallback: Client-side pagination
+      else if (Array.isArray(result.data)) {
+        const allData = result.data;
+        const total = allData.length;
+        const lastPage = Math.ceil(total / per_page) || 1;
+
+        const start = (page - 1) * per_page;
+        const end = start + per_page;
+        data = allData.slice(start, end);
+
+        meta = {
+          current_page: parseInt(page),
+          last_page: lastPage,
+          total: total
+        };
+      }
+
+      if (data && data.length > 0) {
+        populateFuelsTable(data);
+        renderFuelPagination(meta, search, fuel_filter);
+      } else {
+        tableBody.innerHTML = `<div class="text-center text-muted py-3">No fuels found</div>`;
+        if (paginationEl) paginationEl.innerHTML = '';
+      }
     } else {
       tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || 'Unknown error'}</div>`;
       showError(result.message);
@@ -72,6 +111,59 @@ function populateFuelsTable(fuels) {
   });
 
   attachDeleteListeners();
+}
+
+// ==================== Render Pagination ====================
+function renderFuelPagination(meta, search, filter) {
+  const container = document.getElementById('fuelsPagination');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!meta || !meta.last_page || meta.last_page <= 1) return;
+
+  const current = meta.current_page;
+  const last = meta.last_page;
+
+  const createPageItem = (page, text, isActive = false, isDisabled = false) => {
+    const li = document.createElement('li');
+    li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+    li.innerHTML = `<a class="page-link" href="#">${text}</a>`;
+    if (!isDisabled && !isActive) {
+      li.addEventListener('click', (e) => {
+        e.preventDefault();
+        getAllFuels({ search, fuel_filter: filter, page: page });
+      });
+    }
+    return li;
+  };
+
+  // Previous
+  container.appendChild(createPageItem(current - 1, 'Previous', false, current === 1));
+
+  // Page Numbers
+  let pages = [];
+  if (last <= 7) {
+    pages = Array.from({ length: last }, (_, i) => i + 1);
+  } else {
+    if (current <= 4) {
+      pages = [1, 2, 3, 4, 5, '...', last];
+    } else if (current >= last - 3) {
+      pages = [1, '...', last - 4, last - 3, last - 2, last - 1, last];
+    } else {
+      pages = [1, '...', current - 1, current, current + 1, '...', last];
+    }
+  }
+
+  pages.forEach(p => {
+    if (p === '...') {
+      container.appendChild(createPageItem(null, '...', false, true));
+    } else {
+      container.appendChild(createPageItem(p, p, p === current));
+    }
+  });
+
+  // Next
+  container.appendChild(createPageItem(current + 1, 'Next', false, current === last));
 }
 
 // ==================== Create / Add Fuel ====================

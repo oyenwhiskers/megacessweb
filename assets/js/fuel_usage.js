@@ -7,17 +7,20 @@ let selectedUsageUser = null;     // For Add Modal
 let editSelectedUsageUser = null; // For Edit Modal
 
 // ==================== Fetch Fuel Usages ====================
-async function getAllFuelUsages({ search = '', usageFilter = '', per_page = 15 } = {}) {
+async function getAllFuelUsages({ search = '', usageFilter = '', page = 1, per_page = 10 } = {}) {
     const loading = document.getElementById('usageLoading');
     const tableBody = document.getElementById('fuelUsageTableBody');
+    const paginationEl = document.getElementById('fuelUsagePagination');
 
     if (loading) loading.style.display = 'block';
     if (tableBody) tableBody.innerHTML = '';
+    if (paginationEl) paginationEl.innerHTML = '';
 
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (usageFilter && usageFilter !== 'default') params.append('usageFilter', usageFilter);
-    if (per_page) params.append('per_page', per_page);
+    params.append('page', page);
+    params.append('per_page', per_page);
 
     try {
         const result = await apiFetch(`/fuel-usages?${params.toString()}`, { method: 'GET' });
@@ -25,10 +28,42 @@ async function getAllFuelUsages({ search = '', usageFilter = '', per_page = 15 }
         if (loading) loading.style.display = 'none';
 
         if (result.success) {
-            if (result.data && result.data.length > 0) {
-                populateFuelUsageTable(result.data);
+            let data = [];
+            let meta = {};
+
+            // Option A: Root Meta (User's confirmed structure)
+            if (result.meta) {
+                data = result.data;
+                meta = result.meta;
+            }
+            // Option C: Laravel Default (Nested in data)
+            else if (result.data && Array.isArray(result.data.data) && result.data.current_page) {
+                data = result.data.data;
+                meta = result.data;
+            }
+            // Fallback: Client-side pagination
+            else if (Array.isArray(result.data)) {
+                const allData = result.data;
+                const total = allData.length;
+                const lastPage = Math.ceil(total / per_page) || 1;
+
+                const start = (page - 1) * per_page;
+                const end = start + per_page;
+                data = allData.slice(start, end);
+
+                meta = {
+                    current_page: parseInt(page),
+                    last_page: lastPage,
+                    total: total
+                };
+            }
+
+            if (data && data.length > 0) {
+                populateFuelUsageTable(data);
+                renderFuelUsagePagination(meta, search, usageFilter);
             } else {
                 if (tableBody) tableBody.innerHTML = `<div class="text-center text-muted py-3">No fuel usage records found</div>`;
+                if (paginationEl) paginationEl.innerHTML = '';
             }
         } else {
             if (tableBody) tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || 'Unknown error'}</div>`;
@@ -99,6 +134,59 @@ function populateFuelUsageTable(usages) {
     attachUsageEditListeners();
     attachUsageDeleteListeners();
     attachDescriptionViewListeners();
+}
+
+// ==================== Render Pagination ====================
+function renderFuelUsagePagination(meta, search, filter) {
+    const container = document.getElementById('fuelUsagePagination');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!meta || !meta.last_page || meta.last_page <= 1) return;
+
+    const current = meta.current_page;
+    const last = meta.last_page;
+
+    const createPageItem = (page, text, isActive = false, isDisabled = false) => {
+        const li = document.createElement('li');
+        li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#">${text}</a>`;
+        if (!isDisabled && !isActive) {
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                getAllFuelUsages({ search, usageFilter: filter, page: page });
+            });
+        }
+        return li;
+    };
+
+    // Previous
+    container.appendChild(createPageItem(current - 1, 'Previous', false, current === 1));
+
+    // Page Numbers
+    let pages = [];
+    if (last <= 7) {
+        pages = Array.from({ length: last }, (_, i) => i + 1);
+    } else {
+        if (current <= 4) {
+            pages = [1, 2, 3, 4, 5, '...', last];
+        } else if (current >= last - 3) {
+            pages = [1, '...', last - 4, last - 3, last - 2, last - 1, last];
+        } else {
+            pages = [1, '...', current - 1, current, current + 1, '...', last];
+        }
+    }
+
+    pages.forEach(p => {
+        if (p === '...') {
+            container.appendChild(createPageItem(null, '...', false, true));
+        } else {
+            container.appendChild(createPageItem(p, p, p === current));
+        }
+    });
+
+    // Next
+    container.appendChild(createPageItem(current + 1, 'Next', false, current === last));
 }
 
 // ==================== Create Usage ====================
