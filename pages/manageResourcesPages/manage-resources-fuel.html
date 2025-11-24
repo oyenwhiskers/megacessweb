@@ -28,6 +28,12 @@
     <!-- Main Content -->
     <main class="content flex-grow-1">
 
+      <div id="loadingOverlay" class="loading-overlay d-none">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
       <!-- Topbar -->
       <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
         <h1 class="page-title h5 mb-0">Manage Resources (Fuel)</h1>
@@ -416,12 +422,6 @@
       });
     });
   </script>
-  <!-- Loading overlay spinner at the very end of body -->
-  <div id="loadingOverlay" class="loading-overlay d-none">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </body>
 
 </html>

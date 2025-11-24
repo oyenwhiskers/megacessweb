@@ -17,6 +17,7 @@
   border: 2px solid #0d6efd;
   color: #0d6efd;
 }
+
 .btn-vehicle:hover {
   background-color: #0d6efd;
   color: #fff;
@@ -27,6 +28,7 @@
   border: 2px solid #198754;
   color: #198754;
 }
+
 .btn-tools:hover {
   background-color: #198754;
   color: #fff;
@@ -37,6 +39,7 @@
   border: 2px solid #ffc107;
   color: #ffc107;
 }
+
 .btn-fuels:hover {
   background-color: #ffc107;
   color: #fff;
@@ -48,12 +51,15 @@
 
 /* === Back Button === */
 .back-btn {
-  background-color: #0d6efd; /* Bootstrap danger red */
+  background-color: #0d6efd;
+  /* Bootstrap danger red */
   color: #fff;
   border: none;
 }
+
 .back-btn:hover {
-  background-color: #0b5ed7; /* darker red */
+  background-color: #0b5ed7;
+  /* darker red */
   color: #fff;
 }
 
@@ -78,17 +84,20 @@
   background-color: #e9ecef;
   color: #495057;
   text-decoration: none !important;
-  transform: translateY(-1px); /* subtle lift */
+  transform: translateY(-1px);
+  /* subtle lift */
 }
 
 /* Active tab style */
 .tab-btn.active {
-  background-color: #198754; /* Bootstrap success green */
+  background-color: #198754;
+  /* Bootstrap success green */
   color: #fff;
   border-color: #198754;
   text-decoration: none !important;
   transform: scale(1.02);
-  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.25); /* soft glow */
+  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.25);
+  /* soft glow */
 }
 
 /* Active tab hover (slightly darker green) */
@@ -144,20 +153,24 @@
 }
 
 /* Padding for first column text only */
-.content-row > div:first-child {
+.content-row>div:first-child {
   padding-left: 12px;
 }
 
 .badge-maintenance {
-  background-color: #fd7e14; /* bright orange tone */
+  background-color: #fd7e14;
+  /* bright orange tone */
   color: #fff;
 }
 
 /* Solid dropdown background */
 .solid-dropdown {
-  background-color: #fff !important;  /* force white background */
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* subtle shadow */
-  border: 1px solid #dee2e6;          /* optional border */
+  background-color: #fff !important;
+  /* force white background */
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  /* subtle shadow */
+  border: 1px solid #dee2e6;
+  /* optional border */
 }
 
 /* ============================================================
@@ -183,7 +196,7 @@
 }
 
 /* Padding for first column text only */
-.tools-row > div:first-child {
+.tools-row>div:first-child {
   padding-left: 12px;
 }
 
@@ -193,20 +206,22 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0.7); /* semi-transparent white */
+  background-color: rgba(255, 255, 255, 0.7);
+  /* semi-transparent white */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1050; /* higher than Bootstrap modals */
+  z-index: 999 !important;
+  /* higher than Bootstrap modals */
 }
 
 .stat-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-  .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Analytics Card Spinner Styles */

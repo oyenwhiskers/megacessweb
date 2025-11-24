@@ -1,46 +1,6 @@
-// ==================== SweetAlert2 Helper Functions ====================
-function showSuccess(msg) {
-  Swal.fire({ icon: 'success', title: 'Success!', text: msg, timer: 2000, showConfirmButton: false });
-}
-
-function showErrorNoToken(msg) {
-  Swal.fire({
-    icon: 'error',
-    title: 'Missing authentication token',
-    text: 'Please login first',
-  }).then(() => window.location.replace('../log-in.html'));
-}
-
-function showError(msg) {
-  Swal.fire({ icon: 'error', title: 'Error', text: msg, timer: 3000, showConfirmButton: true });
-}
-
-function showConfirm(message, callbackYes) {
-  Swal.fire({
-    title: 'Are you sure?',
-    text: message,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Yes, do it!'
-  }).then((result) => { if (result.isConfirmed) callbackYes(); });
-}
-
 // ==================== Loading Overlay ====================
 function showLoading() { document.getElementById('loadingOverlay')?.classList.remove('d-none'); }
 function hideLoading() { document.getElementById('loadingOverlay')?.classList.add('d-none'); }
-
-// ==================== Token Utility ====================
-function getToken() {
-  const keys = ['authToken','auth_token','token','access_token'];
-  for (const k of keys) {
-    const v = localStorage.getItem(k) || sessionStorage.getItem(k);
-    if (v) return v;
-  }
-  console.warn("No token found in storage");
-  return null;
-}
 
 // ==================== Fetch Fuels ====================
 async function getAllFuels({ search = '', fuel_filter = '', per_page = 15 } = {}) {
@@ -57,12 +17,12 @@ async function getAllFuels({ search = '', fuel_filter = '', per_page = 15 } = {}
 
   loading.style.display = 'block';
   tableBody.innerHTML = '';
-  
+
   console.log('API URL:', apiUrl.toString());
   console.log('Filter value:', fuel_filter);
 
   try {
-    const res = await fetch(apiUrl, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept':'application/json' } });
+    const res = await fetch(apiUrl, { method: 'GET', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } });
     const result = await res.json();
     loading.style.display = 'none';
 
@@ -98,7 +58,7 @@ function populateFuelsTable(fuels) {
         <span class="badge ${fuelClass} px-3 py-2 fs-6">${fuel.fuel_bought || 'Unknown'}</span>
       </div>
       <div class="col">
-        ${fuel.date_bought ? new Date(fuel.date_bought).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '-'}
+        ${fuel.date_bought ? new Date(fuel.date_bought).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
       </div>
       <div class="col text-center">
         <button class="btn btn-sm btn-warning me-2 update-fuel-btn"
@@ -130,7 +90,7 @@ async function createFuelRecord(payload) {
   try {
     const res = await fetch('https://mwms.megacess.com/api/v1/fuels', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type':'application/json', 'Accept':'application/json' },
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(payload)
     });
     const result = await res.json();
@@ -150,7 +110,7 @@ async function updateFuelRecord(fuelId, payload) {
   try {
     const res = await fetch(`https://mwms.megacess.com/api/v1/fuels/${fuelId}`, {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type':'application/json', 'Accept':'application/json' },
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(payload)
     });
     const result = await res.json();
@@ -173,13 +133,15 @@ function attachDeleteListeners() {
 }
 
 async function handleDelete(e) {
+  e.preventDefault(); // <--- ADD THIS
   const token = getToken(); if (!token) return showErrorNoToken();
   const fuelId = e.currentTarget.dataset.id;
 
   showConfirm('You want to delete this fuel?', async () => {
     showLoading();
+    console.log('showing loading');
     try {
-      const res = await fetch(`https://mwms.megacess.com/api/v1/fuels/${fuelId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}`, 'Accept':'application/json' } });
+      const res = await fetch(`https://mwms.megacess.com/api/v1/fuels/${fuelId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } });
       const result = await res.json();
       if (res.ok && result.success) { showSuccess(result.message); getAllFuels(); }
       else showError(result.message);
@@ -195,9 +157,9 @@ async function getAllBuyers() {
   const token = getToken(); if (!token) return showErrorNoToken();
 
   try {
-    const res = await fetch('https://mwms.megacess.com/api/v1/users', { headers: { 'Authorization': `Bearer ${token}`, 'Accept':'application/json' } });
+    const res = await fetch('https://mwms.megacess.com/api/v1/users', { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } });
     const data = await res.json();
-    return data?.data?.map(u => ({ id: u.id, fullname: u.user_fullname, account_type:'user' })) || [];
+    return data?.data?.map(u => ({ id: u.id, fullname: u.user_fullname, account_type: 'user' })) || [];
   } catch (err) {
     console.error(err); showError("Failed to load buyers."); return [];
   }
@@ -212,22 +174,22 @@ function initBuyerDropdownGeneric(inputEl, dropdownEl, onSelect) {
 
   function showDropdown(list) {
     dropdownEl.innerHTML = '';
-    if (!list.length) { 
-      const li = document.createElement('li'); li.classList.add('dropdown-item','text-muted'); li.textContent="No results found"; dropdownEl.appendChild(li); dropdownEl.style.display='block'; return;
+    if (!list.length) {
+      const li = document.createElement('li'); li.classList.add('dropdown-item', 'text-muted'); li.textContent = "No results found"; dropdownEl.appendChild(li); dropdownEl.style.display = 'block'; return;
     }
     list.forEach(person => {
       const li = document.createElement('li'); li.classList.add('dropdown-item');
       li.innerHTML = `${person.fullname}<small class="text-muted d-block">(USER ID: ${person.id})</small>`;
-      li.addEventListener('click', () => { inputEl.value = person.fullname; selectedBuyer = person; dropdownEl.style.display='none'; onSelect(selectedBuyer); });
+      li.addEventListener('click', () => { inputEl.value = person.fullname; selectedBuyer = person; dropdownEl.style.display = 'none'; onSelect(selectedBuyer); });
       dropdownEl.appendChild(li);
     });
-    dropdownEl.style.display='block';
+    dropdownEl.style.display = 'block';
   }
 
   inputEl.addEventListener('focus', () => showDropdown(allBuyers));
   inputEl.addEventListener('click', () => showDropdown(allBuyers));
   inputEl.addEventListener('input', () => { const search = inputEl.value.toLowerCase(); showDropdown(allBuyers.filter(p => p.fullname.toLowerCase().includes(search) || String(p.id).includes(search))); });
-  document.addEventListener('click', e => { if (!inputEl.contains(e.target)) dropdownEl.style.display='none'; });
+  document.addEventListener('click', e => { if (!inputEl.contains(e.target)) dropdownEl.style.display = 'none'; });
 
   return { getSelected: () => selectedBuyer };
 }
@@ -252,51 +214,51 @@ const editFuelDropdown = initBuyerDropdownGeneric(editBuyerInput, editBuyerDropd
 // ==================== Form Handlers ====================
 document.getElementById('addFuelForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
   // Validation: Check all fields are filled
   const supplierName = document.getElementById('supplierName').value.trim();
   const fuelBought = document.getElementById('fuelBought').value.trim();
   const dateBought = document.getElementById('dateBought').value.trim();
-  
+
   if (!supplierName) return showError("Please enter supplier name.");
   if (!selectedBuyer) return showError("Please select a buyer.");
   if (!fuelBought) return showError("Please enter fuel amount.");
   if (!dateBought) return showError("Please select date bought.");
-  
+
   const payload = {
     supplier_name: supplierName,
     fuel_bought: fuelBought,
     date_bought: dateBought,
     user_id: selectedBuyer.id
   };
-  const saveBtn = document.getElementById('saveFuelBtn'); saveBtn.disabled=true; saveBtn.textContent="Adding...";
-  try { await createFuelRecord(payload); bootstrap.Modal.getInstance(document.getElementById('addFuelModal')).hide(); getAllFuels(); } finally { saveBtn.disabled=false; saveBtn.textContent="Save Fuel"; }
+  const saveBtn = document.getElementById('saveFuelBtn'); saveBtn.disabled = true; saveBtn.textContent = "Adding...";
+  try { await createFuelRecord(payload); bootstrap.Modal.getInstance(document.getElementById('addFuelModal')).hide(); getAllFuels(); } finally { saveBtn.disabled = false; saveBtn.textContent = "Save Fuel"; }
 });
 
 document.getElementById('editFuelForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fuelId = document.getElementById('editFuelId').value;
-  
+
   // Validation: Check all fields are filled
   const editSupplierName = document.getElementById('editSupplierName').value.trim();
   const editFuelBought = document.getElementById('editFuelBought').value.trim();
   const editDateBought = document.getElementById('editDateBought').value.trim();
-  
+
   if (!editSupplierName) return showError("Please enter supplier name.");
   if (!editSelectedBuyer) return showError("Please select a buyer.");
   if (!editFuelBought) return showError("Please enter fuel amount.");
   if (!editDateBought) return showError("Please select date bought.");
-  
+
   const payload = {
     supplier_name: editSupplierName,
     fuel_bought: editFuelBought,
     date_bought: editDateBought,
     user_id: editSelectedBuyer.id
   };
-  const saveBtn = document.getElementById('saveEditFuelBtn'); saveBtn.disabled=true; saveBtn.textContent="Updating...";
+  const saveBtn = document.getElementById('saveEditFuelBtn'); saveBtn.disabled = true; saveBtn.textContent = "Updating...";
   const success = await updateFuelRecord(fuelId, payload);
   if (success) { bootstrap.Modal.getInstance(document.getElementById('editFuelModal')).hide(); showSuccess('Fuel updated successfully'); }
-  saveBtn.disabled=false; saveBtn.textContent="Update Fuel";
+  saveBtn.disabled = false; saveBtn.textContent = "Update Fuel";
 });
 
 // ==================== Attach Edit Buttons ====================
@@ -337,7 +299,7 @@ let currentFilter = 'default';
 function updateFuelTable() {
   const searchValue = document.getElementById('fuelSearch')?.value.trim() || '';
   const sortValue = document.getElementById('fuelFilter')?.value || 'default';
-  
+
   getAllFuels({ search: searchValue, fuel_filter: sortValue });
 }
 
@@ -357,19 +319,19 @@ const handleFuelSearch = debounce(updateFuelTable, 300);
 document.addEventListener('DOMContentLoaded', () => {
   // Load initial data
   getAllFuels();
-  
+
   // Attach search listener
   const fuelSearchInput = document.getElementById('fuelSearch');
   if (fuelSearchInput) {
     fuelSearchInput.addEventListener('input', handleFuelSearch);
   }
-  
+
   // Attach filter listener
   const fuelFilterSelect = document.getElementById('fuelFilter');
   if (fuelFilterSelect) {
     fuelFilterSelect.addEventListener('change', updateFuelTable);
   }
-  
+
   // Attach refresh button
   const refreshBtn = document.getElementById('refreshFuelBtn');
   if (refreshBtn) {
@@ -379,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
       getAllFuels();
     });
   }
-  
+
   // Attach buyer dropdown listener
   if (typeof buyerInput !== 'undefined' && buyerInput) {
     buyerInput.addEventListener('click', () => { showBuyerDropdown(allBuyers); });

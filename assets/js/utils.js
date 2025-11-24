@@ -73,7 +73,11 @@ function showConfirm(message, callbackYes) {
 // ==================== DOM HELPERS ====================
 function showLoading() {
   const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.remove('d-none');
+  if (overlay) {
+    overlay.classList.remove('d-none');
+  } else {
+    console.warn('showLoading: #loadingOverlay not found');
+  }
 }
 
 function hideLoading() {
@@ -83,7 +87,7 @@ function hideLoading() {
 
 function debounce(func, delay) {
   let timeout;
-  return function(...args) {
+  return function (...args) {
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(this, args), delay);
   };
