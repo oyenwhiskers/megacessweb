@@ -67,7 +67,9 @@ function populateFuelsTable(fuels) {
           data-buyer-id="${fuel.user?.id || ''}"
           data-buyer-name="${fuel.user?.user_fullname || ''}"
           data-fuel-bought="${fuel.fuel_bought || ''}"
-          data-date-bought="${fuel.date_bought ? new Date(fuel.date_bought).toISOString().split('T')[0] : ''}">
+          data-date-bought="${fuel.date_bought ? new Date(fuel.date_bought).toISOString().split('T')[0] : ''}"
+          data-bs-toggle="modal" 
+          data-bs-target="#editFuelModal">
           <i class="bi bi-pencil"></i> Edit
         </button>
         <button class="btn btn-sm btn-danger delete-fuel-btn" data-id="${fuel.id}">
@@ -79,7 +81,6 @@ function populateFuelsTable(fuels) {
     tableBody.appendChild(row);
   });
 
-  attachEditListeners();
   attachDeleteListeners();
 }
 
@@ -195,21 +196,21 @@ function initBuyerDropdownGeneric(inputEl, dropdownEl, onSelect) {
 }
 
 // ==================== Initialize Buyer Dropdowns ====================
-const addFuelDropdown = initBuyerDropdownGeneric(document.getElementById('assignedPerson'), buyerDropdown, sel => selectedBuyer = sel);
+let selectedBuyer = null;
+const buyerInput = document.getElementById('assignedPerson');
+const buyerDropdownEl = document.getElementById('buyerDropdown');
+
+if (buyerInput && buyerDropdownEl) {
+  initBuyerDropdownGeneric(buyerInput, buyerDropdownEl, sel => selectedBuyer = sel);
+}
 
 const editBuyerInput = document.getElementById('editAssignedPerson');
-const editBuyerDropdown = document.createElement('ul');
-editBuyerDropdown.className = 'dropdown-menu w-100 shadow-sm overflow-auto';
-editBuyerDropdown.style.position = 'absolute';
-editBuyerDropdown.style.zIndex = '1000';
-editBuyerDropdown.style.maxHeight = '200px';
-editBuyerDropdown.style.overflowY = 'auto';
-editBuyerDropdown.style.width = '100%';
-editBuyerDropdown.style.left = '0px';
-editBuyerDropdown.style.right = '0px';
-editBuyerInput.parentNode.appendChild(editBuyerDropdown);
+const editBuyerDropdownEl = document.getElementById('editBuyerDropdown');
 let editSelectedBuyer = null;
-const editFuelDropdown = initBuyerDropdownGeneric(editBuyerInput, editBuyerDropdown, sel => editSelectedBuyer = sel);
+
+if (editBuyerInput && editBuyerDropdownEl) {
+  initBuyerDropdownGeneric(editBuyerInput, editBuyerDropdownEl, sel => editSelectedBuyer = sel);
+}
 
 // ==================== Form Handlers ====================
 document.getElementById('addFuelForm').addEventListener('submit', async (e) => {
@@ -261,33 +262,46 @@ document.getElementById('editFuelForm').addEventListener('submit', async (e) => 
   saveBtn.disabled = false; saveBtn.textContent = "Update Fuel";
 });
 
-// ==================== Attach Edit Buttons ====================
-function attachEditListeners() {
-  document.querySelectorAll('.update-fuel-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const fuelId = btn.dataset.id;
-      const supplierName = btn.dataset.supplierName || '';
-      const buyerId = btn.dataset.buyerId || '';
-      const buyerName = btn.dataset.buyerName || '';
-      const fuelBought = btn.dataset.fuelBought || '';
-      const dateBought = btn.dataset.dateBought || '';
+// ==================== Attach Edit Listeners (FIXED METHOD) ====================
+const editModalEl = document.getElementById('editFuelModal');
+if (!editModalEl) console.error('CRITICAL: Edit Fuel Modal not found in DOM');
 
-      document.getElementById('editFuelId').value = fuelId;
-      document.getElementById('editSupplierName').value = supplierName;
-      document.getElementById('editFuelBought').value = fuelBought;
-      document.getElementById('editDateBought').value = dateBought;
 
-      // Prefill buyer input and selected buyer object
-      if (buyerName) {
-        editBuyerInput.value = buyerName;
-        editSelectedBuyer = buyerId ? { id: parseInt(buyerId, 10), fullname: buyerName } : null;
-      } else {
-        editBuyerInput.value = '';
-        editSelectedBuyer = null;
-      }
+if (editModalEl) {
+  // 1. Listen for the moment Bootstrap starts to show the modal
+  editModalEl.addEventListener('show.bs.modal', (event) => {
+    console.log('Edit Modal Opening...');
 
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('editFuelModal')).show();
-    });
+
+    // 2. Determine which button triggered the modal
+    const btn = event.relatedTarget;
+
+    // 3. Extract data from the button's data-attributes
+    const fuelId = btn.dataset.id;
+    const supplierName = btn.dataset.supplierName || '';
+    const buyerId = btn.dataset.buyerId || '';
+    const buyerName = btn.dataset.buyerName || '';
+    const fuelBought = btn.dataset.fuelBought || '';
+    const dateBought = btn.dataset.dateBought || '';
+
+    // 4. Data Population (Mapping to your Modal's IDs)
+    document.getElementById('editFuelId').value = fuelId;
+    document.getElementById('editSupplierName').value = supplierName;
+    document.getElementById('editFuelBought').value = fuelBought;
+    document.getElementById('editDateBought').value = dateBought;
+
+    // 5. Prefill Buyer/User Dropdown
+    if (buyerName) {
+      // Note: editBuyerInput is the global variable set from initBuyerDropdownGeneric
+      editBuyerInput.value = buyerName;
+      editSelectedBuyer = buyerId ? { id: parseInt(buyerId, 10), fullname: buyerName } : null;
+    } else {
+      editBuyerInput.value = '';
+      editSelectedBuyer = null;
+    }
+
+    // Ensure the dropdown is hidden if it was open from a previous action
+    document.getElementById('editBuyerDropdown').style.display = 'none';
   });
 }
 
@@ -342,8 +356,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Attach buyer dropdown listener
-  if (typeof buyerInput !== 'undefined' && buyerInput) {
-    buyerInput.addEventListener('click', () => { showBuyerDropdown(allBuyers); });
-  }
+
 });
