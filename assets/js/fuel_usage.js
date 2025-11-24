@@ -14,7 +14,6 @@ async function getAllFuelUsages({ search = '', usageFilter = '', page = 1, per_p
 
     if (loading) loading.style.display = 'block';
     if (tableBody) tableBody.innerHTML = '';
-    if (paginationEl) paginationEl.innerHTML = '';
 
     const params = new URLSearchParams();
     if (search) params.append('search', search);

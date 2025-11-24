@@ -6,7 +6,6 @@ async function getAllFuels({ search = '', fuel_filter = '', page = 1, per_page =
 
   if (loading) loading.style.display = 'block';
   if (tableBody) tableBody.innerHTML = '';
-  if (paginationEl) paginationEl.innerHTML = '';
 
   const params = new URLSearchParams();
   if (search) params.append('search', search);
