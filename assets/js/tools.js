@@ -1,7 +1,7 @@
 let toolState = {
     currentPage: 1,
     lastPage: 1,
-    perPage: 15,
+    perPage: 10,
     total: 0,
     search: '',
     status: ''
