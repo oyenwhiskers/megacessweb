@@ -1,602 +1,301 @@
-// ==================== SweetAlert2 Helper Functions ====================
-function showSuccess(msg) {
-  Swal.fire({
-    icon: 'success',
-    title: 'Success!',
-    text: msg,
-    timer: 2000,
-    showConfirmButton: false
-  });
-}
+let toolState = {
+    currentPage: 1,
+    lastPage: 1,
+    perPage: 15,
+    total: 0,
+    search: '',
+    status: ''
+};
 
-function showErrorNoToken(msg) {
-  Swal.fire({
-    icon: 'error',
-    title: 'Missing authentication token',
-    text: 'Please login first',
-  }).then(() => {
-    window.location.replace('../log-in.html');
-  });
-}
+// ==================== MAIN TABLE LOGIC ====================
 
-function showError(msg) {
-  Swal.fire({
-    icon: 'error',
-    title: 'Error',
-    text: msg,
-    timer: 3000,
-    showConfirmButton: true
-  });
-}
+async function getAllTools({ search = '', status = '', page = 1 } = {}) {
+    const loading = document.getElementById('loading');
+    const tableBody = document.getElementById('toolsTableBody');
+    
+    // Update Global State
+    toolState.search = search;
+    toolState.status = status;
+    toolState.currentPage = page;
 
-function showConfirm(message, callbackYes) {
-  Swal.fire({
-    title: 'Are you sure?',
-    text: message,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Yes, do it!'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      callbackYes();
+    loading.style.display = 'block';
+    tableBody.innerHTML = '';
+
+    try {
+        const queryParams = new URLSearchParams({
+            search: search,
+            status: status,
+            page: page,
+            per_page: toolState.perPage
+        });
+
+        const result = await apiFetch(`/tools?${queryParams.toString()}`);
+        loading.style.display = 'none';
+
+        if (result.data && result.data.length > 0) {
+            populateToolsTable(result.data);
+            if (result.meta) updateToolPaginationControls(result.meta);
+        } else {
+            tableBody.innerHTML = `<div class="text-center text-muted py-3">No tools found</div>`;
+        }
+    } catch (error) {
+        loading.style.display = 'none';
+        tableBody.innerHTML = `<div class="text-center text-danger py-3">Failed to load tools</div>`;
+        showError(error.message);
     }
-  });
 }
 
-// ==================== Loading Overlay ====================
-function showLoading() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.remove('d-none');
-}
-
-function hideLoading() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.add('d-none');
-}
-
-/* -------------------- Token Utilities -------------------- */
-function getToken() {
-  const keys = ['authToken', 'auth_token', 'token', 'access_token'];
-  for (const k of keys) {
-    const v = localStorage.getItem(k) || sessionStorage.getItem(k);
-    if (v) return v;
-  }
-  console.warn(" No token found in storage");
-  return null;
-}
-
-// ==================== GET /tools ====================
-async function getAllTools({ search = '', status = '', per_page = 15, page = 1 } = {}) {
-  const token = getToken();
-  if (!token) {
-    showErrorNoToken("Missing authentication token. Please login first.");
-    return;
-  }
-
-  const apiUrl = new URL('https://mwms.megacess.com/api/v1/tools');
-
-  if (search) apiUrl.searchParams.append('search', search);
-  if (status) apiUrl.searchParams.append('status', status);
-  if (per_page) apiUrl.searchParams.append('per_page', per_page);
-  if (page) apiUrl.searchParams.append('page', page);
-
-  const loading = document.getElementById('loading');
-  const tableBody = document.getElementById('toolsTableBody');
-
-  loading.style.display = 'block';
-  tableBody.innerHTML = '';
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-
-    const result = await response.json();
-    loading.style.display = 'none';
-
-    if (response.ok && result.success) {
-      if (result.data.length > 0) {
-        populateToolsTable(result.data);
-        // Update pagination info
-        updateToolPaginationControls(result.meta);
-      }
-      else tableBody.innerHTML = `<div class="text-center text-muted py-3">No tools found</div>`;
-    } else {
-      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || 'Unknown error'}</div>`;
-      if (typeof showError === 'function') showError(result.message);
-    }
-  } catch (error) {
-    loading.style.display = 'none';
-    tableBody.innerHTML = `<div class="text-center text-danger py-3">Failed to load tools</div>`;
-    if (typeof showError === 'function') showError('Failed to load tools. Please try again.');
-    console.error('Fetch error:', error);
-  }
-}
-
-// ==================== Populate Table ====================
 function populateToolsTable(tools) {
-  const tableBody = document.getElementById('toolsTableBody');
-  tableBody.innerHTML = '';
+    const tableBody = document.getElementById('toolsTableBody');
+    tableBody.innerHTML = '';
 
-  tools.forEach(tool => {
-    const row = document.createElement('div');
-    row.className = 'content-row d-flex border-bottom py-2 align-items-center';
+    tools.forEach(tool => {
+        const row = document.createElement('div');
+        row.className = 'content-row d-flex border-bottom py-2 align-items-center';
 
-    const toolStatus = tool.status ? tool.status.toLowerCase() : 'unknown';
-    let statusClass = 'bg-secondary';
-    if (toolStatus === 'available') statusClass = 'bg-success';
-    else if (toolStatus === 'in use') statusClass = 'bg-warning text-dark';
-    else if (toolStatus === 'broken') statusClass = 'bg-danger';
+        const statusRaw = tool.status ? tool.status.toLowerCase() : 'unknown';
+        let statusClass = 'bg-secondary';
+        if (statusRaw === 'available') statusClass = 'bg-success';
+        else if (statusRaw === 'in use') statusClass = 'bg-warning text-dark';
+        else if (statusRaw === 'broken') statusClass = 'bg-danger';
 
-    row.innerHTML = `
-      <div class="col-4 ps-3">${tool.tool_name || 'Unnamed Tool'}</div>
-      <div class="col-4">
-        <span class="badge ${statusClass}">${tool.status || 'Unknown'}</span>
-      </div>
-      <div class="col-4 text-center">
-        <button class="btn btn-sm btn-warning me-2 update-tool-btn" 
-                data-id="${tool.id}" 
-                data-name="${tool.tool_name || ''}" 
-                data-status="${toolStatus}">
-          <i class="bi bi-pencil"></i> Edit
-        </button>
-        <button class="btn btn-sm btn-danger delete-tool-btn" data-id="${tool.id}">
-          <i class="bi bi-trash"></i> Delete
-        </button>
-      </div>
-    `;
-    tableBody.appendChild(row);
-  });
+        // Escape quotes for the data-json attribute
+        const safeJson = JSON.stringify(tool).replace(/'/g, "&apos;");
 
-    // NOTE: Do not update stat cards here (per-page counts).
-    // Stats are refreshed from the server via `refreshToolSummary()`
-    // to ensure analytics reflect global totals only.
-
-  // ✅ Safely reattach event listeners (if defined)
-  if (typeof attachEditListeners === 'function') attachEditListeners();
-  if (typeof attachDeleteListeners === 'function') attachDeleteListeners();
-}
-
-// Animate the counting with fade-in & scale effect
-function animateCount(el, value, duration = 1500) {
-  let start = 0;
-  const startTime = performance.now();
-
-  // Reset visual styles before animating
-  el.style.opacity = 0;
-  el.style.transform = "scale(0.9)";
-  el.style.transition = "opacity 0.4s ease-out, transform 0.4s ease-out";
-
-  // Trigger fade/scale animation
-  requestAnimationFrame(() => {
-    el.style.opacity = 1;
-    el.style.transform = "scale(1)";
-  });
-
-  function update(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-
-    // Ease-out curve (smooth stop)
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const current = Math.floor(start + (value - start) * eased);
-    el.textContent = current;
-
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    } else {
-      el.textContent = value;
-    }
-  }
-
-  requestAnimationFrame(update);
-}
-
-// Update tool stats cards
-function updateToolStats(tools) {
-  const total = tools.length;
-  const available = tools.filter(v => v.status.toLowerCase() === 'available').length;
-  const inUse = tools.filter(v => v.status.toLowerCase() === 'in use').length;
-  const broken = tools.filter(v => v.status.toLowerCase() === 'broken').length;
-
-  // update the value spans (these are per-page counts; server summary will overwrite)
-  animateCount(document.getElementById('totalToolsValue'), total, 1800);
-  animateCount(document.getElementById('availableToolsValue'), available, 1800);
-  animateCount(document.getElementById('inUseToolsValue'), inUse, 1800);
-  animateCount(document.getElementById('brokenToolsValue'), broken, 1800);
-}
-
-// Helpers to show/hide spinner indicators for analytics cards
-function setStatsLoading(isLoading) {
-  const mapping = [
-    ['totalToolsSpinner', 'totalToolsValue'],
-    ['availableToolsSpinner', 'availableToolsValue'],
-    ['inUseToolsSpinner', 'inUseToolsValue'],
-    ['brokenToolsSpinner', 'brokenToolsValue']
-  ];
-
-  mapping.forEach(([spinnerId, valueId]) => {
-    const spinner = document.getElementById(spinnerId);
-    const valueEl = document.getElementById(valueId);
-    if (!spinner || !valueEl) return;
-
-    if (isLoading) {
-      spinner.classList.remove('d-none');
-      valueEl.classList.add('opacity-50');
-    } else {
-      spinner.classList.add('d-none');
-      valueEl.classList.remove('opacity-50');
-    }
-  });
-}
-
-// -------------------- Real Analytics (Summary) --------------------
-// Try the server-provided summary endpoint first. If it's not available,
-// fall back to issuing lightweight requests per status and reading the
-// returned `meta.total` values to compute global counts.
-async function fetchResourcesUsageAnalytics() {
-  const token = getToken();
-  if (!token) return null;
-
-  try {
-    const resp = await fetch('https://mwms.megacess.com/api/v1/analytics/resources-usage', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      }
+        row.innerHTML = `
+            <div class="col-4 ps-3">${tool.tool_name || 'Unnamed Tool'}</div>
+            <div class="col-4"><span class="badge ${statusClass}">${tool.status || 'Unknown'}</span></div>
+            <div class="col-4 text-center">
+                <button class="btn btn-sm btn-warning me-2 edit-btn" data-json='${safeJson}'>
+                    <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-danger delete-btn" data-id="${tool.id}">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        `;
+        tableBody.appendChild(row);
     });
+}
 
-    const result = await resp.json();
-    if (result?.success && result?.data) {
-      return result.data;
+// EVENT DELEGATION: Handle Table Clicks (Edit/Delete)
+document.getElementById('toolsTableBody').addEventListener('click', (e) => {
+    const deleteBtn = e.target.closest('.delete-btn');
+    const editBtn = e.target.closest('.edit-btn');
+
+    if (deleteBtn) {
+        const toolId = deleteBtn.dataset.id;
+        handleDelete(toolId);
+    } else if (editBtn) {
+        const toolData = JSON.parse(editBtn.dataset.json);
+        openUpdateModal(toolData);
     }
-  } catch (err) {
-    console.error("Failed to fetch analytics:", err);
-  }
+});
 
-  return null;
+// ==================== PAGINATION ====================
+
+function updateToolPaginationControls(meta) {
+    toolState.lastPage = meta.last_page;
+    toolState.total = meta.total;
+    renderToolPagination(meta.current_page, meta.last_page);
+    console.log(meta.current_page, meta.last_page);
+}
+
+function renderToolPagination(current, last) {
+    const container = document.getElementById('toolPagination');
+    if (!container) return;
+
+    let html = '';
+    const prevDisabled = current <= 1 ? 'disabled' : '';
+    html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current - 1}">Previous</a></li>`;
+
+    const maxButtons = 5;
+    let start = Math.max(1, current - 2);
+    let end = Math.min(last, start + maxButtons - 1);
+
+    if (end - start < maxButtons) start = Math.max(1, end - maxButtons + 1);
+
+    for (let i = start; i <= end; i++) {
+        html += `<li class="page-item ${i === current ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    }
+
+    const nextDisabled = current >= last ? 'disabled' : '';
+    html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current + 1}">Next</a></li>`;
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('a.page-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = parseInt(e.target.dataset.page);
+            if (page && page !== current && page > 0 && page <= last) {
+                getAllTools({ ...toolState, page });
+                window.scrollTo(0, 0);
+            }
+        });
+    });
+}
+
+// ==================== ANALYTICS ====================
+
+function animateCount(el, value, duration = 1000) {
+    if (!el) return;
+    let start = 0;
+    const startTime = performance.now();
+    
+    requestAnimationFrame(() => { el.style.opacity = 1; });
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        
+        el.textContent = Math.floor(start + (value - start) * eased);
+        
+        if (progress < 1) requestAnimationFrame(update);
+        else el.textContent = value;
+    }
+    requestAnimationFrame(update);
 }
 
 async function refreshToolSummary() {
-  setStatsLoading(true);
-
-  const analytics = await fetchResourcesUsageAnalytics();
-  if (!analytics || !analytics.tools_analytics) {
-    console.warn("Unable to fetch tools analytics.");
-    setStatsLoading(false);
-    return;
-  }
-
-  const tools = analytics.tools_analytics;
-
-  animateCount(document.getElementById('totalToolsValue'), Number(tools.total_tools) || 0, 1200);
-  animateCount(document.getElementById('availableToolsValue'), Number(tools.available) || 0, 1200);
-  animateCount(document.getElementById('inUseToolsValue'), Number(tools.in_use) || 0, 1200);
-  animateCount(document.getElementById('brokenToolsValue'), Number(tools.broken) || 0, 1200);
-
-  setStatsLoading(false);
-}
-
-
-// ==================== Pagination Controls ====================
-// Store pagination state
-let toolPaginationState = {
-  currentPage: 1,
-  lastPage: 1,
-  perPage: 15,
-  total: 0,
-  search: '',
-  status: ''
-};
-
-// Update pagination controls and render pagination
-function updateToolPaginationControls(meta) {
-  // Update pagination state
-  toolPaginationState.currentPage = meta.current_page;
-  toolPaginationState.lastPage = meta.last_page;
-  toolPaginationState.perPage = meta.per_page;
-  toolPaginationState.total = meta.total;
-
-  // Render pagination list
-  renderToolPagination(meta.current_page, meta.last_page);
-}
-
-// Render pagination HTML into #toolPagination with Previous / numbered pages / Next
-function renderToolPagination(current, last) {
-  const container = document.getElementById('toolPagination');
-  if (!container) return;
-
-  const maxButtons = 7; // total number of numeric page buttons to show
-  let start = Math.max(1, current - Math.floor(maxButtons / 2));
-  let end = Math.min(last, start + maxButtons - 1);
-  if (end - start + 1 < maxButtons) {
-    start = Math.max(1, end - maxButtons + 1);
-  }
-
-  // Build Bootstrap pagination markup
-  let html = '';
-
-  const prevDisabled = current <= 1;
-  html += `<li class="page-item ${prevDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.max(1, current - 1)}">Previous</a></li>`;
-
-  for (let i = start; i <= end; i++) {
-    if (i === current) {
-      html += `<li class="page-item active" aria-current="page"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    } else {
-      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    }
-  }
-
-  const nextDisabled = current >= last;
-  html += `<li class="page-item ${nextDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.min(last, current + 1)}">Next</a></li>`;
-
-  container.innerHTML = html;
-
-  // Attach click handlers to enabled items only
-  const enabledLinks = container.querySelectorAll('li.page-item:not(.disabled) a[data-page]');
-  enabledLinks.forEach(link => {
-    link.removeEventListener('click', handleToolPaginationClick);
-    link.addEventListener('click', handleToolPaginationClick);
-  });
-}
-
-function handleToolPaginationClick(e) {
-  e.preventDefault();
-  const page = parseInt(e.currentTarget.dataset.page, 10);
-  if (!page || page === toolPaginationState.currentPage) return;
-
-  getAllTools({
-    search: toolPaginationState.search,
-    status: toolPaginationState.status,
-    per_page: toolPaginationState.perPage,
-    page: page
-  });
-  window.scrollTo(0, 0);
-}
-
-// ==================== POST /tools ====================
-document.getElementById('addToolBtn').addEventListener('click', async () => {
-  const token = getToken();
-  if (!token) {
-    showErrorNoToken("Missing authentication token. Please login first.");
-    return;
-  }
-  const toolName = document.getElementById('toolName').value.trim();
-  const statusSelect = document.getElementById('toolStatusModal');
-  const status = statusSelect.value;
-
-  if (!toolName || !status || status === 'Choose status') {
-    showError('Please fill in all fields.');
-    return;
-  }
-
-  const addBtn = document.getElementById('addToolBtn');
-  addBtn.disabled = true;
-  const originalText = addBtn.textContent;
-  addBtn.textContent = 'Adding...';
-
-  try {
-    const response = await fetch('https://mwms.megacess.com/api/v1/tools', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ tool_name : toolName, status })
-    });
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      bootstrap.Modal.getInstance(document.getElementById('addToolsModal')).hide();
-      document.getElementById('toolName').value = '';
-      statusSelect.value = '';
-      getAllTools({
-        search: toolPaginationState.search,
-        status: toolPaginationState.status,
-        page: 1
-      });
-        // Refresh global analytics after adding a tool
-        if (typeof refreshToolSummary === 'function') refreshToolSummary();
-      showSuccess('Tool added successfully!');
-    } else {
-      showError(result.message);
-    }
-  } catch (error) {
-    console.error(error);
-    showError('Failed to add tool. Please try again.');
-  } finally {
-    addBtn.disabled = false;
-    addBtn.textContent = originalText;
-  }
-});
-
-// ==================== UPDATE /tools ====================
-let currentToolId = null;
-
-function attachEditListeners() {
-  const editBtns = document.querySelectorAll('.update-tool-btn');
-  editBtns.forEach(btn => {
-    btn.removeEventListener('click', handleEdit);
-    btn.addEventListener('click', handleEdit);
-  });
-}
-
-function handleEdit(e) {
-  const btn = e.currentTarget;
-  currentToolId = btn.dataset.id;
-  document.getElementById('updateToolName').value = btn.dataset.name;
-  document.getElementById('updateToolStatus').value = btn.dataset.status;
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal')).show();
-}
-
-document.getElementById('updateToolBtn').addEventListener('click', async () => {
-  const token = getToken();
-  if (!token) {
-    showErrorNoToken("Missing authentication token. Please login first.");
-    return;
-  }
-
-  if (!currentToolId) return;
-
-  const name = document.getElementById('updateToolName').value.trim();
-  const status = document.getElementById('updateToolStatus').value;
-
-  if (!name && !status) {
-    showError('Please fill at least one field to update.');
-    return;
-  }
-
-  const updateBtn = document.getElementById('updateToolBtn');
-  updateBtn.disabled = true;
-  const originalText = updateBtn.textContent;
-  updateBtn.textContent = 'Updating...';
-
-  try {
-    const response = await fetch(`https://mwms.megacess.com/api/v1/tools/${currentToolId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        tool_name: name || undefined,
-        status: status || undefined
-      })
-    });
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal')).hide();
-      getAllTools({
-        search: toolPaginationState.search,
-        status: toolPaginationState.status,
-        page: toolPaginationState.currentPage
-      });
-      // Refresh global analytics after updating a tool
-      if (typeof refreshToolSummary === 'function') refreshToolSummary();
-      showSuccess(result.message);
-    } else {
-      showError(result.message);
-    }
-  } catch (err) {
-    console.error(err);
-    showError('Failed to update tool.');
-  } finally {
-    updateBtn.disabled = false;
-    updateBtn.textContent = originalText;
-  }
-});
-
-// ==================== DELETE /tools ====================
-function attachDeleteListeners() {
-  const deleteButtons = document.querySelectorAll('.delete-tool-btn');
-  deleteButtons.forEach(btn => {
-    btn.removeEventListener('click', handleDelete);
-    btn.addEventListener('click', handleDelete);
-  });
-}
-
-async function handleDelete(e) {
-  const token = getToken();
-  if (!token) {
-    showErrorNoToken("Missing authentication token. Please login first.");
-    return;
-  }
-
-  const toolId = e.currentTarget.dataset.id;
-  showConfirm('You want to delete this tool?', async () => {
-    showLoading();
     try {
-      const response = await fetch(`https://mwms.megacess.com/api/v1/tools/${toolId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+        // Simple direct fetch to ensure we get global stats, not just per-page
+        const result = await apiFetch('/analytics/resources-usage');
+        
+        if (result.data && result.data.tools_analytics) {
+            const stats = result.data.tools_analytics;
+            animateCount(document.getElementById('totalToolsValue'), Number(stats.total_tools) || 0);
+            animateCount(document.getElementById('availableToolsValue'), Number(stats.available) || 0);
+            animateCount(document.getElementById('inUseToolsValue'), Number(stats.in_use) || 0);
+            animateCount(document.getElementById('brokenToolsValue'), Number(stats.broken) || 0);
         }
-      });
-      const result = await response.json();
-      if (response.ok && result.success) {
-        showSuccess(result.message);
-        getAllTools({
-          search: toolPaginationState.search,
-          status: toolPaginationState.status,
-          page: toolPaginationState.currentPage
-        });
-        // Refresh global analytics after deleting a tool
-        if (typeof refreshToolSummary === 'function') refreshToolSummary();
-      } else {
-        showError(result.message);
-      }
     } catch (err) {
-      console.error(err);
-      showError('Failed to delete tool. Please try again.');
-    } finally {
-      hideLoading();
+        console.warn("Analytics fetch failed:", err);
     }
-  });
 }
 
-// ==================== Initialize Fetch on Page Load ====================
-document.addEventListener('DOMContentLoaded', () => {
-  getAllTools(); // Fetch and render all tools
-  // Fetch global analytics once on load
-  if (typeof refreshToolSummary === 'function') refreshToolSummary();
+// ==================== CRUD OPERATIONS ====================
+
+// CREATE TOOL
+document.getElementById('addToolBtn').addEventListener('click', async () => {
+    const nameInput = document.getElementById('toolName');
+    const statusInput = document.getElementById('toolStatusModal');
+    const btn = document.getElementById('addToolBtn');
+
+    const payload = {
+        tool_name: nameInput.value.trim(),
+        status: statusInput.value
+    };
+
+    if (!payload.tool_name || !payload.status || payload.status === 'Choose status') {
+        return showError('Please fill in all fields.');
+    }
+
+    btn.disabled = true; btn.textContent = 'Adding...';
+
+    try {
+        const result = await apiFetch('/tools', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        showSuccess('Tool added successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('addToolsModal')).hide();
+        nameInput.value = '';
+        statusInput.value = '';
+        
+        getAllTools({ page: 1 }); // Reset to first page
+        refreshToolSummary();
+
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        btn.disabled = false; btn.textContent = 'Add Tool';
+    }
 });
 
-// ==================== Search Functions ====================
-// Debounce helper to limit rapid API calls
-function debounce(func, delay) {
-  let timer;
-  return function (...args) {
-    clearTimeout(timer);
-    timer = setTimeout(() => func.apply(this, args), delay);
-  };
+// DELETE TOOL
+async function handleDelete(toolId) {
+    showConfirm('Are you sure you want to delete this tool?', async () => {
+        showLoading();
+        try {
+            const result = await apiFetch(`/tools/${toolId}`, { method: 'DELETE' });
+            showSuccess(result.message || 'Tool deleted');
+            
+            getAllTools({ ...toolState }); // Refresh current page
+            refreshToolSummary();
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            hideLoading();
+        }
+    });
 }
 
-// Triggered whenever search input or filter changes
-function updateToolTable() {
-  const searchValue = document.getElementById('toolSearch').value.trim() || undefined;
-  const statusValue = document.getElementById('toolStatus').value || undefined; // 'All Status' can map to undefined
-  
-  // Update pagination state when search/filter changes
-  toolPaginationState.search = searchValue || '';
-  toolPaginationState.status = statusValue || '';
-  toolPaginationState.currentPage = 1; // Reset to first page
-  
-  getAllTools({ search: searchValue, status: statusValue, page: 1 });
+// UPDATE TOOL PREPARATION
+function openUpdateModal(tool) {
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal'));
+    
+    document.getElementById('updateToolName').value = tool.tool_name;
+    document.getElementById('updateToolStatus').value = tool.status;
+    
+    // Store ID on the update button for reference
+    document.getElementById('updateToolBtn').dataset.id = tool.id;
+    
+    modal.show();
 }
 
-// Debounce the search input to avoid flooding API requests
-const handleToolSearch = debounce(updateToolTable, 150);
+// UPDATE TOOL SUBMIT
+document.getElementById('updateToolBtn').addEventListener('click', async (e) => {
+    const toolId = e.target.dataset.id;
+    const name = document.getElementById('updateToolName').value.trim();
+    const status = document.getElementById('updateToolStatus').value;
+    const btn = e.target;
 
-// Attach event listeners
-document.getElementById('toolSearch').addEventListener('input', handleToolSearch);
-document.getElementById('toolStatus').addEventListener('change', updateToolTable);
+    if (!toolId) return;
+    if (!name && !status) return showError('Nothing to update.');
+
+    btn.disabled = true; btn.textContent = 'Updating...';
+
+    try {
+        const result = await apiFetch(`/tools/${toolId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ tool_name: name, status: status })
+        });
+
+        showSuccess(result.message || 'Tool updated');
+        bootstrap.Modal.getInstance(document.getElementById('updateToolModal')).hide();
+        
+        getAllTools({ ...toolState });
+        refreshToolSummary();
+
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        btn.disabled = false; btn.textContent = 'Update Tool';
+    }
+});
+
+// ==================== INITIALIZATION & SEARCH ====================
+
+document.addEventListener('DOMContentLoaded', () => {
+    getAllTools();
+    refreshToolSummary();
+});
+
+// Search & Filter Handlers
+const handleSearch = debounce(() => {
+    const search = document.getElementById('toolSearch').value.trim();
+    const status = document.getElementById('toolStatus').value;
+    getAllTools({ search, status, page: 1 });
+}, 300);
+
+document.getElementById('toolSearch').addEventListener('input', handleSearch);
+document.getElementById('toolStatus').addEventListener('change', handleSearch);
 
 document.getElementById('refreshToolBtn').addEventListener('click', () => {
-  // Reset search input
-  document.getElementById('toolSearch').value = '';
-
-  // Reset status filter
-  document.getElementById('toolStatus').value = '';
-
-  // Reset pagination state
-  toolPaginationState.search = '';
-  toolPaginationState.status = '';
-  toolPaginationState.currentPage = 1;
-
-  // Reload tools table
-  getAllTools();
+    document.getElementById('toolSearch').value = '';
+    document.getElementById('toolStatus').value = '';
+    getAllTools({ page: 1, search: '', status: '' });
 });
-

@@ -1,160 +1,157 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MegaCess Web • Manage Resources</title>
 
-    <!-- Bootstrap & Icons -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    >
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
-      rel="stylesheet"
-    >
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaCess Web • Manage Resources</title>
 
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
-    <link rel="stylesheet" href="/megacessweb/assets/css/roderickv1.css">
-    <!-- Links to Roderick's CSS style -->
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <!-- Sweet2Alert style -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  </head>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="/megacessweb/assets/css/roderickv1.css">
+  <!-- Links to Roderick's CSS style -->
 
-  <body data-page="manage-resources">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Sweet2Alert style -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+</head>
+
+<body data-page="manage-resources">
+  <!-- Main Content -->
+  <div class="app d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar p-3" id="sidebar-root"></aside>
+
     <!-- Main Content -->
-    <div class="app d-flex">
-      <!-- Sidebar -->
-      <aside class="sidebar p-3" id="sidebar-root"></aside>
+    <main class="content flex-grow-1">
 
-      <!-- Main Content -->
-      <main class="content flex-grow-1">
-        
-        <!-- Topbar -->
-        <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
-          <h1 class="page-title h5 mb-0">Manage Resources (Vehicle)</h1>
-          <button class="btn btn-outline-light d-lg-none" id="sidebarToggle">
-            <i class="bi bi-list"></i>
-          </button>
+      <!-- Topbar -->
+      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+        <h1 class="page-title h5 mb-0">Manage Resources (Vehicle)</h1>
+        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+
+      <!-- Row 1: Back Button -->
+      <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
+        <!-- Back Button -->
+        <a href="/megacessweb/pages/manage-resources.html" class="btn back-btn d-flex align-items-center">
+          <i class="bi bi-arrow-left me-2"></i>
+          Back to Manage Resources
+        </a>
+      </div>
+
+      <!-- Row 2: Statistics Cards -->
+      <div class="container my-4 mb-4 px-4 mt-4">
+        <div class="row g-4">
+          <!-- Total Vehicles -->
+          <div class="col-md-3 col-sm-6">
+            <div class="card text-white bg-primary shadow-sm stat-card">
+              <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <h6 class="card-title mb-1">Total Vehicles</h6>
+                  <h3 class="mb-0">
+                    <span id="totalVehiclesValue">-</span>
+                    <span id="totalVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
+                      role="status" aria-hidden="true"></span>
+                  </h3>
+                </div>
+                <i class="bi bi-truck fs-1"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Available -->
+          <div class="col-md-3 col-sm-6">
+            <div class="card text-white bg-success shadow-sm stat-card">
+              <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <h6 class="card-title mb-1">Available</h6>
+                  <h3 class="mb-0">
+                    <span id="availableVehiclesValue">-</span>
+                    <span id="availableVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
+                      role="status" aria-hidden="true"></span>
+                  </h3>
+                </div>
+                <i class="bi bi-check-circle fs-1"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- In Use -->
+          <div class="col-md-3 col-sm-6">
+            <div class="card text-white bg-warning text-dark shadow-sm stat-card">
+              <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <h6 class="card-title mb-1">In Use</h6>
+                  <h3 class="mb-0">
+                    <span id="inUseVehiclesValue">-</span>
+                    <span id="inUseVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
+                      role="status" aria-hidden="true"></span>
+                  </h3>
+                </div>
+                <i class="bi bi-gear fs-1"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Under Maintenance -->
+          <div class="col-md-3 col-sm-6">
+            <div class="card text-white bg-danger shadow-sm stat-card">
+              <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <h6 class="card-title mb-1">Under Maintenance</h6>
+                  <h3 class="mb-0">
+                    <span id="maintenanceVehiclesValue">-</span>
+                    <span id="maintenanceVehiclesSpinner"
+                      class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status"
+                      aria-hidden="true"></span>
+                  </h3>
+                </div>
+                <i class="bi bi-tools fs-1"></i>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Row 1: Back Button -->
-        <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
-          <!-- Back Button -->
-          <a
-            href="/megacessweb/pages/manage-resources.html"
-            class="btn back-btn d-flex align-items-center"
-          >
-            <i class="bi bi-arrow-left me-2"></i>
-            Back to Manage Resources
+      <!-- Row 3: Tabs -->
+      <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
+        <!-- Tab Selection -->
+        <div class="btn-group" role="group">
+          <a href="#" class="tab-btn active d-flex align-items-center" data-target="vehicle">
+            <i class="bi bi-truck me-2"></i>
+            Vehicle
+          </a>
+          <a href="#" class="tab-btn d-flex align-items-center" data-target="booking">
+            <i class="bi bi-calendar-check me-2"></i>
+            Booking
           </a>
         </div>
+      </div>
 
-        <!-- Row 2: Statistics Cards -->
-        <div class="container my-4 mb-4 px-4 mt-4">
-          <div class="row g-4">
-            <!-- Total Vehicles -->
-            <div class="col-md-3 col-sm-6">
-              <div class="card text-white bg-primary shadow-sm stat-card">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                  <div>
-                    <h6 class="card-title mb-1">Total Vehicles</h6>
-                    <h3 class="mb-0">
-                      <span id="totalVehiclesValue">-</span>
-                      <span id="totalVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
-                    </h3>
-                  </div>
-                  <i class="bi bi-truck fs-1"></i>
-                </div>
-              </div>
-            </div>
+      <!-- Tab Content for Vehicle and Booking-->
+      <div class="tab-content">
+        <!-- Vehicle Tab -->
+        <div class="tab-pane" data-name="vehicle">
+          <div class="px-4 mb-4">
+            <!-- Title -->
+            <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
 
-            <!-- Available -->
-            <div class="col-md-3 col-sm-6">
-              <div class="card text-white bg-success shadow-sm stat-card">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                  <div>
-                    <h6 class="card-title mb-1">Available</h6>
-                    <h3 class="mb-0">
-                      <span id="availableVehiclesValue">-</span>
-                      <span id="availableVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
-                    </h3>
-                  </div>
-                  <i class="bi bi-check-circle fs-1"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- In Use -->
-            <div class="col-md-3 col-sm-6">
-              <div class="card text-white bg-warning text-dark shadow-sm stat-card">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                  <div>
-                    <h6 class="card-title mb-1">In Use</h6>
-                    <h3 class="mb-0">
-                      <span id="inUseVehiclesValue">-</span>
-                      <span id="inUseVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
-                    </h3>
-                  </div>
-                  <i class="bi bi-gear fs-1"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- Under Maintenance -->
-            <div class="col-md-3 col-sm-6">
-              <div class="card text-white bg-danger shadow-sm stat-card">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                  <div>
-                    <h6 class="card-title mb-1">Under Maintenance</h6>
-                    <h3 class="mb-0">
-                      <span id="maintenanceVehiclesValue">-</span>
-                      <span id="maintenanceVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" aria-hidden="true"></span>
-                    </h3>
-                  </div>
-                  <i class="bi bi-tools fs-1"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Row 3: Tabs -->
-        <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
-          <!-- Tab Selection -->
-          <div class="btn-group" role="group">
-            <a href="#" class="tab-btn active d-flex align-items-center" data-target="vehicle">
-              <i class="bi bi-truck me-2"></i>
-              Vehicle
-            </a>
-            <a href="#" class="tab-btn d-flex align-items-center" data-target="booking">
-              <i class="bi bi-calendar-check me-2"></i>
-              Booking
-            </a>
-          </div>
-        </div>
-
-        <!-- Tab Content for Vehicle and Booking-->
-        <div class="tab-content">
-          <!-- Vehicle Tab -->
-          <div class="tab-pane" data-name="vehicle">
-            <!-- Row 2: Vehicle List Header -->
-            <div class="d-flex flex-wrap gap-3 align-items-center px-4 mb-4">
+            <!-- Search Bar + Filter + Add button -->
+            <div class="d-flex flex-wrap gap-3 align-items-center">
               <!-- Search Bar -->
               <div class="flex-grow-1">
                 <div class="input-group">
-                  <input
-                    type="text"
-                    id="vehicleSearch" 
-                    class="form-control"
-                    placeholder="Search vehicle/plate number..."
-                  >
+                  <input type="text" id="vehicleSearch" class="form-control"
+                    placeholder="Search vehicle/plate number...">
                   <button class="btn btn-secondary" id="refreshVehicleBtn" type="button">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                   </button>
@@ -162,7 +159,7 @@
               </div>
 
               <!-- Filter Dropdown -->
-              <div class="me-2">
+              <div>
                 <select id="vehicleStatus" class="form-select shadow-sm rounded" style="min-width: 160px;">
                   <option selected value="">All Status</option>
                   <option value="Available">Available</option>
@@ -171,429 +168,367 @@
                 </select>
               </div>
 
+              <!-- Add Vehicle Button -->
+              <button type="button" class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                data-bs-target="#addVehicleModal">
+                <i class="bi bi-plus-circle me-2"></i>
+                Add Vehicle
+              </button>
+            </div>
+          </div>
+          <!-- Row 3: Vehicle Table -->
+          <div class="mt-4 px-4" style="padding-bottom: 35px;">
+            <div class="content-table mt-4">
+              <!-- Table Header -->
+              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                <div class="col-3">Vehicle Name</div>
+                <div class="col-3">Plate No.</div>
+                <div class="col-3">Status</div>
+                <div class="col-3 text-center">Action</div>
+              </div>
+
+              <div id="loading" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+              <!-- Table Body (Empty, JS will populate it) -->
+              <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
+
+              <!-- Pagination (Tailwind-like style requested) -->
+              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
+                  <!-- JS will render Previous, page numbers, Next here -->
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Tab -->
+        <div class="tab-pane" data-name="booking">
+          <div class="px-4 mb-4">
+            <!-- Title -->
+            <h5 class="fw-semibold mb-3">List of Vehicle Bookings :</h5>
+
+            <!-- Search Bar + Filter + Add Button -->
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+              <!-- Search Bar -->
+              <div class="flex-grow-1">
+                <div class="input-group">
+                  <input type="text" id="vehicleBookingSearch" class="form-control"
+                    placeholder="Search vehicle/plate number...">
+                  <button class="btn btn-secondary" id="refreshVehicleBookingBtn" type="button">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                  </button>
+                </div>
+              </div>
+
+              <!-- Filter Dropdown -->
+              <div>
+                <select id='vehicleBookingSortBy' class="form-select">
+                  <option selected value="">Sort by...</option>
+                  <!-- Date sorting -->
+                  <option value="booking-asc">Booking Date ↑ (asc)</option>
+                  <option value="booking-desc">Booking Date ↓ (desc)</option>
+                  <option value="return-asc">Return Date ↑ (asc)</option>
+                  <option value="return-desc">Return Date ↓ (desc)</option>
+                </select>
+              </div>
 
               <!-- Add Vehicle Button -->
-              <div>
-                <button
-                  type="button" 
-                  class="btn btn-primary d-flex align-items-center"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addVehicleModal"
-                >
-                  <i class="bi bi-plus-circle me-2"></i>
-                  Add Vehicle
-                </button>
-              </div>
-            </div>
-
-            <!-- Row 3: Vehicle Table -->
-            <div class="mt-4 px-4" style="padding-bottom: 35px;">
-              <div class="content-table mt-4">
-                <!-- Table Header -->
-                <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                  <div class="col-3">Vehicle Name</div>
-                  <div class="col-3">Plate No.</div>
-                  <div class="col-3">Status</div>
-                  <div class="col-3 text-center">Action</div>
-                </div>
-
-                <div id="loading" class="text-center my-3" style="display: none;">
-                  <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-                 <!-- Table Body (Empty, JS will populate it) -->
-                <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
-                  
-                  <!-- Pagination (Tailwind-like style requested) -->
-                  <nav aria-label="Page navigation" style="padding-bottom: 35px;">
-                    <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
-                      <!-- JS will render Previous, page numbers, Next here -->
-                    </ul>
-                  </nav>
-              </div>              
+              <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
+                <i class="bi bi-plus-circle me-2"></i> Add Booking
+              </button>
             </div>
           </div>
 
-          <!-- Booking Tab -->
-          <div class="tab-pane" data-name="booking">
-            <div class="px-4 mb-4">
-              <!-- Title -->
-              <h5 class="fw-semibold mb-3">List of Vehicles :</h5>
+          <div class="mt-4 px-4">
+            <!-- Vehicle Table-like Div -->
+            <div class="content-table mt-4">
 
-              <!-- Search Bar + Filter + Add Button -->
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <!-- Search Bar -->
-                <div class="flex-grow-1">
-                  <input type="text" class="form-control" placeholder="Search vehicle/plate number/assigned person...">
-                </div>
-
-                <!-- Filter Dropdown -->
-                <div>
-                  <select class="form-select">
-                    <option selected>Sort by...</option>
-                    <!-- Date sorting -->
-                    <option value="booking-date-asc">Booking Date ↑ (asc)</option>
-                    <option value="booking-date-desc">Booking Date ↓ (desc)</option>
-                    <option value="return-date-asc">Return Date ↑ (asc)</option>
-                    <option value="return-date-desc">Return Date ↓ (desc)</option>
-                  </select>
-                </div>
-
-                <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
-                  <i class="bi bi-plus-circle me-2"></i> Add Booking
-                </button>
+              <!-- Table Header -->
+              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                <div class="col">Vehicle Name</div>
+                <div class="col">Assigned Person</div>
+                <div class="col">Booking Date</div>
+                <div class="col">Return Date</div>
+                <div class="col text-center">Action</div>
               </div>
+
+              <div id="loadingBooking" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+              <!-- Table Body -->
+              <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
+
+              <!-- Pagination -->
+              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                <ul id="vehicleBookingPagination" class="pagination justify-content-center mb-0">
+                  <!-- JS will render Previous, page numbers, Next here -->
+                </ul>
+              </nav>
             </div>
-
-            <div class="mt-4 px-4">
-              <!-- Vehicle Table-like Div -->
-              <div class="content-table mt-4">
-
-                <!-- Table Header -->
-                <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                  <div class="col">Vehicle Name</div>
-                  <div class="col">Assigned Person</div>
-                  <div class="col">Booking Date</div>
-                  <div class="col">Return Date</div>
-                  <div class="col text-center">Action</div>
-                </div>
-
-                <div id="loadingBooking" class="text-center my-3" style="display: none;">
-                  <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-                <!-- Table Body -->
-                <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-      </main>
-      <!-- End of Main Content -->
-    </div>
-
-    <!-- Add Vehicle Modal -->
-    <div
-      class="modal fade"
-      id="addVehicleModal"
-      tabindex="-1"
-      aria-labelledby="addVehicleModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <!-- Header -->
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title" id="addVehicleModalLabel">Add New Vehicle</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-
-          <!-- Body -->
-          <div class="modal-body">
-            <form>
-              <!-- Vehicle Name -->
-              <div class="mb-3">
-                <label for="vehicleName" class="form-label">Vehicle Name</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="vehicleName"
-                  placeholder="Enter vehicle name"
-                >
-              </div>
-
-              <!-- Plate Number -->
-              <div class="mb-3">
-                <label for="plateNo" class="form-label">Plate Number</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="plateNo"
-                  placeholder="Enter plate number"
-                >
-              </div>
-
-              <!-- Status -->
-              <div class="mb-3">
-                <label for="addVehicleStatus" class="form-label">Status</label>
-                <select class="form-select" id="addVehicleStatus">
-                  <option selected>Choose status</option>
-                  <option value="Available">Available</option>
-                  <option value="In Use">In Use</option>
-                  <option value="Under Maintenance">Under Maintenance</option>
-                </select>
-              </div>
-            </form>
-          </div>
-
-          <!-- Footer -->
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button type="button" class="btn btn-primary" id="addVehicleBtn">Add Vehicle</button>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Update Vehicle Modal -->
-    <div class="modal fade" id="updateVehicleModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <!-- Header -->
-          <div class="modal-header bg-warning text-white">
-            <h5 class="modal-title">Update Vehicle</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
+    </main>
+    <!-- End of Main Content -->
+  </div>
 
-          <!-- Body -->
-          <div class="modal-body">
-            <form>
-              <div class="mb-3">
-                <label for="updateVehicleName" class="form-label">Vehicle Name</label>
-                <input type="text" class="form-control" id="updateVehicleName">
-              </div>
-
-              <div class="mb-3">
-                <label for="updatePlateNo" class="form-label">Plate Number</label>
-                <input type="text" class="form-control" id="updatePlateNo">
-              </div>
-
-              <div class="mb-3">
-                <label for="updateVehicleStatus" class="form-label">Status</label>
-                <select class="form-select" id="updateVehicleStatus">
-                  <option value="Available">Available</option>
-                  <option value="In Use">In Use</option>
-                  <option value="Under Maintenance">Under Maintenance</option>
-                </select>
-              </div>
-            </form>
-          </div>
-
-          <!-- Footer -->
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" id="updateVehicleBtn" class="btn btn-warning">Update Vehicle</button>
-          </div>
+  <!-- Add Vehicle Modal -->
+  <div class="modal fade" id="addVehicleModal" tabindex="-1" aria-labelledby="addVehicleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- Header -->
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="addVehicleModalLabel">Add New Vehicle</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-      </div>
-    </div>
 
-    <!-- Add Vehicle Booking Modal -->
-    <div class="modal fade" id="addVehicleBookingModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-
-        <div class="modal-content">
-
-          <!-- Modal Header -->
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">Add Vehicle Booking</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-
-          <!-- Modal Form -->
-          <form id="addVehicleBookingForm">
-            <div class="modal-body">
-
-              <!-- Vehicle -->
-              <div class="mb-3 position-relative">
-                <label class="form-label">Vehicle</label>
-                <input 
-                  type="text"
-                  class="form-control"
-                  id="bookingVehicleInput"
-                  placeholder="Enter or select a vehicle"
-                  required
-                  autocomplete="off"
-                >
-
-                <!-- DROPDOWN -->
-                <ul 
-                  class="dropdown-menu w-100" 
-                  id="vehicleDropdown"
-                  style="max-height: 200px; overflow-y: auto;"
-                ></ul>
-              </div>
-
-              <!-- Used By -->
-              <div class="mb-3 position-relative">
-                <label for="usedBy" class="form-label fw-semibold">Used By</label>
-                <input 
-                  type="text"
-                  class="form-control"
-                  id="usedBy"
-                  placeholder="Enter or search user/staff"
-                  required
-                  autocomplete="off"
-                >
-
-                <!-- DROPDOWN -->
-                <ul 
-                  class="dropdown-menu w-100" 
-                  id="usedByDropdown"
-                  style="max-height: 200px; overflow-y: auto;"
-                ></ul>
-              </div>
-
-
-              <!-- Booking Date -->
-              <div class="mb-3">
-                <label class="form-label">Booking Date</label>
-                <input type="datetime-local" id="bookingDateInput" class="form-control" required>
-              </div>
-
-              <!-- Return Date -->
-              <div class="mb-3">
-                <label class="form-label">Return Date</label>
-                <input type="datetime-local" id="returnDateInput" class="form-control" required>
-              </div>
-
+        <!-- Body -->
+        <div class="modal-body">
+          <form>
+            <!-- Vehicle Name -->
+            <div class="mb-3">
+              <label for="vehicleName" class="form-label">Vehicle Name</label>
+              <input type="text" class="form-control" id="vehicleName" placeholder="Enter vehicle name">
             </div>
 
-            <!-- Modal Footer -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-primary">Create Booking</button>
+            <!-- Plate Number -->
+            <div class="mb-3">
+              <label for="plateNo" class="form-label">Plate Number</label>
+              <input type="text" class="form-control" id="plateNo" placeholder="Enter plate number">
             </div>
 
+            <!-- Status -->
+            <div class="mb-3">
+              <label for="addVehicleStatus" class="form-label">Status</label>
+              <select class="form-select" id="addVehicleStatus">
+                <option selected>Choose status</option>
+                <option value="Available">Available</option>
+                <option value="In Use">In Use</option>
+                <option value="Under Maintenance">Under Maintenance</option>
+              </select>
+            </div>
           </form>
         </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" id="addVehicleBtn">Add Vehicle</button>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- Update Vehicle Booking Modal -->
-    <div class="modal fade" id="updateVehicleBookingModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <form id="updateVehicleBookingForm" class="modal-content">
+  <!-- Update Vehicle Modal -->
+  <div class="modal fade" id="updateVehicleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- Header -->
+        <div class="modal-header bg-warning text-white">
+          <h5 class="modal-title">Update Vehicle</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
 
-          <!-- Header -->
-          <div class="modal-header bg-warning text-dark">
-            <h5 class="modal-title">Edit Vehicle Booking</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
+        <!-- Body -->
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <label for="updateVehicleName" class="form-label">Vehicle Name</label>
+              <input type="text" class="form-control" id="updateVehicleName">
+            </div>
 
-          <!-- Body -->
+            <div class="mb-3">
+              <label for="updatePlateNo" class="form-label">Plate Number</label>
+              <input type="text" class="form-control" id="updatePlateNo">
+            </div>
+
+            <div class="mb-3">
+              <label for="updateVehicleStatus" class="form-label">Status</label>
+              <select class="form-select" id="updateVehicleStatus">
+                <option value="Available">Available</option>
+                <option value="In Use">In Use</option>
+                <option value="Under Maintenance">Under Maintenance</option>
+              </select>
+            </div>
+          </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" id="updateVehicleBtn" class="btn btn-warning">Update Vehicle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Vehicle Booking Modal -->
+  <div class="modal fade" id="addVehicleBookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">Add Vehicle Booking</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- Modal Form -->
+        <form id="addVehicleBookingForm">
           <div class="modal-body">
 
-            <!-- Vehicle Input -->
+            <!-- Vehicle -->
             <div class="mb-3 position-relative">
               <label class="form-label">Vehicle</label>
-              <input 
-                list="updateVehiclesList" 
-                class="form-control"
-                id="updateBookingVehicleInput"
-                placeholder="Enter or select a vehicle"
-                required
-              >
-              <datalist id="updateVehiclesList"></datalist>
+              <input type="text" class="form-control" id="bookingVehicleInput" placeholder="Enter or select a vehicle"
+                required autocomplete="off">
 
-              <!-- Dropdown container (same as ADD modal structure) -->
-              <ul 
-                class="dropdown-menu w-100"
-                id="updateVehicleDropdown"
-                style="max-height: 200px; overflow-y: auto;"
-              ></ul>
+              <!-- DROPDOWN -->
+              <ul class="dropdown-menu w-100" id="vehicleDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
             </div>
 
             <!-- Used By -->
             <div class="mb-3 position-relative">
-              <label class="form-label">Used By</label>
-              <input 
-                list="updateUsersList"
-                class="form-control"
-                id="updateUsedBy"
-                placeholder="Search staff or user"
-                required
-              >
-              <datalist id="updateUsersList"></datalist>
+              <label for="usedBy" class="form-label fw-semibold">Used By</label>
+              <input type="text" class="form-control" id="usedBy" placeholder="Enter or search user/staff" required
+                autocomplete="off">
 
-              <!-- Dropdown container -->
-              <ul 
-                class="dropdown-menu w-100"
-                id="updateUsedByDropdown"
-                style="max-height: 200px; overflow-y: auto;"
-              ></ul>
+              <!-- DROPDOWN -->
+              <ul class="dropdown-menu w-100" id="usedByDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
             </div>
+
 
             <!-- Booking Date -->
             <div class="mb-3">
               <label class="form-label">Booking Date</label>
-              <input 
-                type="datetime-local" 
-                class="form-control" 
-                id="updateBookingDateInput" 
-                required
-              >
+              <input type="datetime-local" id="bookingDateInput" class="form-control" required>
             </div>
 
             <!-- Return Date -->
             <div class="mb-3">
               <label class="form-label">Return Date</label>
-              <input 
-                type="datetime-local" 
-                class="form-control" 
-                id="updateReturnDateInput"
-              >
+              <input type="datetime-local" id="returnDateInput" class="form-control" required>
             </div>
 
           </div>
 
-          <!-- Footer -->
+          <!-- Modal Footer -->
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-warning">Update Booking</button>
+            <button id="createBookingBtn" type="submit" class="btn btn-primary">Create Booking</button>
           </div>
 
         </form>
       </div>
     </div>
+  </div>
 
+  <!-- Update Vehicle Booking Modal -->
+  <div class="modal fade" id="updateVehicleBookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <form id="updateVehicleBookingForm" class="modal-content">
 
+        <!-- Header -->
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title">Edit Vehicle Booking</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/megacessweb/assets/js/main.js"></script>
-    <script src="/megacessweb/assets/js/vehicles.js"></script>
-    <script src="/megacessweb/assets/js/vehicle_bookings.js"></script>
-    <script>
-      $(document).ready(function () {
-        // Show the first tab content by default
-        $(".tab-pane").first().show();
+        <!-- Body -->
+        <div class="modal-body">
 
-        // Tab Button Click Handler
-        $(".tab-btn").click(function () {
-          const target = $(this).data("target"); // Get target tab name
+          <!-- Vehicle Input -->
+          <div class="mb-3 position-relative">
+            <label class="form-label">Vehicle</label>
+            <input list="updateVehiclesList" class="form-control" id="updateBookingVehicleInput"
+              placeholder="Enter or select a vehicle" required>
+            <datalist id="updateVehiclesList"></datalist>
 
-          // Hide all panes
-          $(".tab-pane").hide();
+            <!-- Dropdown container (same as ADD modal structure) -->
+            <ul class="dropdown-menu w-100" id="updateVehicleDropdown" style="max-height: 200px; overflow-y: auto;">
+            </ul>
+          </div>
 
-          // Show the selected one
-          $(`.tab-pane[data-name="${target}"]`).show();
+          <!-- Used By -->
+          <div class="mb-3 position-relative">
+            <label class="form-label">Used By</label>
+            <input list="updateUsersList" class="form-control" id="updateUsedBy" placeholder="Search staff or user"
+              required>
+            <datalist id="updateUsersList"></datalist>
 
-          // Update active button
-          $(".tab-btn").removeClass("active");
-          $(this).addClass("active");
-        });
-      });
-    </script>
-    <!-- Loading overlay spinner at the very end of body -->
-    <div id="loadingOverlay" class="loading-overlay d-none">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+            <!-- Dropdown container -->
+            <ul class="dropdown-menu w-100" id="updateUsedByDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
+          </div>
+
+          <!-- Booking Date -->
+          <div class="mb-3">
+            <label class="form-label">Booking Date</label>
+            <input type="datetime-local" class="form-control" id="updateBookingDateInput" required>
+          </div>
+
+          <!-- Return Date -->
+          <div class="mb-3">
+            <label class="form-label">Return Date</label>
+            <input type="datetime-local" class="form-control" id="updateReturnDateInput">
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button id="updateBookingBtn" type="submit" class="btn btn-warning">Update Booking</button>
+        </div>
+
+      </form>
     </div>
-  </body>
+  </div>
+
+
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="/megacessweb/assets/js/utils.js"></script>
+  <script src="/megacessweb/assets/js/vehicles.js"></script>
+  <script src="/megacessweb/assets/js/vehicle_bookings.js"></script>
+  <script>
+    $(document).ready(function () {
+      // Show the first tab content by default
+      $(".tab-pane").first().show();
+
+      // Tab Button Click Handler
+      $(".tab-btn").click(function () {
+        const target = $(this).data("target"); // Get target tab name
+
+        // Hide all panes
+        $(".tab-pane").hide();
+
+        // Show the selected one
+        $(`.tab-pane[data-name="${target}"]`).show();
+
+        // Update active button
+        $(".tab-btn").removeClass("active");
+        $(this).addClass("active");
+      });
+    });
+  </script>
+  <!-- Loading overlay spinner at the very end of body -->
+  <div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</body>
+
 </html>
