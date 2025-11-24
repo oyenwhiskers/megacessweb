@@ -4,7 +4,7 @@ let allUsersAndStaff = [];
 let bookingPaginationState = {
     currentPage: 1,
     lastPage: 1,
-    perPage: 15,
+    perPage: 10,
     total: 0,
     search: '',
     bookingFilter: ''
@@ -73,7 +73,7 @@ async function fetchUserAndStaff() {
 
 // ==================== MAIN TABLE LOGIC ====================
 
-async function getAllVehicleBookings({ search = '', bookingFilter = '', page = 1 } = {}) {
+async function getAllVehicleBookings({ search = '', bookingFilter = '', page = 1, per_page = 10 } = {}) {
     const token = getToken();
     if (!token) {
         showErrorNoToken("Please login first.");
@@ -84,6 +84,7 @@ async function getAllVehicleBookings({ search = '', bookingFilter = '', page = 1
     if (search) apiUrl.searchParams.append('search', search);
     if (bookingFilter) apiUrl.searchParams.append('bookingFilter', bookingFilter);
     apiUrl.searchParams.append('page', page);
+    apiUrl.searchParams.append('per_page', per_page);
 
     const loading = document.getElementById('loadingBooking');
     const tableBody = document.getElementById('vehicleBookingTableBody');
@@ -99,11 +100,45 @@ async function getAllVehicleBookings({ search = '', bookingFilter = '', page = 1
         if (loading) loading.style.display = 'none';
 
         if (response.ok && result.success) {
-            if (result.data.length > 0) {
-                populateVehicleBookingTable(result.data);
-                if (result.meta) updateBookingPaginationControls(result.meta);
+            let data = [];
+            let meta = {};
+
+            // Option A: Root Meta
+            if (result.meta) {
+                data = result.data;
+                meta = result.meta;
+            }
+            // Option B: Nested Meta
+            else if (result.data && Array.isArray(result.data.data) && result.data.current_page) {
+                data = result.data.data;
+                meta = result.data;
+            }
+            // Fallback: Client-side pagination
+            else if (Array.isArray(result.data)) {
+                const allData = result.data;
+                const total = allData.length;
+                const lastPage = Math.ceil(total / per_page) || 1;
+
+                const start = (page - 1) * per_page;
+                const end = start + per_page;
+                data = allData.slice(start, end);
+
+                meta = {
+                    current_page: parseInt(page),
+                    last_page: lastPage,
+                    total: total,
+                    per_page: per_page
+                };
+            }
+
+            if (data && data.length > 0) {
+                populateVehicleBookingTable(data);
+                updateBookingPaginationControls(meta);
             } else {
                 if (tableBody) tableBody.innerHTML = `<div class="text-center text-muted py-3">No bookings found</div>`;
+                // Clear pagination
+                const container = document.getElementById('vehicleBookingPagination');
+                if (container) container.innerHTML = '';
             }
         } else {
             showError(result.message || 'Failed to load bookings.');
