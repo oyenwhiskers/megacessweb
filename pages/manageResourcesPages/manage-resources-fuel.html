@@ -378,12 +378,31 @@
           <form id="addUsageForm">
             <!-- Usage Quantity -->
             <div class="mb-3">
+              <label for="usageQuantity" class="form-label fw-semibold">Usage Quantity (Liters)</label>
+              <input type="number" min="0" class="form-control" id="usageQuantity" placeholder="Enter quantity"
+                required>
+            </div>
 
-              <!-- Description (Optional) -->
-              <div class="mb-3">
-                <label for="usageDescription" class="form-label fw-semibold">Description (Optional)</label>
-                <input type="text" class="form-control" id="usageDescription" placeholder="Enter description">
-              </div>
+            <!-- Used By -->
+            <div class="mb-3 position-relative">
+              <label for="usedBy" class="form-label fw-semibold">Used By</label>
+              <input type="text" class="form-control" id="usedBy" placeholder="Search user..." autocomplete="off"
+                required>
+              <ul id="addUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
+                style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
+            </div>
+
+            <!-- Usage Date -->
+            <div class="mb-3">
+              <label for="usageDate" class="form-label fw-semibold">Usage Date</label>
+              <input type="date" class="form-control" id="usageDate" required>
+            </div>
+
+            <!-- Description (Optional) -->
+            <div class="mb-3">
+              <label for="usageDescription" class="form-label fw-semibold">Description (Optional)</label>
+              <input type="text" class="form-control" id="usageDescription" placeholder="Enter description">
+            </div>
           </form>
         </div>
 
@@ -396,10 +415,6 @@
       </div>
     </div>
   </div>
-
-
-
-
 
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

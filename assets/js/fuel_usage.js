@@ -225,10 +225,10 @@ if (addUsageForm) {
         if (!date) return showError("Please select a date.");
 
         const payload = {
-            quantity: quantity,
+            usage_quantity: quantity,
             user_id: selectedUsageUser.id,
             usage_date: date,
-            description: description
+            usage_description: description
         };
 
         const saveBtn = addUsageForm.querySelector('button[type="submit"]');
@@ -268,10 +268,10 @@ if (editUsageForm) {
         if (!date) return showError("Please select a date.");
 
         const payload = {
-            quantity: quantity,
+            usage_quantity: quantity,
             user_id: editSelectedUsageUser.id,
             usage_date: date,
-            description: description
+            usage_description: description
         };
 
         const saveBtn = document.getElementById('saveEditUsageBtn');
