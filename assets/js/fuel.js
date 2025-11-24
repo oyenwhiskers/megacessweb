@@ -75,7 +75,6 @@ function populateFuelsTable(fuels) {
 }
 
 // ==================== Create / Add Fuel ====================
-// ==================== Create / Add Fuel ====================
 async function createFuelRecord(payload) {
   try {
     const result = await apiFetch('/fuels', { method: 'POST', body: JSON.stringify(payload) });
@@ -86,7 +85,6 @@ async function createFuelRecord(payload) {
   }
 }
 
-// ==================== Update Fuel ====================
 // ==================== Update Fuel ====================
 async function updateFuelRecord(fuelId, payload) {
   if (!fuelId) { console.error("Fuel ID is required"); return false; }
@@ -129,7 +127,6 @@ async function handleDelete(e) {
 }
 
 // ==================== Fetch Buyers ====================
-// ==================== Fetch Buyers ====================
 async function getAllBuyers() {
   try {
     const result = await apiFetch('/users', { method: 'GET' });
@@ -140,7 +137,6 @@ async function getAllBuyers() {
 }
 
 // ==================== Generic Buyer Dropdown ====================
-// ==================== Initialize Buyer Dropdowns ====================
 let selectedBuyer = null;
 const buyerInput = document.getElementById('assignedPerson');
 const buyerDropdownEl = document.getElementById('buyerDropdown');

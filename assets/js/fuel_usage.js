@@ -7,7 +7,6 @@ let selectedUsageUser = null;     // For Add Modal
 let editSelectedUsageUser = null; // For Edit Modal
 
 // ==================== Fetch Fuel Usages ====================
-// ==================== Fetch Fuel Usages ====================
 async function getAllFuelUsages({ search = '', usageFilter = '', per_page = 15 } = {}) {
     const loading = document.getElementById('usageLoading');
     const tableBody = document.getElementById('fuelUsageTableBody');
@@ -103,7 +102,6 @@ function populateFuelUsageTable(usages) {
 }
 
 // ==================== Create Usage ====================
-// ==================== Create Usage ====================
 async function createFuelUsage(payload) {
     try {
         const result = await apiFetch('/fuel-usages', { method: 'POST', body: JSON.stringify(payload) });
@@ -123,7 +121,6 @@ async function createFuelUsage(payload) {
 }
 
 // ==================== Update Usage ====================
-// ==================== Update Usage ====================
 async function updateFuelUsage(id, payload) {
     try {
         const result = await apiFetch(`/fuel-usages/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
@@ -142,7 +139,6 @@ async function updateFuelUsage(id, payload) {
     }
 }
 
-// ==================== Delete Usage ====================
 // ==================== Delete Usage ====================
 async function deleteFuelUsage(id) {
     showConfirm('Are you sure you want to delete this usage record?', async () => {
@@ -336,7 +332,6 @@ if (refreshUsageBtn) {
     });
 }
 
-// ==================== User Dropdown Logic ====================
 // ==================== User Dropdown Logic ====================
 async function fetchAllUsers() {
     try {
