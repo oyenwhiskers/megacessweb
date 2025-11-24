@@ -128,6 +128,13 @@
               </div>
               <!-- Table Body -->
               <div id="fuelsTableBody" style="padding-bottom: 70px;"></div>
+
+              <!-- Pagination (Tailwind-like style requested) -->
+              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                <ul id="fuelsPagination" class="pagination justify-content-center mb-0">
+                  <!-- JS will render Previous, page numbers, Next here -->
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
@@ -140,10 +147,16 @@
 
             <!-- Search Bar + Filter + Add Button -->
             <div class="d-flex flex-wrap gap-3 align-items-center">
-              <!-- Search Bar -->
+              <!-- Search Bar + Refresh button -->
               <div class="flex-grow-1">
-                <input type="text" id="usageSearch" class="form-control" placeholder="Search fuel usage/used by...">
-              </div>
+                <div class="input-group">
+                  <input type="text" id="usageSearch" class="form-control"
+                    placeholder="Search fuel usage/used by...">
+                  <button class="btn btn-secondary" id="refreshUsageBtn" type="button">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                  </button>
+                </div>
+              </div>          
 
               <!-- Filter Dropdown -->
               <div>
@@ -190,6 +203,12 @@
               <!-- Table Body -->
               <div id="fuelUsageTableBody" style="padding-bottom: 70px;"></div>
 
+              <!-- Pagination (Tailwind-like style requested) -->
+              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                <ul id="fuelUsagePagination" class="pagination justify-content-center mb-0">
+                  <!-- JS will render Previous, page numbers, Next here -->
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
