@@ -4,6 +4,8 @@
     // Shared variables
   let currentRoleFilter = 'all';
   let currentSearch = '';
+  let currentPage = 1;
+  const DEFAULT_PER_PAGE = 10;
 
   // Highlight search terms in text
   function highlightSearchTerm(text, searchTerm) {
@@ -57,9 +59,10 @@
   }
 
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
-  async function fetchStaffList(search = '', role = 'all') {
+  async function fetchStaffList(search = '', role = 'all', page = 1) {
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
+    currentPage = page;
     // retrieve token from localStorage / session
     const token = localStorage.getItem('auth_token') || 
                  sessionStorage.getItem('auth_token') || 
@@ -75,7 +78,8 @@
     const params = {
       role: (role && role !== 'all') ? role : '',
       search: search || "",
-      per_page: "20",
+      per_page: DEFAULT_PER_PAGE.toString(),
+      page: page.toString(),
     };
     Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
 
@@ -108,6 +112,39 @@
     }
   }
 
+  function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentRole) {
+    if (totalPages <= 1) return '';
+    let paginationHTML = `
+      <nav aria-label="Staff list pagination" class="mt-4">
+        <ul class="pagination justify-content-center" style="background:#effaf3; border-radius:8px; padding:8px 16px;">
+    `;
+    // Previous button
+    paginationHTML += `
+      <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
+        <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+      </li>
+    `;
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      paginationHTML += `
+        <li class="page-item${i === currentPage ? ' active' : ''}">
+          <button class="page-link" style="${i === currentPage ? 'background:#007bff;color:#fff;border:none;' : 'background:transparent; border:none; color:#007bff;'}" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${i})">${i}</button>
+        </li>
+      `;
+    }
+    // Next button
+    paginationHTML += `
+      <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
+        <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+      </li>
+    `;
+    paginationHTML += `
+        </ul>
+      </nav>
+    `;
+    return paginationHTML;
+  }
+
   function renderStaff(payload, roleFilter) {
     // remove any previous status nodes
     const prevStatus = staffView.querySelector('.js-status');
@@ -137,6 +174,11 @@
         return name.toLowerCase().includes(searchTerm) || nickname.toLowerCase().includes(searchTerm);
       });
     }
+    
+    // Pagination meta
+    const meta = payload.meta || {};
+    const totalItems = meta.total || users.length;
+    const totalPages = meta.last_page || Math.ceil(totalItems / DEFAULT_PER_PAGE);
     
     if (!users || users.length === 0) {
       const emptyMessage = currentSearch ? 
@@ -229,6 +271,8 @@
         `;
         list.appendChild(item);
       });
+      // Add pagination below the list
+      list.innerHTML += createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentRoleFilter);
     }
 
     // keep heading and replace remaining contents
@@ -881,4 +925,14 @@
       if (!staffView.classList.contains('d-none')) fetchStaffList('', currentRoleFilter);
     });
   }
+
+  // Auto-load staff when the script is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.body.dataset.page === 'manage-account') {
+      const staffTabActive = document.getElementById('staffView') && !document.getElementById('staffView').classList.contains('d-none');
+      if (staffTabActive) {
+        fetchStaffList('', 'all', 1);
+      }
+    }
+  });
 })();

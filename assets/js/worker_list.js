@@ -140,77 +140,43 @@
     
     // Create pagination HTML
     function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentGender) {
-        if (totalPages <= 1) return '';
-        
+        // Always show pagination bar, even if only 1 page
         let paginationHTML = `
             <nav aria-label="Worker list pagination" class="mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <small class="text-muted">
-                        Showing page ${currentPage} of ${totalPages} (${totalItems} total workers)
-                    </small>
-                </div>
-                <ul class="pagination justify-content-center">
+                <ul class="pagination justify-content-center" style="background:#effaf3; border-radius:8px; padding:8px 16px;">
         `;
-        
         // Previous button
         paginationHTML += `
-            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${currentPage - 1}, '${currentGender}')" 
-                        ${currentPage === 1 ? 'disabled' : ''}>
-                    <i class="bi bi-chevron-left"></i>
-                </button>
+            <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
+                <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchWorkersList('${currentSearch}', ${currentPage - 1}, '${currentGender}')" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
             </li>
         `;
-        
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-        
-        if (startPage > 1) {
+        // Only show one page button if totalPages === 1
+        if (totalPages === 1) {
             paginationHTML += `
-                <li class="page-item">
-                    <button class="page-link" onclick="fetchWorkersList('${currentSearch}', 1, '${currentGender}')">1</button>
+                <li class="page-item active">
+                    <button class="page-link" style="background:#007bff;color:#fff;border:none;">1</button>
                 </li>
             `;
-            if (startPage > 2) {
-                paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        } else {
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <li class="page-item${i === currentPage ? ' active' : ''}">
+                        <button class="page-link" style="${i === currentPage ? 'background:#007bff;color:#fff;border:none;' : 'background:transparent; border:none; color:#007bff;'}" onclick="fetchWorkersList('${currentSearch}', ${i}, '${currentGender}')">${i}</button>
+                    </li>
+                `;
             }
         }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            paginationHTML += `
-                <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${i}, '${currentGender}')">${i}</button>
-                </li>
-            `;
-        }
-        
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-            }
-            paginationHTML += `
-                <li class="page-item">
-                    <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${totalPages}, '${currentGender}')">${totalPages}</button>
-                </li>
-            `;
-        }
-        
         // Next button
         paginationHTML += `
-            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${currentPage + 1}, '${currentGender}')" 
-                        ${currentPage === totalPages ? 'disabled' : ''}>
-                    <i class="bi bi-chevron-right"></i>
-                </button>
+            <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
+                <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchWorkersList('${currentSearch}', ${currentPage + 1}, '${currentGender}')" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
             </li>
         `;
-        
         paginationHTML += `
                 </ul>
             </nav>
         `;
-        
         return paginationHTML;
     }
     
