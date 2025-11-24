@@ -128,6 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const resourceStartDate = document.getElementById('resourceStartDate');
     const resourceEndDate = document.getElementById('resourceEndDate');
     const resourceLocation = document.getElementById('resourceLocation');
+    const fertilizerTypeFilter = document.getElementById('fertilizerTypeFilter');
+    const fertilizerTypeFilterContainer = document.getElementById('fertilizerTypeFilterContainer');
 
     // --- Populate Block (resourceLocation) dropdown dynamically ---
     async function populateResourceLocationDropdown() {
@@ -162,6 +164,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Call on DOMContentLoaded
     populateResourceLocationDropdown();
 
+    // --- Fertilizer Type Filter ---
+    function populateFertilizerTypeOptions() {
+        if (!fertilizerTypeFilter) return;
+        const fertilizerTypes = [
+            { value: '', label: 'All' },
+            { value: 'NPK', label: 'NPK' },
+            { value: 'MOP', label: 'MOP' },
+            { value: 'BORATE', label: 'BORATE' },
+            { value: 'OTHER', label: 'OTHER' }
+        ];
+        fertilizerTypeFilter.innerHTML = '';
+        fertilizerTypes.forEach(type => {
+            const opt = document.createElement('option');
+            opt.value = type.value;
+            opt.textContent = type.label;
+            fertilizerTypeFilter.appendChild(opt);
+        });
+        fertilizerTypeFilter.value = '';
+    }
+    populateFertilizerTypeOptions();
+    // Show/hide fertilizer type filter based on active button
     function setActiveResourceButton(selected) {
         if (btnManuring && btnSpraying) {
             if (selected === 'manuring') {
@@ -191,7 +214,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         // Show fertilizer type filter only for manuring
-        const fertilizerTypeFilterContainer = document.getElementById('fertilizerTypeFilterContainer');
         if (fertilizerTypeFilterContainer) {
             if (selected === 'manuring') {
                 fertilizerTypeFilterContainer.style.display = '';
@@ -235,6 +257,27 @@ document.addEventListener('DOMContentLoaded', function() {
     if (resourceStartDate) resourceStartDate.addEventListener('change', function() { fetchResourceUsage(getActiveResourceType()); });
     if (resourceEndDate) resourceEndDate.addEventListener('change', function() { fetchResourceUsage(getActiveResourceType()); });
     if (resourceLocation) resourceLocation.addEventListener('change', function() { fetchResourceUsage(getActiveResourceType()); });
+    if (fertilizerTypeFilter) {
+        fertilizerTypeFilter.addEventListener('change', function() {
+            if (btnManuring && btnManuring.classList.contains('active')) {
+                // Client-side filter by fertilizer type
+                const selectedType = fertilizerTypeFilter.value;
+                if (window.resourceUsageData) {
+                    let filteredRecords = window.resourceUsageData.records;
+                    if (selectedType !== '') {
+                        filteredRecords = filteredRecords.filter(record => (record.fertilizer_type || '').toLowerCase() === selectedType.toLowerCase());
+                    }
+                    renderResourceItems(
+                        filteredRecords,
+                        window.resourceUsageData.resourceType,
+                        window.resourceUsageData.unit
+                    );
+                } else {
+                    fetchResourceUsage('manuring');
+                }
+            }
+        });
+    }
 
     function getActiveResourceType() {
         if (btnSpraying && btnSpraying.classList.contains('active')) return 'spraying';
@@ -903,6 +946,7 @@ async function fetchResourceUsage(type = 'manuring') {
         const startDate = document.getElementById('resourceStartDate')?.value || `${new Date().getFullYear()}-01-01`;
         const endDate = document.getElementById('resourceEndDate')?.value || `${new Date().getFullYear()}-12-31`;
         const locationId = document.getElementById('resourceLocation')?.value || 1;
+        const fertilizerType = (type === 'manuring' && fertilizerTypeFilter) ? fertilizerTypeFilter.value : undefined;
         // If sanitationType is 'slashing', show message and skip API call
         if (type === 'spraying' && sanitationType === 'slashing') {
             const resourceList = document.querySelector('.resources-list');
@@ -926,6 +970,9 @@ async function fetchResourceUsage(type = 'manuring') {
             if (sanitationType && sanitationType !== '' && sanitationType !== 'Select type') {
                 url += `&sanitation_type=${encodeURIComponent(sanitationType)}`;
             }
+        }
+        if (type === 'manuring' && fertilizerType) {
+            url += `&fertilizer_type=${fertilizerType}`;
         }
         const response = await fetch(url, {
             method: 'GET',
