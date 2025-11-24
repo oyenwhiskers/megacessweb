@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                      style="width: 60px; height: 60px; object-fit: cover;">`;
 
             return `
-                <div class="card mb-3">
+                <div class="card mb-3 worker-card" data-worker-id="${worker.id}">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-3">
                             ${profileImage}
@@ -274,11 +274,62 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <h5 class="mb-0 fw-bold">${worker.staff_fullname}</h5>
                                 <p class="mb-0 text-muted small">${worker.staff_phone || 'No phone number'}</p>
                             </div>
+                            <button class="btn btn-outline-danger ms-auto remove-worker-btn" type="button">Remove</button>
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
+
+        // Add event listeners for Remove buttons
+        setTimeout(() => {
+            document.querySelectorAll('.remove-worker-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const workerCard = e.target.closest('.worker-card');
+                    const staffId = workerCard.getAttribute('data-worker-id');
+                    if (!staffId || !selectedMandor) return;
+                    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+                    if (!token) {
+                        alert('Please log in to remove workers.');
+                        return;
+                    }
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Removing...';
+                    fetch(`https://mwms.megacess.com/api/v1/staff/${staffId}/unclaim`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('authToken');
+                            window.location.href = '/megacessweb/pages/log-in.html';
+                            return null;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Remove';
+                        if (data && data.success) {
+                            fetchWorkersByMandor(selectedMandor.id);
+                            alert('Staff unassigned successfully');
+                        } else {
+                            alert(data && data.message ? data.message : 'Failed to remove worker.');
+                        }
+                    })
+                    .catch(error => {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Remove';
+                        alert('Failed to remove worker. Please try again.');
+                    });
+                });
+            });
+        }, 0);
     }
 
     // Display unassigned workers in modal
