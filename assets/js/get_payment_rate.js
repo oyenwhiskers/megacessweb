@@ -82,13 +82,15 @@ function renderTaskList(tasks) {
   tasks.forEach((task, index) => {
     const activeClass = index === 0 ? 'active' : '';
     const firstCategory = task.categories?.[0];
-    const badgeText = firstCategory ? `${firstCategory.rate} ${firstCategory.unit}` : '';
+    const categoryCount = task.categories?.length || 0;
 
     const item = `
       <li class="list-group-item d-flex justify-content-between align-items-center ${activeClass}" 
           data-id="${task.id}">
-        <span>${task.task_name}</span>
-        <span class="badge bg-success">${badgeText}</span>
+        <div>
+          <span>${task.task_name}</span>
+        </div>
+        <span class="badge bg-secondary ms-2" style="font-size: 0.75rem;">${categoryCount} ${categoryCount === 1 ? 'category' : 'categories'}</span>
       </li>
     `;
 
@@ -196,8 +198,8 @@ function renderTaskEditor(task) {
 
         <!-- Row 3: Display Order -->
         <div class="row">
-          <div class="col-md-4 mb-2">
-            <label class="form-label" data-bs-toggle="tooltip" data-bs-placement="top" title="Order in which this category appears in the list">
+          <div class="col-md-12 mb-2">
+            <label class="form-label" data-bs-toggle="tooltip" data-bs-placement="top" title="Order in which this category appears in the list (starts with 0,1,2...)">
               Display Order <i class="bi bi-info-circle text-muted ms-1"></i>
             </label>
             <input type="number" class="form-control category-order" value="${c.display_order ?? ''}" disabled>
