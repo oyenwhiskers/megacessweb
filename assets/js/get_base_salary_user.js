@@ -105,15 +105,16 @@ $(document).ready(function () {
         contentType: "application/json",
         data: JSON.stringify({ base_salary: newSalary }),
         success: function (res) {
-          console.log("Base salary updated successfully!");
+          console.log(`Base Salary updated to RM ${res.base_salary}`);
           Swal.fire({
             icon: "success",
-            text: "Base salary updated successfully!",
-            timer: 2500,
+            text: `Base Salary updated to RM ${res.base_salary}!`,
+            timer: 2000,
             timerProgressBar: true,
             showConfirmButton: false
+          }).then(() => {
+            window.location.href = "/megacessweb/pages/manage-payment-rate.html?employee=staff&type=salary";
           });
-          renderUserForm(res); // re-render with updated data
         },
         error: function (xhr) {
           console.error("Failed to update base salary:", xhr.responseText);
