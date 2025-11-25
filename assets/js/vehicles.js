@@ -1,23 +1,57 @@
-// ==================== GET /vehicles ====================
-async function getAllVehicles({ search = '', status = '', page = 1 } = {}) {
-  const token = getToken();
-  if (!token) {
-    showErrorNoToken("Missing authentication token. Please login first.");
-    return;
+// ==================== GLOBAL STATE ====================
+let paginationState = {
+  currentPage: 1,
+  lastPage: 1,
+  perPage: 10,
+  total: 0,
+  search: '',
+  status: ''
+};
+
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+  getAllVehicles();
+  if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
+
+  // Search & Filter Listeners
+  const searchInput = document.getElementById('vehicleSearch');
+  const statusFilter = document.getElementById('vehicleStatusFilter');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce((e) => {
+      paginationState.search = e.target.value;
+      paginationState.currentPage = 1;
+      getAllVehicles(paginationState);
+    }, 300));
   }
 
-  const apiUrl = new URL('https://mwms.megacess.com/api/v1/vehicles');
-  if (search) apiUrl.searchParams.append('search', search);
-  if (status) apiUrl.searchParams.append('status', status);
-  if (page) apiUrl.searchParams.append('page', page);
+  if (statusFilter) {
+    statusFilter.addEventListener('change', (e) => {
+      paginationState.status = e.target.value;
+      paginationState.currentPage = 1;
+      getAllVehicles(paginationState);
+    });
+  }
+});
+
+// ==================== DATA FETCHING ====================
+async function getAllVehicles({ search = '', status = '', page = 1, per_page = 10 } = {}) {
+  const token = getToken();
+  if (!token) return;
 
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('vehicleTableBody');
   if (loading) loading.style.display = 'block';
   if (tableBody) tableBody.innerHTML = '';
 
+  const params = new URLSearchParams();
+  if (search) params.append('search', search);
+  if (status) params.append('status', status);
+  params.append('page', page);
+  params.append('per_page', per_page);
+
   try {
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -25,41 +59,55 @@ async function getAllVehicles({ search = '', status = '', page = 1 } = {}) {
         'Accept': 'application/json'
       }
     });
-
     const result = await response.json();
 
     if (loading) loading.style.display = 'none';
 
     if (response.ok && result.success) {
-      if (result.data && result.data.length > 0) {
-        populateVehicleTable(result.data);
+      let data = [];
+      let meta = {};
 
-        if (result.meta) {
-          updatePaginationControls(result.meta);
-        } else {
-          if (document.getElementById('currentPage')) document.getElementById('currentPage').textContent = 1;
-          if (document.getElementById('totalPages')) document.getElementById('totalPages').textContent = 1;
-          if (document.getElementById('totalRecords')) document.getElementById('totalRecords').textContent = result.data.length;
-          renderPagination(1, 1);
-        }
+      // Handle different API response structures
+      if (result.meta) {
+        data = result.data;
+        meta = result.meta;
+      } else if (result.data && Array.isArray(result.data.data) && result.data.current_page) {
+        data = result.data.data;
+        meta = result.data;
+      } else if (Array.isArray(result.data)) {
+        // Client-side fallback
+        const allData = result.data;
+        const total = allData.length;
+        const lastPage = Math.ceil(total / per_page) || 1;
+        const start = (page - 1) * per_page;
+        const end = start + per_page;
+        data = allData.slice(start, end);
+        meta = {
+          current_page: parseInt(page),
+          last_page: lastPage,
+          total: total,
+          per_page: per_page
+        };
+      }
 
+      if (data && data.length > 0) {
+        populateVehicleTable(data);
+        updatePaginationControls(meta);
       } else {
         if (tableBody) tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
+        const container = document.getElementById('vehiclePagination');
+        if (container) container.innerHTML = '';
       }
     } else {
-      if (tableBody) tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result?.message || 'Unknown error'}</div>`;
-      showError(result?.message || 'Failed to load vehicles.');
+      showError(result.message || "Failed to fetch vehicles.");
     }
-
   } catch (error) {
+    console.error(error);
     if (loading) loading.style.display = 'none';
-    if (tableBody) tableBody.innerHTML = `<div class="text-center text-danger py-3">Failed to load vehicles</div>`;
-    console.error('Fetch error:', error);
-    showError('Failed to load vehicles. Please try again.');
+    showError("Network error.");
   }
 }
 
-// ==================== Populate Table ====================
 function populateVehicleTable(vehicles) {
   const tableBody = document.getElementById('vehicleTableBody');
   if (!tableBody) return;
@@ -75,22 +123,22 @@ function populateVehicleTable(vehicles) {
     else if (vehicle.status.toLowerCase() === 'under maintenance') statusClass = 'bg-danger';
 
     row.innerHTML = `
-      <div class="col ps-3">${vehicle.vehicle_name}</div>
-      <div class="col">${vehicle.plate_number}</div>
-      <div class="col"><span class="badge ${statusClass}">${vehicle.status}</span></div>
-      <div class="col text-center">
-        <button class="btn btn-sm btn-warning me-2 edit-vehicle-btn" 
-                data-id="${vehicle.id}" 
-                data-name="${vehicle.vehicle_name}" 
-                data-plate="${vehicle.plate_number}" 
-                data-status="${vehicle.status.toLowerCase()}">
-          <i class="bi bi-pencil"></i> Edit
-        </button>
-        <button class="btn btn-sm btn-danger delete-vehicle-btn" data-id="${vehicle.id}">
-          <i class="bi bi-trash"></i> Delete
-        </button>
-      </div>
-    `;
+            <div class="col ps-3">${vehicle.vehicle_name}</div>
+            <div class="col">${vehicle.plate_number}</div>
+            <div class="col"><span class="badge ${statusClass}">${vehicle.status}</span></div>
+            <div class="col text-center">
+                <button class="btn btn-sm btn-warning me-2 edit-vehicle-btn" 
+                        data-id="${vehicle.id}" 
+                        data-name="${vehicle.vehicle_name}" 
+                        data-plate="${vehicle.plate_number}" 
+                        data-status="${vehicle.status.toLowerCase()}">
+                    <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-danger delete-vehicle-btn" data-id="${vehicle.id}">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        `;
     tableBody.appendChild(row);
   });
 
@@ -98,6 +146,73 @@ function populateVehicleTable(vehicles) {
   attachDeleteListeners();
 }
 
+// ==================== PAGINATION ====================
+function updatePaginationControls(meta) {
+  paginationState.currentPage = meta.current_page;
+  paginationState.lastPage = meta.last_page;
+  paginationState.perPage = meta.per_page;
+  paginationState.total = meta.total;
+
+  const currentEl = document.getElementById('currentPage');
+  const totalPagesEl = document.getElementById('totalPages');
+  const totalRecordsEl = document.getElementById('totalRecords');
+  if (currentEl) currentEl.textContent = meta.current_page;
+  if (totalPagesEl) totalPagesEl.textContent = meta.last_page;
+  if (totalRecordsEl) totalRecordsEl.textContent = meta.total;
+
+  renderPagination(meta.current_page, meta.last_page);
+}
+
+function renderPagination(current, last) {
+  const container = document.getElementById('vehiclePagination');
+  if (!container) return;
+
+  const maxButtons = 7;
+  let start = Math.max(1, current - Math.floor(maxButtons / 2));
+  let end = Math.min(last, start + maxButtons - 1);
+  if (end - start + 1 < maxButtons) {
+    start = Math.max(1, end - maxButtons + 1);
+  }
+
+  let html = '';
+  const prevDisabled = current <= 1;
+  html += `<li class="page-item ${prevDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.max(1, current - 1)}">Previous</a></li>`;
+
+  for (let i = start; i <= end; i++) {
+    if (i === current) {
+      html += `<li class="page-item active" aria-current="page"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    } else {
+      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    }
+  }
+
+  const nextDisabled = current >= last;
+  html += `<li class="page-item ${nextDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.min(last, current + 1)}">Next</a></li>`;
+
+  container.innerHTML = html;
+
+  const enabledLinks = container.querySelectorAll('li.page-item:not(.disabled) a[data-page]');
+  enabledLinks.forEach(link => {
+    link.removeEventListener('click', handlePaginationClick);
+    link.addEventListener('click', handlePaginationClick);
+  });
+}
+
+function handlePaginationClick(e) {
+  e.preventDefault();
+  const page = parseInt(e.currentTarget.dataset.page, 10);
+  if (!page || page === paginationState.currentPage) return;
+
+  getAllVehicles({
+    search: paginationState.search,
+    status: paginationState.status,
+    per_page: paginationState.perPage,
+    page: page
+  });
+  window.scrollTo(0, 0);
+}
+
+// ==================== ANALYTICS ====================
 // Animate the counting with fade-in & scale effect
 function animateCount(el, value, duration = 1500) {
   if (!el) return;
@@ -197,81 +312,6 @@ async function refreshVehicleSummary() {
   animateCount(document.getElementById('maintenanceVehiclesValue'), Number(vehicles.under_maintenance) || 0, 1200);
 
   setStatsLoading(false);
-}
-
-// ==================== Pagination Controls ====================
-let paginationState = {
-  currentPage: 1,
-  lastPage: 1,
-  perPage: 15,
-  total: 0,
-  search: '',
-  status: ''
-};
-
-function updatePaginationControls(meta) {
-  paginationState.currentPage = meta.current_page;
-  paginationState.lastPage = meta.last_page;
-  paginationState.perPage = meta.per_page;
-  paginationState.total = meta.total;
-
-  const currentEl = document.getElementById('currentPage');
-  const totalPagesEl = document.getElementById('totalPages');
-  const totalRecordsEl = document.getElementById('totalRecords');
-  if (currentEl) currentEl.textContent = meta.current_page;
-  if (totalPagesEl) totalPagesEl.textContent = meta.last_page;
-  if (totalRecordsEl) totalRecordsEl.textContent = meta.total;
-
-  renderPagination(meta.current_page, meta.last_page);
-}
-
-function renderPagination(current, last) {
-  const container = document.getElementById('vehiclePagination');
-  if (!container) return;
-
-  const maxButtons = 7;
-  let start = Math.max(1, current - Math.floor(maxButtons / 2));
-  let end = Math.min(last, start + maxButtons - 1);
-  if (end - start + 1 < maxButtons) {
-    start = Math.max(1, end - maxButtons + 1);
-  }
-
-  let html = '';
-  const prevDisabled = current <= 1;
-  html += `<li class="page-item ${prevDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.max(1, current - 1)}">Previous</a></li>`;
-
-  for (let i = start; i <= end; i++) {
-    if (i === current) {
-      html += `<li class="page-item active" aria-current="page"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    } else {
-      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    }
-  }
-
-  const nextDisabled = current >= last;
-  html += `<li class="page-item ${nextDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.min(last, current + 1)}">Next</a></li>`;
-
-  container.innerHTML = html;
-
-  const enabledLinks = container.querySelectorAll('li.page-item:not(.disabled) a[data-page]');
-  enabledLinks.forEach(link => {
-    link.removeEventListener('click', handlePaginationClick);
-    link.addEventListener('click', handlePaginationClick);
-  });
-}
-
-function handlePaginationClick(e) {
-  e.preventDefault();
-  const page = parseInt(e.currentTarget.dataset.page, 10);
-  if (!page || page === paginationState.currentPage) return;
-
-  getAllVehicles({
-    search: paginationState.search,
-    status: paginationState.status,
-    per_page: paginationState.perPage,
-    page: page
-  });
-  window.scrollTo(0, 0);
 }
 
 // ==================== POST /vehicles ====================
@@ -411,8 +451,8 @@ if (updateVehicleBtn) {
     const plate = document.getElementById('updatePlateNo').value.trim();
     const status = document.getElementById('updateVehicleStatus').value;
 
-    if (!name && !plate && !status) {
-      showError('Please fill at least one field to update.');
+    if (!name || !plate || !status) {
+      showError('Please fill in all fields.');
       return;
     }
 
@@ -428,11 +468,7 @@ if (updateVehicleBtn) {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          vehicle_name: name || undefined,
-          plate_number: plate || undefined,
-          status: status || undefined
-        })
+        body: JSON.stringify({ vehicle_name: name, plate_number: plate, status })
       });
       const result = await response.json();
 
@@ -440,12 +476,12 @@ if (updateVehicleBtn) {
         bootstrap.Modal.getInstance(document.getElementById('updateVehicleModal')).hide();
         getAllVehicles();
         if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
-        showSuccess('Success!', result.message);
+        showSuccess('Success!', 'Vehicle updated successfully!');
       } else {
         showError(result.message);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       showError('Failed to update vehicle.');
     } finally {
       updateVehicleBtn.disabled = false;
@@ -453,44 +489,3 @@ if (updateVehicleBtn) {
     }
   });
 }
-
-// ==================== Search Functions ====================
-function updateVehicleTable() {
-  const searchInput = document.getElementById('vehicleSearch');
-  const statusInput = document.getElementById('vehicleStatus');
-
-  const searchValue = searchInput ? searchInput.value.trim() : '';
-  const statusValue = statusInput ? statusInput.value : '';
-
-  paginationState.search = searchValue;
-  paginationState.status = statusValue;
-
-  getAllVehicles({ search: searchValue, status: statusValue, page: 1 });
-}
-
-// Use debounce from utils.js
-const handleVehicleSearch = typeof debounce === 'function' ? debounce(updateVehicleTable, 150) : updateVehicleTable;
-
-// ==================== DOMContentLoaded ====================
-window.addEventListener('DOMContentLoaded', () => {
-  getAllVehicles();
-  if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
-
-  const searchInput = document.getElementById('vehicleSearch');
-  const statusInput = document.getElementById('vehicleStatus');
-  const refreshBtn = document.getElementById('refreshVehicleBtn');
-
-  if (searchInput) searchInput.addEventListener('input', handleVehicleSearch);
-  if (statusInput) statusInput.addEventListener('change', updateVehicleTable);
-
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
-      if (searchInput) searchInput.value = '';
-      if (statusInput) statusInput.value = '';
-      paginationState.search = '';
-      paginationState.status = '';
-      paginationState.currentPage = 1;
-      getAllVehicles({ page: 1 });
-    });
-  }
-});

@@ -100,3 +100,81 @@ function formatForDateTimeLocal(isoString) {
   const localTime = new Date(date.getTime() - offset);
   return localTime.toISOString().slice(0, 16);
 }
+
+function formatDateDisplay(dateString) {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+// ==================== GENERIC DROPDOWN ====================
+/**
+ * Initializes a searchable dropdown.
+ * @param {HTMLElement} inputEl - The input element.
+ * @param {HTMLElement} dropdownEl - The UL element for the dropdown.
+ * @param {Function} fetchItems - Async function returning array of items.
+ * @param {Function} onSelect - Callback when item is selected.
+ * @param {Function} renderItem - Function returning HTML string for an item.
+ * @param {Function} filterItem - Function returning boolean for search filtering.
+ */
+function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, renderItem, filterItem) {
+  if (!inputEl || !dropdownEl) return;
+
+  let allItems = [];
+  let hasFetched = false;
+
+  async function loadItems() {
+    if (!hasFetched) {
+      try {
+        allItems = await fetchItems();
+        hasFetched = true;
+      } catch (e) {
+        console.error("Failed to fetch dropdown items", e);
+        allItems = [];
+      }
+    }
+    return allItems;
+  }
+
+  function showDropdown(list) {
+    dropdownEl.innerHTML = '';
+    if (!list.length) {
+      dropdownEl.innerHTML = '<li class="dropdown-item text-muted">No results found</li>';
+    } else {
+      list.forEach(item => {
+        const li = document.createElement('li');
+        li.classList.add('dropdown-item');
+        li.style.cursor = 'pointer';
+        li.innerHTML = renderItem(item);
+        li.addEventListener('click', () => {
+          inputEl.value = item.fullname || item.name || ''; // Default fallback
+          dropdownEl.style.display = 'none';
+          onSelect(item);
+        });
+        dropdownEl.appendChild(li);
+      });
+    }
+    dropdownEl.style.display = 'block';
+  }
+
+  inputEl.addEventListener('focus', async () => {
+    const items = await loadItems();
+    showDropdown(items);
+  });
+
+  inputEl.addEventListener('input', async () => {
+    await loadItems(); // Ensure items are loaded
+    const search = inputEl.value.toLowerCase();
+    const filtered = allItems.filter(item => filterItem(item, search));
+    showDropdown(filtered);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+      dropdownEl.style.display = 'none';
+    }
+  });
+}

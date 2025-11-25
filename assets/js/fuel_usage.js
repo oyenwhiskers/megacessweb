@@ -3,44 +3,66 @@
 // Global State
 let currentUsageSearch = '';
 let currentUsageFilter = 'default';
-let allUsageUsers = [];
 let selectedUsageUser = null;     // For Add Modal
 let editSelectedUsageUser = null; // For Edit Modal
 
 // ==================== Fetch Fuel Usages ====================
-async function getAllFuelUsages({ search = '', usageFilter = '', per_page = 15 } = {}) {
-    const token = getToken();
-    if (!token) return showErrorNoToken();
-
-    // Build URL
-    const apiUrl = new URL('https://mwms.megacess.com/api/v1/fuel-usages');
-    if (search) apiUrl.searchParams.append('search', search);
-    if (usageFilter && usageFilter !== 'default') apiUrl.searchParams.append('usageFilter', usageFilter);
-    if (per_page) apiUrl.searchParams.append('per_page', per_page);
-
+async function getAllFuelUsages({ search = '', usageFilter = '', page = 1, per_page = 10 } = {}) {
     const loading = document.getElementById('usageLoading');
     const tableBody = document.getElementById('fuelUsageTableBody');
+    const paginationEl = document.getElementById('fuelUsagePagination');
 
     if (loading) loading.style.display = 'block';
     if (tableBody) tableBody.innerHTML = '';
 
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (usageFilter && usageFilter !== 'default') params.append('usageFilter', usageFilter);
+    params.append('page', page);
+    params.append('per_page', per_page);
+
     try {
-        const res = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
-            }
-        });
-        const result = await res.json();
+        const result = await apiFetch(`/fuel-usages?${params.toString()}`, { method: 'GET' });
 
         if (loading) loading.style.display = 'none';
 
-        if (res.ok && result.success) {
-            if (result.data && result.data.length > 0) {
-                populateFuelUsageTable(result.data);
+        if (result.success) {
+            let data = [];
+            let meta = {};
+
+            // Option A: Root Meta (User's confirmed structure)
+            if (result.meta) {
+                data = result.data;
+                meta = result.meta;
+            }
+            // Option C: Laravel Default (Nested in data)
+            else if (result.data && Array.isArray(result.data.data) && result.data.current_page) {
+                data = result.data.data;
+                meta = result.data;
+            }
+            // Fallback: Client-side pagination
+            else if (Array.isArray(result.data)) {
+                const allData = result.data;
+                const total = allData.length;
+                const lastPage = Math.ceil(total / per_page) || 1;
+
+                const start = (page - 1) * per_page;
+                const end = start + per_page;
+                data = allData.slice(start, end);
+
+                meta = {
+                    current_page: parseInt(page),
+                    last_page: lastPage,
+                    total: total
+                };
+            }
+
+            if (data && data.length > 0) {
+                populateFuelUsageTable(data);
+                renderFuelUsagePagination(meta, search, usageFilter);
             } else {
                 if (tableBody) tableBody.innerHTML = `<div class="text-center text-muted py-3">No fuel usage records found</div>`;
+                if (paginationEl) paginationEl.innerHTML = '';
             }
         } else {
             if (tableBody) tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || 'Unknown error'}</div>`;
@@ -83,13 +105,13 @@ function populateFuelUsageTable(usages) {
             </div>
             <div class="col">${usage.user ? usage.user.user_fullname : (usage.used_by_name || '-')}</div>
             <div class="col">
-                ${usage.usage_date ? new Date(usage.usage_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                ${formatDateDisplay(usage.usage_date)}
             </div>
             <div class="col">
                 ${descHtml}
             </div>
             <div class="col text-center">
-                <button class="btn btn-sm btn-outline-primary me-2 update-usage-btn"
+                <button class="btn btn-sm btn-warning me-2 update-usage-btn"
                 data-id="${usage.id}"
                 data-quantity="${usage.usage_quantity || ''}"
                 data-user-id="${usage.user ? usage.user.id : ''}"
@@ -97,10 +119,10 @@ function populateFuelUsageTable(usages) {
                 data-date="${usage.usage_date ? new Date(usage.usage_date).toISOString().split('T')[0] : ''}"
                 data-description="${usage.usage_description || ''}"
                 >
-                <i class="bi bi-pencil me-1"></i> Edit
+                <i class="bi bi-pencil"></i> Edit
                 </button>
-                <button class="btn btn-sm btn-outline-danger delete-usage-btn" data-id="${usage.id}">
-                <i class="bi bi-trash me-1"></i> Delete
+                <button class="btn btn-sm btn-danger delete-usage-btn" data-id="${usage.id}">
+                <i class="bi bi-trash"></i> Delete
                 </button>
             </div>
         `;
@@ -113,24 +135,65 @@ function populateFuelUsageTable(usages) {
     attachDescriptionViewListeners();
 }
 
+// ==================== Render Pagination ====================
+function renderFuelUsagePagination(meta, search, filter) {
+    const container = document.getElementById('fuelUsagePagination');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!meta || !meta.last_page || meta.last_page <= 1) return;
+
+    const current = meta.current_page;
+    const last = meta.last_page;
+
+    const createPageItem = (page, text, isActive = false, isDisabled = false) => {
+        const li = document.createElement('li');
+        li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#">${text}</a>`;
+        if (!isDisabled && !isActive) {
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                getAllFuelUsages({ search, usageFilter: filter, page: page });
+            });
+        }
+        return li;
+    };
+
+    // Previous
+    container.appendChild(createPageItem(current - 1, 'Previous', false, current === 1));
+
+    // Page Numbers
+    let pages = [];
+    if (last <= 7) {
+        pages = Array.from({ length: last }, (_, i) => i + 1);
+    } else {
+        if (current <= 4) {
+            pages = [1, 2, 3, 4, 5, '...', last];
+        } else if (current >= last - 3) {
+            pages = [1, '...', last - 4, last - 3, last - 2, last - 1, last];
+        } else {
+            pages = [1, '...', current - 1, current, current + 1, '...', last];
+        }
+    }
+
+    pages.forEach(p => {
+        if (p === '...') {
+            container.appendChild(createPageItem(null, '...', false, true));
+        } else {
+            container.appendChild(createPageItem(p, p, p === current));
+        }
+    });
+
+    // Next
+    container.appendChild(createPageItem(current + 1, 'Next', false, current === last));
+}
+
 // ==================== Create Usage ====================
 async function createFuelUsage(payload) {
-    const token = getToken();
-    if (!token) return showErrorNoToken();
-
     try {
-        const res = await fetch('https://mwms.megacess.com/api/v1/fuel-usages', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-        const result = await res.json();
+        const result = await apiFetch('/fuel-usages', { method: 'POST', body: JSON.stringify(payload) });
 
-        if (res.ok && result.success) {
+        if (result.success) {
             showSuccess("Success!", "Fuel usage recorded successfully!");
             return true;
         } else {
@@ -146,22 +209,10 @@ async function createFuelUsage(payload) {
 
 // ==================== Update Usage ====================
 async function updateFuelUsage(id, payload) {
-    const token = getToken();
-    if (!token) return showErrorNoToken();
-
     try {
-        const res = await fetch(`https://mwms.megacess.com/api/v1/fuel-usages/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-        const result = await res.json();
+        const result = await apiFetch(`/fuel-usages/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
 
-        if (res.ok && result.success) {
+        if (result.success) {
             showSuccess("Success!", "Fuel usage updated successfully!");
             return true;
         } else {
@@ -177,22 +228,12 @@ async function updateFuelUsage(id, payload) {
 
 // ==================== Delete Usage ====================
 async function deleteFuelUsage(id) {
-    const token = getToken();
-    if (!token) return showErrorNoToken();
-
     showConfirm('Are you sure you want to delete this usage record?', async () => {
         showLoading();
         try {
-            const res = await fetch(`https://mwms.megacess.com/api/v1/fuel-usages/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            const result = await res.json();
+            const result = await apiFetch(`/fuel-usages/${id}`, { method: 'DELETE' });
 
-            if (res.ok && result.success) {
+            if (result.success) {
                 showSuccess("Success!", result.message || "Deleted successfully");
                 getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
             } else {
@@ -367,79 +408,42 @@ if (usageFilterSelect) {
     });
 }
 
+const refreshUsageBtn = document.getElementById('refreshUsageBtn');
+if (refreshUsageBtn) {
+    refreshUsageBtn.addEventListener('click', () => {
+        if (usageSearchInput) usageSearchInput.value = '';
+        if (usageFilterSelect) usageFilterSelect.value = 'default';
+        currentUsageSearch = '';
+        currentUsageFilter = 'default';
+        getAllFuelUsages();
+    });
+}
+
 // ==================== User Dropdown Logic ====================
 async function fetchAllUsers() {
-    const token = getToken();
-    if (!token) return [];
     try {
-        const res = await fetch('https://mwms.megacess.com/api/v1/users', {
-            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-        });
-        const data = await res.json();
-        return data?.data?.map(u => ({ id: u.id, fullname: u.user_fullname })) || [];
+        const result = await apiFetch('/users', { method: 'GET' });
+        return result?.data?.map(u => ({ id: u.id, fullname: u.user_fullname })) || [];
     } catch (err) {
         console.error(err);
         return [];
     }
 }
 
-function initUserDropdown(inputEl, dropdownEl, onSelect) {
-    if (!inputEl || !dropdownEl) return;
-
-    function showDropdown(list) {
-        dropdownEl.innerHTML = '';
-        if (!list.length) {
-            const li = document.createElement('li');
-            li.classList.add('dropdown-item', 'text-muted');
-            li.textContent = "No results found";
-            dropdownEl.appendChild(li);
-            dropdownEl.style.display = 'block';
-            return;
-        }
-        list.forEach(user => {
-            const li = document.createElement('li');
-            li.classList.add('dropdown-item');
-            li.style.cursor = 'pointer';
-            li.innerHTML = `${user.fullname} <small class="text-muted">(${user.id})</small>`;
-            li.addEventListener('click', () => {
-                inputEl.value = user.fullname;
-                dropdownEl.style.display = 'none';
-                onSelect(user);
-            });
-            dropdownEl.appendChild(li);
-        });
-        dropdownEl.style.display = 'block';
-    }
-
-    inputEl.addEventListener('focus', async () => {
-        if (allUsageUsers.length === 0) allUsageUsers = await fetchAllUsers();
-        showDropdown(allUsageUsers);
-    });
-
-    inputEl.addEventListener('input', () => {
-        const search = inputEl.value.toLowerCase();
-        const filtered = allUsageUsers.filter(u => u.fullname.toLowerCase().includes(search));
-        showDropdown(filtered);
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
-            dropdownEl.style.display = 'none';
-        }
-    });
-}
-
 // ==================== Initialize Page ====================
 document.addEventListener('DOMContentLoaded', () => {
+    const renderUsageUser = (u) => `${u.fullname} <small class="text-muted">(${u.id})</small>`;
+    const filterUsageUser = (u, s) => u.fullname.toLowerCase().includes(s);
+
     // Add Modal Dropdown
     const addInput = document.getElementById('usedBy');
     const addDropdown = document.getElementById('addUsageUserDropdown');
-    initUserDropdown(addInput, addDropdown, (user) => { selectedUsageUser = user; });
+    initSearchableDropdown(addInput, addDropdown, fetchAllUsers, (user) => { selectedUsageUser = user; }, renderUsageUser, filterUsageUser);
 
     // Edit Modal Dropdown
     const editInput = document.getElementById('editUsedBy');
     const editDropdown = document.getElementById('editUsageUserDropdown');
-    initUserDropdown(editInput, editDropdown, (user) => { editSelectedUsageUser = user; });
+    initSearchableDropdown(editInput, editDropdown, fetchAllUsers, (user) => { editSelectedUsageUser = user; }, renderUsageUser, filterUsageUser);
 
     // Tab Listener
     $('.tab-btn[data-target="usage"]').on('click', () => {
