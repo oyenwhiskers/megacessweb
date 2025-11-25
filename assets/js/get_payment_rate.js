@@ -140,7 +140,7 @@ function renderTaskEditor(task) {
         <div class="d-flex justify-content-between align-items-center mb-2">
           <strong>${c.category_name || 'Unnamed Category'}</strong>
           <div class="d-flex align-items-center gap-2">
-            <span class="text-success">${c.rate ?? 0} ${c.unit || ''}</span>
+            <span class="fw-semibold">${c.rate ?? 0} ${c.unit || ''}</span>
             <button class="btn btn-sm btn-danger remove-category-btn" type="button" title="Remove category">
               <i class="bi bi-trash"></i>
             </button>
@@ -248,7 +248,7 @@ function renderTaskEditor(task) {
 
       <div class="mb-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <label class="form-label fw-semibold mb-0">Categories & Rates</label>
+          <label class="form-label fw-bold mb-0">Categories & Rates</label>
           <button class="btn btn-sm btn-success py-1 px-3" id="addCategoryBtn" type="button">
             <i class="bi bi-plus-circle me-1"></i> Add Category
           </button>
