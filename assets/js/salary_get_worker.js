@@ -80,7 +80,22 @@ function showEmployeeType(type, push) {
       ...(searchInput ? { search: searchInput } : {})
     };
 
-    $("#workerList .row").html('<div class="col-12 text-center text-muted py-3">Loading...</div>');
+    // Show skeleton loaders
+    const skeletonHtml = Array(6).fill(0).map(() => `
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex gap-3 align-items-center">
+            <div class="skeleton skeleton-circle" style="width: 64px; height: 64px;"></div>
+            <div class="flex-grow-1">
+              <div class="skeleton skeleton-text" style="width: 60%; height: 20px; margin-bottom: 8px;"></div>
+              <div class="skeleton skeleton-text" style="width: 40%; height: 16px;"></div>
+            </div>
+            <div class="skeleton skeleton-button" style="width: 40px; height: 32px;"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    $("#workerList .row").html(skeletonHtml);
 
     $.ajax({
       url: API_URL,

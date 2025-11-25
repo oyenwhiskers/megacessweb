@@ -99,21 +99,35 @@ body, html {
    Slider (To switch between Salary Management & Work-based Management)
 ====================================================== */
 
+.type-of-payment-slider .btn-group {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  padding: 6px;
+  border-radius: 50px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8);
+}
+
 .rate-btn {
   cursor: pointer;
   flex: 1;
   text-align: center;
-  padding: 14px 30px;
+  padding: 16px 35px;
   border: none;
-  background: #f7f7f7;
-  color: #333;
-  font-weight: 500;
+  background: transparent;
+  color: #666;
+  font-weight: 600;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.rate-btn i {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
 }
 
 .rate-btn:first-of-type {
@@ -126,13 +140,30 @@ body, html {
 }
 
 .btn-check:checked + .rate-btn {
-  background-color: #0d6832;
+  background: linear-gradient(135deg, #0d6832 0%, #0a5528 100%);
   color: #fff;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 15px rgba(13,104,50,0.4), inset 0 1px 2px rgba(255,255,255,0.2);
+  transform: scale(1.02);
 }
 
-.rate-btn:hover {
-  background-color: #e7e7e7;
+.btn-check:checked + .rate-btn i {
+  transform: scale(1.1);
+}
+
+.btn-check:checked + .rate-btn:hover {
+  background: linear-gradient(135deg, #0a5528 0%, #083f20 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(13,104,50,0.5), inset 0 1px 2px rgba(255,255,255,0.2);
+}
+
+.rate-btn:hover:not(.btn-check:checked + *) {
+  background: rgba(13,104,50,0.08);
+  color: #0d6832;
+  transform: translateY(-1px);
+}
+
+.rate-btn:active {
+  transform: scale(0.98);
 }
 
 /* ===================================================
@@ -279,3 +310,90 @@ Edit Salary Page - Remove card borders
   border-top: none !important;
 }
 
+/* =======================================
+Add new Category Modal
+========================================== */
+.modal-header {
+  background-color: #0d6832;
+  color: white;
+}
+
+/* =======================================
+Skeleton Loading Animation
+========================================== */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-text {
+  border-radius: 4px;
+}
+
+.skeleton-button {
+  border-radius: 6px;
+}
+
+.skeleton-badge {
+  border-radius: 12px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* =======================================
+Pagination Styling
+========================================== */
+#workerPagination,
+#staffPagination {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: inline-block;
+  text-align: center;
+}
+
+#workerList,
+#staffList {
+  text-align: center;
+}
+
+#workerPagination .btn,
+#staffPagination .btn {
+  background-color: white;
+  border: 1px solid #dee2e6;
+}
+
+#workerPagination .btn:hover:not(:disabled),
+#staffPagination .btn:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #0d6832;
+  color: #0d6832;
+}
+
+#workerPagination .btn.btn-success,
+#staffPagination .btn.btn-success {
+  background-color: #0d6832;
+  border-color: #0d6832;
+  color: white;
+}
+
+#workerPagination .btn:disabled,
+#staffPagination .btn:disabled {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  opacity: 0.5;
+}

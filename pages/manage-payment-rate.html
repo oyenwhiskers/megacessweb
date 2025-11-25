@@ -27,7 +27,7 @@
       
       <div class="container-fluid p-4">
         <!-- Slider (Control both views)-->
-        <div class="type-of-payment-slider text-center my-4">
+        <div class="type-of-payment-slider text-start mx-3 my-4">
           <div class="btn-group" role="group" aria-label="Type of Payment Rate">
             <input type="radio" class="btn-check" name="rateType" id="salary" autocomplete="off" checked>
             <label class="rate-btn" for="salary">
@@ -40,6 +40,7 @@
             </label>
           </div>
         </div>
+        <hr>
 
         <div class="content-inner flex-grow-1 px-3">
           <!-- Salary Management Section -->
@@ -138,11 +139,11 @@
 
           <!-- Work-based Rate Section -->
           <div id="workSection" class="payment-rate-container mx-auto d-none">
-            <div class="add-rate-btn text-end mb-3">
+            <!-- <div class="add-rate-btn text-end mb-3">
               <a href="/megacessweb/pages/manage-payment-rate-work-based-rate-add-new.html" class="btn btn-success">
                 <i class="bi bi-plus-circle me-1"></i> Add new Payment Rate
               </a>
-            </div>
+            </div> -->
 
             <div class="work-based-container d-flex flex-column flex-lg-row gap-3">
               <!-- Left panel: Task List -->
@@ -185,6 +186,8 @@ $(function() {
       $('#salarySection').addClass('d-none');
       $('#workSection').removeClass('d-none');
       $('#work').prop('checked', true);
+      // Load payment rates when work section is shown
+      if (typeof getPaymentRates === 'function') getPaymentRates();
     } else {
       $('#workSection').addClass('d-none');
       $('#salarySection').removeClass('d-none');
