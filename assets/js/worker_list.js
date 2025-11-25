@@ -495,7 +495,7 @@
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">IC / Document ID:</label>
-                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_ic) !== '-' ? displayValue(worker.staff_ic) : worker.id}" readonly>
+                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_doc)}" readonly>
                             </div>
                             
                             <div class="col-md-6">
