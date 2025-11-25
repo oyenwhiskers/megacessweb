@@ -537,6 +537,11 @@
                                 <label class="form-label fw-semibold mb-1 small">KWSP Number:</label>
                                 <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_kwsp_number)}" readonly>
                             </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold mb-1 small">Start Date:</label>
+                                <input type="text" class="form-control form-control-sm" value="${formatDateForDisplay(worker.staff_employment_start_date)}" readonly>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -635,7 +640,7 @@
             const label = input.previousElementSibling?.textContent || '';
             
             if (label.includes('IC / Document ID')) {
-                input.setAttribute('name', 'staff_ic');
+                input.setAttribute('name', 'staff_doc');
             } else if (label.includes('Full Name')) {
                 input.setAttribute('name', 'staff_fullname');
             } else if (label.includes('Phone Number')) {
@@ -681,6 +686,20 @@
                 input.setAttribute('name', 'staff_bank_number');
             } else if (label.includes('KWSP Number')) {
                 input.setAttribute('name', 'staff_kwsp_number');
+            } else if (label.includes('Start Date')) {
+                // Convert DD/MM/YYYY to YYYY-MM-DD for date input BEFORE changing type
+                const dateValue = input.value;
+                if (dateValue && dateValue !== '-') {
+                    const parts = dateValue.split('/');
+                    if (parts.length === 3) {
+                        const day = parts[0].padStart(2, '0');
+                        const month = parts[1].padStart(2, '0');
+                        const year = parts[2];
+                        input.value = `${year}-${month}-${day}`;
+                    }
+                }
+                input.type = 'date';
+                input.setAttribute('name', 'staff_employment_start_date');
             }
             
             // Clear dash values
@@ -716,14 +735,12 @@
                             e.target.value = '';
                             return;
                         }
-                        
                         // Validate file size (max 5MB)
                         if (file.size > 5 * 1024 * 1024) {
                             alert('Image size must be less than 5MB.');
                             e.target.value = '';
                             return;
                         }
-                        
                         // Show preview
                         const reader = new FileReader();
                         reader.onload = function(event) {
@@ -767,140 +784,73 @@
         try {
             const modal = document.getElementById('workerDetailsModal');
             if (!modal) return;
-            
             const modalBody = modal.querySelector('.modal-body');
-            
+
+            // Collect all editable fields
+            const staffDocInput = modalBody.querySelector('input[name="staff_doc"]');
+            const fullNameInput = modalBody.querySelector('input[name="fullname"]');
+            const phoneInput = modalBody.querySelector('input[name="phone"]');
+            const dobInput = modalBody.querySelector('input[name="dob"]');
+            const genderInput = modalBody.querySelector('input[name="gender"], select[name="gender"]');
+            const startDateInput = modalBody.querySelector('input[name="staff_employment_start_date"]');
+            // Add other fields as needed
+
             // Check if there's an image file to upload
             const imageInput = document.getElementById('workerDetailsImageInput');
             const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
-            
-            // Use FormData if there's an image, otherwise use JSON
+
+            // Use FormData for all fields if image is present
             let requestBody;
             let headers = {
                 'Authorization': `Bearer ${getAuthToken()}`,
                 'Accept': 'application/json'
             };
-            
-            if (imageFile) {
-                // Use FormData for file upload
-                const formData = new FormData();
-                
-                // Collect all input values
-                const inputs = modalBody.querySelectorAll('input:not([type="file"]), select');
-                
-                inputs.forEach(input => {
-                    const name = input.getAttribute('name');
-                    if (name) {
-                        let value = input.value.trim();
-                        // Only include password if it's not empty
-                        if (name === 'staff_password') {
-                            if (value !== '') {
-                                formData.append(name, value);
-                            }
-                        } else if (value !== '') {
-                            formData.append(name, value);
-                        }
-                    }
-                });
-                
-                // Add image file
-                formData.append('staff_img', imageFile);
-                requestBody = formData;
-                // Don't set Content-Type for FormData, browser will set it with boundary
-            } else {
-                // Use JSON for regular update
-                const workerData = {};
-                const inputs = modalBody.querySelectorAll('input, select');
-                
-                inputs.forEach(input => {
-                    const name = input.getAttribute('name');
-                    if (name) {
-                        let value = input.value.trim();
-                        // Convert empty values to null, except for password
-                        if (name === 'staff_password') {
-                            // Only include password if it's not empty (user wants to change it)
-                            if (value !== '') {
-                                workerData[name] = value;
-                            }
-                        } else {
-                            workerData[name] = value !== '' ? value : null;
-                        }
-                    }
-                });
-                
-                requestBody = JSON.stringify(workerData);
-                headers['Content-Type'] = 'application/json';
-                
-                // Validate required fields
-                if (!workerData.staff_fullname) {
-                    alert('Full Name is required');
-                    return;
-                }
-                if (!workerData.staff_phone) {
-                    alert('Phone Number is required');
-                    return;
-                }
-                if (!workerData.staff_dob) {
-                    alert('Date of Birth is required');
-                    return;
-                }
-                if (!workerData.staff_gender) {
-                    alert('Gender is required');
-                    return;
-                }
-            }
-            
+
+            requestBody = new FormData();
+            if (staffDocInput) requestBody.append('staff_doc', staffDocInput.value);
+            if (fullNameInput) requestBody.append('staff_fullname', fullNameInput.value);
+            if (phoneInput) requestBody.append('staff_phone', phoneInput.value);
+            if (dobInput) requestBody.append('staff_dob', dobInput.value);
+            if (genderInput) requestBody.append('staff_gender', genderInput.value);
+            if (startDateInput) requestBody.append('staff_employment_start_date', startDateInput.value);
+            // Add other fields as needed
+            if (imageFile) requestBody.append('staff_img', imageFile);
+
             // Disable save button and show loading state
             const saveButton = event.target;
             const originalButtonText = saveButton.innerHTML;
             saveButton.disabled = true;
             saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-            
+
             // Make PUT request to update worker
             const response = await fetch(`${API_BASE_URL}/staff/${workerId}`, {
                 method: 'PUT',
                 headers: headers,
                 body: requestBody
             });
-            
+
             if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Authentication failed. Please log in again.');
-                } else if (response.status === 403) {
-                    throw new Error('Access denied. You do not have permission to edit this worker.');
-                } else if (response.status === 404) {
-                    throw new Error('Worker not found.');
-                } else if (response.status === 422) {
-                    const errorData = await response.json();
-                    const errorMessages = Object.values(errorData.errors || {}).flat().join(', ');
-                    throw new Error(errorMessages || 'Validation failed. Please check your input.');
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                throw new Error('Failed to save changes.');
             }
-            
+
             const result = await response.json();
-            
             console.log('Save response:', result);
-            
+
             // Show success message
             alert('Worker details updated successfully!');
-            
+
             // Close the modal
             const modalInstance = bootstrap.Modal.getInstance(modal);
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-            
+            if (modalInstance) modalInstance.hide();
+
             // Refresh the worker list to show updated data including image
             setTimeout(() => {
                 fetchWorkersList(currentSearch, currentPage);
             }, 300);
-            
+
         } catch (error) {
             console.error('Error saving worker changes:', error);
             alert(`Failed to save changes: ${error.message}`);
-            
             // Re-enable save button
             const saveButton = event.target;
             if (saveButton) {
