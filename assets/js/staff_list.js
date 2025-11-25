@@ -4,6 +4,8 @@
     // Shared variables
   let currentRoleFilter = 'all';
   let currentSearch = '';
+  let currentPage = 1;
+  const DEFAULT_PER_PAGE = 10;
 
   // Highlight search terms in text
   function highlightSearchTerm(text, searchTerm) {
@@ -57,9 +59,10 @@
   }
 
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
-  async function fetchStaffList(search = '', role = 'all') {
+  async function fetchStaffList(search = '', role = 'all', page = 1) {
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
+    currentPage = page;
     // retrieve token from localStorage / session
     const token = localStorage.getItem('auth_token') || 
                  sessionStorage.getItem('auth_token') || 
@@ -75,7 +78,8 @@
     const params = {
       role: (role && role !== 'all') ? role : '',
       search: search || "",
-      per_page: "20",
+      per_page: DEFAULT_PER_PAGE.toString(),
+      page: page.toString(),
     };
     Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
 
@@ -108,6 +112,39 @@
     }
   }
 
+  function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentRole) {
+    if (totalPages <= 1) return '';
+    let paginationHTML = `
+      <nav aria-label="Staff list pagination" class="mt-4">
+        <ul class="pagination justify-content-center" style="background:#effaf3; border-radius:8px; padding:8px 16px;">
+    `;
+    // Previous button
+    paginationHTML += `
+      <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
+        <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+      </li>
+    `;
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      paginationHTML += `
+        <li class="page-item${i === currentPage ? ' active' : ''}">
+          <button class="page-link" style="${i === currentPage ? 'background:#007bff;color:#fff;border:none;' : 'background:transparent; border:none; color:#007bff;'}" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${i})">${i}</button>
+        </li>
+      `;
+    }
+    // Next button
+    paginationHTML += `
+      <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
+        <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+      </li>
+    `;
+    paginationHTML += `
+        </ul>
+      </nav>
+    `;
+    return paginationHTML;
+  }
+
   function renderStaff(payload, roleFilter) {
     // remove any previous status nodes
     const prevStatus = staffView.querySelector('.js-status');
@@ -137,6 +174,11 @@
         return name.toLowerCase().includes(searchTerm) || nickname.toLowerCase().includes(searchTerm);
       });
     }
+    
+    // Pagination meta
+    const meta = payload.meta || {};
+    const totalItems = meta.total || users.length;
+    const totalPages = meta.last_page || Math.ceil(totalItems / DEFAULT_PER_PAGE);
     
     if (!users || users.length === 0) {
       const emptyMessage = currentSearch ? 
@@ -210,6 +252,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <div class="btn-group" role="group">
+                    <!-- View Details button retained -->
                     <button class="btn btn-sm btn-outline-primary" 
                             onclick="viewStaffDetails(${u.id || u.user_id})"
                             title="View Details">
@@ -228,6 +271,8 @@
         `;
         list.appendChild(item);
       });
+      // Add pagination below the list
+      list.innerHTML += createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentRoleFilter);
     }
 
     // keep heading and replace remaining contents
@@ -253,18 +298,15 @@
                    sessionStorage.getItem('auth_token') || 
                    localStorage.getItem('authToken') ||
                    sessionStorage.getItem('authToken');
-      
       if (!token) {
         alert('Authentication token not found. Please log in again.');
         window.location.href = '/megacessweb/pages/log-in.html';
         return;
       }
-      
       // Show loading modal first
       showStaffDetailsModal({ loading: true });
-      
-      // Fetch staff details from API
-      const response = await fetch(`https://mwms.megacess.com/api/v1/profile`, {
+      // Fetch staff details from API using staffId
+      const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -272,7 +314,6 @@
           'Accept': 'application/json'
         }
       });
-      
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Authentication failed. Please log in again.');
@@ -282,13 +323,10 @@
           throw new Error(`Failed to load staff details (${response.status})`);
         }
       }
-      
       const result = await response.json();
       const staffData = result.data || result;
-      
       // Display staff details in modal
       showStaffDetailsModal(staffData);
-      
     } catch (error) {
       console.error('Error fetching staff details:', error);
       showStaffDetailsModal({
@@ -617,39 +655,10 @@
     
     // Add password field in edit mode
     const lastRow = modalBody.querySelector('.row.g-2');
-    if (lastRow && !modalBody.querySelector('input[name="user_password"]')) {
-      const passwordFieldHTML = `
-        <div class="col-md-6" id="passwordFieldContainer">
-          <label class="form-label fw-semibold mb-1 small">Password (optional):</label>
-          <div class="input-group input-group-sm">
-            <input type="password" class="form-control form-control-sm border-primary" id="passwordFieldStaff" name="user_password" placeholder="Enter new password (leave blank to keep current)">
-            <button class="btn btn-outline-secondary" type="button" id="togglePasswordStaff" title="Show/Hide Password">
-              <i class="bi bi-eye" id="togglePasswordIconStaff"></i>
-            </button>
-          </div>
-          <small class="text-muted">Leave blank to keep current password</small>
-        </div>
-      `;
-      lastRow.insertAdjacentHTML('beforeend', passwordFieldHTML);
-      
-      // Add password toggle functionality
-      const togglePasswordBtn = modalBody.querySelector('#togglePasswordStaff');
-      const passwordField = modalBody.querySelector('#passwordFieldStaff');
-      const togglePasswordIcon = modalBody.querySelector('#togglePasswordIconStaff');
-      
-      if (togglePasswordBtn && passwordField && togglePasswordIcon) {
-        togglePasswordBtn.addEventListener('click', function() {
-          if (passwordField.type === 'password') {
-            passwordField.type = 'text';
-            togglePasswordIcon.classList.remove('bi-eye');
-            togglePasswordIcon.classList.add('bi-eye-slash');
-          } else {
-            passwordField.type = 'password';
-            togglePasswordIcon.classList.remove('bi-eye-slash');
-            togglePasswordIcon.classList.add('bi-eye');
-          }
-        });
-      }
+    // Remove password field if present
+    const passwordFieldContainer = modalBody.querySelector('#passwordFieldContainer');
+    if (passwordFieldContainer) {
+      passwordFieldContainer.remove();
     }
     
     // Add "Change Photo" button in edit mode
@@ -703,7 +712,7 @@
       <button type="button" class="btn btn-secondary" onclick="cancelEditModeStaff(${staffId})">
         <i class="bi bi-x-circle me-1"></i>Cancel
       </button>
-      <button type="button" class="btn btn-primary" onclick="saveStaffChanges(${staffId})">
+      <button type="button" class="btn btn-primary" onclick="saveStaffChanges(${staffId}, event)">
         <i class="bi bi-save me-1"></i>Save Changes
       </button>
     `;
@@ -725,36 +734,29 @@
     }, 300);
   };
 
-  // Function to save staff changes
-  window.saveStaffChanges = async function(staffId) {
+  // Update saveStaffChanges to accept event and fix button usage
+  window.saveStaffChanges = async function(staffId, event) {
     try {
       const modal = document.getElementById('staffDetailsModal');
       if (!modal) return;
-      
       const modalBody = modal.querySelector('.modal-body');
-      
       // Collect all input values first
       const inputs = modalBody.querySelectorAll('input:not([type="file"]):not([readonly]), select');
       const staffData = {};
-      
       inputs.forEach(input => {
         const name = input.getAttribute('name');
         if (name) {
           let value = input.value.trim();
-          // Only include password if it's not empty (user wants to change it)
           if (name === 'user_password') {
             if (value !== '') {
               staffData[name] = value;
             }
           } else if (value !== '' && value !== '-') {
-            // Include non-empty values
             staffData[name] = value;
           }
         }
       });
-      
       // Validate required fields before proceeding
-      // Note: fullname and nickname may not be updatable via /profile endpoint
       if (!staffData.user_ic) {
         alert('IC / Document ID is required');
         return;
@@ -775,91 +777,68 @@
         alert('Role is required');
         return;
       }
-      
       // Check if there's an image file to upload
       const imageInput = document.getElementById('staffDetailsImageInput');
       const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
-      
-      // Prepare data for API
       let requestBody;
       let headers = {
         'Authorization': `Bearer ${getAuthToken()}`,
         'Accept': 'application/json'
       };
-      
       if (imageFile) {
-        // Use FormData for file upload
         const formData = new FormData();
-        
-        // Add all collected data to FormData
         Object.keys(staffData).forEach(key => {
           formData.append(key, staffData[key]);
         });
-        
-        // Add image file
         formData.append('user_img', imageFile);
         requestBody = formData;
-        // Don't set Content-Type for FormData, browser will set it with boundary
       } else {
-        // Use JSON for regular update (no image)
         requestBody = JSON.stringify(staffData);
         headers['Content-Type'] = 'application/json';
       }
-      
-      // Disable save button and show loading state
-      const saveButton = event.target;
-      const originalButtonText = saveButton.innerHTML;
-      saveButton.disabled = true;
-      saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-      
-      // Make PUT request to update staff profile
-      const response = await fetch(`https://mwms.megacess.com/api/v1/profile`, {
+      if (event && event.target) {
+        const saveButton = event.target;
+        const originalButtonText = saveButton.innerHTML;
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+      }
+      // Use correct API endpoint for updating staff
+      const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}` , {
         method: 'PUT',
         headers: headers,
         body: requestBody
       });
-      
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Authentication failed. Please log in again.');
         } else if (response.status === 403) {
-          throw new Error('Access denied. You can only edit your own profile.');
+          throw new Error('Access denied. You do not have permission to edit this staff.');
         } else if (response.status === 404) {
-          throw new Error('Profile not found.');
+          throw new Error('Staff not found.');
         } else if (response.status === 422) {
           const errorData = await response.json();
+          console.log('Validation error details:', errorData);
           const errorMessages = Object.values(errorData.errors || {}).flat().join(', ');
           throw new Error(errorMessages || 'Validation failed. Please check your input.');
         } else {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
       }
-      
       const result = await response.json();
-      
       console.log('Save response:', result);
-      
-      // Show success message
       alert('Staff profile updated successfully!');
-      
-      // Close the modal
       const modalInstance = bootstrap.Modal.getInstance(modal);
       if (modalInstance) {
         modalInstance.hide();
       }
-      
-      // Refresh the staff list to show updated data including image
       setTimeout(() => {
         fetchStaffList(currentSearch, currentRoleFilter);
       }, 300);
-      
     } catch (error) {
       console.error('Error saving staff changes:', error);
       alert(`Failed to save changes: ${error.message}`);
-      
-      // Re-enable save button
-      const saveButton = event.target;
-      if (saveButton) {
+      if (event && event.target) {
+        const saveButton = event.target;
         saveButton.disabled = false;
         saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
       }
@@ -946,4 +925,14 @@
       if (!staffView.classList.contains('d-none')) fetchStaffList('', currentRoleFilter);
     });
   }
+
+  // Auto-load staff when the script is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.body.dataset.page === 'manage-account') {
+      const staffTabActive = document.getElementById('staffView') && !document.getElementById('staffView').classList.contains('d-none');
+      if (staffTabActive) {
+        fetchStaffList('', 'all', 1);
+      }
+    }
+  });
 })();
