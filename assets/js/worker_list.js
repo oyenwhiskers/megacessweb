@@ -672,18 +672,17 @@
                 input.type = 'date';
                 input.setAttribute('name', 'staff_dob');
             } else if (label.includes('Gender')) {
-                // Replace gender input with select
+                // Replace gender input with select (only Male and Female)
                 const currentValue = input.value.toLowerCase();
                 const selectHTML = `
-                    <select class="form-control form-control-sm border-primary" name="staff_gender" required>
+                    <select class="form-control form-control-sm border-primary" name="gender" required>
                         <option value="">Select Gender</option>
                         <option value="male" ${currentValue === 'male' ? 'selected' : ''}>Male</option>
                         <option value="female" ${currentValue === 'female' ? 'selected' : ''}>Female</option>
-                        <option value="other" ${currentValue === 'other' ? 'selected' : ''}>Other</option>
                     </select>
                 `;
                 input.outerHTML = selectHTML;
-                return; // Skip further processing for this field
+                return;
             } else if (label.includes('Role')) {
                 // Role field stays readonly - workers cannot change their role
                 input.classList.remove('border-primary');
