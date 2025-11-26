@@ -263,6 +263,11 @@
                             title="Delete Staff">
                       <i class="bi bi-trash"></i>
                     </button>
+                    <button class="btn btn-sm btn-outline-warning" 
+                            onclick="showResetPasswordModal(${u.id || u.user_id})"
+                            title="Reset Password">
+                      <i class="bi bi-key"></i> Reset Password
+                    </button>
                   </div>
                 </div>
               </div>
@@ -926,4 +931,154 @@
       }
     }
   });
+
+  // Add Reset Password modal logic
+  window.showResetPasswordModal = function(staffId) {
+    // Remove existing modal if present
+    const existingModal = document.getElementById('resetPasswordModal');
+    if (existingModal) {
+      const modalInstance = bootstrap.Modal.getInstance(existingModal);
+      if (modalInstance) modalInstance.dispose();
+      existingModal.remove();
+    }
+    // Remove any lingering backdrops
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    if (!document.querySelector('.modal.show')) {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.id = 'resetPasswordModal';
+    modal.className = 'modal fade';
+    modal.tabIndex = -1;
+    modal.setAttribute('aria-labelledby', 'resetPasswordModalLabel');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="resetPasswordModalLabel">Reset Password</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="resetPasswordForm">
+            <div class="modal-body">
+              <label for="newPassword" class="form-label">New Password:</label>
+              <div class="input-group mb-2">
+                <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="6" placeholder="Enter new password">
+                <button type="button" class="btn btn-outline-secondary" tabindex="-1" id="toggleNewPassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+              </div>
+              <label for="confirmPassword" class="form-label mt-3">Confirm Password:</label>
+              <div class="input-group mb-2">
+                <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="6" placeholder="Confirm new password">
+                <button type="button" class="btn btn-outline-secondary" tabindex="-1" id="toggleConfirmPassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+              </div>
+              <div id="resetPasswordError" class="text-danger mt-2" style="display:none;"></div>
+            </div>
+            <div class="modal-footer justify-content-end">
+              <button type="submit" class="btn btn-success"><i class="bi bi-check2-square"></i> Reset Password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    // Show modal
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    // Password visibility toggle logic
+    const newPasswordInput = modal.querySelector('#newPassword');
+    const toggleNewPasswordBtn = modal.querySelector('#toggleNewPassword');
+    toggleNewPasswordBtn.addEventListener('click', function() {
+      if (newPasswordInput.type === 'password') {
+        newPasswordInput.type = 'text';
+        toggleNewPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+      } else {
+        newPasswordInput.type = 'password';
+        toggleNewPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
+      }
+    });
+    const confirmPasswordInput = modal.querySelector('#confirmPassword');
+    const toggleConfirmPasswordBtn = modal.querySelector('#toggleConfirmPassword');
+    toggleConfirmPasswordBtn.addEventListener('click', function() {
+      if (confirmPasswordInput.type === 'password') {
+        confirmPasswordInput.type = 'text';
+        toggleConfirmPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+      } else {
+        confirmPasswordInput.type = 'password';
+        toggleConfirmPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
+      }
+    });
+    // Handle form submit
+    modal.querySelector('#resetPasswordForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const password = modal.querySelector('#newPassword').value;
+      const passwordConfirmation = modal.querySelector('#confirmPassword').value;
+      const errorDiv = modal.querySelector('#resetPasswordError');
+      errorDiv.style.display = 'none';
+      errorDiv.textContent = '';
+      if (!password || !passwordConfirmation) {
+        errorDiv.textContent = 'Please enter and confirm the new password.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      if (password !== passwordConfirmation) {
+        errorDiv.textContent = 'Passwords do not match.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errorDiv.textContent = 'Password must be at least 6 characters.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      // Disable button and show spinner
+      const submitBtn = modal.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Resetting...';
+      // Prepare API call
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        errorDiv.textContent = 'Authentication token not found. Please log in again.';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check2-square"></i> Reset Password';
+        return;
+      }
+      const url = new URL(`https://mwms.megacess.com/api/v1/users/${staffId}/change-password`);
+      const headers = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      const body = {
+        password: password,
+        password_confirmation: passwordConfirmation
+      };
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          errorDiv.textContent = result.message || result.error || 'Failed to reset password.';
+          errorDiv.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-check2-square"></i> Reset Password';
+          return;
+        }
+        // Success
+        modalInstance.hide();
+        alert('Password reset successfully!');
+      } catch (err) {
+        errorDiv.textContent = 'Network or server error. Please try again.';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check2-square"></i> Reset Password';
+      }
+    };
+  };
 })();
