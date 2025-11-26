@@ -137,18 +137,23 @@ function renderTaskEditor(task) {
            data-category='${JSON.stringify(c)}'>
 
         <!-- Category Header -->
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <strong>${c.category_name || 'Unnamed Category'}</strong>
-          <div class="d-flex align-items-center gap-2">
-            <span class="fw-semibold">${c.rate ?? 0} ${c.unit || ''}</span>
-            <button class="btn btn-sm btn-danger remove-category-btn" type="button" title="Remove category">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-        </div>
-
         <div class="mb-2 small text-muted">
           <strong>Category ID:</strong> ${c.id || 'N/A'}
+        </div>
+
+        <!-- Row 0: Category Name -->
+        <div class="row">
+          <div class="col-md-10 mb-2">
+            <label class="form-label" data-bs-toggle="tooltip" data-bs-placement="top" title="Name to identify this payment category">
+              Category Name <i class="bi bi-info-circle text-muted ms-1"></i>
+            </label>
+            <input type="text" class="form-control category-name" value="${c.category_name || ''}" disabled>
+          </div>
+          <div class="col-md-2 mb-2 d-flex align-items-end">
+            <button class="btn btn-sm btn-danger remove-category-btn w-100" type="button" title="Remove category">
+              <i class="bi bi-trash"></i> Remove
+            </button>
+          </div>
         </div>
 
         <!-- Row 1: Rate and Unit -->
@@ -253,6 +258,7 @@ function renderTaskEditor(task) {
             <i class="bi bi-plus-circle me-1"></i> Add Category
           </button>
         </div>
+        <hr>
         ${categoryHtml || '<p class="text-muted">No categories defined</p>'}
       </div>
 
@@ -397,11 +403,11 @@ function collectFormData(taskId) {
     }
 
     // read UI fields (keep names/classes exactly as your UI)
+    const catName = $(this).find('.category-name').val()?.trim() || original.category_name || '';
     const rateVal = $(this).find('.category-rate').val();
     const unitVal = $(this).find('.category-unit').val();
     const orderVal = parseInt($(this).find('.category-order').val()) || 0;
-    const catName = $(this).find('strong').first().text().trim() || original.category_name || '';
-    const catKey = original.category_key || '';
+    const catKey = original.category_key || catName.toLowerCase().replace(/\s+/g, '_') || '';
 
     // IMPORTANT: read the free-text type exactly as the UI provides it
     const type = $(this).find('.category-type').val()?.trim() || '';
@@ -735,20 +741,24 @@ function appendNewCategoryBlock(c) {
   const idx = $('#workSection .task-editor .card-body .category-block').length;
   const block = `
     <div class="border rounded p-3 mb-3 category-block" data-index="${idx}" data-category='${JSON.stringify(c)}'>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <strong>${c.category_name || 'Unnamed Category'}</strong>
-        <div class="d-flex align-items-center gap-2">
-          <span class="text-success">${c.rate ?? 0} ${c.unit || ''}</span>
-          <button class="btn btn-sm btn-danger remove-category-btn" type="button" title="Remove category">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
-      </div>
-
       <div class="mb-2 small text-muted">
         <strong>Category ID:</strong> ${c.id || 'N/A'}
       </div>
 
+      <!-- Row 0: Category Name -->
+      <div class="row">
+        <div class="col-md-10 mb-2">
+          <label class="form-label">Category Name</label>
+          <input type="text" class="form-control category-name" value="${c.category_name || ''}">
+        </div>
+        <div class="col-md-2 mb-2 d-flex align-items-end">
+          <button class="btn btn-sm btn-danger remove-category-btn w-100" type="button" title="Remove category">
+            <i class="bi bi-trash"></i> Remove
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 1: Rate and Unit -->
       <div class="row">
         <div class="col-md-6 mb-2">
           <label class="form-label">Rate</label>
