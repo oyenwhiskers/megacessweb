@@ -286,8 +286,13 @@ function renderTaskEditor(task) {
     }
   });
 
-  // Save button wiring (unchanged)
+  // Save button wiring with validation
   $('#saveChangesBtn').off('click').on('click', async function () {
+    // Validate categories first
+    if (!validateCategories()) {
+      return; // Stop if validation fails
+    }
+    
     const updatedData = collectFormData(task.id);
     console.log("Updating payment rate:", updatedData);
     await updatePaymentRate(task.id, updatedData);
@@ -390,6 +395,20 @@ function collectFormData(taskId) {
     const maxRaw = $(this).find('.category-max').val();
     const condUnit = $(this).find('.category-condition-unit').val()?.trim() || '';
 
+    // Validate: if min or max is provided, type must not be empty
+    const hasMinOrMax = (minRaw !== "" && minRaw !== null && typeof minRaw !== 'undefined') || 
+                        (maxRaw !== "" && maxRaw !== null && typeof maxRaw !== 'undefined');
+    
+    if (hasMinOrMax && !type) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: `Category "${catName}" has min/max values but no Condition Type. Please specify the type (e.g., weight, quantity, area).`,
+        confirmButtonText: 'OK'
+      });
+      return false; // Stop processing
+    }
+
     // To build conditions according to:
     // if type === 'weight' -> min_weight, max_weight
     // if type === 'quantity' -> min_quantity, max_quantity
@@ -428,6 +447,38 @@ function collectFormData(taskId) {
   });
 
   return data;
+}
+
+/* Validate categories before submission */
+function validateCategories() {
+  let isValid = true;
+  const errors = [];
+
+  $('.category-block').each(function () {
+    const catName = $(this).find('strong').first().text().trim() || 'Unnamed Category';
+    const type = $(this).find('.category-type').val()?.trim() || '';
+    const minRaw = $(this).find('.category-min').val();
+    const maxRaw = $(this).find('.category-max').val();
+
+    const hasMinOrMax = (minRaw !== "" && minRaw !== null && typeof minRaw !== 'undefined') || 
+                        (maxRaw !== "" && maxRaw !== null && typeof maxRaw !== 'undefined');
+    
+    if (hasMinOrMax && !type) {
+      isValid = false;
+      errors.push(`"${catName}" has min/max values but no Condition Type`);
+    }
+  });
+
+  if (!isValid) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Validation Error',
+      html: `<p>Please fix the following issues:</p><ul class="text-start">${errors.map(e => `<li>${e}</li>`).join('')}</ul><p class="mt-3">Condition Type is required when Min or Max values are provided (e.g., weight, quantity, area).</p>`,
+      confirmButtonText: 'OK'
+    });
+  }
+
+  return isValid;
 }
 
 /* -------------------- PUT Request (Update Payment Rate) -------------------- */
@@ -583,6 +634,20 @@ function ensureAddCategoryModalExists() {
     const min = $('#new_category_min').val();
     const max = $('#new_category_max').val();
     const condUnit = $('#new_category_cond_unit').val().trim();
+
+    // Validate: if min or max is provided, type must not be empty
+    const hasMinOrMax = (min !== "" && min !== null && typeof min !== 'undefined') || 
+                        (max !== "" && max !== null && typeof max !== 'undefined');
+    
+    if (hasMinOrMax && !type) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: 'Condition Type is required when Min or Max values are provided. Please specify the type (e.g., weight, quantity, area).',
+        confirmButtonText: 'OK'
+      });
+      return; // Stop processing
+    }
 
     let conditions = null;
     if (type) {
