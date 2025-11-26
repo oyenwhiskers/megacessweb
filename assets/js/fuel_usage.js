@@ -87,7 +87,7 @@ function populateFuelUsageTable(usages) {
         row.className = 'content-row d-flex border-bottom py-2 align-items-center';
 
         // Usage Quantity Badge Color
-        let badgeClass = 'bg-primary text-white';
+        let badgeClass = 'bg-warning text-black';
 
         // Handle Long Description
         const fullDesc = usage.usage_description || '-';
@@ -221,7 +221,7 @@ async function createFuelUsage(payload) {
         }
     } catch (err) {
         console.error(err);
-        showError("Failed to add fuel usage. Try again.");
+        showError(err.message || "Failed to add fuel usage.");
         return false;
     }
 }

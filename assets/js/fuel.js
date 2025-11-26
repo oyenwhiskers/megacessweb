@@ -77,7 +77,7 @@ function populateFuelsTable(fuels) {
     const row = document.createElement('div');
     row.className = 'content-row d-flex border-bottom py-2 align-items-center';
 
-    let fuelClass = 'bg-warning text-black'; // customize based on fuel amount if needed
+    let fuelClass = 'bg-primary text-white'; // customize based on fuel amount if needed
 
     row.innerHTML = `
       <div class="col">${fuel.supplier_name || 'Unnamed Fuel'}</div>
@@ -89,7 +89,7 @@ function populateFuelsTable(fuels) {
         ${formatDateDisplay(fuel.date_bought)}
       </div>
       <div class="col text-center">
-        <button class="btn btn-sm btn-warning me-2 update-fuel-btn"
+        <button class="btn btn-sm btn-primary me-2 update-fuel-btn"
           data-id="${fuel.id}"
           data-supplier-name="${fuel.supplier_name || ''}"
           data-buyer-id="${fuel.user?.id || ''}"
