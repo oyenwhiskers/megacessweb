@@ -5,8 +5,7 @@ let paginationState = {
   perPage: 10,
   total: 0,
   search: '',
-  status: '',
-  sort: ''
+  status: ''
 };
 
 // ==================== INITIALIZATION ====================
@@ -34,33 +33,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Sorting Listener
-  const sortSelect = document.getElementById('vehicleSortBy');
-  if (sortSelect) {
-    sortSelect.addEventListener('change', (e) => {
-      paginationState.sort = e.target.value;
-      paginationState.currentPage = 1;
-      getAllVehicles(paginationState);
-    });
-  }
-
   // Refresh Button Listener
   const refreshBtn = document.getElementById('refreshVehicleBtn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
-      getAllVehicles({
-        search: paginationState.search,
-        status: paginationState.status,
-        sort: paginationState.sort,
-        page: paginationState.currentPage,
-        per_page: paginationState.perPage
-      });
+      // Reset State
+      paginationState.search = '';
+      paginationState.status = '';
+      paginationState.currentPage = 1;
+
+      // Reset DOM elements
+      if (searchInput) searchInput.value = '';
+      if (statusFilter) statusFilter.value = '';
+
+      getAllVehicles(paginationState);
     });
   }
 });
 
 // ==================== DATA FETCHING ====================
-async function getAllVehicles({ search = '', status = '', sort = '', page = 1, per_page = 10 } = {}) {
+async function getAllVehicles({ search = '', status = '', page = 1, per_page = 10 } = {}) {
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('vehicleTableBody');
   if (loading) loading.style.display = 'block';
@@ -69,7 +61,6 @@ async function getAllVehicles({ search = '', status = '', sort = '', page = 1, p
   const params = new URLSearchParams();
   if (search) params.append('search', search);
   if (status) params.append('status', status);
-  if (sort) params.append('sort', sort);
   params.append('page', page);
   params.append('per_page', per_page);
 
@@ -91,28 +82,7 @@ async function getAllVehicles({ search = '', status = '', sort = '', page = 1, p
         meta = result.data;
       } else if (Array.isArray(result.data)) {
         // Client-side fallback
-        let allData = result.data;
-
-        // Client-side sorting
-        if (sort) {
-          allData.sort((a, b) => {
-            const [key, order] = sort.split('-');
-            let valA = '', valB = '';
-
-            if (key === 'name') {
-              valA = (a.vehicle_name || '').toLowerCase();
-              valB = (b.vehicle_name || '').toLowerCase();
-            } else if (key === 'plate') {
-              valA = (a.plate_number || '').toLowerCase();
-              valB = (b.plate_number || '').toLowerCase();
-            }
-
-            if (valA < valB) return order === 'asc' ? -1 : 1;
-            if (valA > valB) return order === 'asc' ? 1 : -1;
-            return 0;
-          });
-        }
-
+        const allData = result.data;
         const total = allData.length;
         const lastPage = Math.ceil(total / per_page) || 1;
         const start = (page - 1) * per_page;
