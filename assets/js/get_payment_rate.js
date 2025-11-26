@@ -251,13 +251,13 @@ function renderTaskEditor(task) {
         <textarea class="form-control" id="description" rows="3" readonly>${task.description || ''}</textarea>
       </div>
 
-      <div class="mb-3">
+      <!-- <div class="mb-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <label class="form-label fw-bold mb-0">Categories & Rates</label>
           <button class="btn btn-sm btn-success fw-semibold py-1 px-3" id="addCategoryBtn" type="button">
             <i class="bi bi-plus-circle me-1"></i> Add Category
           </button>
-        </div>
+        </div> -->
         <hr>
         ${categoryHtml || '<p class="text-muted">No categories defined</p>'}
       </div>
