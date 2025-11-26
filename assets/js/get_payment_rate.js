@@ -318,8 +318,22 @@ function renderTaskEditor(task) {
 
   // Add Category trigger
   $('#addCategoryBtn').off('click').on('click', function () {
+    // Automatically enable edit mode if not already editing
+    const isEditing = $('#editToggleBtn').data('editing') || false;
+    if (!isEditing) {
+      $('#editToggleBtn').click(); // Trigger edit mode
+    }
+    
     openAddCategoryModal((newCat) => {
       appendNewCategoryBlock(newCat);
+      // Auto-save after adding category
+      setTimeout(async () => {
+        if (validateCategories()) {
+          const updatedData = collectFormData(task.id);
+          console.log("Auto-saving after category addition:", updatedData);
+          await updatePaymentRate(task.id, updatedData);
+        }
+      }, 500); // Small delay to ensure DOM is updated
     });
   });
 
@@ -517,9 +531,11 @@ async function updatePaymentRate(id, bodyData) {
       console.log("Payment rate updated successfully!");
       Swal.fire({
         icon: "success",
-        title: "Payment rate updated successfully!",
-        timer: 2500,
-        timerProgressBar: true
+        title: "Saved successfully!",
+        text: "Payment rate has been updated.",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false
       });
       getPaymentRates(); // reload list
     } else {
@@ -626,7 +642,7 @@ function ensureAddCategoryModalExists() {
 
   $('#saveNewCategoryBtn').on('click', function () {
     const name = $('#new_category_name').val().trim();
-    const key = $('#new_category_key').val().trim() || generateCategoryKey(name);
+    const key = name.toLowerCase().replace(/\s+/g, '_');
     const rate = $('#new_category_rate').val();
     const unit = $('#new_category_unit').val().trim();
     const order = parseInt($('#new_category_order').val()) || 0;
@@ -683,15 +699,6 @@ function ensureAddCategoryModalExists() {
     const modalEl = document.getElementById('addCategoryModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     if (modal) modal.hide();
-
-    // Show success message
-    Swal.fire({
-      icon: 'success',
-      title: 'Category Added!',
-      text: `"${name}" has been added successfully.`,
-      timer: 2000,
-      showConfirmButton: false
-    });
   });
 }
 

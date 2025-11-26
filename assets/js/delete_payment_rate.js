@@ -33,7 +33,9 @@ async function deletePaymentRate(id) {
     showCancelButton: true,
     reverseButtons: true,
     confirmButtonText: "Delete",
+    confirmButtonColor: "#dc3545",
     cancelButtonText: "Cancel",
+    cancelButtonColor: "#6c757d",
     focusCancel: true,
     showLoaderOnConfirm: true,
     preConfirm: () => {
@@ -121,7 +123,9 @@ async function deletePaymentRateCategory(id, categoryId) {
     showCancelButton: true,
     reverseButtons: true,
     confirmButtonText: "Delete",
+    confirmButtonColor: "#dc3545",
     cancelButtonText: "Cancel",
+    cancelButtonColor: "#6c757d",
     focusCancel: true,
     showLoaderOnConfirm: true,
     preConfirm: () => {
