@@ -32,13 +32,23 @@ document.addEventListener('DOMContentLoaded', () => {
       getAllVehicles(paginationState);
     });
   }
+
+  // Refresh Button Listener
+  const refreshBtn = document.getElementById('refreshVehicleBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      getAllVehicles({
+        search: paginationState.search,
+        status: paginationState.status,
+        page: paginationState.currentPage,
+        per_page: paginationState.perPage
+      });
+    });
+  }
 });
 
 // ==================== DATA FETCHING ====================
 async function getAllVehicles({ search = '', status = '', page = 1, per_page = 10 } = {}) {
-  const token = getToken();
-  if (!token) return;
-
   const loading = document.getElementById('loading');
   const tableBody = document.getElementById('vehicleTableBody');
   if (loading) loading.style.display = 'block';
@@ -51,19 +61,11 @@ async function getAllVehicles({ search = '', status = '', page = 1, per_page = 1
   params.append('per_page', per_page);
 
   try {
-    const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-    const result = await response.json();
+    const result = await apiFetch(`/vehicles?${params.toString()}`);
 
     if (loading) loading.style.display = 'none';
 
-    if (response.ok && result.success) {
+    if (result.success) {
       let data = [];
       let meta = {};
 
@@ -104,7 +106,6 @@ async function getAllVehicles({ search = '', status = '', page = 1, per_page = 1
   } catch (error) {
     console.error(error);
     if (loading) loading.style.display = 'none';
-    showError("Network error.");
   }
 }
 
@@ -271,19 +272,8 @@ function setStatsLoading(isLoading) {
 
 // -------------------- Real Analytics (Summary) --------------------
 async function fetchResourcesUsageAnalytics() {
-  const token = getToken();
-  if (!token) return null;
-
   try {
-    const resp = await fetch('https://mwms.megacess.com/api/v1/analytics/resources-usage', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      }
-    });
-
-    const result = await resp.json();
+    const result = await apiFetch('/analytics/resources-usage');
     if (result?.success && result?.data) {
       return result.data;
     }
@@ -318,12 +308,6 @@ async function refreshVehicleSummary() {
 const addVehicleBtn = document.getElementById('addVehicleBtn');
 if (addVehicleBtn) {
   addVehicleBtn.addEventListener('click', async () => {
-    const token = getToken();
-    if (!token) {
-      showError("Missing authentication token. Please login first.");
-      return;
-    }
-
     const vehicleName = document.getElementById('vehicleName').value.trim();
     const plateNo = document.getElementById('plateNo').value.trim();
     const statusSelect = document.getElementById('addVehicleStatus');
@@ -339,18 +323,12 @@ if (addVehicleBtn) {
     addVehicleBtn.textContent = 'Adding...';
 
     try {
-      const response = await fetch('https://mwms.megacess.com/api/v1/vehicles', {
+      const result = await apiFetch('/vehicles', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ vehicle_name: vehicleName, plate_number: plateNo, status })
       });
-      const result = await response.json();
 
-      if (response.ok && result.success) {
+      if (result.success) {
         bootstrap.Modal.getInstance(document.getElementById('addVehicleModal')).hide();
         document.getElementById('vehicleName').value = '';
         document.getElementById('plateNo').value = '';
@@ -363,7 +341,6 @@ if (addVehicleBtn) {
       }
     } catch (error) {
       console.error(error);
-      showError('Failed to add vehicle. Please try again.');
     } finally {
       addVehicleBtn.disabled = false;
       addVehicleBtn.textContent = originalText;
@@ -381,26 +358,14 @@ function attachDeleteListeners() {
 }
 
 async function handleDelete(e) {
-  const token = getToken();
-  if (!token) {
-    showErrorNoToken("Missing authentication token. Please login first.");
-    return;
-  }
-
   const vehicleId = e.currentTarget.dataset.id;
   showConfirm('You want to delete this vehicle?', async () => {
     showLoading();
     try {
-      const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${vehicleId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
+      const result = await apiFetch(`/vehicles/${vehicleId}`, {
+        method: 'DELETE'
       });
-      const result = await response.json();
-      if (response.ok && result.success) {
+      if (result.success) {
         showSuccess('Success!', result.message);
         getAllVehicles();
         if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
@@ -409,7 +374,6 @@ async function handleDelete(e) {
       }
     } catch (err) {
       console.error(err);
-      showError('Failed to delete vehicle. Please try again.');
     } finally {
       hideLoading();
     }
@@ -439,12 +403,6 @@ function handleEdit(e) {
 const updateVehicleBtn = document.getElementById('updateVehicleBtn');
 if (updateVehicleBtn) {
   updateVehicleBtn.addEventListener('click', async () => {
-    const token = getToken();
-    if (!token) {
-      showErrorNoToken("Missing authentication token. Please login first.");
-      return;
-    }
-
     if (!currentVehicleId) return;
 
     const name = document.getElementById('updateVehicleName').value.trim();
@@ -461,18 +419,12 @@ if (updateVehicleBtn) {
     updateVehicleBtn.textContent = 'Updating...';
 
     try {
-      const response = await fetch(`https://mwms.megacess.com/api/v1/vehicles/${currentVehicleId}`, {
+      const result = await apiFetch(`/vehicles/${currentVehicleId}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
         body: JSON.stringify({ vehicle_name: name, plate_number: plate, status })
       });
-      const result = await response.json();
 
-      if (response.ok && result.success) {
+      if (result.success) {
         bootstrap.Modal.getInstance(document.getElementById('updateVehicleModal')).hide();
         getAllVehicles();
         if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
@@ -482,7 +434,6 @@ if (updateVehicleBtn) {
       }
     } catch (error) {
       console.error(error);
-      showError('Failed to update vehicle.');
     } finally {
       updateVehicleBtn.disabled = false;
       updateVehicleBtn.textContent = originalText;
