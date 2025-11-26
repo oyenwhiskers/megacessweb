@@ -244,6 +244,7 @@
     
     // Main function to fetch workers
     async function fetchWorkersList(search = '', page = 1, gender = 'all') {
+        const startTime = performance.now();
         try {
             showLoading();
             
@@ -348,10 +349,14 @@
             }
             
             workersView.innerHTML = workersHTML;
+            const endTime = performance.now();
+            console.log(`[WorkerList] API + render time: ${(endTime - startTime).toFixed(2)} ms`);
             
         } catch (error) {
             console.error('Error fetching workers:', error);
             showError(error.message || 'Failed to load workers. Please try again.', search, gender);
+            const endTime = performance.now();
+            console.log(`[WorkerList] API + render time (error): ${(endTime - startTime).toFixed(2)} ms`);
         }
     }
     

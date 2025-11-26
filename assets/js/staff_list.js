@@ -60,6 +60,7 @@
 
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
   async function fetchStaffList(search = '', role = 'all', page = 1) {
+    const startTime = performance.now();
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
     currentPage = page;
@@ -105,9 +106,13 @@
       }
 
       const data = await res.json();
+      const endTime = performance.now();
+      console.log(`[StaffList] API + render time: ${(endTime - startTime).toFixed(2)} ms`);
       renderStaff(data, role);
     } catch (err) {
       showStatus('Network or server error while loading staff list.', 'danger');
+      const endTime = performance.now();
+      console.log(`[StaffList] API + render time (error): ${(endTime - startTime).toFixed(2)} ms`);
       renderStaff({ data: [] });
     }
   }
