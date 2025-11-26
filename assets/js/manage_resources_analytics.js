@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function fetchAnalyticsData() {
+    setLoadingState();
     try {
         // Using apiFetch from utils.js
         const response = await apiFetch('/analytics/resources-usage');
@@ -12,10 +13,40 @@ async function fetchAnalyticsData() {
             updateFuelAnalytics(response.data.fuel_analytics);
         } else {
             console.error('Failed to load analytics data');
+            setErrorState();
         }
     } catch (error) {
         console.error('Error fetching analytics:', error);
+        setErrorState();
     }
+}
+
+function setLoadingState() {
+    const ids = [
+        'vehicle-total', 'vehicle-available', 'vehicle-in-use', 'vehicle-maintenance',
+        'tools-total', 'tools-available', 'tools-in-use', 'tools-broken',
+        'fuel-remaining'
+    ];
+
+    const spinner = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = spinner;
+    });
+}
+
+function setErrorState() {
+    const ids = [
+        'vehicle-total', 'vehicle-available', 'vehicle-in-use', 'vehicle-maintenance',
+        'tools-total', 'tools-available', 'tools-in-use', 'tools-broken',
+        'fuel-remaining'
+    ];
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '-';
+    });
 }
 
 function updateVehicleAnalytics(data) {
@@ -113,7 +144,7 @@ function initToolChart(statusDistribution) {
             labels: labels,
             datasets: [{ data: data, backgroundColor: backgroundColor }],
         },
-        options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { padding: 20 } } } },
     });
 }
 
