@@ -595,7 +595,7 @@ function ensureAddCategoryModalExists() {
                 <input type="text" id="new_category_unit" class="form-control">
               </div>
               <div class="col-md-4 mb-2">
-                <label class="form-label" data-bs-toggle="tooltip" data-bs-placement="top" title="Order in which this category appears in the list">
+                <label class="form-label" data-bs-toggle="tooltip" data-bs-placement="top" title="Order in which this category appears in the list (starts with 0,1,2...)">
                   Display Order <i class="bi bi-info-circle text-muted ms-1"></i>
                 </label>
                 <input type="number" id="new_category_order" class="form-control" value="0">
@@ -609,7 +609,6 @@ function ensureAddCategoryModalExists() {
                 <label class="form-label" data-bs-toggle="tooltip" data-bs-placement="top" title="Type of condition (e.g., weight, quantity, area, fruit)">
                   Condition Type <i class="bi bi-info-circle text-muted ms-1"></i>
                 </label>
-                <!-- free-text per your request -->
                 <input type="text" id="new_category_type" class="form-control" placeholder="e.g. weight, quantity, area">
               </div>
               <div class="col-md-4 mb-2">
