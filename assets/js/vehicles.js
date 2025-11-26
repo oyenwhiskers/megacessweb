@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
       paginationState.search = e.target.value;
       paginationState.currentPage = 1;
       getAllVehicles(paginationState);
-    }, 300));
+    }, 100));
   }
 
   if (statusFilter) {

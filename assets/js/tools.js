@@ -289,7 +289,7 @@ const handleSearch = debounce(() => {
     const search = document.getElementById('toolSearch').value.trim();
     const status = document.getElementById('toolStatus').value;
     getAllTools({ search, status, page: 1 });
-}, 300);
+}, 100);
 
 document.getElementById('toolSearch').addEventListener('input', handleSearch);
 document.getElementById('toolStatus').addEventListener('change', handleSearch);
