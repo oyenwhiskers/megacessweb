@@ -26,7 +26,7 @@ async function loadBookingReferenceData({ force = false } = {}) {
     ALL_TOOLS = toolsData.map(t => ({
       id: t.id,
       tool_name: t.tool_name,
-      // searchField: (t.tool_name || '').toLowerCase(), // Not strictly needed for initSearchableDropdown but good to have
+      name: t.tool_name, // Added for dropdown compatibility
     }));
 
     ALL_USERS_STAFF = usersStaffData.map(entity => {
@@ -47,7 +47,9 @@ async function loadBookingReferenceData({ force = false } = {}) {
     }).filter(item => item.id);
 
     console.log("🔧 Tools loaded:", ALL_TOOLS.length);
+    console.log("🔧 Tools:", ALL_TOOLS);
     console.log("🔧 Users/Staff loaded:", ALL_USERS_STAFF.length);
+    console.log("🔧 Users/Staff:", ALL_USERS_STAFF);
 
   } catch (error) {
     console.error("Error loading reference data:", error);
@@ -298,7 +300,7 @@ async function handleCreateToolBookingSubmit(event) {
     showError('Please select a tool.');
     return;
   }
-  if (!userId && !staffId) {
+  if ((!userId || userId === 'null' || userId === 'undefined') && (!staffId || staffId === 'null' || staffId === 'undefined')) {
     showError('Please select a user or staff member.');
     return;
   }
@@ -307,9 +309,14 @@ async function handleCreateToolBookingSubmit(event) {
     tool_id: toolId,
     datetime_booking: bookingDateInput.value,
     datetime_return: returnDateInput.value || null,
-    ...(userId && { user_id: userId }),
-    ...(staffId && { staff_id: staffId }),
   };
+
+  if (userId && userId !== 'null' && userId !== 'undefined') {
+    payload.user_id = parseInt(userId, 10);
+  }
+  if (staffId && staffId !== 'null' && staffId !== 'undefined') {
+    payload.staff_id = parseInt(staffId, 10);
+  }
 
   btn.disabled = true;
   btn.textContent = "Creating..."
@@ -589,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sortBy: toolBookingState.sortBy,
         page: 1,
       });
-    }, 100);
+    }, 400);
     searchInput.addEventListener('input', handleSearchInput);
   }
 
