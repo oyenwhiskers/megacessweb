@@ -108,17 +108,13 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">IC / Document ID:</label>
-                <input type="text" class="form-control" name="ic" required placeholder="Enter IC or Document ID">
+                <input type="text" class="form-control" name="staff_doc" required placeholder="Enter IC or Document ID">
                 <div class="invalid-feedback">Please provide a valid IC or Document ID.</div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Full Name:</label>
                 <input type="text" class="form-control" name="fullname" required placeholder="Enter full name" minlength="2">
                 <div class="invalid-feedback">Please provide a valid full name (minimum 2 characters).</div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Nickname:</label>
-                <input type="text" class="form-control" name="nickname" placeholder="Enter nickname (optional)">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Phone Number:</label>
@@ -136,7 +132,6 @@
                   <option value="">Select Gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
-                  <option value="other">Other</option>
                 </select>
                 <div class="invalid-feedback">Please select a gender.</div>
               </div>
@@ -246,6 +241,11 @@
               <div class="col-md-6">
                 <label class="form-label">KWSP Number:</label>
                 <input type="text" class="form-control" name="kwsp">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Start Date:</label>
+                <input type="date" class="form-control" name="staff_employment_start_date" required>
+                <div class="invalid-feedback">Please provide a valid start date.</div>
               </div>
             </div>
             <div class="mt-4 text-end">
