@@ -846,7 +846,9 @@
             // Refresh the worker list to show updated data including image
             setTimeout(() => {
                 fetchWorkersList(currentSearch, currentPage);
-            }, 300);
+                // Reopen the modal with updated worker details to refresh image
+                viewWorkerDetails(workerId);
+            }, 1000);
 
         } catch (error) {
             console.error('Error saving worker changes:', error);
