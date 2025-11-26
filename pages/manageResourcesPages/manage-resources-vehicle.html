@@ -172,110 +172,110 @@
               <button type="button" class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
                 data-bs-target="#addVehicleModal">
                 <i class="bi bi-plus-circle me-2"></i>
-                Add Vehicle
-              </button>
-            </div>
-          </div>
-          <!-- Row 3: Vehicle Table -->
-          <div class="mt-4 px-4" style="padding-bottom: 35px;">
-            <div class="content-table mt-4">
-              <!-- Table Header -->
-              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                <div class="col-3">Vehicle Name</div>
-                <div class="col-3">Plate No.</div>
-                <div class="col-3">Status</div>
-                <div class="col-3 text-center">Action</div>
-              </div>
-
-              <!-- Loading Spinner -->
-              <div id="loading" class="text-center my-3" style="display: none;">
-                <div class="spinner-border text-success" role="status">
-                  <span class="visually-hidden">Loading...</span>
+                  Add Vehicle
+                  </button>
                 </div>
               </div>
-              <!-- Table Body (Empty, JS will populate it) -->
-              <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
+              <!-- Row 3: Vehicle Table -->
+              <div class="mt-4 px-4" style="padding-bottom: 35px;">
+                <div class="content-table mt-4">
+                  <!-- Table Header -->
+                  <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                    <div class="col-3">Vehicle Name</div>
+                    <div class="col-3">Plate No.</div>
+                    <div class="col-3">Status</div>
+                    <div class="col-3 text-center">Action</div>
+                  </div>
 
-              <!-- Pagination (Tailwind-like style requested) -->
-              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
-                <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
-                  <!-- JS will render Previous, page numbers, Next here -->
-                </ul>
-              </nav>
+                  <!-- Loading Spinner -->
+                  <div id="loading" class="text-center my-3" style="display: none;">
+                    <div class="spinner-border text-success" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                  <!-- Table Body (Empty, JS will populate it) -->
+                  <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
+
+                  <!-- Pagination (Tailwind-like style requested) -->
+                  <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                    <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
+                      <!-- JS will render Previous, page numbers, Next here -->
+                    </ul>
+                  </nav>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Booking Tab -->
-        <div class="tab-pane" data-name="booking">
-          <div class="px-4 mb-4">
-            <!-- Title -->
-            <h5 class="fw-semibold mb-3">List of Vehicle Bookings :</h5>
+            <!-- Booking Tab -->
+            <div class="tab-pane" data-name="booking">
+              <div class="px-4 mb-4">
+                <!-- Title -->
+                <h5 class="fw-semibold mb-3">List of Vehicle Bookings :</h5>
 
-            <!-- Search Bar + Filter + Add Button -->
-            <div class="d-flex flex-wrap gap-3 align-items-center">
-              <!-- Search Bar -->
-              <div class="flex-grow-1">
-                <div class="input-group">
-                  <input type="text" id="vehicleBookingSearch" class="form-control"
-                    placeholder="Search vehicle/plate number...">
-                  <button class="btn btn-secondary" id="refreshVehicleBookingBtn" type="button">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                <!-- Search Bar + Filter + Add Button -->
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                  <!-- Search Bar -->
+                  <div class="flex-grow-1">
+                    <div class="input-group">
+                      <input type="text" id="vehicleBookingSearch" class="form-control"
+                        placeholder="Search vehicle/plate number...">
+                      <button class="btn btn-secondary" id="refreshVehicleBookingBtn" type="button">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Filter Dropdown -->
+                  <div>
+                    <select id='vehicleBookingSortBy' class="form-select">
+                      <option selected value="">Sort by...</option>
+                      <!-- Date sorting -->
+                      <option value="booking-asc">Booking Date ↑ (asc)</option>
+                      <option value="booking-desc">Booking Date ↓ (desc)</option>
+                      <option value="return-asc">Return Date ↑ (asc)</option>
+                      <option value="return-desc">Return Date ↓ (desc)</option>
+                    </select>
+                  </div>
+
+                  <!-- Add Vehicle Button -->
+                  <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
+                    <i class="bi bi-plus-circle me-2"></i> Add Booking
                   </button>
                 </div>
               </div>
 
-              <!-- Filter Dropdown -->
-              <div>
-                <select id='vehicleBookingSortBy' class="form-select">
-                  <option selected value="">Sort by...</option>
-                  <!-- Date sorting -->
-                  <option value="booking-asc">Booking Date ↑ (asc)</option>
-                  <option value="booking-desc">Booking Date ↓ (desc)</option>
-                  <option value="return-asc">Return Date ↑ (asc)</option>
-                  <option value="return-desc">Return Date ↓ (desc)</option>
-                </select>
-              </div>
+              <div class="mt-4 px-4">
+                <!-- Vehicle Table-like Div -->
+                <div class="content-table mt-4">
 
-              <!-- Add Vehicle Button -->
-              <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
-                <i class="bi bi-plus-circle me-2"></i> Add Booking
-              </button>
-            </div>
-          </div>
+                  <!-- Table Header -->
+                  <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                    <div class="col">Vehicle Name</div>
+                    <div class="col">Assigned Person</div>
+                    <div class="col">Booking Date</div>
+                    <div class="col">Return Date</div>
+                    <div class="col text-center">Action</div>
+                  </div>
 
-          <div class="mt-4 px-4">
-            <!-- Vehicle Table-like Div -->
-            <div class="content-table mt-4">
+                  <!-- Loading Spinner -->
+                  <div id="loadingBooking" class="text-center my-3" style="display: none;">
+                    <div class="spinner-border text-success" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                  <!-- Table Body -->
+                  <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
 
-              <!-- Table Header -->
-              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                <div class="col">Vehicle Name</div>
-                <div class="col">Assigned Person</div>
-                <div class="col">Booking Date</div>
-                <div class="col">Return Date</div>
-                <div class="col text-center">Action</div>
-              </div>
-
-              <!-- Loading Spinner -->
-              <div id="loadingBooking" class="text-center my-3" style="display: none;">
-                <div class="spinner-border text-success" role="status">
-                  <span class="visually-hidden">Loading...</span>
+                  <!-- Pagination -->
+                  <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                    <ul id="vehicleBookingPagination" class="pagination justify-content-center mb-0">
+                      <!-- JS will render Previous, page numbers, Next here -->
+                    </ul>
+                  </nav>
                 </div>
               </div>
-              <!-- Table Body -->
-              <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
-
-              <!-- Pagination -->
-              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
-                <ul id="vehicleBookingPagination" class="pagination justify-content-center mb-0">
-                  <!-- JS will render Previous, page numbers, Next here -->
-                </ul>
-              </nav>
             </div>
           </div>
-        </div>
-      </div>
 
     </main>
     <!-- End of Main Content -->
