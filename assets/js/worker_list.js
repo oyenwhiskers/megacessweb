@@ -91,6 +91,12 @@
             console.log('Worker list - No image for worker:', worker.staff_fullname, 'staff_img:', worker.staff_img);
         }
         
+        // Determine active/inactive status
+        const isActive = worker.is_active !== false; // Default to active if not specified
+        const statusBtnClass = isActive ? 'btn-success' : 'btn-outline-secondary';
+        const statusBtnText = isActive ? 'Active' : 'Inactive';
+        const statusBtnIcon = isActive ? 'bi-toggle-on' : 'bi-toggle-off';
+
         return `
             <div class="list-group-item worker-list-item ${claimedStatus}">
                 <div class="d-flex align-items-center">
@@ -128,6 +134,9 @@
                                             onclick="deleteWorker(${worker.id})"
                                             title="Delete Worker">
                                         <i class="bi bi-trash"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm ${statusBtnClass}" title="Toggle Active/Inactive" onclick="toggleWorkerStatus(${worker.id}, ${isActive})">
+                                        <i class="bi ${statusBtnIcon} me-1"></i>${statusBtnText}
                                     </button>
                                 </div>
                             </div>
@@ -780,11 +789,19 @@
     };
     
     // Function to save worker changes
-    window.saveWorkerChanges = async function(workerId) {
+    window.saveWorkerChanges = async function(workerId, event = null) {
         try {
             const modal = document.getElementById('workerDetailsModal');
-            if (!modal) return;
+            if (!modal) {
+                console.error('Modal not found');
+                return;
+            }
+
             const modalBody = modal.querySelector('.modal-body');
+            if (!modalBody) {
+                console.error('Modal body not found');
+                return;
+            }
 
             // Collect all editable fields
             const staffDocInput = modalBody.querySelector('input[name="staff_doc"]');
@@ -793,71 +810,128 @@
             const dobInput = modalBody.querySelector('input[name="dob"]');
             const genderInput = modalBody.querySelector('input[name="gender"], select[name="gender"]');
             const startDateInput = modalBody.querySelector('input[name="staff_employment_start_date"]');
-            // Add other fields as needed
 
             // Check if there's an image file to upload
             const imageInput = document.getElementById('workerDetailsImageInput');
             const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
 
-            // Use FormData for all fields if image is present
-            let requestBody;
-            let headers = {
-                'Authorization': `Bearer ${getAuthToken()}`,
-                'Accept': 'application/json'
-            };
-
-            requestBody = new FormData();
-            if (staffDocInput) requestBody.append('staff_doc', staffDocInput.value);
-            if (fullNameInput) requestBody.append('staff_fullname', fullNameInput.value);
-            if (phoneInput) requestBody.append('staff_phone', phoneInput.value);
-            if (dobInput) requestBody.append('staff_dob', dobInput.value);
-            if (genderInput) requestBody.append('staff_gender', genderInput.value);
-            if (startDateInput) requestBody.append('staff_employment_start_date', startDateInput.value);
-            // Add other fields as needed
-            if (imageFile) requestBody.append('staff_img', imageFile);
-
-            // Disable save button and show loading state
-            const saveButton = event.target;
-            const originalButtonText = saveButton.innerHTML;
-            saveButton.disabled = true;
-            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-
-            // Make PUT request to update worker
-            const response = await fetch(`${API_BASE_URL}/staff/${workerId}`, {
-                method: 'PUT',
-                headers: headers,
-                body: requestBody
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save changes.');
+            // Get the save button - try from event first, then find it in the modal
+            let saveButton = null;
+            if (event && event.target) {
+                saveButton = event.target;
+            } else {
+                saveButton = modal.querySelector('button[onclick*="saveWorkerChanges"], .btn-primary, button[type="submit"]');
             }
 
+            // Disable save button and show loading state
+            const originalButtonText = saveButton ? saveButton.innerHTML : '';
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+            }
+
+            // Use FormData for all fields (works for both file and non-file updates)
+            const formData = new FormData();
+
+            // Append all fields to FormData
+            if (staffDocInput && staffDocInput.value) {
+                formData.append('staff_doc', staffDocInput.value);
+            }
+            if (fullNameInput && fullNameInput.value) {
+                formData.append('staff_fullname', fullNameInput.value);
+            }
+            if (phoneInput && phoneInput.value) {
+                formData.append('staff_phone', phoneInput.value);
+            }
+            if (dobInput && dobInput.value) {
+                formData.append('staff_dob', dobInput.value);
+            }
+            if (genderInput && genderInput.value) {
+                formData.append('staff_gender', genderInput.value);
+            }
+            if (startDateInput && startDateInput.value) {
+                formData.append('staff_employment_start_date', startDateInput.value);
+            }
+
+            // Append image file if present
+            if (imageFile) {
+                formData.append('staff_img', imageFile);
+            }
+
+            // Prepare headers
+            const headers = {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Accept': 'application/json'
+                // Don't set Content-Type for FormData - browser will set it automatically with boundary
+            };
+
+            // Make POST request to update worker (POST works better with file uploads)
+            const response = await fetch(`${API_BASE_URL}/staff/${workerId}`, {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+
+            // Parse response
             const result = await response.json();
+
+            if (!response.ok) {
+                // Handle API error response
+                const errorMessage = result.message || result.error || 'Failed to save changes.';
+                throw new Error(errorMessage);
+            }
+
+            if (!result.success) {
+                // Handle non-success response
+                const errorMessage = result.message || 'Failed to save changes.';
+                throw new Error(errorMessage);
+            }
+
             console.log('Save response:', result);
 
             // Show success message
-            alert('Worker details updated successfully!');
+            if (typeof showNotification === 'function') {
+                showNotification('Worker details updated successfully!', 'success');
+            } else {
+                alert('Worker details updated successfully!');
+            }
 
             // Close the modal
             const modalInstance = bootstrap.Modal.getInstance(modal);
-            if (modalInstance) modalInstance.hide();
+            if (modalInstance) {
+                modalInstance.hide();
+            }
 
             // Refresh the worker list to show updated data including image
             setTimeout(() => {
-                fetchWorkersList(currentSearch, currentPage);
+                if (typeof fetchWorkersList === 'function') {
+                    fetchWorkersList(currentSearch, currentPage);
+                }
                 // Reopen the modal with updated worker details to refresh image
-                viewWorkerDetails(workerId);
+                if (typeof viewWorkerDetails === 'function') {
+                    viewWorkerDetails(workerId);
+                }
             }, 1000);
 
         } catch (error) {
             console.error('Error saving worker changes:', error);
-            alert(`Failed to save changes: ${error.message}`);
+            
+            // Show error message
+            const errorMessage = error.message || 'Failed to save changes. Please try again.';
+            if (typeof showNotification === 'function') {
+                showNotification(errorMessage, 'error');
+            } else {
+                alert(`Failed to save changes: ${errorMessage}`);
+            }
+
             // Re-enable save button
-            const saveButton = event.target;
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
+            const modal = document.getElementById('workerDetailsModal');
+            if (modal) {
+                const saveButton = modal.querySelector('button[onclick*="saveWorkerChanges"], .btn-primary, button[type="submit"]');
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
+                }
             }
         }
     };
@@ -902,6 +976,42 @@
         } catch (error) {
             console.error('Error deleting worker:', error);
             alert(`Failed to delete worker: ${error.message}`);
+        }
+    };
+    
+    // Toggle worker active/inactive status
+    window.toggleWorkerStatus = async function(workerId, currentStatus) {
+        try {
+            // Show loading indicator (optional)
+            const btn = document.querySelector(`button[onclick="toggleWorkerStatus(${workerId}, ${currentStatus})"]`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Updating...';
+            }
+            // API call to update status
+            const headers = {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            const newStatus = currentStatus ? 'inactive' : 'active';
+            const requestBody = { staff_status: newStatus };
+            const response = await fetch(`${API_BASE_URL}/staff/${workerId}/status`, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(requestBody)
+            });
+            if (!response.ok) {
+                throw new Error('Failed to update status.');
+            }
+            const result = await response.json();
+            alert(result.message || 'Status updated!');
+            // Refresh list
+            fetchWorkersList(currentSearch, currentPage);
+        } catch (error) {
+            alert('Error updating status: ' + error.message);
+        } finally {
+            // Re-enable button after refresh
         }
     };
     
