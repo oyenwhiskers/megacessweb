@@ -12,7 +12,7 @@ let toolState = {
 async function getAllTools({ search = '', status = '', page = 1 } = {}) {
     const loading = document.getElementById('loading');
     const tableBody = document.getElementById('toolsTableBody');
-    
+
     // Update Global State
     toolState.search = search;
     toolState.status = status;
@@ -98,7 +98,6 @@ function updateToolPaginationControls(meta) {
     toolState.lastPage = meta.last_page;
     toolState.total = meta.total;
     renderToolPagination(meta.current_page, meta.last_page);
-    console.log(meta.current_page, meta.last_page);
 }
 
 function renderToolPagination(current, last) {
@@ -138,42 +137,82 @@ function renderToolPagination(current, last) {
 
 // ==================== ANALYTICS ====================
 
-function animateCount(el, value, duration = 1000) {
+// Animate the counting with fade-in & scale effect
+function animateCount(el, value, duration = 1500) {
     if (!el) return;
     let start = 0;
     const startTime = performance.now();
-    
-    requestAnimationFrame(() => { el.style.opacity = 1; });
+
+    el.style.opacity = 0;
+    el.style.transform = "scale(0.9)";
+    el.style.transition = "opacity 0.4s ease-out, transform 0.4s ease-out";
+
+    requestAnimationFrame(() => {
+        el.style.opacity = 1;
+        el.style.transform = "scale(1)";
+    });
 
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-        
-        el.textContent = Math.floor(start + (value - start) * eased);
-        
-        if (progress < 1) requestAnimationFrame(update);
-        else el.textContent = value;
+        const current = Math.floor(start + (value - start) * eased);
+        el.textContent = current;
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            el.textContent = value;
+        }
     }
+
     requestAnimationFrame(update);
 }
 
+// Helpers to show/hide spinner indicators for analytics cards
+function setStatsLoading(isLoading) {
+    const mapping = [
+        ['totalToolsSpinner', 'totalToolsValue'],
+        ['availableToolsSpinner', 'availableToolsValue'],
+        ['inUseToolsSpinner', 'inUseToolsValue'],
+        ['brokenToolsSpinner', 'brokenToolsValue']
+    ];
+
+    mapping.forEach(([spinnerId, valueId]) => {
+        const spinner = document.getElementById(spinnerId);
+        const valueEl = document.getElementById(valueId);
+        if (!spinner || !valueEl) return;
+
+        if (isLoading) {
+            spinner.classList.remove('d-none');
+            valueEl.classList.add('opacity-50');
+        } else {
+            spinner.classList.add('d-none');
+            valueEl.classList.remove('opacity-50');
+        }
+    });
+}
+
 async function refreshToolSummary() {
+    setStatsLoading(true);
     try {
         // Simple direct fetch to ensure we get global stats, not just per-page
         const result = await apiFetch('/analytics/resources-usage');
-        
+
         if (result.data && result.data.tools_analytics) {
             const stats = result.data.tools_analytics;
-            animateCount(document.getElementById('totalToolsValue'), Number(stats.total_tools) || 0);
-            animateCount(document.getElementById('availableToolsValue'), Number(stats.available) || 0);
-            animateCount(document.getElementById('inUseToolsValue'), Number(stats.in_use) || 0);
-            animateCount(document.getElementById('brokenToolsValue'), Number(stats.broken) || 0);
+            animateCount(document.getElementById('totalToolsValue'), Number(stats.total_tools) || 0, 1200);
+            animateCount(document.getElementById('availableToolsValue'), Number(stats.available) || 0, 1200);
+            animateCount(document.getElementById('inUseToolsValue'), Number(stats.in_use) || 0, 1200);
+            animateCount(document.getElementById('brokenToolsValue'), Number(stats.broken) || 0, 1200);
         }
     } catch (err) {
         console.warn("Analytics fetch failed:", err);
+    } finally {
+        setStatsLoading(false);
     }
 }
+window.refreshToolSummary = refreshToolSummary;
 
 // ==================== CRUD OPERATIONS ====================
 
@@ -204,7 +243,7 @@ document.getElementById('addToolBtn').addEventListener('click', async () => {
         bootstrap.Modal.getInstance(document.getElementById('addToolsModal')).hide();
         nameInput.value = '';
         statusInput.value = '';
-        
+
         getAllTools({ page: 1 }); // Reset to first page
         refreshToolSummary();
 
@@ -222,7 +261,7 @@ async function handleDelete(toolId) {
         try {
             const result = await apiFetch(`/tools/${toolId}`, { method: 'DELETE' });
             showSuccess(result.message || 'Tool deleted');
-            
+
             getAllTools({ ...toolState }); // Refresh current page
             refreshToolSummary();
         } catch (error) {
@@ -236,13 +275,13 @@ async function handleDelete(toolId) {
 // UPDATE TOOL PREPARATION
 function openUpdateModal(tool) {
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal'));
-    
+
     document.getElementById('updateToolName').value = tool.tool_name;
     document.getElementById('updateToolStatus').value = tool.status;
-    
+
     // Store ID on the update button for reference
     document.getElementById('updateToolBtn').dataset.id = tool.id;
-    
+
     modal.show();
 }
 
@@ -266,7 +305,7 @@ document.getElementById('updateToolBtn').addEventListener('click', async (e) => 
 
         showSuccess(result.message || 'Tool updated');
         bootstrap.Modal.getInstance(document.getElementById('updateToolModal')).hide();
-        
+
         getAllTools({ ...toolState });
         refreshToolSummary();
 

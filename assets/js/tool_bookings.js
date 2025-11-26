@@ -187,10 +187,7 @@ function renderToolBookingPagination(current, last) {
   const container = document.getElementById('toolBookingPagination');
   if (!container) return;
 
-  if (!last || last <= 1) {
-    container.innerHTML = '';
-    return;
-  }
+  if (!last) last = 1;
 
   let html = '';
   const prevDisabled = current <= 1 ? 'disabled' : '';
@@ -243,6 +240,8 @@ async function deleteToolBooking(id) {
       sortBy: toolBookingState.sortBy,
       page: toolBookingState.currentPage,
     });
+
+    if (window.refreshToolSummary) window.refreshToolSummary();
   } catch (error) {
     hideLoading();
     showError(error.message || 'Failed to delete tool booking.');
@@ -340,6 +339,8 @@ async function handleCreateToolBookingSubmit(event) {
       sortBy: toolBookingState.sortBy,
       page: 1,
     });
+
+    if (window.refreshToolSummary) window.refreshToolSummary();
 
   } catch (error) {
     btn.disabled = false;
@@ -498,7 +499,7 @@ async function handleUpdateToolBookingSubmit(event) {
     showError('Please select a tool.');
     return;
   }
-  if (!userId && !staffId) {
+  if ((!userId || userId === 'null' || userId === 'undefined') && (!staffId || staffId === 'null' || staffId === 'undefined')) {
     showError('Please select a user or staff member.');
     return;
   }
@@ -507,9 +508,14 @@ async function handleUpdateToolBookingSubmit(event) {
     tool_id: toolId,
     datetime_booking: dateInput.value,
     datetime_return: returnInput.value || null,
-    ...(userId && { user_id: userId }),
-    ...(staffId && { staff_id: staffId }),
   };
+
+  if (userId && userId !== 'null' && userId !== 'undefined') {
+    payload.user_id = parseInt(userId, 10);
+  }
+  if (staffId && staffId !== 'null' && staffId !== 'undefined') {
+    payload.staff_id = parseInt(staffId, 10);
+  }
 
   btn.disabled = true;
   btn.textContent = 'Updating...';
@@ -530,6 +536,8 @@ async function handleUpdateToolBookingSubmit(event) {
       sortBy: toolBookingState.sortBy,
       page: toolBookingState.currentPage,
     });
+
+    if (window.refreshToolSummary) window.refreshToolSummary();
   } catch (error) {
     showError(error.message || 'Failed to update tool booking. Please check your inputs.');
   } finally {
