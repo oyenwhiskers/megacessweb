@@ -150,7 +150,7 @@ function renderTaskEditor(task) {
             <input type="text" class="form-control category-name" value="${c.category_name || ''}" disabled>
           </div>
           <div class="col-md-2 mb-2 d-flex align-items-end">
-            <button class="btn btn-sm btn-danger remove-category-btn w-100" type="button" title="Remove category">
+            <button class="btn btn-sm btn-danger remove-category-btn w-100 mb-1" type="button" title="Remove category">
               <i class="bi bi-trash"></i> Remove
             </button>
           </div>
@@ -225,7 +225,7 @@ function renderTaskEditor(task) {
           <button class="btn btn-sm btn-danger py-1 px-3" id="deleteBtn">
             <i class="bi bi-trash-fill"></i> Delete
             </button>
-          <button class="btn btn-sm btn-success py-1 px-3" id="editToggleBtn"> 
+          <button class="btn btn-sm btn-secondary py-1 px-3" id="editToggleBtn"> 
             <i class="bi bi-pencil-square"></i> Edit
             </button>
         </div>
@@ -254,7 +254,7 @@ function renderTaskEditor(task) {
       <div class="mb-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <label class="form-label fw-bold mb-0">Categories & Rates</label>
-          <button class="btn btn-sm btn-success py-1 px-3" id="addCategoryBtn" type="button">
+          <button class="btn btn-sm btn-success fw-semibold py-1 px-3" id="addCategoryBtn" type="button">
             <i class="bi bi-plus-circle me-1"></i> Add Category
           </button>
         </div>
@@ -567,7 +567,7 @@ function ensureAddCategoryModalExists() {
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Add Category</h5>
+          <h5 class="modal-title fw-semibold">Add Category</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">

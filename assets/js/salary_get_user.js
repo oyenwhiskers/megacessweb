@@ -165,7 +165,24 @@ $(document).ready(function() {
   }
 
   // Search + filter triggers
-  $("#searchStaff").on("input", () => fetchUsers(1));
+  $("#searchStaff").on("input", function() {
+    const value = $(this).val().trim();
+    // Show/hide clear button
+    if (value.length > 0) {
+      $("#clearSearchStaff").show();
+    } else {
+      $("#clearSearchStaff").hide();
+    }
+    fetchUsers(1);
+  });
+
+  // Clear search button
+  $("#clearSearchStaff").on("click", function() {
+    $("#searchStaff").val("");
+    $(this).hide();
+    fetchUsers(1);
+  });
+
   $("input[name='staffFilter']").on("change", () => fetchUsers(1));
 
   // Initial fetch

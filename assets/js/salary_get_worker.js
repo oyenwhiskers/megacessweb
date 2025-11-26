@@ -194,7 +194,23 @@ function showEmployeeType(type, push) {
   }
 
   // Search input
-  $("#searchWorker").on("input", () => fetchWorkers(1));
+  $("#searchWorker").on("input", function() {
+    const value = $(this).val().trim();
+    // Show/hide clear button
+    if (value.length > 0) {
+      $("#clearSearchWorker").show();
+    } else {
+      $("#clearSearchWorker").hide();
+    }
+    fetchWorkers(1);
+  });
+
+  // Clear search button
+  $("#clearSearchWorker").on("click", function() {
+    $("#searchWorker").val("");
+    $(this).hide();
+    fetchWorkers(1);
+  });
 
   // Initial fetch
   fetchWorkers();
