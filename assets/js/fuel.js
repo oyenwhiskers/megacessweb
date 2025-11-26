@@ -221,7 +221,7 @@ async function handleDelete(e) {
 async function getAllBuyers() {
   try {
     const result = await apiFetch('/users', { method: 'GET' });
-    return result?.data?.map(u => ({ id: u.id, fullname: u.user_fullname, account_type: 'user' })) || [];
+    return result?.data?.map(u => ({ id: u.id, fullname: u.user_fullname, role: u.user_role, account_type: 'user' })) || [];
   } catch (err) {
     console.error(err); showError("Failed to load buyers."); return [];
   }
@@ -232,7 +232,7 @@ let selectedBuyer = null;
 const buyerInput = document.getElementById('assignedPerson');
 const buyerDropdownEl = document.getElementById('buyerDropdown');
 
-const renderBuyer = (p) => `${p.fullname}<small class="text-muted d-block">(USER ID: ${p.id})</small>`;
+const renderBuyer = (p) => `${p.fullname}<small class="text-muted d-inline"> - (${p.role})</small>`;
 const filterBuyer = (p, s) => p.fullname.toLowerCase().includes(s) || String(p.id).includes(s);
 
 if (buyerInput && buyerDropdownEl) {
