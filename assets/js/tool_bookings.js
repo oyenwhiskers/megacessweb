@@ -366,26 +366,26 @@ function ensureUpdateToolBookingModalExists() {
             <div class="modal-body">
               <!-- Tool -->
               <div class="mb-3 position-relative">
-                <label class="form-label">Tool</label>
+                <label class="form-label fw-semibold">Tool</label>
                 <input type="text" class="form-control" id="updateToolInput" placeholder="Enter or select a tool" required autocomplete="off">
                 <ul class="dropdown-menu w-100" id="updateToolDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
               </div>
 
               <!-- Assigned Person -->
               <div class="mb-3 position-relative">
-                <label class="form-label">Assigned Person</label>
+                <label class="form-label fw-semibold">Assigned Person</label>
                 <input type="text" class="form-control" id="updateUserInput" placeholder="Enter or search user/staff" required autocomplete="off">
                 <ul class="dropdown-menu w-100" id="updateUserDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
               </div>
 
               <!-- Dates -->
               <div class="mb-3">
-                <label class="form-label">Booking Date</label>
+                <label class="form-label fw-semibold">Booking Date</label>
                 <input type="datetime-local" class="form-control" id="updateBookingDateInput" required>
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Return Date</label>
+                <label class="form-label fw-semibold">Return Date</label>
                 <input type="datetime-local" class="form-control" id="updateReturnDateInput">
               </div>
             </div>

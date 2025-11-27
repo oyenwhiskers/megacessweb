@@ -337,4 +337,5 @@ document.getElementById('refreshToolBtn').addEventListener('click', () => {
     document.getElementById('toolSearch').value = '';
     document.getElementById('toolStatus').value = '';
     getAllTools({ page: 1, search: '', status: '' });
+    refreshToolSummary();
 });

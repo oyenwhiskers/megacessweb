@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (statusFilter) statusFilter.value = '';
 
       getAllVehicles(paginationState);
+      refreshVehicleSummary();
     });
   }
 });
