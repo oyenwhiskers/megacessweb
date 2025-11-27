@@ -15,14 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Search & Filter Listeners
   const searchInput = document.getElementById('vehicleSearch');
-  const statusFilter = document.getElementById('vehicleStatusFilter');
+  const statusFilter = document.getElementById('vehicleStatus');
 
   if (searchInput) {
     searchInput.addEventListener('input', debounce((e) => {
       paginationState.search = e.target.value;
       paginationState.currentPage = 1;
       getAllVehicles(paginationState);
-    }, 300));
+    }, 100));
   }
 
   if (statusFilter) {
@@ -37,12 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('refreshVehicleBtn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
-      getAllVehicles({
-        search: paginationState.search,
-        status: paginationState.status,
-        page: paginationState.currentPage,
-        per_page: paginationState.perPage
-      });
+      // Reset State
+      paginationState.search = '';
+      paginationState.status = '';
+      paginationState.currentPage = 1;
+
+      // Reset DOM elements
+      if (searchInput) searchInput.value = '';
+      if (statusFilter) statusFilter.value = '';
+
+      getAllVehicles(paginationState);
+      refreshVehicleSummary();
     });
   }
 });

@@ -128,6 +128,10 @@ function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, rende
 
   async function loadItems() {
     if (!hasFetched) {
+      // Show loading immediately
+      dropdownEl.innerHTML = '<li class="dropdown-item text-muted">Loading...</li>';
+      dropdownEl.style.display = 'block';
+
       try {
         allItems = await fetchItems();
         hasFetched = true;
@@ -160,10 +164,16 @@ function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, rende
     dropdownEl.style.display = 'block';
   }
 
-  inputEl.addEventListener('focus', async () => {
+  const openDropdown = async () => {
     const items = await loadItems();
-    showDropdown(items);
-  });
+    const search = inputEl.value.toLowerCase();
+    // Filter if there is a value, otherwise show all
+    const filtered = search ? allItems.filter(item => filterItem(item, search)) : allItems;
+    showDropdown(filtered);
+  };
+
+  inputEl.addEventListener('focus', openDropdown);
+  inputEl.addEventListener('click', openDropdown);
 
   inputEl.addEventListener('input', async () => {
     await loadItems(); // Ensure items are loaded

@@ -326,9 +326,12 @@ window.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refreshVehicleBookingBtn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
+            const sortInput = document.getElementById('vehicleBookingSortBy');
+            if (sortInput) sortInput.value = "";
+
             getAllVehicleBookings({
                 search: bookingPaginationState.search,
-                bookingFilter: bookingPaginationState.bookingFilter,
+                bookingFilter: "",
                 page: bookingPaginationState.currentPage,
                 per_page: bookingPaginationState.perPage
             });
@@ -436,9 +439,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Event Delegation for Table Actions (Edit/Delete) - Moved inside DOMContentLoaded or keep outside?
-    // It's better to keep it outside if it attaches to a static element, but if the table body is static, it's fine.
-    // However, to ensure it runs after DOM is ready:
+    // Event Delegation for Table Actions (Edit/Delete)
     const tableBody = document.getElementById('vehicleBookingTableBody');
     if (tableBody) {
         tableBody.addEventListener('click', (e) => {

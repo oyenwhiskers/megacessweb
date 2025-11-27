@@ -87,7 +87,7 @@ function populateFuelUsageTable(usages) {
         row.className = 'content-row d-flex border-bottom py-2 align-items-center';
 
         // Usage Quantity Badge Color
-        let badgeClass = 'bg-primary text-white';
+        let badgeClass = 'bg-warning text-black';
 
         // Handle Long Description
         const fullDesc = usage.usage_description || '-';
@@ -99,11 +99,27 @@ function populateFuelUsageTable(usages) {
             `;
         }
 
+        // Determine Assigned Person Name and IDs
+        let assignedName = usage.used_by_name || '-';
+        let userId = '';
+        let staffId = '';
+        let rawName = '';
+
+        if (usage.user) {
+            rawName = usage.user.user_fullname;
+            assignedName = `${rawName} (User)`;
+            userId = usage.user.id || usage.user.user_id;
+        } else if (usage.staff) {
+            rawName = usage.staff.staff_fullname;
+            assignedName = `${rawName} (Staff)`;
+            staffId = usage.staff.id || usage.staff.staff_id;
+        }
+
         row.innerHTML = `
             <div class="col">
                 <span class="badge ${badgeClass} px-3 py-2 fs-6">${usage.usage_quantity || 0} Liters</span>
             </div>
-            <div class="col">${usage.user ? usage.user.user_fullname : (usage.used_by_name || '-')}</div>
+            <div class="col">${assignedName}</div>
             <div class="col">
                 ${formatDateDisplay(usage.usage_date)}
             </div>
@@ -114,8 +130,9 @@ function populateFuelUsageTable(usages) {
                 <button class="btn btn-sm btn-warning me-2 update-usage-btn"
                 data-id="${usage.id}"
                 data-quantity="${usage.usage_quantity || ''}"
-                data-user-id="${usage.user ? usage.user.id : ''}"
-                data-user-name="${usage.user ? usage.user.user_fullname : ''}"
+                data-user-id="${userId}"
+                data-staff-id="${staffId}"
+                data-name="${rawName}"
                 data-date="${usage.usage_date ? new Date(usage.usage_date).toISOString().split('T')[0] : ''}"
                 data-description="${usage.usage_description || ''}"
                 >
@@ -141,10 +158,12 @@ function renderFuelUsagePagination(meta, search, filter) {
     if (!container) return;
     container.innerHTML = '';
 
-    if (!meta || !meta.last_page || meta.last_page <= 1) return;
+    if (!meta || !meta.last_page) return; // Allow single page to show if needed, but usually we hide if 0 pages
 
-    const current = meta.current_page;
-    const last = meta.last_page;
+    const current = meta.current_page || 1;
+    const last = meta.last_page || 1;
+
+    // Always show pagination even if 1 page (as per user preference in other modules)
 
     const createPageItem = (page, text, isActive = false, isDisabled = false) => {
         const li = document.createElement('li');
@@ -160,7 +179,7 @@ function renderFuelUsagePagination(meta, search, filter) {
     };
 
     // Previous
-    container.appendChild(createPageItem(current - 1, 'Previous', false, current === 1));
+    container.appendChild(createPageItem(current - 1, 'Previous', false, current <= 1));
 
     // Page Numbers
     let pages = [];
@@ -185,7 +204,7 @@ function renderFuelUsagePagination(meta, search, filter) {
     });
 
     // Next
-    container.appendChild(createPageItem(current + 1, 'Next', false, current === last));
+    container.appendChild(createPageItem(current + 1, 'Next', false, current >= last));
 }
 
 // ==================== Create Usage ====================
@@ -202,7 +221,7 @@ async function createFuelUsage(payload) {
         }
     } catch (err) {
         console.error(err);
-        showError("Failed to add fuel usage. Try again.");
+        showError(err.message || "Failed to add fuel usage.");
         return false;
     }
 }
@@ -236,6 +255,7 @@ async function deleteFuelUsage(id) {
             if (result.success) {
                 showSuccess("Success!", result.message || "Deleted successfully");
                 getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
+                if (window.refreshFuelSummary) window.refreshFuelSummary();
             } else {
                 showError(result.message || "Failed to delete usage.");
             }
@@ -262,15 +282,20 @@ if (addUsageForm) {
 
         // Validate
         if (!quantity) return showError("Please enter usage quantity.");
-        if (!selectedUsageUser) return showError("Please select a user.");
+        if (!selectedUsageUser) return showError("Please select a user or staff.");
         if (!date) return showError("Please select a date.");
 
         const payload = {
             usage_quantity: quantity,
-            user_id: selectedUsageUser.id,
             usage_date: date,
             usage_description: description
         };
+
+        if (selectedUsageUser.user_id) {
+            payload.user_id = selectedUsageUser.user_id;
+        } else if (selectedUsageUser.staff_id) {
+            payload.staff_id = selectedUsageUser.staff_id;
+        }
 
         const saveBtn = document.getElementById('saveUsageBtn');
         const originalText = saveBtn.textContent;
@@ -288,6 +313,7 @@ if (addUsageForm) {
             selectedUsageUser = null;
             document.getElementById('usedBy').value = '';
             getAllFuelUsages();
+            if (window.refreshFuelSummary) window.refreshFuelSummary();
         }
     });
 }
@@ -305,15 +331,20 @@ if (editUsageForm) {
 
         if (!id) return showError("Invalid usage ID.");
         if (!quantity) return showError("Please enter usage quantity.");
-        if (!editSelectedUsageUser) return showError("Please select a user.");
+        if (!editSelectedUsageUser) return showError("Please select a user or staff.");
         if (!date) return showError("Please select a date.");
 
         const payload = {
             usage_quantity: quantity,
-            user_id: editSelectedUsageUser.id,
             usage_date: date,
             usage_description: description
         };
+
+        if (editSelectedUsageUser.user_id) {
+            payload.user_id = editSelectedUsageUser.user_id;
+        } else if (editSelectedUsageUser.staff_id) {
+            payload.staff_id = editSelectedUsageUser.staff_id;
+        }
 
         const saveBtn = document.getElementById('saveEditUsageBtn');
         const originalText = saveBtn.textContent;
@@ -328,6 +359,7 @@ if (editUsageForm) {
         if (success) {
             bootstrap.Modal.getInstance(document.getElementById('editUsageModal')).hide();
             getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
+            if (window.refreshFuelSummary) window.refreshFuelSummary();
         }
     });
 }
@@ -339,7 +371,8 @@ function attachUsageEditListeners() {
             const id = btn.dataset.id;
             const quantity = btn.dataset.quantity;
             const userId = btn.dataset.userId;
-            const userName = btn.dataset.userName;
+            const staffId = btn.dataset.staffId;
+            const name = btn.dataset.name;
             const date = btn.dataset.date;
             const description = btn.dataset.description;
 
@@ -348,11 +381,16 @@ function attachUsageEditListeners() {
             document.getElementById('editUsageDate').value = date;
             document.getElementById('editUsageDescription').value = description;
 
-            // Set User
+            // Set User/Staff
             const userInput = document.getElementById('editUsedBy');
-            if (userId && userName) {
-                editSelectedUsageUser = { id: userId, fullname: userName };
-                userInput.value = userName;
+            if (userId || staffId) {
+                editSelectedUsageUser = {
+                    user_id: userId || null,
+                    staff_id: staffId || null,
+                    fullname: name,
+                    role: userId ? 'user' : 'staff'
+                };
+                userInput.value = name;
             } else {
                 editSelectedUsageUser = null;
                 userInput.value = '';
@@ -419,11 +457,17 @@ if (refreshUsageBtn) {
     });
 }
 
-// ==================== User Dropdown Logic ====================
-async function fetchAllUsers() {
+// ==================== User and Staff Dropdown Logic ====================
+async function fetchAllUsersAndStaff() {
     try {
-        const result = await apiFetch('/users', { method: 'GET' });
-        return result?.data?.map(u => ({ id: u.id, fullname: u.user_fullname })) || [];
+        const result = await apiFetch('/users-and-staff', { method: 'GET' });
+        return result?.data?.map(u => ({
+            id: u.role === 'user' ? `user-${u.user_id}` : `staff-${u.staff_id}`, // Unique ID for keying
+            user_id: u.role === 'user' ? u.user_id : null,
+            staff_id: u.role === 'staff' ? u.staff_id : null,
+            fullname: u.fullname,
+            role: u.role
+        })) || [];
     } catch (err) {
         console.error(err);
         return [];
@@ -432,18 +476,18 @@ async function fetchAllUsers() {
 
 // ==================== Initialize Page ====================
 document.addEventListener('DOMContentLoaded', () => {
-    const renderUsageUser = (u) => `${u.fullname} <small class="text-muted">(${u.id})</small>`;
+    const renderUsageUser = (u) => `${u.fullname} <small class="text-muted">(${u.role})</small>`;
     const filterUsageUser = (u, s) => u.fullname.toLowerCase().includes(s);
 
     // Add Modal Dropdown
     const addInput = document.getElementById('usedBy');
     const addDropdown = document.getElementById('addUsageUserDropdown');
-    initSearchableDropdown(addInput, addDropdown, fetchAllUsers, (user) => { selectedUsageUser = user; }, renderUsageUser, filterUsageUser);
+    initSearchableDropdown(addInput, addDropdown, fetchAllUsersAndStaff, (user) => { selectedUsageUser = user; }, renderUsageUser, filterUsageUser);
 
     // Edit Modal Dropdown
     const editInput = document.getElementById('editUsedBy');
     const editDropdown = document.getElementById('editUsageUserDropdown');
-    initSearchableDropdown(editInput, editDropdown, fetchAllUsers, (user) => { editSelectedUsageUser = user; }, renderUsageUser, filterUsageUser);
+    initSearchableDropdown(editInput, editDropdown, fetchAllUsersAndStaff, (user) => { editSelectedUsageUser = user; }, renderUsageUser, filterUsageUser);
 
     // Tab Listener
     $('.tab-btn[data-target="usage"]').on('click', () => {
