@@ -87,7 +87,7 @@ async function getAllToolBookings({ search = '', sortBy = '', page = 1 } = {}) {
 
   const queryParams = new URLSearchParams({
     search,
-    statusFilter: sortBy,
+    bookingFilter: sortBy,
     page,
     per_page: toolBookingState.perPage,
   });
@@ -592,9 +592,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Search & Sort
-  const bookingTab = document.querySelector('.tab-pane[data-name="booking"]');
-  const searchInput = bookingTab ? bookingTab.querySelector('input.form-control[placeholder="Search tools..."]') : null;
-  const sortSelect = bookingTab ? bookingTab.querySelector('select.form-select') : null;
+  const searchInput = document.getElementById('toolBookingSearch');
+  const sortSelect = document.getElementById('toolBookingSort');
 
   if (searchInput) {
     const handleSearchInput = debounce(() => {
@@ -604,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sortBy: toolBookingState.sortBy,
         page: 1,
       });
-    }, 400);
+    }, 100);
     searchInput.addEventListener('input', handleSearchInput);
   }
 
@@ -622,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.getElementById('refreshToolBookingBtn').addEventListener('click', () => {
-    document.getElementById('toolBookingSearch').value = '';
-    document.getElementById('toolBookingSort').value = '';
-    getAllToolBookings({ search: '', sortBy: '', page: 1});
+  document.getElementById('toolBookingSearch').value = '';
+  document.getElementById('toolBookingSort').value = '';
+  getAllToolBookings({ search: '', sortBy: '', page: 1 });
 });
