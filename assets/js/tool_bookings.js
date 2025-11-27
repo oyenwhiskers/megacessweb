@@ -620,3 +620,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+document.getElementById('refreshToolBookingBtn').addEventListener('click', () => {
+    document.getElementById('toolBookingSearch').value = '';
+    document.getElementById('toolBookingSort').value = '';
+    getAllToolBookings({ search: '', sortBy: '', page: 1});
+});

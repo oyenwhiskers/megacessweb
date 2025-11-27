@@ -216,7 +216,7 @@
                 <!-- Search Bar -->
                 <div class="flex-grow-1">
                   <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search tools...">
+                    <input id="toolBookingSearch" type="text" class="form-control" placeholder="Search tools...">
                     <button class="btn btn-secondary" id="refreshToolBookingBtn" type="button">
                       <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
@@ -225,8 +225,8 @@
 
                 <!-- Filter Dropdown -->
                 <div>
-                  <select class="form-select">
-                    <option selected>Sort by...</option>
+                  <select id="toolBookingSort" class="form-select">
+                    <option selected value="">Sort by...</option>
                     <option value="booking-date-asc">Booking Date ↑ (asc)</option>
                     <option value="booking-date-desc">Booking Date ↓ (desc)</option>
                     <option value="return-date-asc">Return Date ↑ (asc)</option>
