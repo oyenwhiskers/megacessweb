@@ -25,7 +25,7 @@ function setLoadingState() {
     const ids = [
         'vehicle-total', 'vehicle-available', 'vehicle-in-use', 'vehicle-maintenance',
         'tools-total', 'tools-available', 'tools-in-use', 'tools-broken',
-        'fuel-remaining'
+        'fuel-remaining', 'fuel-total-bought', 'fuel-total-used'
     ];
 
     const spinner = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
@@ -40,7 +40,7 @@ function setErrorState() {
     const ids = [
         'vehicle-total', 'vehicle-available', 'vehicle-in-use', 'vehicle-maintenance',
         'tools-total', 'tools-available', 'tools-in-use', 'tools-broken',
-        'fuel-remaining'
+        'fuel-remaining', 'fuel-total-bought', 'fuel-total-used'
     ];
 
     ids.forEach(id => {
@@ -89,7 +89,12 @@ function updateFuelAnalytics(data) {
     if (!data) return;
 
     const remainingEl = document.getElementById('fuel-remaining');
+    const totalBoughtEl = document.getElementById('fuel-total-bought');
+    const totalUsedEl = document.getElementById('fuel-total-used');
+
     if (remainingEl) remainingEl.textContent = data.remaining_fuel || 0;
+    if (totalBoughtEl) totalBoughtEl.textContent = data.total_fuel_bought || 0;
+    if (totalUsedEl) totalUsedEl.textContent = data.total_fuel_used || 0;
 
     if (data.monthly_fuel_usage) {
         initFuelChart(data.monthly_fuel_usage);
