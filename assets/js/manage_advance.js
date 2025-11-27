@@ -257,6 +257,58 @@ document.addEventListener('DOMContentLoaded', function() {
     attachViewButtonHandlers();
   }
 
+  // Add Advance: POST new advance record
+  async function addAdvance(data) {
+    const token = getAuthToken();
+    if (!token) {
+      alert('Not authenticated');
+      return { success: false, message: 'Not authenticated' };
+    }
+    const url = 'https://mwms.megacess.com/api/v1/advances';
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      return result;
+    } catch (err) {
+      return { success: false, message: err.message || 'Error adding advance.' };
+    }
+  }
+
+  // Example: Attach handler to Add Advance form/button
+  const addAdvanceForm = document.getElementById('addAdvanceForm');
+  if (addAdvanceForm) {
+    addAdvanceForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      // Collect form data (adjust field names as needed)
+      const formData = new FormData(addAdvanceForm);
+      const data = {
+        loan_amount: formData.get('loan_amount'),
+        loan_date: formData.get('loan_date'),
+        loan_remarks: formData.get('loan_remarks'),
+        loan_status: formData.get('loan_status'),
+        // Add other fields as needed
+        type: currentType === 'worker' ? 'staff' : 'user',
+        person_id: formData.get('person_id') // staff_id or user_id
+      };
+      const result = await addAdvance(data);
+      if (result.success) {
+        alert('Advance added successfully!');
+        fetchAdvances(); // Refresh list
+        addAdvanceForm.reset();
+      } else {
+        alert(result.message || 'Failed to add advance.');
+      }
+    });
+  }
+
   // Tab switching
   workerTab.addEventListener('click', function() {
     workerTab.classList.remove('btn-light', 'border');

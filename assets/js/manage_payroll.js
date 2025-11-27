@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const avatarImage = staffImage 
             ? `<img src="${staffImage}" alt="${staff.user_fullname}" class="rounded-circle" 
                     style="width: 50px; height: 50px; object-fit: cover;" 
-                    onerror="this.outerHTML='<div class=&quot;bg-primary rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>';">`
+                    onerror="this.outerHTML='<div class=&quot;bg-primary rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>'">`
             : `<div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                  <i class="bi bi-person text-white"></i>
                </div>`;
@@ -979,33 +979,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const payslipMonth = document.getElementById('payslipMonth');
         payslipMonth.innerHTML = '<option selected disabled>select month</option>';
         const now = new Date();
-        let monthOptions = [];
         for (let i = 0; i < 6; i++) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const val = `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().slice(-2)}`;
             const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
             payslipMonth.innerHTML += `<option value="${val}">${label}</option>`;
-            monthOptions.push(val);
         }
         // Clear all fields for new entry
-        document.getElementById('incomeTableBody').innerHTML = '';
         document.getElementById('deductionTableBody').innerHTML = '';
         document.getElementById('totalDeductions').textContent = '0.00';
         document.getElementById('advanceAmount').textContent = '0.00';
         document.getElementById('advanceRemarks').textContent = '';
-        const incomeTableHead = document.getElementById('incomeTableHead');
-        if (isStaff) {
-            // For staff, only show base salary as income row, no task, and remove table head
-            const baseSalary = workerData.base_salary?.base_salary ? parseFloat(workerData.base_salary.base_salary).toFixed(2) : '0.00';
-            document.getElementById('incomeTableBody').innerHTML = `<tr><td>Base Salary</td><td>RM ${baseSalary}</td></tr>`;
-            document.getElementById('totalSalary').textContent = baseSalary;
-            if (incomeTableHead) incomeTableHead.innerHTML = '';
-        } else {
-            // For worker, reset total salary and show headers
-            document.getElementById('totalSalary').textContent = '0.00';
-            if (incomeTableHead) incomeTableHead.innerHTML = '<tr><th>Task</th><th>Salary</th></tr>';
-        }
-        // Optionally, you can fetch and suggest previous payslip data for this worker/staff, but do not auto-fill it
+        // Staff details
+        document.getElementById('staffDoc').textContent = workerData.staff_doc || '-';
+        document.getElementById('staffBankName').textContent = workerData.staff_bank_name || '-';
+        document.getElementById('staffBankNumber').textContent = workerData.staff_bank_number || '-';
+        document.getElementById('staffKwspNumber').textContent = workerData.staff_kwsp_number || '-';
+        // Income fields
+        document.getElementById('baseSalary').textContent = workerData.base_salary ? parseFloat(workerData.base_salary).toFixed(2) : '0.00';
+        document.getElementById('taskIncome').textContent = workerData.task_income ? parseFloat(workerData.task_income).toFixed(2) : '0.00';
+        document.getElementById('totalIncome').textContent = workerData.total_income ? parseFloat(workerData.total_income).toFixed(2) : '0.00';
+        document.getElementById('totalDeduction').textContent = workerData.total_deduction ? parseFloat(workerData.total_deduction).toFixed(2) : '0.00';
+        document.getElementById('netSalary').textContent = workerData.net_salary ? parseFloat(workerData.net_salary).toFixed(2) : '0.00';
     }
 
     // Payroll button functionality
@@ -1053,6 +1048,74 @@ let currentPayslipWorkerData = null;
                     // Optionally store for payslip modal if needed
                     currentPayslipWorkerId = staffId;
                     currentPayslipWorkerData = staffDataObj;
+                }
+            } else if (e.target && e.target.id === 'generatePayslip') {
+                // Only open payslip modal here, using stored worker data
+                if (currentPayslipWorkerData) {
+                    fillPayslipModal(currentPayslipWorkerData);
+                    var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
+                    payslipModal.show();
+                }
+            } else if (e.target.closest('button[data-payslip-id]')) {
+                const btn = e.target.closest('button[data-payslip-id]');
+                const payslipId = btn.getAttribute('data-payslip-id');
+                // Check if this is the Delete button
+                if (btn.classList.contains('btn-danger')) {
+                    // Only allow delete for Worker or Staff option
+                    if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
+                        if (!payslipId) return;
+                        if (!confirm('Are you sure you want to delete this payslip? This action cannot be undone.')) return;
+                        (async function() {
+                            try {
+                                const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+                                if (!AUTH_TOKEN) throw new Error('No auth token');
+                                let url;
+                                if (workerTab.classList.contains('btn-success')) {
+                                    url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
+                                } else {
+                                    url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
+                                }
+                                const res = await fetch(url, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Authorization': `Bearer ${AUTH_TOKEN}`,
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                                const result = await res.json();
+                                if (res.ok && result.success) {
+                                    alert('Payslip deleted successfully!');
+                                    // Refresh the employment overview to update the list
+                                    if (currentPayslipWorkerData) {
+                                        const employeeData = {
+                                            id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                                            name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                                            joinedSince: currentPayslipWorkerData.joined_since,
+                                            role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                            age: currentPayslipWorkerData.age || 'N/A',
+                                            staff_fullname: currentPayslipWorkerData.staff_fullname,
+                                            nickname: currentPayslipWorkerData.user_nickname || ''
+                                        };
+                                        showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
+                                    } else {
+                                        location.reload();
+                                    }
+                                } else {
+                                    let msg = result.message || 'Unknown error';
+                                    alert('Delete failed: ' + msg);
+                                }
+                            } catch (err) {
+                                alert('Error: ' + err.message);
+                            }
+                        })();
+                    }
+                } else {
+                    // View button clicked: API call removed, show placeholder modal only
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewPayslipModal'));
+                    const modalBody = document.getElementById('viewPayslipModalBody');
+                    modalBody.innerHTML = '<div class="text-center py-4"><i class="bi bi-eye display-4 text-primary"></i><div class="mt-2">Payslip details view is disabled.</div></div>';
+                    viewModal.show();
                 }
             }
         } else if (e.target && e.target.id === 'generatePayslip') {
@@ -1117,23 +1180,11 @@ let currentPayslipWorkerData = null;
                     })();
                 }
             } else {
-                // Handle View button for payslip record (worker only)
-                const payslipId = e.target.closest('button[data-payslip-id]').getAttribute('data-payslip-id');
-                console.log('Payslip View button clicked, payslipId:', payslipId); // DEBUG
-                if (payslipId) {
-                    const viewModal = new bootstrap.Modal(document.getElementById('viewPayslipModal'));
-                    const modalBody = document.getElementById('viewPayslipModalBody');
-                    modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div>Loading payslip details...</div></div>';
-                    viewModal.show();
-                    fetchWorkerPayslipDetails(payslipId)
-                      .then(payslipData => {
-                        console.log('Payslip API data:', payslipData); // DEBUG
-                        renderPayslipDetailsModal(payslipData);
-                      })
-                      .catch(err => {
-                        modalBody.innerHTML = `<div class='text-danger text-center'>${err.message || err}</div>`;
-                      });
-                }
+                // View button clicked: API call removed, show placeholder modal only
+                const viewModal = new bootstrap.Modal(document.getElementById('viewPayslipModal'));
+                const modalBody = document.getElementById('viewPayslipModalBody');
+                modalBody.innerHTML = '<div class="text-center py-4"><i class="bi bi-eye display-4 text-primary"></i><div class="mt-2">Payslip details view is disabled.</div></div>';
+                viewModal.show();
             }
         }
     });
@@ -1144,7 +1195,7 @@ let currentPayslipWorkerData = null;
         payslipModalEl.addEventListener('shown.bs.modal', function() {
             // Reset form fields if needed
         });
-        document.getElementById('generatePayslipBtn').onclick = async function() {
+        document.getElementById('generatePayslipBtn').onclick = function() {
             if (!currentPayslipWorkerId) return;
             const payslipMonth = document.getElementById('payslipMonth').value;
             if (!payslipMonth || payslipMonth === 'select month') {
@@ -1175,42 +1226,8 @@ let currentPayslipWorkerData = null;
                 // For staff, add base_salary and use /users/{id}/generate endpoint
                 payload.base_salary = currentPayslipWorkerData.base_salary?.base_salary || 0;
             }
-            // API call
-            try {
-                const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
-                if (!AUTH_TOKEN) throw new Error('No auth token');
-                let url;
-                if (isStaff) {
-                    // Use user_id for staff
-                    const staffUserId = currentPayslipWorkerData.user_id || currentPayslipWorkerId;
-                    url = `https://mwms.megacess.com/api/v1/payroll/users/${staffUserId}/generate`;
-                } else {
-                    url = `https://mwms.megacess.com/api/v1/payroll/staff/${currentPayslipWorkerId}/generate`;
-                }
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AUTH_TOKEN}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const result = await res.json();
-                if (res.ok && result.success) {
-                    alert('Payslip generated successfully!');
-                    var modal = bootstrap.Modal.getInstance(payslipModalEl);
-                    modal.hide();
-                } else {
-                    let msg = result.message || 'Unknown error';
-                    if (result.errors) {
-                        msg += '\n' + JSON.stringify(result.errors);
-                    }
-                    alert('Failed to generate payslip: ' + msg);
-                }
-            } catch (err) {
-                alert('Error: ' + err.message);
-            }
+            // API call removed
+            alert('Payslip generation API call removed.');
         };
     }
 

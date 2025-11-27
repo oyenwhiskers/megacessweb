@@ -244,6 +244,7 @@
     
     // Main function to fetch workers
     async function fetchWorkersList(search = '', page = 1, gender = 'all') {
+        const startTime = performance.now();
         try {
             showLoading();
             
@@ -348,10 +349,14 @@
             }
             
             workersView.innerHTML = workersHTML;
+            const endTime = performance.now();
+            console.log(`[WorkerList] API + render time: ${(endTime - startTime).toFixed(2)} ms`);
             
         } catch (error) {
             console.error('Error fetching workers:', error);
             showError(error.message || 'Failed to load workers. Please try again.', search, gender);
+            const endTime = performance.now();
+            console.log(`[WorkerList] API + render time (error): ${(endTime - startTime).toFixed(2)} ms`);
         }
     }
     
@@ -672,18 +677,17 @@
                 input.type = 'date';
                 input.setAttribute('name', 'staff_dob');
             } else if (label.includes('Gender')) {
-                // Replace gender input with select
+                // Replace gender input with select (only Male and Female)
                 const currentValue = input.value.toLowerCase();
                 const selectHTML = `
-                    <select class="form-control form-control-sm border-primary" name="staff_gender" required>
+                    <select class="form-control form-control-sm border-primary" name="gender" required>
                         <option value="">Select Gender</option>
                         <option value="male" ${currentValue === 'male' ? 'selected' : ''}>Male</option>
                         <option value="female" ${currentValue === 'female' ? 'selected' : ''}>Female</option>
-                        <option value="other" ${currentValue === 'other' ? 'selected' : ''}>Other</option>
                     </select>
                 `;
                 input.outerHTML = selectHTML;
-                return; // Skip further processing for this field
+                return;
             } else if (label.includes('Role')) {
                 // Role field stays readonly - workers cannot change their role
                 input.classList.remove('border-primary');

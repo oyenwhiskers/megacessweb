@@ -60,6 +60,7 @@
 
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
   async function fetchStaffList(search = '', role = 'all', page = 1) {
+    const startTime = performance.now();
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
     currentPage = page;
@@ -105,9 +106,13 @@
       }
 
       const data = await res.json();
+      const endTime = performance.now();
+      console.log(`[StaffList] API + render time: ${(endTime - startTime).toFixed(2)} ms`);
       renderStaff(data, role);
     } catch (err) {
       showStatus('Network or server error while loading staff list.', 'danger');
+      const endTime = performance.now();
+      console.log(`[StaffList] API + render time (error): ${(endTime - startTime).toFixed(2)} ms`);
       renderStaff({ data: [] });
     }
   }
@@ -262,6 +267,11 @@
                             onclick="deleteStaff(${u.id || u.user_id})"
                             title="Delete Staff">
                       <i class="bi bi-trash"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" 
+                            onclick="showResetPasswordModal(${u.id || u.user_id})"
+                            title="Reset Password">
+                      <i class="bi bi-key"></i> Reset Password
                     </button>
                   </div>
                 </div>
@@ -613,14 +623,13 @@
         input.setAttribute('name', 'user_dob');
         input.setAttribute('required', 'required');
       } else if (label.includes('Gender')) {
-        // Replace gender input with select
+        // Replace gender input with select (only Male and Female)
         const currentValue = input.value.toLowerCase();
         const selectHTML = `
           <select class="form-control form-control-sm border-primary" name="user_gender" required>
             <option value="">Select Gender</option>
             <option value="male" ${currentValue === 'male' ? 'selected' : ''}>Male</option>
             <option value="female" ${currentValue === 'female' ? 'selected' : ''}>Female</option>
-            <option value="other" ${currentValue === 'other' ? 'selected' : ''}>Other</option>
           </select>
         `;
         input.outerHTML = selectHTML;
@@ -735,113 +744,105 @@
   };
 
   // Update saveStaffChanges to accept event and fix button usage
-  window.saveStaffChanges = async function(staffId, event) {
+  window.saveStaffChanges = async function(staffId, event = null) {
     try {
-      const modal = document.getElementById('staffDetailsModal');
-      if (!modal) return;
-      const modalBody = modal.querySelector('.modal-body');
-      // Collect all input values first
-      const inputs = modalBody.querySelectorAll('input:not([type="file"]):not([readonly]), select');
-      const staffData = {};
-      inputs.forEach(input => {
-        const name = input.getAttribute('name');
-        if (name) {
-          let value = input.value.trim();
-          if (name === 'user_password') {
-            if (value !== '') {
-              staffData[name] = value;
-            }
-          } else if (value !== '' && value !== '-') {
-            staffData[name] = value;
-          }
+        const modal = document.getElementById('staffDetailsModal');
+        if (!modal) {
+            console.error('Modal not found');
+            return;
         }
-      });
-      // Validate required fields before proceeding
-      if (!staffData.user_ic) {
-        alert('IC / Document ID is required');
-        return;
-      }
-      if (!staffData.user_phone) {
-        alert('Phone Number is required');
-        return;
-      }
-      if (!staffData.user_dob) {
-        alert('Date of Birth is required');
-        return;
-      }
-      if (!staffData.user_gender) {
-        alert('Gender is required');
-        return;
-      }
-      if (!staffData.user_role) {
-        alert('Role is required');
-        return;
-      }
-      // Check if there's an image file to upload
-      const imageInput = document.getElementById('staffDetailsImageInput');
-      const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
-      let requestBody;
-      let headers = {
-        'Authorization': `Bearer ${getAuthToken()}`,
-        'Accept': 'application/json'
-      };
-      if (imageFile) {
-        const formData = new FormData();
-        Object.keys(staffData).forEach(key => {
-          formData.append(key, staffData[key]);
-        });
-        formData.append('user_img', imageFile);
-        requestBody = formData;
-      } else {
-        requestBody = JSON.stringify(staffData);
-        headers['Content-Type'] = 'application/json';
-      }
-      if (event && event.target) {
-        const saveButton = event.target;
-        const originalButtonText = saveButton.innerHTML;
-        saveButton.disabled = true;
-        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-      }
-      // Use correct API endpoint for updating staff
-      const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}` , {
-        method: 'PUT',
-        headers: headers,
-        body: requestBody
-      });
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
-        } else if (response.status === 403) {
-          throw new Error('Access denied. You do not have permission to edit this staff.');
-        } else if (response.status === 404) {
-          throw new Error('Staff not found.');
-        } else if (response.status === 422) {
-          const errorData = await response.json();
-          console.log('Validation error details:', errorData);
-          const errorMessages = Object.values(errorData.errors || {}).flat().join(', ');
-          throw new Error(errorMessages || 'Validation failed. Please check your input.');
+        const modalBody = modal.querySelector('.modal-body');
+        if (!modalBody) {
+            console.error('Modal body not found');
+            return;
+        }
+        // Collect all editable fields
+        const icInput = modalBody.querySelector('input[name="user_ic"]');
+        const nicknameInput = modalBody.querySelector('input[name="user_nickname"]');
+        const fullnameInput = modalBody.querySelector('input[name="user_fullname"]');
+        const phoneInput = modalBody.querySelector('input[name="user_phone"]');
+        const dobInput = modalBody.querySelector('input[name="user_dob"]');
+        const genderInput = modalBody.querySelector('select[name="user_gender"]');
+        const roleInput = modalBody.querySelector('select[name="user_role"]');
+        const bankNameInput = modalBody.querySelector('input[name="user_bank_name"]');
+        const bankNumberInput = modalBody.querySelector('input[name="user_bank_number"]');
+        const kwspNumberInput = modalBody.querySelector('input[name="user_kwsp_number"]');
+        const startDateInput = modalBody.querySelector('input[name="user_employment_start_date"]');
+        // Check if there's an image file to upload
+        const imageInput = document.getElementById('staffDetailsImageInput');
+        const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
+        // Get the save button
+        let saveButton = null;
+        if (event && event.target) {
+            saveButton = event.target;
         } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            saveButton = modal.querySelector('button[onclick*="saveStaffChanges"], .btn-primary, button[type="submit"]');
         }
-      }
-      const result = await response.json();
-      console.log('Save response:', result);
-      alert('Staff profile updated successfully!');
-      const modalInstance = bootstrap.Modal.getInstance(modal);
-      if (modalInstance) {
-        modalInstance.hide();
-      }
-      setTimeout(() => {
-        fetchStaffList(currentSearch, currentRoleFilter);
-      }, 300);
+        // Disable save button and show loading state
+        const originalButtonText = saveButton ? saveButton.innerHTML : '';
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+        }
+        // Use FormData for all fields
+        const formData = new FormData();
+        if (icInput && icInput.value) formData.append('user_ic', icInput.value);
+        if (nicknameInput && nicknameInput.value) formData.append('user_nickname', nicknameInput.value);
+        if (fullnameInput && fullnameInput.value) formData.append('user_fullname', fullnameInput.value);
+        if (phoneInput && phoneInput.value) formData.append('user_phone', phoneInput.value);
+        if (dobInput && dobInput.value) formData.append('user_dob', dobInput.value);
+        if (genderInput && genderInput.value) formData.append('user_gender', genderInput.value);
+        if (roleInput && roleInput.value) formData.append('user_role', roleInput.value);
+        if (bankNameInput && bankNameInput.value) formData.append('user_bank_name', bankNameInput.value);
+        if (bankNumberInput && bankNumberInput.value) formData.append('user_bank_number', bankNumberInput.value);
+        if (kwspNumberInput && kwspNumberInput.value) formData.append('user_kwsp_number', kwspNumberInput.value);
+        if (startDateInput && startDateInput.value) formData.append('user_employment_start_date', startDateInput.value);
+        // Append image file if present
+        if (imageFile) {
+            formData.append('user_img', imageFile);
+        }
+        // Prepare headers
+        const headers = {
+            'Authorization': `Bearer ${getAuthToken()}`,
+            'Accept': 'application/json'
+            // Don't set Content-Type for FormData
+        };
+        // Make POST request to update staff (POST works better with file uploads)
+        const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}`, {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            const errorMessage = result.message || result.error || 'Failed to save changes.';
+            throw new Error(errorMessage);
+        }
+        if (!result.success) {
+            const errorMessage = result.message || 'Failed to save changes.';
+            throw new Error(errorMessage);
+        }
+        console.log('Save response:', result);
+        alert('Staff details updated successfully!');
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+        setTimeout(() => {
+            fetchStaffList(currentSearch, currentRoleFilter);
+            viewStaffDetails(staffId);
+        }, 1000);
     } catch (error) {
-      console.error('Error saving staff changes:', error);
-      alert(`Failed to save changes: ${error.message}`);
-      if (event && event.target) {
-        const saveButton = event.target;
-        saveButton.disabled = false;
-        saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
-      }
+        console.error('Error saving staff changes:', error);
+        alert(`Failed to save changes: ${error.message || 'Please try again.'}`);
+        const modal = document.getElementById('staffDetailsModal');
+        if (modal) {
+            const saveButton = modal.querySelector('button[onclick*="saveStaffChanges"], .btn-primary, button[type="submit"]');
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
+            }
+        }
     }
   };
 
@@ -935,4 +936,154 @@
       }
     }
   });
+
+  // Add Reset Password modal logic
+  window.showResetPasswordModal = function(staffId) {
+    // Remove existing modal if present
+    const existingModal = document.getElementById('resetPasswordModal');
+    if (existingModal) {
+      const modalInstance = bootstrap.Modal.getInstance(existingModal);
+      if (modalInstance) modalInstance.dispose();
+      existingModal.remove();
+    }
+    // Remove any lingering backdrops
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    if (!document.querySelector('.modal.show')) {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.id = 'resetPasswordModal';
+    modal.className = 'modal fade';
+    modal.tabIndex = -1;
+    modal.setAttribute('aria-labelledby', 'resetPasswordModalLabel');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="resetPasswordModalLabel">Reset Password</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="resetPasswordForm">
+            <div class="modal-body">
+              <label for="newPassword" class="form-label">New Password:</label>
+              <div class="input-group mb-2">
+                <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="6" placeholder="Enter new password">
+                <button type="button" class="btn btn-outline-secondary" tabindex="-1" id="toggleNewPassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+              </div>
+              <label for="confirmPassword" class="form-label mt-3">Confirm Password:</label>
+              <div class="input-group mb-2">
+                <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="6" placeholder="Confirm new password">
+                <button type="button" class="btn btn-outline-secondary" tabindex="-1" id="toggleConfirmPassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+              </div>
+              <div id="resetPasswordError" class="text-danger mt-2" style="display:none;"></div>
+            </div>
+            <div class="modal-footer justify-content-end">
+              <button type="submit" class="btn btn-success"><i class="bi bi-check2-square"></i> Reset Password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    // Show modal
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    // Password visibility toggle logic
+    const newPasswordInput = modal.querySelector('#newPassword');
+    const toggleNewPasswordBtn = modal.querySelector('#toggleNewPassword');
+    toggleNewPasswordBtn.addEventListener('click', function() {
+      if (newPasswordInput.type === 'password') {
+        newPasswordInput.type = 'text';
+        toggleNewPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+      } else {
+        newPasswordInput.type = 'password';
+        toggleNewPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
+      }
+    });
+    const confirmPasswordInput = modal.querySelector('#confirmPassword');
+    const toggleConfirmPasswordBtn = modal.querySelector('#toggleConfirmPassword');
+    toggleConfirmPasswordBtn.addEventListener('click', function() {
+      if (confirmPasswordInput.type === 'password') {
+        confirmPasswordInput.type = 'text';
+        toggleConfirmPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+      } else {
+        confirmPasswordInput.type = 'password';
+        toggleConfirmPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
+      }
+    });
+    // Handle form submit
+    modal.querySelector('#resetPasswordForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const password = modal.querySelector('#newPassword').value;
+      const passwordConfirmation = modal.querySelector('#confirmPassword').value;
+      const errorDiv = modal.querySelector('#resetPasswordError');
+      errorDiv.style.display = 'none';
+      errorDiv.textContent = '';
+      if (!password || !passwordConfirmation) {
+        errorDiv.textContent = 'Please enter and confirm the new password.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      if (password !== passwordConfirmation) {
+        errorDiv.textContent = 'Passwords do not match.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errorDiv.textContent = 'Password must be at least 6 characters.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      // Disable button and show spinner
+      const submitBtn = modal.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Resetting...';
+      // Prepare API call
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        errorDiv.textContent = 'Authentication token not found. Please log in again.';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check2-square"></i> Reset Password';
+        return;
+      }
+      const url = new URL(`https://mwms.megacess.com/api/v1/users/${staffId}/change-password`);
+      const headers = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      const body = {
+        password: password,
+        password_confirmation: passwordConfirmation
+      };
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          errorDiv.textContent = result.message || result.error || 'Failed to reset password.';
+          errorDiv.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-check2-square"></i> Reset Password';
+          return;
+        }
+        // Success
+        modalInstance.hide();
+        alert('Password reset successfully!');
+      } catch (err) {
+        errorDiv.textContent = 'Network or server error. Please try again.';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check2-square"></i> Reset Password';
+      }
+    };
+  };
 })();
