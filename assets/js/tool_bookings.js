@@ -1,7 +1,6 @@
 // GLOBAL DECLARATION
 let ALL_TOOLS = [];
 let ALL_USERS_STAFF = [];
-const TOOL_BOOKING_RESULTS_LIMIT = 8;
 
 const toolBookingState = {
   search: '',
