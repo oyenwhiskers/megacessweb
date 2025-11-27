@@ -121,6 +121,12 @@ function showEmployeeType(type, push) {
       const workerAvatar = worker.staff_img 
         ? (worker.staff_img.startsWith("http") ? worker.staff_img : `https://mwms.megacess.com${worker.staff_img}`)
         : "https://via.placeholder.com/64";
+      
+      // Safely access nested base_salary property
+      let workerBaseSalary = "Not set";
+      if (worker.base_salary && worker.base_salary.base_salary != null) {
+        workerBaseSalary = worker.base_salary.base_salary;
+      }
 
       const $col = $("<div>").addClass("col-12 col-sm-6 col-md-4");
       const $card = $(`
@@ -129,10 +135,11 @@ function showEmployeeType(type, push) {
             <img src="${workerAvatar}" alt="${workerName}" class="rounded-circle" width="64" height="64">
             <div class="flex-grow-1">
               <h6 class="mb-1">${workerName}</h6>
+              <small class="text-muted d-block">Base Salary: <strong>${workerBaseSalary}</strong></small>
             </div>
-            <div class="d-flex flex-column ms-2">
+            <div class="d-flex flex-column ms-auto">
               <a href="/megacessweb/pages/manage-payment-rate-edit-salary-worker.html?id=${encodeURIComponent(workerId)}" 
-                 class="btn btn-sm btn-outline-success mb-1" title="Edit base salary">
+                 class="btn btn-sm btn-outline-success" title="Edit base salary">
                  <i class="bi bi-pencil-fill"></i>
               </a>
             </div>

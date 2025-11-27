@@ -18,9 +18,90 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Payroll content will go here.</p>
+        <!-- Tab Navigation -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="d-flex gap-2">
+              <button class="btn btn-success px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="workerTab">
+                <i class="bi bi-person-workspace"></i>
+                Worker
+              </button>
+              <button class="btn btn-outline-secondary px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="staffTab">
+                <i class="bi bi-person-badge"></i>
+                Staff
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="search-container">
+              <input type="text" class="form-control form-control-lg" placeholder="search name..." id="searchInput">
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Filter Buttons (Initially Hidden) -->
+        <div class="row mb-4" id="roleFilterContainer" style="display: none;">
+          <div class="col-12">
+            <div class="d-flex gap-2">
+              <button class="btn btn-success px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="roleFilterAll" data-role="all">
+                All
+              </button>
+              <button class="btn btn-outline-secondary px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="roleFilterMandor" data-role="mandor">
+                Mandur
+              </button>
+              <button class="btn btn-outline-secondary px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="roleFilterChecker" data-role="checker">
+                Checker
+              </button>
+              <button class="btn btn-outline-secondary px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="roleFilterAdmin" data-role="admin">
+                Admin
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Worker List Header -->
+        <div class="row mb-3">
+          <div class="col-12">
+            <h3 class="h5 mb-0">List of existing worker:</h3>
+          </div>
+        </div>
+
+        <!-- Worker List -->
+        <div class="row" id="workerList">
+          <div class="col-12" id="workerContainer">
+            <!-- Workers will be populated here -->
+          </div>
+        </div>
+
+        <!-- Staff List (Initially Hidden) -->
+        <div class="row d-none" id="staffList">
+          <div class="col-12">
+            <div class="text-center py-5">
+              <i class="bi bi-person-badge display-1 text-muted"></i>
+              <h4 class="text-muted mt-3">No staff members found</h4>
+              <p class="text-muted">Staff payroll information will appear here.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Pagination Controls -->
+        <div class="row">
+          <div class="col-12" id="paginationContainer" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mt-4">
+              <div class="pagination-info">
+                <span class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 items</span>
+              </div>
+              <nav aria-label="Pagination">
+                <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                  <!-- Pagination buttons will be generated here -->
+                </ul>
+              </nav>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -29,5 +110,111 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
+  <script src="/megacessweb/assets/js/manage_payroll.js"></script>
+
+  <!-- Payslip Generation Modal -->
+  <div class="modal fade" id="payslipModal" tabindex="-1" aria-labelledby="payslipModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h2 class="modal-title w-100 text-center fw-bold" id="payslipModalLabel">Payslip Generation</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3 d-flex align-items-center gap-3">
+            <span class="fw-bold fs-5" style="color:#226644;">Name:</span>
+            <span id="payslipName" class="fw-semibold fs-5"></span>
+          </div>
+          <div class="mb-4 d-flex align-items-center gap-3">
+            <span class="fw-bold fs-5" style="color:#226644;">Month Selection:</span>
+            <select class="form-select w-auto" id="payslipMonth">
+              <option selected disabled>select month</option>
+              <!-- Month options will be populated dynamically -->
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <span class="fw-bold fs-5" style="color:#226644;">Income:</span>
+            <div class="table-responsive mt-2">
+              <table class="table table-bordered align-middle mb-0">
+                <thead id="incomeTableHead">
+                  <!-- Table head will be set dynamically -->
+                </thead>
+                <tbody id="incomeTableBody">
+                  <!-- Income rows will be populated dynamically -->
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td class="fw-bold">Total Salary</td>
+                    <td class="fw-bold" id="totalSalary">0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <span class="fw-bold fs-5" style="color:#226644;">Add Deductions:</span>
+            <form class="row g-2 align-items-center mt-2" id="deductionForm" autocomplete="off">
+              <div class="col-md-5">
+                <input type="text" class="form-control" placeholder="Enter deduction type" id="deductionType">
+              </div>
+              <div class="col-md-2 text-center fw-bold">RM</div>
+              <div class="col-md-3">
+                <input type="number" step="0.01" class="form-control" placeholder="Enter deduction amount" id="deductionAmount">
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">ADD</button>
+              </div>
+            </form>
+            <div class="table-responsive mt-3">
+              <table class="table table-bordered align-middle mb-0">
+                <tbody id="deductionTableBody">
+                  <!-- Deductions will be populated dynamically -->
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td class="fw-bold">Total Deductions</td>
+                    <td class="fw-bold" id="totalDeductions">0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <span class="fw-bold fs-5" style="color:#226644;">Advance:</span>
+            <div class="row g-0 align-items-center border rounded p-3 mb-2">
+              <div class="col-md-3 text-center fs-4 fw-bold" id="advanceAmount">0.00</div>
+              <div class="col-md-9">
+                <div class="text-muted">Remarks:</div>
+                <div id="advanceRemarks" class="text-secondary"></div>
+              </div>
+            </div>
+            <div class="text-center text-muted" style="font-size: 0.95em;">(change or leave it as it is)</div>
+          </div>
+
+          <div class="d-grid mt-4">
+            <button class="btn btn-primary btn-lg fw-bold py-3" id="generatePayslipBtn">GENERATE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payslip View Modal -->
+  <div class="modal fade" id="viewPayslipModal" tabindex="-1" aria-labelledby="viewPayslipModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h2 class="modal-title w-100 text-center fw-bold" id="viewPayslipModalLabel">Payslip Details</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="viewPayslipModalBody">
+          <!-- Payslip details will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

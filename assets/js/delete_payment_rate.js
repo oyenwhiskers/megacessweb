@@ -1,7 +1,3 @@
-/* This JS file will include the deletion of the payment rate */
-
-// delete_payment_rate.js
-
 const API_BASE_URL = "https://mwms.megacess.com/api/v1/payment-rates";
 
 /**

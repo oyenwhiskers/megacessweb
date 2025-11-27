@@ -8,6 +8,31 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
   <link rel="stylesheet" href="/megacessweb/assets/css/manaageattendance.css">
+  <style>
+    /* Custom scrollbar for overtime list */
+    #overtimeList::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #overtimeList::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    #overtimeList::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    #overtimeList::-webkit-scrollbar-thumb:hover {
+      background: #a1a1a1;
+    }
+    
+    /* Ensure smooth scrolling */
+    #overtimeList {
+      scroll-behavior: smooth;
+    }
+  </style>
 </head>
 <body data-page="manage-attendance">
   <div class="app d-flex">
@@ -80,11 +105,384 @@
     </main>
   </div>
 
+  <!-- Add Overtime Modal -->
+  <div class="modal fade" id="addOvertimeModal" tabindex="-1" aria-labelledby="addOvertimeModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #f8f9fa; border: none; border-radius: 15px;">
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1070;"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <!-- Back Arrow and Title -->
+          <div class="d-flex align-items-center mb-4">
+            <button type="button" class="btn btn-link p-0 me-3" data-bs-dismiss="modal" style="color: #6c757d;">
+              <i class="bi bi-arrow-left" style="font-size: 1.2rem;"></i>
+            </button>
+            <div>
+              <h5 class="mb-1 fw-bold text-dark">Add new Overtime Record</h5>
+              <p class="mb-0 text-muted small">Insert the required details with the correct information</p>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <form id="addOvertimeForm">
+            <!-- Overtime Date -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Overtime Date:</label>
+              <div class="position-relative">
+                <input type="date" id="overtimeDate" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding-right: 3rem;" placeholder="Select start date..">
+                <i class="bi bi-calendar3 position-absolute end-0 top-50 translate-middle-y me-3" style="color: #6c757d; pointer-events: none;"></i>
+              </div>
+            </div>
+
+            <!-- Duration -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Duration (hour):</label>
+              <input type="number" id="overtimeDuration" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;" placeholder="Enter duration.." min="0" step="0.5">
+            </div>
+
+            <!-- Remarks -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Remarks:</label>
+              <textarea id="overtimeRemarks" class="form-control" rows="5" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; resize: none;" placeholder="Enter remarks.."></textarea>
+            </div>
+
+            <!-- Save Button -->
+            <div class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-dark px-4 py-2 d-flex align-items-center" style="border-radius: 8px;">
+                <i class="bi bi-floppy me-2"></i>
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Overtime Modal -->
+  <div class="modal fade" id="manageOvertimeModal" tabindex="-1" aria-labelledby="manageOvertimeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #d4edda; border-bottom: none;">
+          <h5 class="modal-title fw-bold text-dark" id="manageOvertimeModalLabel">Manage Overtime</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="background-color: #d4edda; padding: 0;">
+          <!-- User Info Section -->
+          <div class="mx-3 mb-3">
+            <div class="bg-white rounded p-3 d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <div style="width: 60px; height: 60px;" class="me-3">
+                  <img id="overtimeUserAvatar" src="" alt="User Avatar" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover; background-color: #333;">
+                </div>
+                <div>
+                  <h6 class="mb-1 fw-bold" id="overtimeUserName">Loading...</h6>
+                  <p class="mb-0 text-muted" id="overtimeUserRole">Loading...</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-success btn-sm" id="addOvertimeBtn">
+                <i class="bi bi-plus-circle me-1"></i>Add overtime
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="mx-3 mb-3">
+            <div class="d-flex gap-2">
+              <button class="btn btn-light active" id="overtimeFilterAll">All</button>
+              <div class="dropdown">
+                <button class="btn btn-light dropdown-toggle" type="button" id="overtimeFilterMonth" data-bs-toggle="dropdown" aria-expanded="false">
+                  Month
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="overtimeFilterMonth">
+                  <li><a class="dropdown-item" href="#" data-month="1">January</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="2">February</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="3">March</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="4">April</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="5">May</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="6">June</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="7">July</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="8">August</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="9">September</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="10">October</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="11">November</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="12">December</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overtime List Section -->
+          <div class="mx-3">
+            <h6 class="mb-3 text-dark">List of existing overtime:</h6>
+            <div id="overtimeList" class="mb-3" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+              <!-- Overtime entries will be loaded here -->
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading overtime records...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="background-color: #d4edda; border-top: none;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Overtime Modal -->
+  <div class="modal fade" id="editOvertimeModal" tabindex="-1" aria-labelledby="editOvertimeModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #f8f9fa; border: none; border-radius: 15px;">
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1070;"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <!-- Back Arrow and Title -->
+          <div class="d-flex align-items-center mb-4">
+            <button type="button" class="btn btn-link p-0 me-3" data-bs-dismiss="modal" style="color: #6c757d;">
+              <i class="bi bi-arrow-left" style="font-size: 1.2rem;"></i>
+            </button>
+            <div>
+              <h5 class="mb-1 fw-bold text-dark">Edit Overtime Record</h5>
+              <p class="mb-0 text-muted small">Update the overtime details with the correct information</p>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <form id="editOvertimeForm">
+            <!-- Hidden field for record ID -->
+            <input type="hidden" id="editOvertimeId" value="">
+            
+            <!-- Overtime Date -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Overtime Date:</label>
+              <div class="position-relative">
+                <input type="date" id="editOvertimeDate" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding-right: 3rem;" placeholder="Select start date..">
+                <i class="bi bi-calendar3 position-absolute end-0 top-50 translate-middle-y me-3" style="color: #6c757d; pointer-events: none;"></i>
+              </div>
+            </div>
+
+            <!-- Duration -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Duration (hour):</label>
+              <input type="number" id="editOvertimeDuration" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;" placeholder="Enter duration.." min="0" step="0.5">
+            </div>
+
+            <!-- Remarks -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Remarks:</label>
+              <textarea id="editOvertimeRemarks" class="form-control" rows="5" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; resize: none;" placeholder="Enter remarks.."></textarea>
+            </div>
+
+            <!-- Save Button -->
+            <div class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-dark px-4 py-2 d-flex align-items-center" style="border-radius: 8px;">
+                <i class="bi bi-floppy me-2"></i>
+                Update
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Leave Modal -->
+  <div class="modal fade" id="manageLeaveModal" tabindex="-1" aria-labelledby="manageLeaveModalLabel">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #d4edda; border-bottom: none;">
+          <h5 class="modal-title fw-bold text-dark" id="manageLeaveModalLabel">Manage Leave</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="background-color: #d4edda; padding: 0;">
+          <!-- User Info Section -->
+          <div class="mx-3 mb-3">
+            <div class="bg-white rounded p-3 d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <div style="width: 60px; height: 60px;" class="me-3">
+                  <img id="leaveUserAvatar" src="" alt="User Avatar" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover; background-color: #333;">
+                </div>
+                <div>
+                  <h6 class="mb-1 fw-bold" id="leaveUserName">Loading...</h6>
+                  <p class="mb-0 text-muted" id="leaveUserRole">Loading...</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-success btn-sm" id="addLeaveBtn">
+                <i class="bi bi-plus-circle me-1"></i>Add new Leave
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="mx-3 mb-3">
+            <div class="d-flex gap-2">
+              <button class="btn btn-light active" id="leaveFilterAll">All</button>
+              <div class="dropdown">
+                <button class="btn btn-light dropdown-toggle" type="button" id="leaveFilterMonth" data-bs-toggle="dropdown" aria-expanded="false">
+                  Month
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="leaveFilterMonth">
+                  <li><a class="dropdown-item" href="#" data-month="1">January</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="2">February</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="3">March</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="4">April</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="5">May</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="6">June</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="7">July</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="8">August</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="9">September</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="10">October</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="11">November</a></li>
+                  <li><a class="dropdown-item" href="#" data-month="12">December</a></li>
+                </ul>
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-light dropdown-toggle" type="button" id="leaveFilterType" data-bs-toggle="dropdown" aria-expanded="false">
+                  Type of Leave
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="leaveFilterType">
+                  <li><a class="dropdown-item" href="#" data-type="annual">Annual Leave</a></li>
+                  <li><a class="dropdown-item" href="#" data-type="sick">Sick Leave</a></li>
+                  <li><a class="dropdown-item" href="#" data-type="unpaid">Unpaid Leave</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leave List Section -->
+          <div class="mx-3">
+            <h6 class="mb-3 text-dark">List of applied leaves:</h6>
+            <div id="leaveList" class="mb-3" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+              <!-- Leave entries will be loaded here -->
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading leave records...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="background-color: #d4edda; border-top: none;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Leave Modal -->
+  <div class="modal fade" id="addLeaveModal" tabindex="-1" aria-labelledby="addLeaveModalLabel" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #f8f9fa; border: none; border-radius: 15px;">
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1070;"></button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <!-- Back Arrow and Title -->
+          <div class="d-flex align-items-center mb-4">
+            <button type="button" class="btn btn-link p-0 me-3" data-bs-dismiss="modal" style="color: #6c757d;">
+              <i class="bi bi-arrow-left" style="font-size: 1.2rem;"></i>
+            </button>
+            <div>
+              <h5 class="mb-1 fw-bold text-dark">Apply for Leave</h5>
+              <p class="mb-0 text-muted small">Fill in the details for your leave request</p>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <form id="addLeaveForm">
+            <!-- Leave Type -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Leave Type:</label>
+              <select id="leaveType" class="form-select py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;" required>
+                <option value="">Select leave type...</option>
+                <option value="annual_leave">Annual Leave</option>
+                <option value="sick_leave">Sick Leave</option>
+                <option value="unpaid_leave">Unpaid Leave</option>
+              </select>
+            </div>
+
+            <!-- From Date -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">From Date:</label>
+              <div class="position-relative">
+                <input type="date" id="leaveFromDate" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding-right: 3rem;" required>
+                <i class="bi bi-calendar3 position-absolute end-0 top-50 translate-middle-y me-3" style="color: #6c757d; pointer-events: none;"></i>
+              </div>
+            </div>
+
+            <!-- To Date -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">To Date:</label>
+              <div class="position-relative">
+                <input type="date" id="leaveToDate" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding-right: 3rem;" required>
+                <i class="bi bi-calendar3 position-absolute end-0 top-50 translate-middle-y me-3" style="color: #6c757d; pointer-events: none;"></i>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Notes (Optional):</label>
+              <textarea id="leaveNotes" class="form-control" rows="4" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; resize: none;" placeholder="Enter reason or additional notes..."></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-success px-4 py-2 d-flex align-items-center" style="border-radius: 8px;">
+                <i class="bi bi-calendar-plus me-2"></i>
+                Submit Leave Request
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
-  <script src="/megacessweb/assets/js/list_workers_att.js"></script>
-  <script src="/megacessweb/assets/js/list_staff_att.js"></script>
+  <script src="/megacessweb/assets/js/manage_overtime.js?v=1.0"></script>
+  <script src="/megacessweb/assets/js/manage_leave.js?v=1.0"></script>
+  <script src="/megacessweb/assets/js/list_workers_att.js?v=1.7"></script>
+  <script src="/megacessweb/assets/js/list_staff_att.js?v=1.3"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
+
+  <style>
+    /* Custom scrollbar for leave list */
+    #leaveList::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #leaveList::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    #leaveList::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+
+    #leaveList::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+
+    /* Ensure consistent spacing for leave entries */
+    #leaveList .bg-white {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #leaveList .bg-white:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+  </style>
 
   <script>
     (function(){
@@ -222,6 +620,576 @@
       
       // Initial state
       show('workers');
+
+      // Overtime Modal Functions
+      window.showOvertimeModal = function(userId, userName, userRole, userImage, userType) {
+        // Store current user context for filtering
+        window.currentOvertimeUserId = userId;
+        window.currentOvertimeUserType = userType;
+        
+        // Set user information
+        document.getElementById('overtimeUserName').textContent = userName || 'Unknown User';
+        document.getElementById('overtimeUserRole').textContent = userRole || 'Unknown Role';
+        
+        // Set user avatar with comprehensive error handling
+        const avatar = document.getElementById('overtimeUserAvatar');
+        
+        // Clean and validate the image URL
+        let cleanImageUrl = '';
+        if (userImage && typeof userImage === 'string' && userImage.trim() !== '') {
+          // Remove problematic suffixes like :1, :2, etc.
+          cleanImageUrl = userImage.replace(/:\d+$/, '').trim();
+          
+          // Additional cleaning for malformed URLs
+          cleanImageUrl = cleanImageUrl.replace(/\.jpg:.*$/, '.jpg');
+          cleanImageUrl = cleanImageUrl.replace(/\.png:.*$/, '.png');
+          cleanImageUrl = cleanImageUrl.replace(/\.jpeg:.*$/, '.jpeg');
+          cleanImageUrl = cleanImageUrl.replace(/\.gif:.*$/, '.gif');
+          
+          // Check if the cleaned URL is still valid
+          if (cleanImageUrl.length < 5 || 
+              cleanImageUrl.includes('null') || 
+              cleanImageUrl.includes('undefined') ||
+              cleanImageUrl.includes('…') || // Sometimes URLs get truncated with ellipsis
+              cleanImageUrl.endsWith(':')) {
+            cleanImageUrl = '';
+          }
+        }
+        
+        if (cleanImageUrl && cleanImageUrl.trim() !== '') {
+          // Try to construct the full URL
+          let imageSrc = cleanImageUrl;
+          
+          // If it's not a full URL, construct the proper path
+          if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
+            imageSrc = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
+          } else if (cleanImageUrl.startsWith('/')) {
+            imageSrc = `https://mwms.megacess.com${cleanImageUrl}`;
+          }
+          
+          // Set the image with error fallback
+          avatar.src = imageSrc;
+          avatar.onerror = function() {
+            // Fallback to placeholder if image fails to load
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            this.src = placeholderImage;
+            this.onerror = null; // Prevent infinite loop
+          };
+        } else {
+          // Generate placeholder avatar for invalid or missing images
+          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+          avatar.src = placeholderImage;
+          avatar.onerror = null; // Clear any previous error handler
+        }
+        
+        // Reset filter buttons
+        document.getElementById('overtimeFilterAll').classList.add('active');
+        document.getElementById('overtimeFilterMonth').textContent = 'Month';
+        
+        // Load overtime data for this user using the real API
+        if (window.loadUserOvertimeData) {
+          window.loadUserOvertimeData(userId, userType);
+        }
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('manageOvertimeModal'));
+        modal.show();
+      };
+
+      // Leave Modal Functions
+      window.showLeaveModal = function(userId, userName, userRole, userImage, userType) {
+        console.log('showLeaveModal called with:', { userId, userName, userRole, userImage, userType });
+        
+        // Store current user context for filtering
+        window.currentLeaveUserId = userId;
+        window.currentLeaveUserType = userType;
+        
+        // Set user information with better debugging
+        console.log('Setting user name to:', userName);
+        console.log('Setting user role to:', userRole);
+        
+        const userNameElement = document.getElementById('leaveUserName');
+        const userRoleElement = document.getElementById('leaveUserRole');
+        
+        if (userNameElement) {
+          userNameElement.textContent = userName || 'Unknown User';
+          console.log('User name element updated to:', userNameElement.textContent);
+        } else {
+          console.error('leaveUserName element not found');
+        }
+        
+        if (userRoleElement) {
+          userRoleElement.textContent = userRole || 'Unknown Role';
+          console.log('User role element updated to:', userRoleElement.textContent);
+        } else {
+          console.error('leaveUserRole element not found');
+        }
+        
+        // Set user avatar with comprehensive error handling
+        const avatar = document.getElementById('leaveUserAvatar');
+        
+        // Clean and validate the image URL
+        let cleanImageUrl = '';
+        if (userImage && typeof userImage === 'string' && userImage.trim() !== '') {
+          // Remove problematic suffixes like :1, :2, etc.
+          cleanImageUrl = userImage.replace(/:\d+$/, '').trim();
+          
+          // Additional cleaning for malformed URLs
+          cleanImageUrl = cleanImageUrl.replace(/\.jpg:.*$/, '.jpg');
+          cleanImageUrl = cleanImageUrl.replace(/\.png:.*$/, '.png');
+          cleanImageUrl = cleanImageUrl.replace(/\.jpeg:.*$/, '.jpeg');
+          cleanImageUrl = cleanImageUrl.replace(/\.gif:.*$/, '.gif');
+          
+          // Check if the cleaned URL is still valid
+          if (cleanImageUrl.length < 5 || 
+              cleanImageUrl.includes('null') || 
+              cleanImageUrl.includes('undefined') ||
+              cleanImageUrl.includes('…') || // Sometimes URLs get truncated with ellipsis
+              cleanImageUrl.endsWith(':')) {
+            cleanImageUrl = '';
+          }
+        }
+        
+        if (cleanImageUrl && cleanImageUrl.trim() !== '') {
+          // Try to construct the full URL
+          let imageSrc = cleanImageUrl;
+          
+          // If it's not a full URL, construct the proper path
+          if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
+            imageSrc = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
+          } else if (cleanImageUrl.startsWith('/')) {
+            imageSrc = `https://mwms.megacess.com${cleanImageUrl}`;
+          }
+          
+          // Set the image with error fallback
+          avatar.src = imageSrc;
+          avatar.onerror = function() {
+            // Fallback to placeholder if image fails to load
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            this.src = placeholderImage;
+            this.onerror = null; // Prevent infinite loop
+          };
+        } else {
+          // Generate placeholder avatar for invalid or missing images
+          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+          avatar.src = placeholderImage;
+          avatar.onerror = null; // Clear any previous error handler
+        }
+        
+        // Reset filter buttons
+        document.getElementById('leaveFilterAll').classList.add('active');
+        document.getElementById('leaveFilterMonth').textContent = 'Month';
+        document.getElementById('leaveFilterType').textContent = 'Type of Leave';
+        
+        // Load leave data for this user using the real API
+        if (window.loadUserLeaveData) {
+          window.loadUserLeaveData(userId, userType);
+        } else {
+          console.error('loadUserLeaveData function not found');
+        }
+        
+        console.log('About to show leave modal...');
+        
+        // Show the modal - Bootstrap will handle aria-hidden automatically
+        const modal = new bootstrap.Modal(document.getElementById('manageLeaveModal'));
+        modal.show();
+        
+        console.log('Leave modal should now be visible');
+      };
+
+      // Add leave button functionality
+      document.getElementById('addLeaveBtn').addEventListener('click', function() {
+        // Show the add leave modal
+        const addLeaveModal = new bootstrap.Modal(document.getElementById('addLeaveModal'));
+        addLeaveModal.show();
+        
+        // Set today's date as default for from date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('leaveFromDate').value = today;
+        document.getElementById('leaveToDate').value = today;
+        
+        // Clear form fields
+        document.getElementById('leaveType').value = '';
+        document.getElementById('leaveNotes').value = '';
+      });
+
+      // Add leave form submission
+      document.getElementById('addLeaveForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const leaveType = document.getElementById('leaveType').value;
+        const fromDate = document.getElementById('leaveFromDate').value;
+        const toDate = document.getElementById('leaveToDate').value;
+        const notes = document.getElementById('leaveNotes').value;
+        
+        // Validate form
+        if (!leaveType) {
+          alert('Please select a leave type');
+          return;
+        }
+        
+        if (!fromDate) {
+          alert('Please select a from date');
+          return;
+        }
+        
+        if (!toDate) {
+          alert('Please select a to date');
+          return;
+        }
+        
+        // Validate date range
+        if (new Date(fromDate) > new Date(toDate)) {
+          alert('From date cannot be later than to date');
+          return;
+        }
+        
+        // Get current user context
+        const userId = window.currentLeaveUserId;
+        const userType = window.currentLeaveUserType;
+        
+        console.log('Form submission - userId:', userId, 'userType:', userType);
+        
+        if (!userId || !userType) {
+          alert('User context not found. Please close and reopen the leave modal.');
+          return;
+        }
+        
+        // Additional validation for user types
+        if (!['worker', 'staff'].includes(userType)) {
+          alert('Invalid user type. Please refresh and try again.');
+          return;
+        }
+        
+        console.log('Submitting leave request:', { userId, leaveType, fromDate, toDate, notes });
+        
+        // Call API to submit leave request
+        submitLeaveRequest(userId, fromDate, toDate, leaveType, notes);
+      });
+
+      // Function to submit leave request via API
+      async function submitLeaveRequest(staffId, fromDate, toDate, leaveType, notes) {
+        const submitButton = document.querySelector('#addLeaveForm button[type="submit"]');
+        
+        try {
+          // Validate that the submitLeaveApplication function exists
+          if (typeof window.submitLeaveApplication !== 'function') {
+            throw new Error('Leave management function not available. Please refresh the page.');
+          }
+
+          // Validate user context
+          if (!window.currentLeaveUserId || !window.currentLeaveUserType) {
+            throw new Error('User context not found. Please close and reopen the leave modal.');
+          }
+
+          // Show loading state
+          const originalContent = submitButton.innerHTML;
+          submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+          submitButton.disabled = true;
+
+          console.log('Calling submitLeaveApplication with:', { staffId, fromDate, toDate, leaveType, notes });
+
+          // Use the API function from manage_leave.js
+          const result = await window.submitLeaveApplication(staffId, fromDate, toDate, leaveType, notes);
+
+          console.log('Leave submission result:', result);
+
+          // Validate result structure - check if it's an object and has required properties
+          if (!result || typeof result !== 'object' || typeof result.success === 'undefined') {
+            throw new Error('Invalid response from leave management system.');
+          }
+
+          if (result.success) {
+            // Show success message
+            const leaveTypeDisplayName = leaveType.replace('_', ' ').toUpperCase();
+            alert(`✅ Leave Request Submitted Successfully!\n\n📋 Details:\n• Type: ${leaveTypeDisplayName}\n• From: ${fromDate}\n• To: ${toDate}\n• Status: ${result.message || 'Approved'}\n\nYour leave request has been processed.`);
+            
+            // Reset the form to initial state
+            document.getElementById('addLeaveForm').reset();
+            
+            // Set today's date as default again
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('leaveFromDate').value = today;
+            document.getElementById('leaveToDate').value = today;
+            
+            // Close the add leave modal
+            const addLeaveModal = bootstrap.Modal.getInstance(document.getElementById('addLeaveModal'));
+            if (addLeaveModal) {
+              addLeaveModal.hide();
+            }
+            
+            // Refresh the leave list immediately and also with a delay to ensure API processing
+            if (window.loadUserLeaveData && window.currentLeaveUserId && window.currentLeaveUserType) {
+              console.log('Refreshing leave list for user:', window.currentLeaveUserId);
+              
+              // Immediate refresh
+              window.loadUserLeaveData(window.currentLeaveUserId, window.currentLeaveUserType);
+              
+              // Also refresh after a short delay to ensure the new record is available
+              setTimeout(() => {
+                console.log('Delayed refresh of leave list');
+                window.loadUserLeaveData(window.currentLeaveUserId, window.currentLeaveUserType);
+              }, 1000);
+            } else {
+              console.error('Unable to refresh leave list - missing context or function');
+            }
+          } else {
+            alert(`❌ Failed to Submit Leave Request\n\n${result.message || 'Unknown error occurred'}\n\nPlease try again or contact support if the problem persists.`);
+          }
+          
+        } catch (error) {
+          console.error('Error submitting leave request:', error);
+          
+          // Provide specific error messages
+          let errorMessage = 'Failed to submit leave request.';
+          if (error.message.includes('token')) {
+            errorMessage = 'Authentication failed. Please login again.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+          } else if (error.message) {
+            errorMessage = `Error: ${error.message}`;
+          }
+          
+          alert(errorMessage);
+        } finally {
+          // Reset button state
+          if (submitButton) {
+            submitButton.innerHTML = '<i class="bi bi-calendar-plus me-2"></i>Submit Leave Request';
+            submitButton.disabled = false;
+          }
+        }
+      }
+
+      // Remove the old mock data function since we're using real API now
+      // function loadUserOvertimeData(userId, userType) { ... } - removed
+
+      // Add overtime button functionality
+      document.getElementById('addOvertimeBtn').addEventListener('click', function() {
+        // Show the add overtime modal
+        const addOvertimeModal = new bootstrap.Modal(document.getElementById('addOvertimeModal'));
+        addOvertimeModal.show();
+        
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('overtimeDate').value = today;
+        
+        // Clear form fields
+        document.getElementById('overtimeDuration').value = '';
+        document.getElementById('overtimeRemarks').value = '';
+      });
+
+      // Add overtime form submission
+      document.getElementById('addOvertimeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const overtimeDate = document.getElementById('overtimeDate').value;
+        const overtimeDuration = document.getElementById('overtimeDuration').value;
+        const overtimeRemarks = document.getElementById('overtimeRemarks').value;
+        
+        // Validate form
+        if (!overtimeDate) {
+          alert('Please select an overtime date');
+          return;
+        }
+        
+        if (!overtimeDuration || overtimeDuration <= 0) {
+          alert('Please enter a valid duration');
+          return;
+        }
+        
+        // Get current user context
+        const userId = window.currentOvertimeUserId;
+        const userType = window.currentOvertimeUserType;
+        
+        if (!userId || !userType) {
+          alert('User context not found. Please close and reopen the overtime modal.');
+          return;
+        }
+        
+        // Prepare data for API
+        const overtimeData = {
+          date: overtimeDate,
+          duration: parseFloat(overtimeDuration) * 60, // Convert hours to minutes
+          remark: overtimeRemarks || '',
+          status: 'approved'
+        };
+        
+        // Add user_id or staff_id based on type
+        if (userType === 'staff') {
+          overtimeData.user_id = parseInt(userId);
+        } else if (userType === 'worker') {
+          overtimeData.staff_id = parseInt(userId);
+        } else {
+          alert('Invalid user type. Please try again.');
+          return;
+        }
+        
+        console.log('Submitting overtime data:', overtimeData);
+        
+        // Call API to save overtime
+        saveOvertimeRecord(overtimeData);
+      });
+
+      // Function to save overtime record via API
+      async function saveOvertimeRecord(overtimeData) {
+        const saveButton = document.querySelector('#addOvertimeForm button[type="submit"]');
+        
+        try {
+          // Show loading state
+          const originalContent = saveButton.innerHTML;
+          saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+          saveButton.disabled = true;
+
+          // Use the API function from manage_overtime.js
+          const result = await window.createOvertimeRecord(overtimeData);
+
+          // Success feedback
+          if (result && result.data) {
+            alert(`Overtime record saved successfully!\n\nDetails:\n- Date: ${result.data.date}\n- Duration: ${result.data.duration} minutes\n- Status: ${result.data.status}`);
+          } else {
+            alert('Overtime record saved successfully!');
+          }
+          
+          // Close the add overtime modal
+          const addOvertimeModal = bootstrap.Modal.getInstance(document.getElementById('addOvertimeModal'));
+          if (addOvertimeModal) {
+            addOvertimeModal.hide();
+          }
+          
+          // Refresh the overtime list
+          if (window.loadUserOvertimeData && window.currentOvertimeUserId && window.currentOvertimeUserType) {
+            window.loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
+          }
+        } catch (error) {
+          console.error('Error saving overtime:', error);
+          
+          // Provide specific error messages
+          let errorMessage = 'Failed to save overtime record.';
+          if (error.message.includes('token')) {
+            errorMessage = 'Authentication failed. Please login again.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+          } else if (error.message) {
+            errorMessage = `Error: ${error.message}`;
+          }
+          
+          alert(errorMessage);
+        } finally {
+          // Reset button state
+          if (saveButton) {
+            saveButton.innerHTML = '<i class="bi bi-floppy me-2"></i>Save';
+            saveButton.disabled = false;
+          }
+        }
+      }
+
+      // Edit overtime form submission
+      document.getElementById('editOvertimeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const overtimeId = document.getElementById('editOvertimeId').value;
+        const overtimeDate = document.getElementById('editOvertimeDate').value;
+        const overtimeDuration = document.getElementById('editOvertimeDuration').value;
+        const overtimeRemarks = document.getElementById('editOvertimeRemarks').value;
+        
+        // Validate form
+        if (!overtimeDate) {
+          alert('Please select an overtime date');
+          return;
+        }
+        
+        if (!overtimeDuration || overtimeDuration <= 0) {
+          alert('Please enter a valid duration');
+          return;
+        }
+        
+        // Get current user context
+        const userId = window.currentOvertimeUserId;
+        const userType = window.currentOvertimeUserType;
+        
+        if (!userId || !userType) {
+          alert('User context not found. Please close and reopen the overtime modal.');
+          return;
+        }
+        
+        // Prepare data for API
+        const overtimeData = {
+          id: parseInt(overtimeId),
+          date: overtimeDate,
+          duration: parseFloat(overtimeDuration) * 60, // Convert hours to minutes
+          remark: overtimeRemarks || ''
+        };
+        
+        // Add user_id or staff_id based on type
+        if (userType === 'staff') {
+          overtimeData.user_id = parseInt(userId);
+        } else if (userType === 'worker') {
+          overtimeData.staff_id = parseInt(userId);
+        } else {
+          alert('Invalid user type. Please try again.');
+          return;
+        }
+        
+        console.log('Updating overtime data:', overtimeData);
+        
+        // Call API to update overtime
+        updateOvertimeRecord(overtimeData);
+      });
+
+      // Function to update overtime record via API
+      async function updateOvertimeRecord(overtimeData) {
+        const updateButton = document.querySelector('#editOvertimeForm button[type="submit"]');
+        
+        try {
+          // Show loading state
+          const originalContent = updateButton.innerHTML;
+          updateButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+          updateButton.disabled = true;
+
+          // Use the API function from manage_overtime.js
+          const result = await window.updateOvertimeRecord(overtimeData);
+
+          // Success feedback
+          if (result && result.data) {
+            alert(`Overtime record updated successfully!\n\nDetails:\n- Date: ${result.data.date_attendance?.date || 'N/A'}\n- Duration: ${result.data.duration} minutes\n- Status: ${result.data.status}`);
+          } else {
+            alert('Overtime record updated successfully!');
+          }
+          
+          // Close the edit overtime modal
+          const editOvertimeModal = bootstrap.Modal.getInstance(document.getElementById('editOvertimeModal'));
+          if (editOvertimeModal) {
+            editOvertimeModal.hide();
+          }
+          
+          // Refresh the overtime list
+          if (window.loadUserOvertimeData && window.currentOvertimeUserId && window.currentOvertimeUserType) {
+            window.loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
+          }
+        } catch (error) {
+          console.error('Error updating overtime:', error);
+          
+          // Provide specific error messages
+          let errorMessage = 'Failed to update overtime record.';
+          if (error.message.includes('token')) {
+            errorMessage = 'Authentication failed. Please login again.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+          } else if (error.message) {
+            errorMessage = `Error: ${error.message}`;
+          }
+          
+          alert(errorMessage);
+        } finally {
+          // Reset button state
+          if (updateButton) {
+            updateButton.innerHTML = '<i class="bi bi-floppy me-2"></i>Update';
+            updateButton.disabled = false;
+          }
+        }
+      }
+
+      // Note: Filter functionality is now handled in manage_overtime.js
     })();
   </script>
 </body>

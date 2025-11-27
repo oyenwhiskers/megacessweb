@@ -1,6 +1,6 @@
-/* -----------------------------
+/* ===================================================
    Layout: Sidebar + Content
-------------------------------*/
+================================================== */
 body, html {
   margin: 0;
   height: 100%;
@@ -53,9 +53,9 @@ body, html {
   width: 100%;
 }
 
-/* -----------------------------
+/* ===================================================
    Payment Rate Containers
-------------------------------*/
+================================================== */
 .payment-rate-container {
   width: 100%;
   margin: 0 auto;
@@ -95,16 +95,9 @@ body, html {
   overflow-y: auto;
 }
 
-/* -----------------------------
-   Buttons, Slider, Filters
-------------------------------*/
-.type-of-rate-slider {
-  display: inline-flex;
-  background: #fff;
-  border-radius: 50px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  overflow: hidden;
-}
+/* ===================================================
+   Slider (To switch between Salary Management & Work-based Management)
+====================================================== */
 
 .rate-btn {
   cursor: pointer;
@@ -142,7 +135,76 @@ body, html {
   background-color: #e7e7e7;
 }
 
-/* Filters */
+/* ===================================================
+   Employee Type Selection / Slider ( Worker / Staff )
+====================================================== */
+
+.type-of-employee-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #f0f0f0;
+  padding: 4px;
+  border-radius: 30px;
+  width: 220px;   
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.type-of-employee-btn input[type="radio"] {
+  display: none;
+}
+
+.type-of-employee-btn label {
+  position: relative;
+  z-index: 2;
+  width: 50%;
+  text-align: center;
+  padding: 10px 0;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+  color: #495057;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 26px;
+}
+
+.type-of-employee-btn .selection-bg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background: #0d6832;          
+  border-radius: 26px;
+  z-index: 1;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.type-of-employee-btn label:hover {
+  color: #212529;
+}
+
+/* When STAFF is selected → move slider right */
+#staff:checked ~ .selection-bg {
+  transform: translateX(calc(100% + 4px));
+}
+
+/* Active label should turn white */
+#worker:checked + label {
+  color: white;
+  font-weight: 700;
+}
+#staff:checked + label {
+  color: white;
+  font-weight: 700;
+}
+
+/* =======================================
+Filter for Staff tab in Salary Management
+========================================== */
+
 .filter-group {
   display: flex;
   justify-content: space-between;
@@ -171,7 +233,10 @@ body, html {
   color: #0d6832;
 }
 
-/* Switch styles */
+/* ==============================================
+List of tasks in Work-based Rate Tab (left panel)
+================================================= */
+
 .form-check-input:checked {
   background-color: #28a745;
   border-color: #28a745;
@@ -187,61 +252,30 @@ body, html {
 }
 
 .list-group-item.active {
-  background-color: #d2d1d1;
+  background-color: #ebebeb;
   border: #7f7f7f;
   color: #000000;
 }
 
-/* -----------------------------
-   Employee Type Selection
-------------------------------*/
-.type-of-employee-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  background: #e9ecef;
-  padding: 4px;
-  border-radius: 30px;
-  width: 220px;   
-  justify-content: space-between;
+/* =======================================
+Edit Salary Page - Remove card borders
+========================================== */
+
+.content-container .salary-card-shadow-sm .salary-card-header {
+  border-bottom: none !important;
+  background-color: transparent !important;
 }
 
-.type-of-employee-btn input[type="radio"] {
-  display: none;
+.content-container .salary-card-shadow-sm .salary-card-body {
+  border-top: none !important;
+  padding-top: 0 !important;
 }
 
-.type-of-employee-btn label {
-  z-index: 2;
-  width: 50%;
-  text-align: center;
-  padding: 8px 0;
-  margin: 0;
-  cursor: pointer;
-  font-weight: 600;
-  color: #495057;
-  transition: color 0.3s ease;
+#workerBaseSalaryContainer {
+  border-top: none !important;
 }
 
-.type-of-employee-btn .selection-bg {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  background: #0d6832;          
-  border-radius: 30px;
-  transition: transform 0.3s ease;
+#staffBaseSalaryContainer {
+  border-top: none !important;
 }
 
-/* When STAFF is selected → move slider right */
-#staff:checked ~ .selection-bg {
-  transform: translateX(100%);
-}
-
-/* Active label should turn white */
-#worker:checked + label {
-  color: white;
-}
-#staff:checked + label {
-  color: white;
-}
