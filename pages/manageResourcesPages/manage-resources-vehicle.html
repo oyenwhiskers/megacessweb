@@ -172,110 +172,110 @@
               <button type="button" class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
                 data-bs-target="#addVehicleModal">
                 <i class="bi bi-plus-circle me-2"></i>
-                  Add Vehicle
-                  </button>
-                </div>
-              </div>
-              <!-- Row 3: Vehicle Table -->
-              <div class="mt-4 px-4" style="padding-bottom: 35px;">
-                <div class="content-table mt-4">
-                  <!-- Table Header -->
-                  <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                    <div class="col-3">Vehicle Name</div>
-                    <div class="col-3">Plate No.</div>
-                    <div class="col-3">Status</div>
-                    <div class="col-3 text-center">Action</div>
-                  </div>
-
-                  <!-- Loading Spinner -->
-                  <div id="loading" class="text-center my-3" style="display: none;">
-                    <div class="spinner-border text-success" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                  </div>
-                  <!-- Table Body (Empty, JS will populate it) -->
-                  <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
-
-                  <!-- Pagination (Tailwind-like style requested) -->
-                  <nav aria-label="Page navigation" style="padding-bottom: 35px;">
-                    <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
-                      <!-- JS will render Previous, page numbers, Next here -->
-                    </ul>
-                  </nav>
-                </div>
-              </div>
-            </div>
-
-            <!-- Booking Tab -->
-            <div class="tab-pane" data-name="booking">
-              <div class="px-4 mb-4">
-                <!-- Title -->
-                <h5 class="fw-semibold mb-3">List of Vehicle Bookings :</h5>
-
-                <!-- Search Bar + Filter + Add Button -->
-                <div class="d-flex flex-wrap gap-3 align-items-center">
-                  <!-- Search Bar -->
-                  <div class="flex-grow-1">
-                    <div class="input-group">
-                      <input type="text" id="vehicleBookingSearch" class="form-control"
-                        placeholder="Search vehicle/plate number...">
-                      <button class="btn btn-secondary" id="refreshVehicleBookingBtn" type="button">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Filter Dropdown -->
-                  <div>
-                    <select id='vehicleBookingSortBy' class="form-select">
-                      <option selected value="">Sort by...</option>
-                      <!-- Date sorting -->
-                      <option value="booking-asc">Booking Date ↑ (asc)</option>
-                      <option value="booking-desc">Booking Date ↓ (desc)</option>
-                      <option value="return-asc">Return Date ↑ (asc)</option>
-                      <option value="return-desc">Return Date ↓ (desc)</option>
-                    </select>
-                  </div>
-
-                  <!-- Add Vehicle Button -->
-                  <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
-                    <i class="bi bi-plus-circle me-2"></i> Add Booking
-                  </button>
-                </div>
-              </div>
-
-              <div class="mt-4 px-4">
-                <!-- Vehicle Table-like Div -->
-                <div class="content-table mt-4">
-
-                  <!-- Table Header -->
-                  <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                    <div class="col">Vehicle Name</div>
-                    <div class="col">Assigned Person</div>
-                    <div class="col">Booking Date</div>
-                    <div class="col">Return Date</div>
-                    <div class="col text-center">Action</div>
-                  </div>
-
-                  <!-- Loading Spinner -->
-                  <div id="loadingBooking" class="text-center my-3" style="display: none;">
-                    <div class="spinner-border text-success" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                  </div>
-                  <!-- Table Body -->
-                  <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
-
-                  <!-- Pagination -->
-                  <nav aria-label="Page navigation" style="padding-bottom: 35px;">
-                    <ul id="vehicleBookingPagination" class="pagination justify-content-center mb-0">
-                      <!-- JS will render Previous, page numbers, Next here -->
-                    </ul>
-                  </nav>
-                </div>
-              </div>
+                Add Vehicle
+              </button>
             </div>
           </div>
+          <!-- Row 3: Vehicle Table -->
+          <div class="mt-4 px-4" style="padding-bottom: 35px;">
+            <div class="content-table mt-4">
+              <!-- Table Header -->
+              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                <div class="col-3">Vehicle Name</div>
+                <div class="col-3">Plate No.</div>
+                <div class="col-3">Status</div>
+                <div class="col-3 text-center">Action</div>
+              </div>
+
+              <!-- Loading Spinner -->
+              <div id="loading" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-success" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+              <!-- Table Body (Empty, JS will populate it) -->
+              <div id="vehicleTableBody" style="padding-bottom: 35px;"></div>
+
+              <!-- Pagination (Tailwind-like style requested) -->
+              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                <ul id="vehiclePagination" class="pagination justify-content-center mb-0">
+                  <!-- JS will render Previous, page numbers, Next here -->
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Tab -->
+        <div class="tab-pane" data-name="booking">
+          <div class="px-4 mb-4">
+            <!-- Title -->
+            <h5 class="fw-semibold mb-3">List of Vehicle Bookings :</h5>
+
+            <!-- Search Bar + Filter + Add Button -->
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+              <!-- Search Bar -->
+              <div class="flex-grow-1">
+                <div class="input-group">
+                  <input type="text" id="vehicleBookingSearch" class="form-control"
+                    placeholder="Search vehicle/plate number...">
+                  <button class="btn btn-secondary" id="refreshVehicleBookingBtn" type="button">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                  </button>
+                </div>
+              </div>
+
+              <!-- Filter Dropdown -->
+              <div>
+                <select id='vehicleBookingSortBy' class="form-select">
+                  <option selected value="">Sort by...</option>
+                  <!-- Date sorting -->
+                  <option value="booking-asc">Booking Date ↑ (asc)</option>
+                  <option value="booking-desc">Booking Date ↓ (desc)</option>
+                  <option value="return-asc">Return Date ↑ (asc)</option>
+                  <option value="return-desc">Return Date ↓ (desc)</option>
+                </select>
+              </div>
+
+              <!-- Add Vehicle Button -->
+              <button id="openModalBtn" class="btn btn-primary d-flex align-items-center">
+                <i class="bi bi-plus-circle me-2"></i> Add Booking
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 px-4">
+            <!-- Vehicle Table-like Div -->
+            <div class="content-table mt-4">
+
+              <!-- Table Header -->
+              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+                <div class="col">Vehicle Name</div>
+                <div class="col">Assigned Person</div>
+                <div class="col">Booking Date</div>
+                <div class="col">Return Date</div>
+                <div class="col text-center">Action</div>
+              </div>
+
+              <!-- Loading Spinner -->
+              <div id="loadingBooking" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-success" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+              <!-- Table Body -->
+              <div id="vehicleBookingTableBody" style="padding-bottom: 70px;"></div>
+
+              <!-- Pagination -->
+              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+                <ul id="vehicleBookingPagination" class="pagination justify-content-center mb-0">
+                  <!-- JS will render Previous, page numbers, Next here -->
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </main>
     <!-- End of Main Content -->
@@ -296,19 +296,19 @@
           <form>
             <!-- Vehicle Name -->
             <div class="mb-3">
-              <label for="vehicleName" class="form-label">Vehicle Name</label>
+              <label for="vehicleName" class="form-label fw-semibold">Vehicle Name</label>
               <input type="text" class="form-control" id="vehicleName" placeholder="Enter vehicle name">
             </div>
 
             <!-- Plate Number -->
             <div class="mb-3">
-              <label for="plateNo" class="form-label">Plate Number</label>
+              <label for="plateNo" class="form-label fw-semibold">Plate Number</label>
               <input type="text" class="form-control" id="plateNo" placeholder="Enter plate number">
             </div>
 
             <!-- Status -->
             <div class="mb-3">
-              <label for="addVehicleStatus" class="form-label">Status</label>
+              <label for="addVehicleStatus" class="form-label fw-semibold">Status</label>
               <select class="form-select" id="addVehicleStatus">
                 <option selected>Choose status</option>
                 <option value="Available">Available</option>
@@ -324,7 +324,7 @@
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button type="button" class="btn btn-primary" id="addVehicleBtn">Add Vehicle</button>
+          <button type="button" class="btn btn-success" id="addVehicleBtn">Add Vehicle</button>
         </div>
       </div>
     </div>
@@ -344,17 +344,17 @@
         <div class="modal-body">
           <form>
             <div class="mb-3">
-              <label for="updateVehicleName" class="form-label">Vehicle Name</label>
+              <label for="updateVehicleName" class="form-label fw-semibold">Vehicle Name</label>
               <input type="text" class="form-control" id="updateVehicleName">
             </div>
 
             <div class="mb-3">
-              <label for="updatePlateNo" class="form-label">Plate Number</label>
+              <label for="updatePlateNo" class="form-label fw-semibold">Plate Number</label>
               <input type="text" class="form-control" id="updatePlateNo">
             </div>
 
             <div class="mb-3">
-              <label for="updateVehicleStatus" class="form-label">Status</label>
+              <label for="updateVehicleStatus" class="form-label fw-semibold">Status</label>
               <select class="form-select" id="updateVehicleStatus">
                 <option value="Available">Available</option>
                 <option value="In Use">In Use</option>
@@ -427,7 +427,7 @@
           <!-- Modal Footer -->
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button id="createBookingBtn" type="submit" class="btn btn-primary">Create Booking</button>
+            <button id="createBookingBtn" type="submit" class="btn btn-success">Create Booking</button>
           </div>
 
         </form>
@@ -451,7 +451,7 @@
 
           <!-- Vehicle Input -->
           <div class="mb-3 position-relative">
-            <label class="form-label">Vehicle</label>
+            <label class="form-label fw-semibold">Vehicle</label>
             <input list="updateVehiclesList" class="form-control" id="updateBookingVehicleInput"
               placeholder="Enter or select a vehicle" required>
             <datalist id="updateVehiclesList"></datalist>
@@ -463,7 +463,7 @@
 
           <!-- Used By -->
           <div class="mb-3 position-relative">
-            <label class="form-label">Used By</label>
+            <label class="form-label fw-semibold">Used By</label>
             <input list="updateUsersList" class="form-control" id="updateUsedBy" placeholder="Search staff or user"
               required>
             <datalist id="updateUsersList"></datalist>
@@ -474,13 +474,13 @@
 
           <!-- Booking Date -->
           <div class="mb-3">
-            <label class="form-label">Booking Date</label>
+            <label class="form-label fw-semibold">Booking Date</label>
             <input type="datetime-local" class="form-control" id="updateBookingDateInput" required>
           </div>
 
           <!-- Return Date -->
           <div class="mb-3">
-            <label class="form-label">Return Date</label>
+            <label class="form-label fw-semibold">Return Date</label>
             <input type="datetime-local" class="form-control" id="updateReturnDateInput">
           </div>
 

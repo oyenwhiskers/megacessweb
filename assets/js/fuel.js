@@ -118,7 +118,7 @@ function renderFuelPagination(meta, search, filter) {
   if (!container) return;
   container.innerHTML = '';
 
-  if (!meta || !meta.last_page || meta.last_page <= 1) return;
+  if (!meta || !meta.last_page) return;
 
   const current = meta.current_page;
   const last = meta.last_page;
