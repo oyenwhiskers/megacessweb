@@ -350,91 +350,11 @@ async function handleCreateToolBookingSubmit(event) {
 
 // ==================== CRUD: Update Modal & Logic ====================
 
-function ensureUpdateToolBookingModalExists() {
-  if (document.getElementById('updateToolBookingModal')) return;
-
-  const template = `
-    <div class="modal fade" id="updateToolBookingModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header bg-warning text-dark">
-            <h5 class="modal-title">Update Tool Booking</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-
-          <form id="updateToolBookingForm">
-            <div class="modal-body">
-              <!-- Tool -->
-              <div class="mb-3 position-relative">
-                <label class="form-label fw-semibold">Tool</label>
-                <input type="text" class="form-control" id="updateToolInput" placeholder="Enter or select a tool" required autocomplete="off">
-                <ul class="dropdown-menu w-100" id="updateToolDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
-              </div>
-
-              <!-- Assigned Person -->
-              <div class="mb-3 position-relative">
-                <label class="form-label fw-semibold">Assigned Person</label>
-                <input type="text" class="form-control" id="updateUserInput" placeholder="Enter or search user/staff" required autocomplete="off">
-                <ul class="dropdown-menu w-100" id="updateUserDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
-              </div>
-
-              <!-- Dates -->
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Booking Date</label>
-                <input type="datetime-local" class="form-control" id="updateBookingDateInput" required>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Return Date</label>
-                <input type="datetime-local" class="form-control" id="updateReturnDateInput">
-              </div>
-            </div>
-
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button id="updateToolBookingBtn" type="submit" class="btn btn-warning">Update Booking</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML('beforeend', template);
-
-  // Initialize dropdowns for the update modal immediately after creation
-  initSearchableDropdown(
-    document.getElementById("updateToolInput"),
-    document.getElementById("updateToolDropdown"),
-    async () => ALL_TOOLS,
-    (t) => { document.getElementById("updateToolInput").dataset.selectedId = t.id; },
-    (t) => t.tool_name,
-    (t, text) => t.tool_name.toLowerCase().includes(text)
-  );
-
-  initSearchableDropdown(
-    document.getElementById("updateUserInput"),
-    document.getElementById("updateUserDropdown"),
-    async () => ALL_USERS_STAFF,
-    (p) => {
-      const input = document.getElementById("updateUserInput");
-      input.dataset.selectedUserId = p.user_id;
-      input.dataset.selectedStaffId = p.staff_id;
-    },
-    (p) => p.name,
-    (p, text) => p.name.toLowerCase().includes(text)
-  );
-
-  // Attach submit listener
-  const form = document.getElementById('updateToolBookingForm');
-  if (form) form.addEventListener('submit', handleUpdateToolBookingSubmit);
-}
-
 async function openUpdateToolBookingModal(toolbooking) {
   if (!toolbooking) return;
 
   await loadBookingReferenceData();
-  ensureUpdateToolBookingModalExists();
+  // ensureUpdateToolBookingModalExists(); // Removed
 
   const modalElement = document.getElementById('updateToolBookingModal');
   const modalInstance = new bootstrap.Modal(modalElement);
@@ -581,10 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addBtn.addEventListener('click', openCreateToolBookingModal);
   }
 
-  // Note: The "Add Tools" button in the Tools tab (not booking tab) is handled by tools.js probably, 
-  // but here we are concerned with "Add Booking" button.
-  // In HTML: <button id="addNewToolBookingBtn" ...>
-
   const createForm = document.getElementById('createToolBookingForm');
   if (createForm) {
     createForm.addEventListener('submit', handleCreateToolBookingSubmit);
@@ -616,6 +532,34 @@ document.addEventListener('DOMContentLoaded', () => {
         page: 1,
       });
     });
+  }
+
+  // 4. Setup Update Modal Dropdowns & Listeners
+  initSearchableDropdown(
+    document.getElementById("updateToolInput"),
+    document.getElementById("updateToolDropdown"),
+    async () => ALL_TOOLS,
+    (t) => { document.getElementById("updateToolInput").dataset.selectedId = t.id; },
+    (t) => t.tool_name,
+    (t, text) => t.tool_name.toLowerCase().includes(text)
+  );
+
+  initSearchableDropdown(
+    document.getElementById("updateUserInput"),
+    document.getElementById("updateUserDropdown"),
+    async () => ALL_USERS_STAFF,
+    (p) => {
+      const input = document.getElementById("updateUserInput");
+      input.dataset.selectedUserId = p.user_id;
+      input.dataset.selectedStaffId = p.staff_id;
+    },
+    (p) => p.name,
+    (p, text) => p.name.toLowerCase().includes(text)
+  );
+
+  const updateForm = document.getElementById('updateToolBookingForm');
+  if (updateForm) {
+    updateForm.addEventListener('submit', handleUpdateToolBookingSubmit);
   }
 });
 
