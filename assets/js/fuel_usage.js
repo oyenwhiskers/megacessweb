@@ -255,6 +255,7 @@ async function deleteFuelUsage(id) {
             if (result.success) {
                 showSuccess("Success!", result.message || "Deleted successfully");
                 getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
+                if (window.refreshFuelSummary) window.refreshFuelSummary();
             } else {
                 showError(result.message || "Failed to delete usage.");
             }
@@ -312,6 +313,7 @@ if (addUsageForm) {
             selectedUsageUser = null;
             document.getElementById('usedBy').value = '';
             getAllFuelUsages();
+            if (window.refreshFuelSummary) window.refreshFuelSummary();
         }
     });
 }
@@ -357,6 +359,7 @@ if (editUsageForm) {
         if (success) {
             bootstrap.Modal.getInstance(document.getElementById('editUsageModal')).hide();
             getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
+            if (window.refreshFuelSummary) window.refreshFuelSummary();
         }
     });
 }

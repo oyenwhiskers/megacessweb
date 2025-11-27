@@ -77,7 +77,7 @@ function populateFuelsTable(fuels) {
     const row = document.createElement('div');
     row.className = 'content-row d-flex border-bottom py-2 align-items-center';
 
-    let fuelClass = 'bg-primary text-white'; // customize based on fuel amount if needed
+    let fuelClass = 'bg-success text-white'; // customize based on fuel amount if needed
 
     row.innerHTML = `
       <div class="col">${fuel.supplier_name || 'Unnamed Fuel'}</div>
@@ -89,7 +89,7 @@ function populateFuelsTable(fuels) {
         ${formatDateDisplay(fuel.date_bought)}
       </div>
       <div class="col text-center">
-        <button class="btn btn-sm btn-primary me-2 update-fuel-btn"
+        <button class="btn btn-sm btn-warning me-2 update-fuel-btn"
           data-id="${fuel.id}"
           data-supplier-name="${fuel.supplier_name || ''}"
           data-buyer-id="${fuel.user?.id || ''}"
@@ -208,7 +208,11 @@ async function handleDelete(e) {
     showLoading();
     try {
       const result = await apiFetch(`/fuels/${fuelId}`, { method: 'DELETE' });
-      if (result.success) { showSuccess(result.message); getAllFuels(); }
+      if (result.success) {
+        showSuccess(result.message);
+        getAllFuels();
+        refreshFuelSummary();
+      }
       else showError(result.message);
     } catch (err) {
       console.error(err);
@@ -268,7 +272,12 @@ document.getElementById('addFuelForm').addEventListener('submit', async (e) => {
     user_id: selectedBuyer.id
   };
   const saveBtn = document.getElementById('saveFuelBtn'); saveBtn.disabled = true; saveBtn.textContent = "Adding...";
-  try { await createFuelRecord(payload); bootstrap.Modal.getInstance(document.getElementById('addFuelModal')).hide(); getAllFuels(); } finally { saveBtn.disabled = false; saveBtn.textContent = "Save Fuel"; }
+  try {
+    await createFuelRecord(payload);
+    bootstrap.Modal.getInstance(document.getElementById('addFuelModal')).hide();
+    getAllFuels();
+    refreshFuelSummary();
+  } finally { saveBtn.disabled = false; saveBtn.textContent = "Save Fuel"; }
 });
 
 document.getElementById('editFuelForm').addEventListener('submit', async (e) => {
@@ -293,7 +302,11 @@ document.getElementById('editFuelForm').addEventListener('submit', async (e) => 
   };
   const saveBtn = document.getElementById('saveEditFuelBtn'); saveBtn.disabled = true; saveBtn.textContent = "Updating...";
   const success = await updateFuelRecord(fuelId, payload);
-  if (success) { bootstrap.Modal.getInstance(document.getElementById('editFuelModal')).hide(); showSuccess('Fuel updated successfully'); }
+  if (success) {
+    bootstrap.Modal.getInstance(document.getElementById('editFuelModal')).hide();
+    showSuccess('Fuel updated successfully');
+    refreshFuelSummary();
+  }
   saveBtn.disabled = false; saveBtn.textContent = "Update Fuel";
 });
 
@@ -357,10 +370,94 @@ function updateFuelTable() {
 // ==================== Debounced Search Input ====================
 const handleFuelSearch = debounce(updateFuelTable, 300);
 
+// ==================== ANALYTICS ====================
+function animateCount(el, value, duration = 1500) {
+  if (!el) return;
+  let start = 0;
+  const startTime = performance.now();
+
+  el.style.opacity = 0;
+  el.style.transform = "scale(0.9)";
+  el.style.transition = "opacity 0.4s ease-out, transform 0.4s ease-out";
+
+  requestAnimationFrame(() => {
+    el.style.opacity = 1;
+    el.style.transform = "scale(1)";
+  });
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    // For fuel, we might have decimals, but animateCount usually does integers.
+    // If we want decimals, we should adjust. Assuming integers for now based on other files.
+    // If value is float, we might want to show it.
+    // Let's stick to the provided animateCount which does Math.floor.
+    // If fuel is float, we might want to change this.
+    // However, the user said "just like ... tools", and tools uses Math.floor.
+    // I'll stick to the existing implementation for consistency, but maybe allow float if needed later.
+    const current = Math.floor(start + (value - start) * eased);
+    el.textContent = current;
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      el.textContent = value;
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+function setStatsLoading(isLoading) {
+  const mapping = [
+    ['fuelRemainingSpinner', 'fuelRemainingValue'],
+    ['fuelTotalBoughtSpinner', 'fuelTotalBoughtValue'],
+    ['fuelTotalUsedSpinner', 'fuelTotalUsedValue']
+  ];
+
+  mapping.forEach(([spinnerId, valueId]) => {
+    const spinner = document.getElementById(spinnerId);
+    const valueEl = document.getElementById(valueId);
+    if (!spinner || !valueEl) return;
+
+    if (isLoading) {
+      spinner.classList.remove('d-none');
+      valueEl.classList.add('opacity-50');
+    } else {
+      spinner.classList.add('d-none');
+      valueEl.classList.remove('opacity-50');
+    }
+  });
+}
+
+async function refreshFuelSummary() {
+  setStatsLoading(true);
+  try {
+    const result = await apiFetch('/analytics/resources-usage');
+    if (result.data && result.data.fuel_analytics) {
+      const stats = result.data.fuel_analytics;
+      // Use Number() to handle potential strings, and keep decimals if important?
+      // animateCount floors it. Let's assume integer is fine or the user will complain.
+      // Actually, fuel is often measured in liters which can be decimal.
+      // But for "Total Fuel Bought" etc, maybe integer is enough for the card.
+      animateCount(document.getElementById('fuelRemainingValue'), Number(stats.remaining_fuel) || 0, 1200);
+      animateCount(document.getElementById('fuelTotalBoughtValue'), Number(stats.total_fuel_bought) || 0, 1200);
+      animateCount(document.getElementById('fuelTotalUsedValue'), Number(stats.total_fuel_used) || 0, 1200);
+    }
+  } catch (err) {
+    console.warn("Analytics fetch failed:", err);
+  } finally {
+    setStatsLoading(false);
+  }
+}
+window.refreshFuelSummary = refreshFuelSummary;
+
 // ==================== Initialize Page ====================
 document.addEventListener('DOMContentLoaded', () => {
   // Load initial data
   getAllFuels();
+  refreshFuelSummary();
 
   // Attach search listener
   const fuelSearchInput = document.getElementById('fuelSearch');
@@ -381,8 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('fuelSearch').value = '';
       document.getElementById('fuelFilter').value = 'default';
       getAllFuels();
+      refreshFuelSummary();
     });
   }
-
-
 });
