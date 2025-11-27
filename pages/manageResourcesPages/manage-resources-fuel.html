@@ -6,9 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MegaCess Web • Manage Resources</title>
 
-  <!-- Bootstrap & Icons -->
+  <!-- Bootstrap & Icons & Popper -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
@@ -28,6 +29,7 @@
     <!-- Main Content -->
     <main class="content flex-grow-1">
 
+      <!-- Loading Overlay -->
       <div id="loadingOverlay" class="loading-overlay d-none">
         <div class="spinner-border text-success" role="status">
           <span class="visually-hidden">Loading...</span>
@@ -106,8 +108,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Tab Selection -->
       <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
-        <!-- Tab Selection -->
         <div class="btn-group" role="group">
           <a href="#" class="tab-btn active d-flex align-items-center" data-target="fuel">
             <i class="bi bi-fuel-pump me-2"></i>
@@ -284,13 +287,19 @@
 
                 <!-- Supplier Name -->
                 <div class="mb-3">
-                  <label for="editSupplierName" class="form-label">Supplier Name</label>
+                  <label for="editSupplierName" class="form-label fw-semibold">
+                    Supplier Name
+                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Edit the official supplier name."></i>
+                  </label>
                   <input type="text" class="form-control" id="editSupplierName" required>
                 </div>
 
                 <!-- User Dropdown -->
                 <div class="mb-3 position-relative">
-                  <label for="editAssignedPerson" class="form-label">User</label>
+                  <label for="editAssignedPerson" class="form-label fw-semibold">
+                    User
+                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Edit the user who used the fuel."></i>
+                  </label>
                   <input type="text" class="form-control" id="editAssignedPerson" placeholder="Select user..."
                     autocomplete="off" required>
                   <ul id="editBuyerDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
@@ -299,13 +308,13 @@
 
                 <!-- Fuel Bought -->
                 <div class="mb-3">
-                  <label for="editFuelBought" class="form-label">Fuel Bought</label>
+                  <label for="editFuelBought" class="form-label fw-semibold">Fuel Bought</label>
                   <input type="number" step="0.01" class="form-control" id="editFuelBought" required>
                 </div>
 
                 <!-- Date Bought -->
                 <div class="mb-3">
-                  <label for="editDateBought" class="form-label">Date Bought</label>
+                  <label for="editDateBought" class="form-label fw-semibold">Date Bought</label>
                   <input type="date" class="form-control" id="editDateBought" required>
                 </div>
               </div>
@@ -339,14 +348,20 @@
 
                 <!-- Usage Quantity -->
                 <div class="mb-3">
-                  <label for="editUsageQuantity" class="form-label fw-semibold">Usage Quantity (Liters)</label>
+                  <label for="editUsageQuantity" class="form-label fw-semibold">
+                    Usage Quantity (Liters)
+                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Edit the usage quantity in liters."></i>
+                  </label>
                   <input type="number" min="0" class="form-control" id="editUsageQuantity" placeholder="Enter quantity"
                     required>
                 </div>
 
                 <!-- Used By -->
                 <div class="mb-3 position-relative">
-                  <label for="editUsedBy" class="form-label fw-semibold">Used By</label>
+                  <label for="editUsedBy" class="form-label fw-semibold">
+                    Used By
+                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Edit the user who used the fuel."></i>
+                    </label>
                   <input type="text" class="form-control" id="editUsedBy" placeholder="Search user..."
                     autocomplete="off" required>
                   <ul id="editUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
@@ -395,14 +410,20 @@
               <form id="addUsageForm">
                 <!-- Usage Quantity -->
                 <div class="mb-3">
-                  <label for="usageQuantity" class="form-label fw-semibold">Usage Quantity (Liters)</label>
+                  <label for="usageQuantity" class="form-label fw-semibold">
+                    Usage Quantity (Liters)
+                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Enter the quantity of fuel used in liters."></i>
+                  </label>
                   <input type="number" min="0" class="form-control" id="usageQuantity" placeholder="Enter quantity"
                     required>
                 </div>
 
                 <!-- Used By -->
                 <div class="mb-3 position-relative">
-                  <label for="usedBy" class="form-label fw-semibold">Used By</label>
+                  <label for="usedBy" class="form-label fw-semibold">
+                    Used By
+                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Select the user who used the fuel."></i>
+                  </label>
                   <input type="text" class="form-control" id="usedBy" placeholder="Search user..." autocomplete="off"
                     required>
                   <ul id="addUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
@@ -452,13 +473,19 @@
           <form id="addFuelForm">
             <!-- Supplier Name -->
             <div class="mb-3">
-              <label for="supplierName" class="form-label fw-semibold">Supplier Name</label>
+              <label for="supplierName" class="form-label fw-semibold">
+                Supplier Name
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Enter the official supplier name."></i>
+              </label>
               <input type="text" class="form-control" id="supplierName" placeholder="Enter supplier name">
             </div>
 
             <!-- Buyer (searchable dropdown) -->
             <div class="mb-3 position-relative">
-              <label for="assignedPerson" class="form-label">Buyer</label>
+              <label for="assignedPerson" class="form-label fw-semibold">
+                Buyer
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Select who buys the fuel."></i>
+              </label>
 
               <input type="text" class="form-control" id="assignedPerson" placeholder="Search for buyer..."
                 autocomplete="off">
@@ -519,6 +546,8 @@
         $(this).addClass("active");
       });
     });
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el))
   </script>
 </body>
 
