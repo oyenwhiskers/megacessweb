@@ -479,6 +479,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderUsageUser = (u) => `${u.fullname} <small class="text-muted">(${u.role})</small>`;
     const filterUsageUser = (u, s) => u.fullname.toLowerCase().includes(s);
 
+    // Load initial data
+    getAllFuelUsages();
+
     // Add Modal Dropdown
     const addInput = document.getElementById('usedBy');
     const addDropdown = document.getElementById('addUsageUserDropdown');
@@ -488,9 +491,4 @@ document.addEventListener('DOMContentLoaded', () => {
     const editInput = document.getElementById('editUsedBy');
     const editDropdown = document.getElementById('editUsageUserDropdown');
     initSearchableDropdown(editInput, editDropdown, fetchAllUsersAndStaff, (user) => { editSelectedUsageUser = user; }, renderUsageUser, filterUsageUser);
-
-    // Tab Listener
-    $('.tab-btn[data-target="usage"]').on('click', () => {
-        getAllFuelUsages();
-    });
 });
