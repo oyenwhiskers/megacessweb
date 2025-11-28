@@ -67,6 +67,10 @@
 
   function loadSidebar() {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> af1e9aeefb72b774018831e58d1910d543ed03de
+>>>>>>> parent of 7501e6e (Merge branch 'development' into brandon)
 =======
 >>>>>>> af1e9aeefb72b774018831e58d1910d543ed03de
 >>>>>>> parent of 7501e6e (Merge branch 'development' into brandon)
