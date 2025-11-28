@@ -1,29 +1,30 @@
 // MegaCess Web minimal JS (no framework)
 // - Toggles active nav item based on body[data-page]
 // - Mobile sidebar toggle
-(function () {
-  function initActiveNav() {
-    try {
+(function(){
+  function initActiveNav(){
+    try{
       var current = document.body.getAttribute('data-page');
-      if (!current) return;
-      document.querySelectorAll('.sidebar a[data-page]').forEach(function (a) {
-        if (a.getAttribute('data-page') === current) {
+      if(!current) return;
+      document.querySelectorAll('.sidebar a[data-page]').forEach(function(a){
+        if(a.getAttribute('data-page') === current){
           a.classList.add('active');
         }
       });
-    } catch (e) { console.warn('Nav init error', e); }
+    }catch(e){ console.warn('Nav init error', e); }
   }
 
-  function initSidebarToggle() {
+  function initSidebarToggle(){
     var toggleBtn = document.getElementById('sidebarToggle');
     var sidebar = document.querySelector('.sidebar');
-    if (toggleBtn && sidebar) {
-      toggleBtn.addEventListener('click', function () {
+    if(toggleBtn && sidebar){
+      toggleBtn.addEventListener('click', function(){
         sidebar.classList.toggle('open');
       });
     }
   }
 
+<<<<<<< HEAD
   // Initialize tabs for Manage Resources pages
   function initTabs() {
     var tabs = document.querySelectorAll('.tab-btn');
@@ -74,24 +75,30 @@
 =======
 >>>>>>> af1e9aeefb72b774018831e58d1910d543ed03de
 >>>>>>> parent of 7501e6e (Merge branch 'development' into brandon)
+=======
+  function initTabs(){
+  }
+
+  function loadSidebar(){
+>>>>>>> parent of a445673 (Merge branch 'roderick' into development)
     var root = document.getElementById('sidebar-root');
-    if (!root) {
+    if(!root){
       initActiveNav();
       initSidebarToggle();
       // initialize in-page tabs if present
       initTabs();
       return;
     }
-    fetch('/megacessweb/partials/sidebar.html', { cache: 'no-store' })
-      .then(function (r) { return r.text(); })
-      .then(function (html) {
+    fetch('/megacessweb/partials/sidebar.html', {cache:'no-store'})
+      .then(function(r){ return r.text(); })
+      .then(function(html){
         root.innerHTML = html;
         initActiveNav();
         initSidebarToggle();
         // initialize in-page tabs after sidebar is loaded
         initTabs();
       })
-      .catch(function (e) {
+      .catch(function(e){
         console.warn('Sidebar load failed', e);
         initActiveNav();
         initSidebarToggle();

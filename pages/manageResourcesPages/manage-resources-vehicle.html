@@ -545,17 +545,34 @@
   <script src="/megacessweb/assets/js/utils.js"></script>
   <script src="/megacessweb/assets/js/vehicles.js"></script>
   <script src="/megacessweb/assets/js/vehicle_bookings.js"></script>
-
   <script>
+    $(document).ready(function () {
+      // Show the first tab content by default
+      $(".tab-pane").first().show();
+
+      // Tab Button Click Handler
+      $(".tab-btn").click(function () {
+        const target = $(this).data("target"); // Get target tab name
+
+        // Hide all panes
+        $(".tab-pane").hide();
+
+        // Show the selected one
+        $(`.tab-pane[data-name="${target}"]`).show();
+
+        // Update active button
+        $(".tab-btn").removeClass("active");
+        $(this).addClass("active");
+      });
+    });
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el))
   </script>
-  
   <!-- Loading overlay spinner at the very end of body -->
   <div id="loadingOverlay" class="loading-overlay d-none">
-  <div class="spinner-border text-success" role="status">
-    <span class="visually-hidden">Loading...</span>
-  </div>
+    <div class="spinner-border text-success" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
   </div>
 </body>
 
