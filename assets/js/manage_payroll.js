@@ -873,6 +873,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Fetch current base salary for a staff (worker) by ID
+    async function fetchBaseSalaryForStaff(staffId) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+            // Correct endpoint: /api/v1/staff/{id}/base-salary
+            const url = new URL(`https://mwms.megacess.com/api/v1/staff/${staffId}/base-salary`);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result.success === false) {
+                throw new Error(result.message || `HTTP error! status: ${response.status}`);
+            }
+            // If result has base_salary, return just the value for easier use
+            if (result && typeof result.base_salary !== 'undefined') {
+                return result.base_salary;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching base salary:', error);
+            return null;
+        }
+    }
+
     // Fetch staff payroll overview data
     async function fetchStaffPayrollOverview(staffId) {
         try {
@@ -971,6 +1005,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Helper to fill modal with real worker data (always use selected worker, never static)
     async function fillPayslipModal(workerData) {
+        console.log('fillPayslipModal workerData:', workerData);
         // Detect if staff or worker
         const isStaff = !!workerData.user_fullname;
         // Set name
@@ -988,15 +1023,46 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear all fields for new entry
         document.getElementById('deductionTableBody').innerHTML = '';
         document.getElementById('totalDeductions').textContent = '0.00';
-        document.getElementById('advanceAmount').textContent = '0.00';
-        document.getElementById('advanceRemarks').textContent = '';
+        const advAmtEl = document.getElementById('advanceAmount');
+        if (advAmtEl) {
+            if (typeof advAmtEl.value !== 'undefined') advAmtEl.value = '0.00';
+            else advAmtEl.textContent = '0.00';
+        }
+        const advRemEl = document.getElementById('advanceRemarks');
+        if (advRemEl) {
+            if (typeof advRemEl.value !== 'undefined') advRemEl.value = '';
+            else advRemEl.textContent = '';
+        }
         // Staff details
         document.getElementById('staffDoc').textContent = workerData.staff_doc || '-';
         document.getElementById('staffBankName').textContent = workerData.staff_bank_name || '-';
         document.getElementById('staffBankNumber').textContent = workerData.staff_bank_number || '-';
         document.getElementById('staffKwspNumber').textContent = workerData.staff_kwsp_number || '-';
         // Income fields
-        document.getElementById('baseSalary').textContent = workerData.base_salary ? parseFloat(workerData.base_salary).toFixed(2) : '0.00';
+        const baseSalaryEl = document.getElementById('baseSalary');
+        let baseVal = '0.00';
+        // Prefer API base-salary for staff endpoints (workers use staff id)
+        // Try to use staff_id if present, else fallback to currentPayslipWorkerId
+        let staffIdForSalary = workerData.staff_id || currentPayslipWorkerId;
+        const baseData = await fetchBaseSalaryForStaff(staffIdForSalary);
+        console.log('Base salary API response:', baseData, 'for staffId:', staffIdForSalary);
+        if (baseData !== null && typeof baseData !== 'undefined') {
+            baseVal = (!isNaN(parseFloat(baseData))) ? parseFloat(baseData).toFixed(2) : '0.00';
+        } else {
+            // Fallback to existing data shape
+            const baseRaw = (workerData.base_salary && typeof workerData.base_salary === 'object')
+                ? workerData.base_salary.base_salary
+                : workerData.base_salary;
+            baseVal = baseRaw ? parseFloat(baseRaw).toFixed(2) : '0.00';
+        }
+        if (baseSalaryEl) {
+            // Always set value for input fields
+            if (baseSalaryEl.tagName === 'INPUT') {
+                baseSalaryEl.value = baseVal;
+            } else {
+                baseSalaryEl.textContent = baseVal;
+            }
+        }
         document.getElementById('taskIncome').textContent = workerData.task_income ? parseFloat(workerData.task_income).toFixed(2) : '0.00';
         document.getElementById('totalIncome').textContent = workerData.total_income ? parseFloat(workerData.total_income).toFixed(2) : '0.00';
         document.getElementById('totalDeduction').textContent = workerData.total_deduction ? parseFloat(workerData.total_deduction).toFixed(2) : '0.00';
@@ -1111,11 +1177,11 @@ let currentPayslipWorkerData = null;
                         })();
                     }
                 } else {
-                    // View button clicked: API call removed, show placeholder modal only
-                    const viewModal = new bootstrap.Modal(document.getElementById('viewPayslipModal'));
-                    const modalBody = document.getElementById('viewPayslipModalBody');
-                    modalBody.innerHTML = '<div class="text-center py-4"><i class="bi bi-eye display-4 text-primary"></i><div class="mt-2">Payslip details view is disabled.</div></div>';
-                    viewModal.show();
+                    // View button clicked: open external payslip page
+                    if (payslipId) {
+                        const url = `https://mwms.megacess.com/payslips/staff/${payslipId}`;
+                        window.open(url, '_blank');
+                    }
                 }
             }
         } else if (e.target && e.target.id === 'generatePayslip') {
@@ -1180,11 +1246,11 @@ let currentPayslipWorkerData = null;
                     })();
                 }
             } else {
-                // View button clicked: API call removed, show placeholder modal only
-                const viewModal = new bootstrap.Modal(document.getElementById('viewPayslipModal'));
-                const modalBody = document.getElementById('viewPayslipModalBody');
-                modalBody.innerHTML = '<div class="text-center py-4"><i class="bi bi-eye display-4 text-primary"></i><div class="mt-2">Payslip details view is disabled.</div></div>';
-                viewModal.show();
+                // View button clicked: open external payslip page
+                if (payslipId) {
+                    const url = `https://mwms.megacess.com/payslips/staff/${payslipId}`;
+                    window.open(url, '_blank');
+                }
             }
         }
     });
@@ -1192,42 +1258,133 @@ let currentPayslipWorkerData = null;
     // Payslip modal: handle GENERATE button
     const payslipModalEl = document.getElementById('payslipModal');
     if (payslipModalEl) {
+        // Wire deduction add/remove when modal is shown
         payslipModalEl.addEventListener('shown.bs.modal', function() {
-            // Reset form fields if needed
-        });
-        document.getElementById('generatePayslipBtn').onclick = function() {
-            if (!currentPayslipWorkerId) return;
-            const payslipMonth = document.getElementById('payslipMonth').value;
-            if (!payslipMonth || payslipMonth === 'select month') {
-                alert('Please select a payslip month.');
-                return;
+            const typeEl = document.getElementById('deductionTypeInput');
+            const amtEl = document.getElementById('deductionAmountInput');
+            const addBtn = document.getElementById('addDeductionBtn');
+            const tbody = document.getElementById('deductionTableBody');
+            const totalEl = document.getElementById('totalDeductions');
+
+            function recalcTotal() {
+                let sum = 0;
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    const val = parseFloat(tr.getAttribute('data-amount') || '0');
+                    if (!isNaN(val)) sum += val;
+                });
+                if (totalEl) totalEl.textContent = sum.toFixed(2);
             }
-            // Gather deductions from deductionTableBody
-            const deductionRows = document.querySelectorAll('#deductionTableBody tr');
-            const deductions = [];
-            deductionRows.forEach(row => {
-                const type = row.children[0]?.textContent?.trim();
-                if (type) deductions.push(type);
+
+            function addRow() {
+                const t = (typeEl?.value || '').trim();
+                const a = parseFloat(amtEl?.value || '0');
+                if (!t) { alert('Enter deduction type'); return; }
+                if (isNaN(a) || a <= 0) { alert('Enter a valid amount'); return; }
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-amount', a.toString());
+                tr.innerHTML = `
+                  <td>${t}</td>
+                  <td class="text-end">${a.toFixed(2)}</td>
+                  <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-deduction">Remove</button></td>
+                `;
+                tbody.appendChild(tr);
+                typeEl.value = '';
+                amtEl.value = '';
+                recalcTotal();
+            }
+
+            if (addBtn) {
+                addBtn.onclick = addRow;
+            }
+            tbody.addEventListener('click', function(ev){
+                const btn = ev.target.closest('.remove-deduction');
+                if (!btn) return;
+                const row = btn.closest('tr');
+                row?.remove();
+                recalcTotal();
             });
-            let payload = {
-                payslip_month: payslipMonth,
-                deductions: deductions
-            };
-            // Only include advance fields if filled and valid
-            const advanceAmount = document.getElementById('advanceAmount').textContent.trim();
-            const advanceRemarks = document.getElementById('advanceRemarks').textContent.trim();
-            if (advanceAmount && !isNaN(parseFloat(advanceAmount)) && parseFloat(advanceAmount) > 0) {
-                payload.advance_repayment_amount = advanceAmount;
-                payload.advance_repayment_remarks = advanceRemarks || '';
+        });
+
+        // Generate button: call API
+        document.getElementById('generatePayslipBtn').onclick = async function() {
+            try {
+                if (!currentPayslipWorkerId) return;
+                const payslipMonth = document.getElementById('payslipMonth').value;
+                if (!payslipMonth || payslipMonth === 'select month') {
+                    alert('Please select a payslip month.');
+                    return;
+                }
+                // Gather deductions (names only per API)
+                const deductionRows = document.querySelectorAll('#deductionTableBody tr');
+                const deductions = [];
+                deductionRows.forEach(row => {
+                    const type = row.children[0]?.textContent?.trim();
+                    if (type) deductions.push(type);
+                });
+
+                // Advance fields
+                const advanceAmountEl = document.getElementById('advanceAmount');
+                const advanceRemarksEl = document.getElementById('advanceRemarks');
+                const advVal = advanceAmountEl ? (advanceAmountEl.value ?? advanceAmountEl.textContent) : '';
+                const advNum = parseFloat((advVal || '').toString());
+                const advRemarks = (advanceRemarksEl?.value || advanceRemarksEl?.textContent || '').trim();
+
+                const payload = {
+                    payslip_month: payslipMonth,
+                    deductions: deductions
+                };
+                if (!isNaN(advNum) && advNum > 0) {
+                    payload.advance_repayment_amount = advNum.toFixed(2);
+                    payload.advance_repayment_remarks = advRemarks || '';
+                }
+
+                const isStaff = !!currentPayslipWorkerData?.user_fullname;
+                const url = isStaff
+                    ? `${API_BASE_URL}/users/${currentPayslipWorkerId}/generate`
+                    : `${API_BASE_URL}/staff/${currentPayslipWorkerId}/generate`;
+
+                if (!AUTH_TOKEN) {
+                    alert('Authentication required. Please log in first.');
+                    return;
+                }
+
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AUTH_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json().catch(() => ({}));
+                if (!res.ok || result.success === false) {
+                    throw new Error(result.message || `Failed to generate payslip (${res.status})`);
+                }
+
+                alert('Payslip generated successfully.');
+
+                // Refresh employment overview to reflect new record
+                if (currentPayslipWorkerData) {
+                    const employeeData = {
+                        id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                        name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                        joinedSince: currentPayslipWorkerData.joined_since,
+                        role: isStaff ? (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : 'Staff') : 'Worker',
+                        age: currentPayslipWorkerData.age || 'N/A',
+                        staff_fullname: currentPayslipWorkerData.staff_fullname,
+                        nickname: currentPayslipWorkerData.user_nickname || ''
+                    };
+                    showEmploymentOverview(employeeData, !isStaff ? true : false);
+                }
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(payslipModalEl);
+                modal?.hide();
+            } catch (err) {
+                alert(`Error: ${err.message}`);
             }
-            // Detect if staff or worker
-            const isStaff = !!currentPayslipWorkerData.user_fullname;
-            if (isStaff) {
-                // For staff, add base_salary and use /users/{id}/generate endpoint
-                payload.base_salary = currentPayslipWorkerData.base_salary?.base_salary || 0;
-            }
-            // API call removed
-            alert('Payslip generation API call removed.');
         };
     }
 
