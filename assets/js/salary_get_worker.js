@@ -80,7 +80,22 @@ function showEmployeeType(type, push) {
       ...(searchInput ? { search: searchInput } : {})
     };
 
-    $("#workerList .row").html('<div class="col-12 text-center text-muted py-3">Loading...</div>');
+    // Show skeleton loaders
+    const skeletonHtml = Array(6).fill(0).map(() => `
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex gap-3 align-items-center">
+            <div class="skeleton skeleton-circle" style="width: 64px; height: 64px;"></div>
+            <div class="flex-grow-1">
+              <div class="skeleton skeleton-text" style="width: 60%; height: 20px; margin-bottom: 8px;"></div>
+              <div class="skeleton skeleton-text" style="width: 40%; height: 16px;"></div>
+            </div>
+            <div class="skeleton skeleton-button" style="width: 40px; height: 32px;"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    $("#workerList .row").html(skeletonHtml);
 
     $.ajax({
       url: API_URL,
@@ -121,6 +136,12 @@ function showEmployeeType(type, push) {
       const workerAvatar = worker.staff_img 
         ? (worker.staff_img.startsWith("http") ? worker.staff_img : `https://mwms.megacess.com${worker.staff_img}`)
         : "https://via.placeholder.com/64";
+      
+      // Safely access nested base_salary property
+      let workerBaseSalary = "Not set";
+      if (worker.base_salary && worker.base_salary.base_salary != null) {
+        workerBaseSalary = worker.base_salary.base_salary;
+      }
 
       const $col = $("<div>").addClass("col-12 col-sm-6 col-md-4");
       const $card = $(`
@@ -129,10 +150,11 @@ function showEmployeeType(type, push) {
             <img src="${workerAvatar}" alt="${workerName}" class="rounded-circle" width="64" height="64">
             <div class="flex-grow-1">
               <h6 class="mb-1">${workerName}</h6>
+              <small class="text-muted d-block">Base Salary: <strong>${workerBaseSalary}</strong></small>
             </div>
-            <div class="d-flex flex-column ms-2">
+            <div class="d-flex flex-column ms-auto">
               <a href="/megacessweb/pages/manage-payment-rate-edit-salary-worker.html?id=${encodeURIComponent(workerId)}" 
-                 class="btn btn-sm btn-outline-success mb-1" title="Edit base salary">
+                 class="btn btn-sm btn-outline-success" title="Edit base salary">
                  <i class="bi bi-pencil-fill"></i>
               </a>
             </div>
@@ -172,7 +194,23 @@ function showEmployeeType(type, push) {
   }
 
   // Search input
-  $("#searchWorker").on("input", () => fetchWorkers(1));
+  $("#searchWorker").on("input", function() {
+    const value = $(this).val().trim();
+    // Show/hide clear button
+    if (value.length > 0) {
+      $("#clearSearchWorker").show();
+    } else {
+      $("#clearSearchWorker").hide();
+    }
+    fetchWorkers(1);
+  });
+
+  // Clear search button
+  $("#clearSearchWorker").on("click", function() {
+    $("#searchWorker").val("");
+    $(this).hide();
+    fetchWorkers(1);
+  });
 
   // Initial fetch
   fetchWorkers();

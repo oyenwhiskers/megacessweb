@@ -1,6 +1,6 @@
-/* -----------------------------
+/* ===================================================
    Layout: Sidebar + Content
-------------------------------*/
+================================================== */
 body, html {
   margin: 0;
   height: 100%;
@@ -53,9 +53,9 @@ body, html {
   width: 100%;
 }
 
-/* -----------------------------
+/* ===================================================
    Payment Rate Containers
-------------------------------*/
+================================================== */
 .payment-rate-container {
   width: 100%;
   margin: 0 auto;
@@ -95,32 +95,39 @@ body, html {
   overflow-y: auto;
 }
 
-/* -----------------------------
-   Buttons, Slider, Filters
-------------------------------*/
-.type-of-rate-slider {
-  display: inline-flex;
-  background: #fff;
+/* ===================================================
+   Slider (To switch between Salary Management & Work-based Management)
+====================================================== */
+
+.type-of-payment-slider .btn-group {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  padding: 6px;
   border-radius: 50px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8);
 }
 
 .rate-btn {
   cursor: pointer;
   flex: 1;
   text-align: center;
-  padding: 14px 30px;
+  padding: 16px 35px;
   border: none;
-  background: #f7f7f7;
-  color: #333;
-  font-weight: 500;
+  background: transparent;
+  color: #666;
+  font-weight: 600;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.rate-btn i {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
 }
 
 .rate-btn:first-of-type {
@@ -133,16 +140,102 @@ body, html {
 }
 
 .btn-check:checked + .rate-btn {
-  background-color: #0d6832;
+  background: linear-gradient(135deg, #0d6832 0%, #0a5528 100%);
   color: #fff;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 15px rgba(13,104,50,0.4), inset 0 1px 2px rgba(255,255,255,0.2);
+  transform: scale(1.02);
 }
 
-.rate-btn:hover {
-  background-color: #e7e7e7;
+.btn-check:checked + .rate-btn i {
+  transform: scale(1.1);
 }
 
-/* Filters */
+.btn-check:checked + .rate-btn:hover {
+  background: linear-gradient(135deg, #0a5528 0%, #083f20 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(13,104,50,0.5), inset 0 1px 2px rgba(255,255,255,0.2);
+}
+
+.rate-btn:hover:not(.btn-check:checked + *) {
+  background: rgba(13,104,50,0.08);
+  color: #0d6832;
+  transform: translateY(-1px);
+}
+
+.rate-btn:active {
+  transform: scale(0.98);
+}
+
+/* ===================================================
+   Employee Type Selection / Slider ( Worker / Staff )
+====================================================== */
+
+.type-of-employee-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #f0f0f0;
+  padding: 4px;
+  border-radius: 30px;
+  width: 220px;   
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.type-of-employee-btn input[type="radio"] {
+  display: none;
+}
+
+.type-of-employee-btn label {
+  position: relative;
+  z-index: 2;
+  width: 50%;
+  text-align: center;
+  padding: 10px 0;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+  color: #495057;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 26px;
+}
+
+.type-of-employee-btn .selection-bg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background: #0d6832;          
+  border-radius: 26px;
+  z-index: 1;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.type-of-employee-btn label:hover {
+  color: #212529;
+}
+
+/* When STAFF is selected → move slider right */
+#staff:checked ~ .selection-bg {
+  transform: translateX(calc(100% + 4px));
+}
+
+/* Active label should turn white */
+#worker:checked + label {
+  color: white;
+  font-weight: 700;
+}
+#staff:checked + label {
+  color: white;
+  font-weight: 700;
+}
+
+/* =======================================
+Filter for Staff tab in Salary Management
+========================================== */
+
 .filter-group {
   display: flex;
   justify-content: space-between;
@@ -171,7 +264,10 @@ body, html {
   color: #0d6832;
 }
 
-/* Switch styles */
+/* ==============================================
+List of tasks in Work-based Rate Tab (left panel)
+================================================= */
+
 .form-check-input:checked {
   background-color: #28a745;
   border-color: #28a745;
@@ -187,61 +283,152 @@ body, html {
 }
 
 .list-group-item.active {
-  background-color: #d2d1d1;
+  background-color: #ebebeb;
   border: #7f7f7f;
   color: #000000;
 }
 
-/* -----------------------------
-   Employee Type Selection
-------------------------------*/
-.type-of-employee-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  background: #e9ecef;
-  padding: 4px;
-  border-radius: 30px;
-  width: 220px;   
-  justify-content: space-between;
+/* =======================================
+Edit Salary Page - Remove card borders
+========================================== */
+
+.content-container .salary-card-shadow-sm .salary-card-header {
+  border-bottom: none !important;
+  background-color: transparent !important;
 }
 
-.type-of-employee-btn input[type="radio"] {
-  display: none;
+.content-container .salary-card-shadow-sm .salary-card-body {
+  border-top: none !important;
+  padding-top: 0 !important;
 }
 
-.type-of-employee-btn label {
-  z-index: 2;
-  width: 50%;
+#workerBaseSalaryContainer {
+  border-top: none !important;
+}
+
+#staffBaseSalaryContainer {
+  border-top: none !important;
+}
+
+/* =======================================
+Add new Category Modal
+========================================== */
+.modal-header {
+  background-color: #0d6832;
+  color: white;
+}
+
+/* =======================================
+Skeleton Loading Animation
+========================================== */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-text {
+  border-radius: 4px;
+}
+
+.skeleton-button {
+  border-radius: 6px;
+}
+
+.skeleton-badge {
+  border-radius: 12px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* =======================================
+Pagination Styling
+========================================== */
+#workerPagination,
+#staffPagination {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: inline-block;
   text-align: center;
-  padding: 8px 0;
-  margin: 0;
-  cursor: pointer;
-  font-weight: 600;
-  color: #495057;
-  transition: color 0.3s ease;
 }
 
-.type-of-employee-btn .selection-bg {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  background: #0d6832;          
-  border-radius: 30px;
-  transition: transform 0.3s ease;
+#workerList,
+#staffList {
+  text-align: center;
 }
 
-/* When STAFF is selected → move slider right */
-#staff:checked ~ .selection-bg {
-  transform: translateX(100%);
+#workerPagination .btn,
+#staffPagination .btn {
+  background-color: white;
+  border: 1px solid #dee2e6;
 }
 
-/* Active label should turn white */
-#worker:checked + label {
+#workerPagination .btn:hover:not(:disabled),
+#staffPagination .btn:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #0d6832;
+  color: #0d6832;
+}
+
+#workerPagination .btn.btn-success,
+#staffPagination .btn.btn-success {
+  background-color: #0d6832;
+  border-color: #0d6832;
   color: white;
 }
-#staff:checked + label {
+
+#workerPagination .btn:disabled,
+#staffPagination .btn:disabled {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  opacity: 0.5;
+}
+
+/* =======================================
+Search bar styling
+========================================== */
+
+/* Remove hover/active/focus states from search input */
+#searchWorker:hover,
+#searchWorker:focus,
+#searchWorker:active,
+#searchStaff:hover,
+#searchStaff:focus,
+#searchStaff:active {
+  border-color: #ced4da !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Search clear button styling */
+.search-clear-btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding: 0.375rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.search-clear-btn:hover {
+  background-color: #dc3545;
   color: white;
+  border-color: #dc3545;
+  transform: scale(1.05);
+}
+
+.search-clear-btn i {
+  font-size: 0.875rem;
 }

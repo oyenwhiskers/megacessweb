@@ -43,7 +43,23 @@ $(document).ready(function() {
       ...(searchInput ? { search: searchInput } : {})
     };
 
-    $("#staffList .row").html('<div class="col-12 text-center text-muted py-3">Loading...</div>');
+    // Show skeleton loaders
+    const skeletonHtml = Array(6).fill(0).map(() => `
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex gap-3 align-items-center">
+            <div class="skeleton skeleton-circle" style="width: 64px; height: 64px;"></div>
+            <div class="flex-grow-1">
+              <div class="skeleton skeleton-text" style="width: 60%; height: 20px; margin-bottom: 8px;"></div>
+              <div class="skeleton skeleton-text" style="width: 40%; height: 16px; margin-bottom: 4px;"></div>
+              <div class="skeleton skeleton-text" style="width: 50%; height: 16px;"></div>
+            </div>
+            <div class="skeleton skeleton-button" style="width: 40px; height: 32px;"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    $("#staffList .row").html(skeletonHtml);
 
     $.ajax({
       url: API_URL,
@@ -85,6 +101,12 @@ $(document).ready(function() {
       const img = user.user_img
         ? (user.user_img.startsWith("http") ? user.user_img : `https://mwms.megacess.com${user.user_img}`)
         : "https://via.placeholder.com/64";
+      
+      // Safely access nested base_salary property
+      let userBaseSalary = "Not set";
+      if (user.base_salary && user.base_salary.base_salary != null) {
+        userBaseSalary = user.base_salary.base_salary;
+      }
 
       const $col = $("<div>").addClass("col-12 col-sm-6 col-md-4");
       const $card = $(`
@@ -93,11 +115,12 @@ $(document).ready(function() {
             <img src="${img}" alt="${name}" class="rounded-circle" width="64" height="64">
             <div class="flex-grow-1">
               <h6 class="mb-1">${name}</h6>
-              <small class="text-muted">${role}</small>
+              <small class="text-muted d-block">${role}</small>
+              <small class="text-muted d-block mt-1">Base Salary: <strong>${userBaseSalary}</strong></small>
             </div>
-            <div class="d-flex flex-column ms-2">
+            <div class="d-flex flex-column ms-auto">
               <a href="/megacessweb/pages/manage-payment-rate-edit-salary-user.html?user_id=${encodeURIComponent(id)}"
-                class="btn btn-sm btn-outline-success mb-1" title="Edit base salary">
+                class="btn btn-sm btn-outline-success" title="Edit base salary">
                 <i class="bi bi-pencil-fill"></i>
               </a>
             </div>
@@ -142,7 +165,24 @@ $(document).ready(function() {
   }
 
   // Search + filter triggers
-  $("#searchStaff").on("input", () => fetchUsers(1));
+  $("#searchStaff").on("input", function() {
+    const value = $(this).val().trim();
+    // Show/hide clear button
+    if (value.length > 0) {
+      $("#clearSearchStaff").show();
+    } else {
+      $("#clearSearchStaff").hide();
+    }
+    fetchUsers(1);
+  });
+
+  // Clear search button
+  $("#clearSearchStaff").on("click", function() {
+    $("#searchStaff").val("");
+    $(this).hide();
+    fetchUsers(1);
+  });
+
   $("input[name='staffFilter']").on("change", () => fetchUsers(1));
 
   // Initial fetch

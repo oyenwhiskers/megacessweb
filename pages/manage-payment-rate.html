@@ -27,7 +27,7 @@
       
       <div class="container-fluid p-4">
         <!-- Slider (Control both views)-->
-        <div class="type-of-payment-slider text-center my-4">
+        <div class="type-of-payment-slider text-start mx-3 my-4">
           <div class="btn-group" role="group" aria-label="Type of Payment Rate">
             <input type="radio" class="btn-check" name="rateType" id="salary" autocomplete="off" checked>
             <label class="rate-btn" for="salary">
@@ -40,6 +40,7 @@
             </label>
           </div>
         </div>
+        <hr>
 
         <div class="content-inner flex-grow-1 px-3">
           <!-- Salary Management Section -->
@@ -49,10 +50,10 @@
             <div class="employee-selection text-start my-4">
               <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
               <input type="radio" class="salary-select-employee" name="employeeType" id="worker" autocomplete="off" checked>
-              <label class="select-employee-btn" for="worker">Worker</label>
+              <label class="select-employee-btn" for="worker"><i class="bi bi-person-workspace me-2"></i>Worker</label> 
 
               <input type="radio" class="salary-select-employee" name="employeeType" id="staff" autocomplete="off">
-              <label class="select-employee-btn" for="staff">Staff</label>
+              <label class="select-employee-btn" for="staff"><i class="bi bi-person-badge me-2"></i>Staff</label> 
 
               <span class="selection-bg"></span>
               </div>
@@ -71,6 +72,9 @@
                             <i class="bi bi-person-search"></i>
                           </span>
                           <input type="text" id="searchWorker" class="form-control" placeholder="Enter worker name..">
+                          <button class="btn btn-outline-danger search-clear-btn" type="button" id="clearSearchWorker" style="display: none;" title="Clear search">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
                         </div>
                       </div>
                     </form>
@@ -98,6 +102,9 @@
                             <i class="bi bi-person-search"></i>
                           </span>
                           <input type="text" id="searchStaff" class="form-control" placeholder="Enter staff name..">
+                          <button class="btn btn-outline-danger search-clear-btn" type="button" id="clearSearchStaff" style="display: none;" title="Clear search">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
                         </div>
                       </div>
                     </form>
@@ -138,11 +145,11 @@
 
           <!-- Work-based Rate Section -->
           <div id="workSection" class="payment-rate-container mx-auto d-none">
-            <div class="add-rate-btn text-end mb-3">
+            <!-- <div class="add-rate-btn text-end mb-3">
               <a href="/megacessweb/pages/manage-payment-rate-work-based-rate-add-new.html" class="btn btn-success">
                 <i class="bi bi-plus-circle me-1"></i> Add new Payment Rate
               </a>
-            </div>
+            </div> -->
 
             <div class="work-based-container d-flex flex-column flex-lg-row gap-3">
               <!-- Left panel: Task List -->
@@ -177,13 +184,6 @@
   <script src="/megacessweb/assets/js/salary_get_worker.js"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
 
-  <script src="/megacessweb/assets/js/main.js"></script>
-<script src="/megacessweb/assets/js/get_payment_rate.js"></script>
-<script src="/megacessweb/assets/js/delete_payment_rate.js"></script>
-<script src="/megacessweb/assets/js/salary_get_user.js"></script>
-<script src="/megacessweb/assets/js/salary_get_worker.js"></script>
-<script src="/megacessweb/assets/js/logout.js"></script>
-
 <!-- Final Toggle + URL Sync Script -->
 <script>
 $(function() {
@@ -192,6 +192,8 @@ $(function() {
       $('#salarySection').addClass('d-none');
       $('#workSection').removeClass('d-none');
       $('#work').prop('checked', true);
+      // Load payment rates when work section is shown
+      if (typeof getPaymentRates === 'function') getPaymentRates();
     } else {
       $('#workSection').addClass('d-none');
       $('#salarySection').removeClass('d-none');

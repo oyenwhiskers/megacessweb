@@ -335,12 +335,14 @@ if (addVehicleBtn) {
 
       if (result.success) {
         bootstrap.Modal.getInstance(document.getElementById('addVehicleModal')).hide();
+        console.log("modal closed");
         document.getElementById('vehicleName').value = '';
         document.getElementById('plateNo').value = '';
         statusSelect.value = 'Choose status';
-        getAllVehicles();
+
         if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
         showSuccess('Success!', 'Vehicle added successfully!');
+        getAllVehicles();
       } else {
         showError(result.message);
       }

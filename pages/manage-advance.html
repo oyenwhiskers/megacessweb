@@ -17,10 +17,35 @@
         <h1 class="page-title h5 mb-0">Manage Advance</h1>
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
-      <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Advance content will go here.</p>
+      <div class="container-fluid p-4" style="background:#d2f5d7; min-height: 100vh;">
+        <div class="d-flex align-items-center mb-3">
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-success px-4 py-2 rounded-pill d-flex align-items-center gap-2" id="workerTab" style="background:#11634b;border:none;">
+              <i class="bi bi-person"></i>
+              Worker
+            </button>
+            <button class="btn btn-light px-4 py-2 rounded-pill d-flex align-items-center gap-2 border" id="staffTab">
+              <i class="bi bi-person-badge"></i>
+              Staff
+            </button>
+          </div>
+          <div class="ms-auto">
+            <button class="btn btn-light border shadow-sm px-4 py-2 d-flex align-items-center gap-2" id="addAdvanceBtn" data-bs-toggle="modal" data-bs-target="#addAdvanceModal">
+              <i class="bi bi-plus-lg"></i>
+              Add advance
+            </button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="advanceSearch" class="form-label fw-semibold mb-1">Search:</label>
+          <input type="text" class="form-control" id="advanceSearch" placeholder="">
+        </div>
+        <hr>
+        <div class="mb-3 fw-semibold">List of existing advance:</div>
+        <div class="bg-white rounded p-3" style="min-height:200px;">
+          <div class="advance-list">
+            <!-- List items will be rendered by JS. View button removed. -->
+          </div>
         </div>
       </div>
     </main>
@@ -29,5 +54,379 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
+  <script src="/megacessweb/assets/js/manage_advance.js"></script>
+
+  <!-- Add Advance Modal -->
+  <div class="modal fade" id="addAdvanceModal" tabindex="-1" aria-labelledby="addAdvanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:700px;">
+      <div class="modal-content" style="background:#d2f5d7;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="addAdvanceModalLabel">Add new Advance & Expenses Records</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <div class="text-center fw-bold fs-5 mb-2">Select a worker/staff:</div>
+              <div class="d-flex align-items-center justify-content-center mb-2 gap-2">
+                <span style="font-size:2.2rem;"><i class="bi bi-person-lines-fill"></i></span>
+                <div class="btn-group bg-white rounded-pill shadow-sm" style="overflow:hidden;">
+                  <button type="button" class="btn btn-success d-flex align-items-center gap-2 px-3 py-1" id="modalWorkerBtn" style="background:#11634b;border:none;">
+                    <i class="bi bi-person"></i> Worker
+                  </button>
+                  <button type="button" class="btn btn-light d-flex align-items-center gap-2 px-3 py-1" id="modalStaffBtn">
+                    <i class="bi bi-people-fill"></i> Staff
+                  </button>
+                </div>
+              </div>
+              <div class="mb-2">
+                <label class="form-label fw-semibold mb-1" for="userSearch">Search:</label>
+                <input type="text" class="form-control" id="userSearch" placeholder="Search Worker/Staff Name">
+              </div>
+              <div class="d-flex gap-2 mb-2 d-none" id="staffFilterRow">
+                <button type="button" class="btn btn-light border flex-fill">All</button>
+                <button type="button" class="btn btn-light border flex-fill">Manager</button>
+                <button type="button" class="btn btn-light border flex-fill">Checker</button>
+                <button type="button" class="btn btn-light border flex-fill">Admin</button>
+              </div>
+              <div class="mb-3">
+                <label for="selectedPerson" class="form-label fw-semibold">Selected Worker/Staff:</label>
+                <input type="text" class="form-control" id="selectedPerson" placeholder="No one selected" readonly>
+              </div>
+              <div style="max-height:220px;overflow-y:auto;">
+                <div class="list-group">
+                  <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded">
+                    <span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>
+                    <div>
+                      <div class="fw-bold">Ethan Muller</div>
+                      <div>Checker</div>
+                    </div>
+                  </button>
+                  <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded">
+                    <span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>
+                    <div>
+                      <div class="fw-bold">Oikawa Yamaguchi</div>
+                      <div>Manager</div>
+                    </div>
+                  </button>
+                  <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded">
+                    <span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>
+                    <div>
+                      <div class="fw-bold">Olivia Wilson</div>
+                      <div>Checker</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="mb-3 mt-4">
+              <label for="advanceDate" class="form-label fw-semibold">Date:</label>
+              <div class="input-group">
+                <input type="date" class="form-control" id="advanceDate" placeholder="Select date..">
+                <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="advanceAmount" class="form-label fw-semibold">Amount:</label>
+              <div class="input-group">
+                <span class="input-group-text">RM</span>
+                <input type="number" class="form-control" id="advanceAmount" placeholder="Enter amount..">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="advanceRemarks" class="form-label fw-semibold">Remarks:</label>
+              <textarea class="form-control" id="advanceRemarks" rows="3" placeholder="Enter remarks.."></textarea>
+            </div>
+            <div class="d-grid">
+              <button type="button" class="btn btn-success fw-bold" style="background:#11634b;border:none;">Add Record</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Toggle filter row in modal
+    document.addEventListener('DOMContentLoaded', function() {
+      var workerBtn = document.getElementById('modalWorkerBtn');
+      var staffBtn = document.getElementById('modalStaffBtn');
+      var filterRow = document.getElementById('staffFilterRow');
+      if(workerBtn && staffBtn && filterRow) {
+        workerBtn.addEventListener('click', function() {
+          workerBtn.classList.add('btn-success');
+          workerBtn.classList.remove('btn-light');
+          workerBtn.style.background = '#11634b';
+          staffBtn.classList.remove('btn-success');
+          staffBtn.classList.add('btn-light');
+          staffBtn.style.background = '';
+          filterRow.classList.add('d-none');
+        });
+        staffBtn.addEventListener('click', function() {
+          staffBtn.classList.add('btn-success');
+          staffBtn.classList.remove('btn-light');
+          staffBtn.style.background = '#11634b';
+          workerBtn.classList.remove('btn-success');
+          workerBtn.classList.add('btn-light');
+          workerBtn.style.background = '';
+          filterRow.classList.remove('d-none');
+        });
+      }
+    });
+  </script>
+  <script>
+    // Worker and Staff list population for Add Advance modal
+    let staffRoleFilter = '';
+    function renderWorkerList(workers) {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.innerHTML = workers.length === 0
+        ? '<div class="text-center text-muted py-3">No workers found.</div>'
+        : workers.map(worker => {
+          let workerImage = worker.staff_img;
+          if (workerImage) {
+            if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+              workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+            } else if (workerImage.startsWith('/')) {
+              workerImage = `https://mwms.megacess.com${workerImage}`;
+            }
+          }
+          return `
+            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded" data-id="${worker.id}">
+              ${workerImage ?
+                `<img src="${workerImage}" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;" alt="${worker.staff_fullname}">` :
+                `<span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>`
+              }
+              <div>
+                <div class="fw-bold">${worker.staff_fullname}</div>
+                <div>${worker.staff_phone || ''}</div>
+              </div>
+            </button>
+          `;
+        }).join('');
+    }
+    function renderStaffList(staffs) {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.innerHTML = staffs.length === 0
+        ? '<div class="text-center text-muted py-3">No staff found.</div>'
+        : staffs.map(staff => {
+          let staffImage = staff.user_img;
+          if (staffImage) {
+            if (!staffImage.startsWith('http') && !staffImage.startsWith('/')) {
+              staffImage = `https://mwms.megacess.com/storage/user-images/${staffImage}`;
+            } else if (staffImage.startsWith('/')) {
+              staffImage = `https://mwms.megacess.com${staffImage}`;
+            }
+          }
+          return `
+            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded" data-id="${staff.id}">
+              ${staffImage ?
+                `<img src="${staffImage}" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;" alt="${staff.user_fullname}">` :
+                `<span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>`
+              }
+              <div>
+                <div class="fw-bold">${staff.user_fullname}</div>
+                <div>${staff.user_role || ''}</div>
+              </div>
+            </button>
+          `;
+        }).join('');
+    }
+    function fetchWorkerList(query = '') {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) return;
+      fetch(`https://mwms.megacess.com/api/v1/advances/staff/list?search=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success && Array.isArray(result.data)) {
+            renderWorkerList(result.data);
+          }
+        });
+    }
+    function fetchStaffList(query = '', role = '') {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) return;
+      let url = `https://mwms.megacess.com/api/v1/advances/users/list?search=${encodeURIComponent(query)}`;
+      if (role && role !== 'all') url += `&role=${encodeURIComponent(role)}`;
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success && Array.isArray(result.data)) {
+            renderStaffList(result.data);
+          }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      const userSearch = document.getElementById('userSearch');
+      const addAdvanceModal = document.getElementById('addAdvanceModal');
+      const workerBtn = document.getElementById('modalWorkerBtn');
+      const staffBtn = document.getElementById('modalStaffBtn');
+      const filterRow = document.getElementById('staffFilterRow');
+      if (addAdvanceModal) {
+        addAdvanceModal.addEventListener('show.bs.modal', function() {
+          if(workerBtn.classList.contains('btn-success')) {
+            fetchWorkerList('');
+          } else {
+            fetchStaffList('', staffRoleFilter);
+          }
+        });
+      }
+      if (userSearch) {
+        userSearch.addEventListener('input', function() {
+          if(workerBtn.classList.contains('btn-success')) {
+            fetchWorkerList(this.value);
+          } else {
+            fetchStaffList(this.value, staffRoleFilter);
+          }
+        });
+      }
+      if (workerBtn && staffBtn && filterRow) {
+        workerBtn.addEventListener('click', function() {
+          userSearch.placeholder = 'Search Worker Name';
+          fetchWorkerList(userSearch.value);
+        });
+        staffBtn.addEventListener('click', function() {
+          userSearch.placeholder = 'Search Staff Name';
+          fetchStaffList(userSearch.value, staffRoleFilter);
+        });
+        filterRow.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', function() {
+            filterRow.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            staffRoleFilter = this.textContent.trim().toLowerCase() === 'all' ? '' : this.textContent.trim().toLowerCase();
+            fetchStaffList(userSearch.value, staffRoleFilter);
+          });
+        });
+        // Set initial placeholder
+        if(workerBtn.classList.contains('btn-success')) {
+          userSearch.placeholder = 'Search Worker Name';
+        } else {
+          userSearch.placeholder = 'Search Staff Name';
+        }
+      }
+    });
+  </script>
+  <script>
+    // --- Set selected worker/staff in input field ---
+    function setSelectedPerson(name, id) {
+      const selectedInput = document.getElementById('selectedPerson');
+      if (selectedInput) selectedInput.value = name;
+      // Store selected id for later use
+      selectedInput.dataset.id = id;
+    }
+    function attachListGroupClickHandlers() {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.querySelectorAll('button.list-group-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const name = this.querySelector('.fw-bold')?.textContent?.trim() || '';
+          const id = this.dataset.id || '';
+          // Also store type for correct API usage
+          const selectedInput = document.getElementById('selectedPerson');
+          if (selectedInput) {
+            selectedInput.value = name;
+            selectedInput.dataset.id = id;
+            // Store type: 'worker' or 'staff' (for Add Advance form logic)
+            const workerBtn = document.getElementById('modalWorkerBtn');
+            selectedInput.dataset.type = workerBtn && workerBtn.classList.contains('btn-success') ? 'worker' : 'staff';
+          }
+        });
+      });
+    }
+    // Patch renderWorkerList and renderStaffList to call attachListGroupClickHandlers
+    const origRenderWorkerList = renderWorkerList;
+    renderWorkerList = function(workers) {
+      origRenderWorkerList(workers);
+      attachListGroupClickHandlers();
+    };
+    const origRenderStaffList = renderStaffList;
+    renderStaffList = function(staffs) {
+      origRenderStaffList(staffs);
+      attachListGroupClickHandlers();
+    };
+  </script>
+  <script>
+    // --- Add Record button handler ---
+    document.addEventListener('DOMContentLoaded', function() {
+      const addRecordBtn = document.querySelector('#addAdvanceModal .btn.btn-success.fw-bold');
+      if (!addRecordBtn) return;
+      addRecordBtn.addEventListener('click', async function() {
+        const selectedInput = document.getElementById('selectedPerson');
+        const selectedName = selectedInput.value;
+        const selectedDataId = selectedInput.dataset.id;
+        const selectedType = selectedInput.dataset.type; // 'worker' or 'staff'
+        const date = document.getElementById('advanceDate').value;
+        const amount = document.getElementById('advanceAmount').value;
+        const remarks = document.getElementById('advanceRemarks').value;
+        let type = selectedType === 'worker' ? 'staff' : 'user';
+        let staff_id = null, user_id = null;
+        if(selectedDataId) {
+          if(selectedType === 'worker') {
+            staff_id = selectedDataId;
+          } else {
+            user_id = selectedDataId;
+          }
+        }
+        if(!date || !amount || !remarks || !selectedDataId) {
+          return alert('Please fill in all fields and select a worker/staff.');
+        }
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        if (!token) return;
+        try {
+          const payload = {
+            type,
+            loan_date: date,
+            loan_amount: amount,
+            loan_remarks: remarks,
+            loan_status: 'not_paid'
+          };
+          if (selectedType === 'worker') {
+            payload.staff_id = staff_id;
+          } else {
+            payload.user_id = user_id;
+          }
+          const response = await fetch('https://mwms.megacess.com/api/v1/advances', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (result.success) {
+            alert('Record added successfully!');
+            // Optionally, reset the form or close the modal
+            addAdvanceModal.querySelector('form').reset();
+            selectedInput.value = 'No one selected';
+            selectedInput.dataset.id = '';
+            selectedInput.dataset.type = '';
+            fetchWorkerList('');
+            fetchStaffList('', staffRoleFilter);
+          } else {
+            alert('Failed to add record: ' + (result.message || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Error adding record:', error);
+          alert('An error occurred while adding the record. Please try again later.');
+        }
+      });
+    });
+  </script>
 </body>
 </html>

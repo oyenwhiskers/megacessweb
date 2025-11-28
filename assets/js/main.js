@@ -24,6 +24,48 @@
     }
   }
 
+
+  // Initialize tabs for Manage Resources pages
+  function initTabs() {
+    var tabs = document.querySelectorAll('.tab-btn');
+    var panes = document.querySelectorAll('.tab-pane');
+
+    if (tabs.length === 0) return;
+
+    function activateTab(tab) {
+      var target = tab.getAttribute('data-target');
+
+      // Update tab buttons
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+
+      // Update tab panes
+      panes.forEach(function (p) {
+        if (p.getAttribute('data-name') === target) {
+          p.style.display = 'block';
+        } else {
+          p.style.display = 'none';
+        }
+      });
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function (e) {
+        e.preventDefault();
+        activateTab(tab);
+      });
+    });
+
+    // Initialize state (show active tab or first one)
+    var activeTab = document.querySelector('.tab-btn.active');
+    if (!activeTab && tabs.length > 0) {
+      activeTab = tabs[0];
+    }
+    if (activeTab) {
+      activateTab(activeTab);
+    }
+  }
+
   function loadSidebar(){
     var root = document.getElementById('sidebar-root');
     if(!root){

@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Base fields
     const task_name = document.getElementById("task_name").value.trim();
     const description = document.getElementById("description").value.trim();
-    const is_active = document.getElementById("is_active").checked;
+    // const is_active = document.getElementById("is_active").checked;
 
     // Categories
     const categoryCards = document.querySelectorAll(".category-card");
@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const body = {
       task_name,
       description,
-      is_active,
+     // is_active,
       categories
     };
 
