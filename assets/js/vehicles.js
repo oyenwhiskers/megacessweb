@@ -334,7 +334,7 @@ if (addVehicleBtn) {
       });
 
       if (result.success) {
-        bootstrap.Modal.getInstance(document.getElementById('addVehicleModal')).hide();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addVehicleModal')).hide();
         console.log("modal closed");
         document.getElementById('vehicleName').value = '';
         document.getElementById('plateNo').value = '';
@@ -432,7 +432,7 @@ if (updateVehicleBtn) {
       });
 
       if (result.success) {
-        bootstrap.Modal.getInstance(document.getElementById('updateVehicleModal')).hide();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('updateVehicleModal')).hide();
         getAllVehicles();
         if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
         showSuccess('Success!', 'Vehicle updated successfully!');

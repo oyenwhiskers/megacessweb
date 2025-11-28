@@ -231,7 +231,7 @@ async function deleteVehicleBooking(id) {
 
 // UPDATE PREPARATION
 function openUpdateVehicleBookingModal(booking) {
-    const modal = new bootstrap.Modal(document.getElementById('updateVehicleBookingModal'));
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('updateVehicleBookingModal'));
     const vInput = document.getElementById('updateBookingVehicleInput');
     const uInput = document.getElementById('updateUsedBy');
 
@@ -370,7 +370,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
                 if (result.success) {
                     showSuccess("Success!", "Booking created!");
-                    bootstrap.Modal.getInstance(document.getElementById("addVehicleBookingModal")).hide();
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById("addVehicleBookingModal")).hide();
                     e.target.reset();
                     // Clear datasets
                     delete vInput.dataset.selectedId;
@@ -417,7 +417,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
                 if (result.success) {
                     showSuccess("Success!", "Updated successfully!");
-                    bootstrap.Modal.getInstance(document.getElementById('updateVehicleBookingModal')).hide();
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('updateVehicleBookingModal')).hide();
                     if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
                     getAllVehicleBookings();
                 } else {
@@ -435,7 +435,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const openModalBtn = document.getElementById("openModalBtn");
     if (openModalBtn) {
         openModalBtn.addEventListener("click", () => {
-            new bootstrap.Modal(document.getElementById("addVehicleBookingModal")).show();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("addVehicleBookingModal")).show();
         });
     }
 
