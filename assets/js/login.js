@@ -60,6 +60,29 @@
         } else {
           console.warn('Login succeeded but no token found in response', data);
         }
+
+        // Store username/fullname for greeting
+        let username = '';
+        if (data && data.user_fullname) {
+          username = data.user_fullname;
+        } else if (data && data.data && data.data.user_fullname) {
+          username = data.data.user_fullname;
+        } else if (data && data.username) {
+          username = data.username;
+        } else if (data && data.data && data.data.username) {
+          username = data.data.username;
+        }
+        if (username) {
+          try {
+            localStorage.setItem('user_fullname', username);
+            sessionStorage.setItem('user_fullname', username);
+          } catch(e) {}
+        }
+
+        // Reload sidebar if present
+        if (window.loadSidebar) {
+          window.loadSidebar();
+        }
         var redirectTo = (data && data.redirect) ? data.redirect : '/megacessweb/index.html';
         window.location.href = redirectTo;
         return;
