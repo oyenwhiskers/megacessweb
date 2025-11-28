@@ -433,9 +433,109 @@
     
     // Global functions for staff attendance actions
     window.viewStaffAttendanceDetails = function(userId) {
-        console.log('View staff attendance details for user ID:', userId);
-        // Implement attendance details modal/page
-        alert('View staff attendance details feature will be implemented');
+        // Show the staff attendance details modal
+        var modalEl = document.getElementById('viewAttendanceModal');
+        if (!modalEl) {
+            alert('Attendance details modal not found.');
+            return;
+        }
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        // Fetch and display staff info
+        var staffData = getCurrentStaffData(userId);
+        var nameEl = modalEl.querySelector('.worker-name');
+        var roleEl = modalEl.querySelector('.worker-role');
+        var avatarEl = modalEl.querySelector('.worker-avatar');
+        if (staffData) {
+            if (nameEl) nameEl.textContent = staffData.user_name || 'Unknown';
+            if (roleEl) roleEl.textContent = 'Staff';
+            if (avatarEl) {
+                var userImage = staffData.user_img || '';
+                var placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffData.user_name || 'User')}&background=cccccc&color=fff&size=96`;
+                // Always use placeholder if running on localhost or image is missing
+                var isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isLocalhost || !userImage || userImage.length < 5 || userImage.includes('null') || userImage.includes('undefined')) {
+                    avatarEl.src = placeholderImage;
+                } else {
+                    avatarEl.src = userImage;
+                    avatarEl.onerror = function() {
+                        this.src = placeholderImage;
+                        this.onerror = null;
+                    };
+                }
+            }
+        } else {
+            if (nameEl) nameEl.textContent = 'Unknown';
+            if (roleEl) roleEl.textContent = 'Staff';
+            if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=User&background=cccccc&color=fff&size=96`;
+        }
+
+        // Set loading state for analytics
+        document.getElementById('attendanceRateValue').textContent = '...';
+        document.getElementById('punctualityRateValue').textContent = '...';
+        document.getElementById('numberAbsentValue').textContent = '...';
+
+        // Helper to get selected month
+        function getSelectedMonth() {
+            var monthSelect = modalEl.querySelector('.attendance-month-select');
+            if (monthSelect) {
+                var val = monthSelect.value;
+                if (val && val !== 'Month') {
+                    var now = new Date();
+                    var monthNum = monthSelect.selectedIndex;
+                    return `${now.getFullYear()}-${String(monthNum).padStart(2,'0')}`;
+                }
+            }
+            var now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        }
+
+        // Fetch staff attendance analytics
+        async function fetchStaffAttendanceAnalytics(userId, month) {
+            const token = getAuthToken();
+            if (!token) return null;
+            const monthStr = month || getSelectedMonth();
+            try {
+                const response = await fetch(`${API_BASE_URL}/user-attendance/${userId}/analytics?month=${monthStr}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!response.ok) return null;
+                const data = await response.json();
+                return data && data.data ? data.data : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Update analytics display
+        async function updateStaffAttendanceAnalytics() {
+            var month = getSelectedMonth();
+            var analytics = await fetchStaffAttendanceAnalytics(userId, month);
+            if (analytics) {
+                document.getElementById('attendanceRateValue').textContent = analytics.attendance_rate + '%';
+                document.getElementById('punctualityRateValue').textContent = analytics.punctuality_rate + '%';
+                document.getElementById('numberAbsentValue').textContent = analytics.number_absent;
+            } else {
+                document.getElementById('attendanceRateValue').textContent = 'N/A';
+                document.getElementById('punctualityRateValue').textContent = 'N/A';
+                document.getElementById('numberAbsentValue').textContent = 'N/A';
+            }
+        }
+
+        updateStaffAttendanceAnalytics();
+        var monthSelect = modalEl.querySelector('.attendance-month-select');
+        if (monthSelect) {
+            monthSelect.onchange = function() {
+                updateStaffAttendanceAnalytics();
+            };
+        }
+    // end viewStaffAttendanceDetails
     };
     
     window.markStaffOvertime = function(userId) {

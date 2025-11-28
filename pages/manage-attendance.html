@@ -456,10 +456,10 @@
         </div>
         <div class="modal-body" style="background: #d4f8d4;">
           <div class="d-flex align-items-center mb-3" style="background: #fff; border-radius: 12px; padding: 16px;">
-            <img src="https://ui-avatars.com/api/?name=Ethan+Muller&background=cccccc&color=fff&size=96" alt="Avatar" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;">
+            <img class="worker-avatar rounded-circle me-3" src="https://ui-avatars.com/api/?name=User&background=cccccc&color=fff&size=96" alt="Avatar" style="width: 64px; height: 64px; object-fit: cover;">
             <div>
-              <div class="fw-bold" style="font-size: 1.25rem;">Ethan Muller</div>
-              <div class="text-muted">Checker</div>
+              <div class="worker-name fw-bold" style="font-size: 1.25rem;">User</div>
+              <div class="worker-role text-muted"></div>
             </div>
           </div>
           <div class="mb-3">
@@ -484,7 +484,7 @@
               <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-body text-center p-3">
                   <div class="text-muted mb-1" style="font-size: 1rem;">Attendance Rate</div>
-                  <div class="fw-bold" style="font-size: 2rem; color: #176c2f;">92%</div>
+                  <div id="attendanceRateValue" class="fw-bold" style="font-size: 2rem; color: #176c2f;">...</div>
                 </div>
               </div>
             </div>
@@ -492,7 +492,7 @@
               <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-body text-center p-3">
                   <div class="text-muted mb-1" style="font-size: 1rem;">Punctuality Rate</div>
-                  <div class="fw-bold" style="font-size: 2rem; color: #176c2f;">81%</div>
+                  <div id="punctualityRateValue" class="fw-bold" style="font-size: 2rem; color: #176c2f;">...</div>
                 </div>
               </div>
             </div>
@@ -500,7 +500,7 @@
               <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-body text-center p-3">
                   <div class="text-muted mb-1" style="font-size: 1rem;">Number of days absence</div>
-                  <div class="fw-bold" style="font-size: 2rem; color: #176c2f;">7</div>
+                  <div id="numberAbsentValue" class="fw-bold" style="font-size: 2rem; color: #176c2f;">...</div>
                 </div>
               </div>
             </div>
@@ -591,46 +591,125 @@
   <script src="/megacessweb/assets/js/list_workers_att.js?v=1.7"></script>
   <script src="/megacessweb/assets/js/list_staff_att.js?v=1.3"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
-
   <script>
-    window.viewAttendanceDetails = function(staffId) {
-      var modal = new bootstrap.Modal(document.getElementById('viewAttendanceModal'));
+    // Ensure this function is defined before window.viewAttendanceDetails
+    function updateAttendanceAnalyticsByMonth(staffId) {
+      var modalEl = document.getElementById('viewAttendanceModal');
+      var monthSelect = modalEl.querySelector('.attendance-month-select');
+      var selectedMonth = '';
+      if (monthSelect) {
+        var val = monthSelect.value;
+        if (val && val !== 'Month') {
+          var now = new Date();
+          var monthNum = monthSelect.selectedIndex;
+          selectedMonth = `${now.getFullYear()}-${String(monthNum).padStart(2,'0')}`;
+        }
+      }
+      fetchAttendanceAnalytics(staffId, selectedMonth).then(analytics => {
+        if (analytics) {
+          document.getElementById('attendanceRateValue').textContent = analytics.attendance_rate + '%';
+          document.getElementById('punctualityRateValue').textContent = analytics.punctuality_rate + '%';
+          document.getElementById('numberAbsentValue').textContent = analytics.number_absent;
+        } else {
+          document.getElementById('attendanceRateValue').textContent = 'N/A';
+          document.getElementById('punctualityRateValue').textContent = 'N/A';
+          document.getElementById('numberAbsentValue').textContent = 'N/A';
+        }
+      });
+    }
+
+    async function fetchAttendanceAnalytics(staffId, month) {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token') || sessionStorage.getItem('authToken') || sessionStorage.getItem('auth_token') || '';
+      if (!token) return null;
+      const now = new Date();
+      const monthStr = month || `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      try {
+        const response = await fetch(`https://mwms.megacess.com/api/v1/staff-attendance/${staffId}/analytics?month=${monthStr}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data && data.data ? data.data : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function fetchWorkerInfo(staffId) {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token') || sessionStorage.getItem('authToken') || sessionStorage.getItem('auth_token') || '';
+      if (!token) return null;
+      try {
+        const response = await fetch(`https://mwms.megacess.com/api/v1/staff/${staffId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data && data.data ? data.data : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    window.viewAttendanceDetails = async function(staffId) {
+      var modalEl = document.getElementById('viewAttendanceModal');
+      var modal = new bootstrap.Modal(modalEl);
       modal.show();
+
+      // Fetch and display worker info
+      const workerInfo = await fetchWorkerInfo(staffId);
+      var nameEl = modalEl.querySelector('.worker-name');
+      var roleEl = modalEl.querySelector('.worker-role');
+      var avatarEl = modalEl.querySelector('.worker-avatar');
+      if (workerInfo) {
+        if (nameEl) nameEl.textContent = workerInfo.staff_fullname || 'Unknown';
+        if (roleEl) roleEl.textContent = workerInfo.staff_role || '';
+        if (avatarEl) {
+          if (workerInfo.staff_img && typeof workerInfo.staff_img === 'string' && workerInfo.staff_img.trim() !== '') {
+            let imgUrl = workerInfo.staff_img.replace(/:\d+$/, '').trim();
+            if (!imgUrl.startsWith('http') && !imgUrl.startsWith('/')) {
+              imgUrl = `https://mwms.megacess.com/storage/user-images/${imgUrl}`;
+            } else if (imgUrl.startsWith('/')) {
+              imgUrl = `https://mwms.megacess.com${imgUrl}`;
+            }
+            avatarEl.src = imgUrl;
+            avatarEl.onerror = function() {
+              this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(workerInfo.staff_fullname || 'User')}&background=cccccc&color=fff&size=96`;
+              this.onerror = null;
+            };
+          } else {
+            avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(workerInfo.staff_fullname || 'User')}&background=cccccc&color=fff&size=96`;
+            avatarEl.onerror = null;
+          }
+        }
+      } else {
+        if (nameEl) nameEl.textContent = 'Unknown';
+        if (roleEl) roleEl.textContent = '';
+        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=User&background=cccccc&color=fff&size=96`;
+      }
+
+      document.getElementById('attendanceRateValue').textContent = '...';
+      document.getElementById('punctualityRateValue').textContent = '...';
+      document.getElementById('numberAbsentValue').textContent = '...';
+
+      updateAttendanceAnalyticsByMonth(staffId);
+      var monthSelect = modalEl.querySelector('.attendance-month-select');
+      if (monthSelect) {
+        monthSelect.onchange = function() {
+          updateAttendanceAnalyticsByMonth(staffId);
+        };
+      }
     };
-  </script>
 
-  <style>
-    /* Custom scrollbar for leave list */
-    #leaveList::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    #leaveList::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-
-    #leaveList::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 10px;
-    }
-
-    #leaveList::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
-
-    /* Ensure consistent spacing for leave entries */
-    #leaveList .bg-white {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    #leaveList .bg-white:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-  </style>
-
-  <script>
     (function(){
       const buttons = document.querySelectorAll('#attendanceTypeToggle button');
       const views = {
