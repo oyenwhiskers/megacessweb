@@ -100,7 +100,7 @@
         const errors = [];
         
         // Required fields
-        if (!formData.ic?.trim()) {
+        if (!formData.staff_doc?.trim()) {
             errors.push('IC / Document ID is required');
         }
         
@@ -118,6 +118,17 @@
         
         if (!formData.gender) {
             errors.push('Gender is required');
+        }
+        
+        // Validate start date (optional, but must be valid if present)
+        if (formData.startdate) {
+            const startDate = new Date(formData.startdate);
+            const today = new Date();
+            if (isNaN(startDate.getTime())) {
+                errors.push('Start Date is invalid');
+            } else if (startDate > today) {
+                errors.push('Start Date cannot be in the future');
+            }
         }
         
         // Validate phone number format (basic validation)
@@ -153,7 +164,12 @@
         apiFormData.append('staff_phone', formData.phone.trim());
         apiFormData.append('staff_dob', formData.dob);
         apiFormData.append('staff_gender', formData.gender);
-        apiFormData.append('staff_doc', formData.ic.trim());
+        apiFormData.append('staff_doc', formData.staff_doc.trim());
+        
+        // Add start date if provided
+        if (formData.staff_employment_start_date) {
+            apiFormData.append('staff_employment_start_date', formData.staff_employment_start_date);
+        }
         
         // Add optional fields
         if (formData.banktype?.trim()) {
@@ -205,17 +221,17 @@
     async function registerWorker(formData) {
         try {
             showFormLoading(true);
-            
+
             // Validate form
             const errors = validateForm(formData);
             if (errors.length > 0) {
                 throw new Error(errors.join(', '));
             }
-            
+
             // Get image file if uploaded
             const imageInput = document.getElementById('workerProfileImageInput');
             const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
-            
+
             // Format data for API
             const apiData = formatFormDataForAPI(formData, imageFile);
             

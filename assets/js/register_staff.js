@@ -17,8 +17,11 @@ document.addEventListener('DOMContentLoaded', function() {
       user_bank_name: fd.get('banktype') || '',
       user_bank_number: fd.get('bankaccount') || '',
       user_kwsp_number: fd.get('kwsp') || '',
-      user_img: '' // You can add image upload logic here if needed
+      user_img: '', // You can add image upload logic here if needed
+      staff_employment_start_date: fd.get('staff_employment_start_date') || ''
     };
+
+    console.log('Register Staff Payload:', body); // Debugging line to show payload
 
     const url = new URL("https://mwms.megacess.com/api/v1/auth/register");
     const headers = {

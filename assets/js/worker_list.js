@@ -91,6 +91,12 @@
             console.log('Worker list - No image for worker:', worker.staff_fullname, 'staff_img:', worker.staff_img);
         }
         
+        // Determine active/inactive status
+        const isActive = worker.is_active !== false; // Default to active if not specified
+        const statusBtnClass = isActive ? 'btn-success' : 'btn-outline-secondary';
+        const statusBtnText = isActive ? 'Active' : 'Inactive';
+        const statusBtnIcon = isActive ? 'bi-toggle-on' : 'bi-toggle-off';
+
         return `
             <div class="list-group-item worker-list-item ${claimedStatus}">
                 <div class="d-flex align-items-center">
@@ -129,6 +135,9 @@
                                             title="Delete Worker">
                                         <i class="bi bi-trash"></i>
                                     </button>
+                                    <button type="button" class="btn btn-sm ${statusBtnClass}" title="Toggle Active/Inactive" onclick="toggleWorkerStatus(${worker.id}, ${isActive})">
+                                        <i class="bi ${statusBtnIcon} me-1"></i>${statusBtnText}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -140,77 +149,43 @@
     
     // Create pagination HTML
     function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentGender) {
-        if (totalPages <= 1) return '';
-        
+        // Always show pagination bar, even if only 1 page
         let paginationHTML = `
             <nav aria-label="Worker list pagination" class="mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <small class="text-muted">
-                        Showing page ${currentPage} of ${totalPages} (${totalItems} total workers)
-                    </small>
-                </div>
-                <ul class="pagination justify-content-center">
+                <ul class="pagination justify-content-center" style="background:#effaf3; border-radius:8px; padding:8px 16px;">
         `;
-        
         // Previous button
         paginationHTML += `
-            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${currentPage - 1}, '${currentGender}')" 
-                        ${currentPage === 1 ? 'disabled' : ''}>
-                    <i class="bi bi-chevron-left"></i>
-                </button>
+            <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
+                <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchWorkersList('${currentSearch}', ${currentPage - 1}, '${currentGender}')" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
             </li>
         `;
-        
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-        
-        if (startPage > 1) {
+        // Only show one page button if totalPages === 1
+        if (totalPages === 1) {
             paginationHTML += `
-                <li class="page-item">
-                    <button class="page-link" onclick="fetchWorkersList('${currentSearch}', 1, '${currentGender}')">1</button>
+                <li class="page-item active">
+                    <button class="page-link" style="background:#007bff;color:#fff;border:none;">1</button>
                 </li>
             `;
-            if (startPage > 2) {
-                paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        } else {
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <li class="page-item${i === currentPage ? ' active' : ''}">
+                        <button class="page-link" style="${i === currentPage ? 'background:#007bff;color:#fff;border:none;' : 'background:transparent; border:none; color:#007bff;'}" onclick="fetchWorkersList('${currentSearch}', ${i}, '${currentGender}')">${i}</button>
+                    </li>
+                `;
             }
         }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            paginationHTML += `
-                <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${i}, '${currentGender}')">${i}</button>
-                </li>
-            `;
-        }
-        
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-            }
-            paginationHTML += `
-                <li class="page-item">
-                    <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${totalPages}, '${currentGender}')">${totalPages}</button>
-                </li>
-            `;
-        }
-        
         // Next button
         paginationHTML += `
-            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                <button class="page-link" onclick="fetchWorkersList('${currentSearch}', ${currentPage + 1}, '${currentGender}')" 
-                        ${currentPage === totalPages ? 'disabled' : ''}>
-                    <i class="bi bi-chevron-right"></i>
-                </button>
+            <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
+                <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchWorkersList('${currentSearch}', ${currentPage + 1}, '${currentGender}')" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
             </li>
         `;
-        
         paginationHTML += `
                 </ul>
             </nav>
         `;
-        
         return paginationHTML;
     }
     
@@ -269,6 +244,7 @@
     
     // Main function to fetch workers
     async function fetchWorkersList(search = '', page = 1, gender = 'all') {
+        const startTime = performance.now();
         try {
             showLoading();
             
@@ -373,10 +349,14 @@
             }
             
             workersView.innerHTML = workersHTML;
+            const endTime = performance.now();
+            console.log(`[WorkerList] API + render time: ${(endTime - startTime).toFixed(2)} ms`);
             
         } catch (error) {
             console.error('Error fetching workers:', error);
             showError(error.message || 'Failed to load workers. Please try again.', search, gender);
+            const endTime = performance.now();
+            console.log(`[WorkerList] API + render time (error): ${(endTime - startTime).toFixed(2)} ms`);
         }
     }
     
@@ -529,12 +509,7 @@
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">IC / Document ID:</label>
-                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_ic) !== '-' ? displayValue(worker.staff_ic) : worker.id}" readonly>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-1 small">Nickname:</label>
-                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_nickname)}" readonly>
+                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_doc)}" readonly>
                             </div>
                             
                             <div class="col-md-6">
@@ -575,6 +550,11 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">KWSP Number:</label>
                                 <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_kwsp_number)}" readonly>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold mb-1 small">Start Date:</label>
+                                <input type="text" class="form-control form-control-sm" value="${formatDateForDisplay(worker.staff_employment_start_date)}" readonly>
                             </div>
                         </div>
                     </div>
@@ -674,9 +654,7 @@
             const label = input.previousElementSibling?.textContent || '';
             
             if (label.includes('IC / Document ID')) {
-                input.setAttribute('name', 'staff_ic');
-            } else if (label.includes('Nickname')) {
-                input.setAttribute('name', 'staff_nickname');
+                input.setAttribute('name', 'staff_doc');
             } else if (label.includes('Full Name')) {
                 input.setAttribute('name', 'staff_fullname');
             } else if (label.includes('Phone Number')) {
@@ -699,18 +677,17 @@
                 input.type = 'date';
                 input.setAttribute('name', 'staff_dob');
             } else if (label.includes('Gender')) {
-                // Replace gender input with select
+                // Replace gender input with select (only Male and Female)
                 const currentValue = input.value.toLowerCase();
                 const selectHTML = `
-                    <select class="form-control form-control-sm border-primary" name="staff_gender" required>
+                    <select class="form-control form-control-sm border-primary" name="gender" required>
                         <option value="">Select Gender</option>
                         <option value="male" ${currentValue === 'male' ? 'selected' : ''}>Male</option>
                         <option value="female" ${currentValue === 'female' ? 'selected' : ''}>Female</option>
-                        <option value="other" ${currentValue === 'other' ? 'selected' : ''}>Other</option>
                     </select>
                 `;
                 input.outerHTML = selectHTML;
-                return; // Skip further processing for this field
+                return;
             } else if (label.includes('Role')) {
                 // Role field stays readonly - workers cannot change their role
                 input.classList.remove('border-primary');
@@ -722,6 +699,20 @@
                 input.setAttribute('name', 'staff_bank_number');
             } else if (label.includes('KWSP Number')) {
                 input.setAttribute('name', 'staff_kwsp_number');
+            } else if (label.includes('Start Date')) {
+                // Convert DD/MM/YYYY to YYYY-MM-DD for date input BEFORE changing type
+                const dateValue = input.value;
+                if (dateValue && dateValue !== '-') {
+                    const parts = dateValue.split('/');
+                    if (parts.length === 3) {
+                        const day = parts[0].padStart(2, '0');
+                        const month = parts[1].padStart(2, '0');
+                        const year = parts[2];
+                        input.value = `${year}-${month}-${day}`;
+                    }
+                }
+                input.type = 'date';
+                input.setAttribute('name', 'staff_employment_start_date');
             }
             
             // Clear dash values
@@ -729,42 +720,6 @@
                 input.value = '';
             }
         });
-        
-        // Add password field in edit mode
-        const lastRow = modalBody.querySelector('.row.g-2');
-        if (lastRow && !modalBody.querySelector('input[name="staff_password"]')) {
-            const passwordFieldHTML = `
-                <div class="col-md-6" id="passwordFieldContainer">
-                    <label class="form-label fw-semibold mb-1 small">Password (optional):</label>
-                    <div class="input-group input-group-sm">
-                        <input type="password" class="form-control form-control-sm border-primary" id="passwordField" name="staff_password" placeholder="Enter new password (leave blank to keep current)">
-                        <button class="btn btn-outline-secondary" type="button" id="togglePassword" title="Show/Hide Password">
-                            <i class="bi bi-eye" id="togglePasswordIcon"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            lastRow.insertAdjacentHTML('beforeend', passwordFieldHTML);
-            
-            // Add password toggle functionality
-            const togglePasswordBtn = modalBody.querySelector('#togglePassword');
-            const passwordField = modalBody.querySelector('#passwordField');
-            const togglePasswordIcon = modalBody.querySelector('#togglePasswordIcon');
-            
-            if (togglePasswordBtn && passwordField && togglePasswordIcon) {
-                togglePasswordBtn.addEventListener('click', function() {
-                    if (passwordField.type === 'password') {
-                        passwordField.type = 'text';
-                        togglePasswordIcon.classList.remove('bi-eye');
-                        togglePasswordIcon.classList.add('bi-eye-slash');
-                    } else {
-                        passwordField.type = 'password';
-                        togglePasswordIcon.classList.remove('bi-eye-slash');
-                        togglePasswordIcon.classList.add('bi-eye');
-                    }
-                });
-            }
-        }
         
         // Add "Change Photo" button in edit mode
         const imageContainer = modalBody.querySelector('.col-md-3.text-center');
@@ -793,14 +748,12 @@
                             e.target.value = '';
                             return;
                         }
-                        
                         // Validate file size (max 5MB)
                         if (file.size > 5 * 1024 * 1024) {
                             alert('Image size must be less than 5MB.');
                             e.target.value = '';
                             return;
                         }
-                        
                         // Show preview
                         const reader = new FileReader();
                         reader.onload = function(event) {
@@ -840,149 +793,149 @@
     };
     
     // Function to save worker changes
-    window.saveWorkerChanges = async function(workerId) {
+    window.saveWorkerChanges = async function(workerId, event = null) {
         try {
             const modal = document.getElementById('workerDetailsModal');
-            if (!modal) return;
-            
+            if (!modal) {
+                console.error('Modal not found');
+                return;
+            }
+
             const modalBody = modal.querySelector('.modal-body');
-            
+            if (!modalBody) {
+                console.error('Modal body not found');
+                return;
+            }
+
+            // Collect all editable fields
+            const staffDocInput = modalBody.querySelector('input[name="staff_doc"]');
+            const fullNameInput = modalBody.querySelector('input[name="fullname"]');
+            const phoneInput = modalBody.querySelector('input[name="phone"]');
+            const dobInput = modalBody.querySelector('input[name="dob"]');
+            const genderInput = modalBody.querySelector('input[name="gender"], select[name="gender"]');
+            const startDateInput = modalBody.querySelector('input[name="staff_employment_start_date"]');
+
             // Check if there's an image file to upload
             const imageInput = document.getElementById('workerDetailsImageInput');
             const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
-            
-            // Use FormData if there's an image, otherwise use JSON
-            let requestBody;
-            let headers = {
+
+            // Get the save button - try from event first, then find it in the modal
+            let saveButton = null;
+            if (event && event.target) {
+                saveButton = event.target;
+            } else {
+                saveButton = modal.querySelector('button[onclick*="saveWorkerChanges"], .btn-primary, button[type="submit"]');
+            }
+
+            // Disable save button and show loading state
+            const originalButtonText = saveButton ? saveButton.innerHTML : '';
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+            }
+
+            // Use FormData for all fields (works for both file and non-file updates)
+            const formData = new FormData();
+
+            // Append all fields to FormData
+            if (staffDocInput && staffDocInput.value) {
+                formData.append('staff_doc', staffDocInput.value);
+            }
+            if (fullNameInput && fullNameInput.value) {
+                formData.append('staff_fullname', fullNameInput.value);
+            }
+            if (phoneInput && phoneInput.value) {
+                formData.append('staff_phone', phoneInput.value);
+            }
+            if (dobInput && dobInput.value) {
+                formData.append('staff_dob', dobInput.value);
+            }
+            if (genderInput && genderInput.value) {
+                formData.append('staff_gender', genderInput.value);
+            }
+            if (startDateInput && startDateInput.value) {
+                formData.append('staff_employment_start_date', startDateInput.value);
+            }
+
+            // Append image file if present
+            if (imageFile) {
+                formData.append('staff_img', imageFile);
+            }
+
+            // Prepare headers
+            const headers = {
                 'Authorization': `Bearer ${getAuthToken()}`,
                 'Accept': 'application/json'
+                // Don't set Content-Type for FormData - browser will set it automatically with boundary
             };
-            
-            if (imageFile) {
-                // Use FormData for file upload
-                const formData = new FormData();
-                
-                // Collect all input values
-                const inputs = modalBody.querySelectorAll('input:not([type="file"]), select');
-                
-                inputs.forEach(input => {
-                    const name = input.getAttribute('name');
-                    if (name) {
-                        let value = input.value.trim();
-                        // Only include password if it's not empty
-                        if (name === 'staff_password') {
-                            if (value !== '') {
-                                formData.append(name, value);
-                            }
-                        } else if (value !== '') {
-                            formData.append(name, value);
-                        }
-                    }
-                });
-                
-                // Add image file
-                formData.append('staff_img', imageFile);
-                requestBody = formData;
-                // Don't set Content-Type for FormData, browser will set it with boundary
-            } else {
-                // Use JSON for regular update
-                const workerData = {};
-                const inputs = modalBody.querySelectorAll('input, select');
-                
-                inputs.forEach(input => {
-                    const name = input.getAttribute('name');
-                    if (name) {
-                        let value = input.value.trim();
-                        // Convert empty values to null, except for password
-                        if (name === 'staff_password') {
-                            // Only include password if it's not empty (user wants to change it)
-                            if (value !== '') {
-                                workerData[name] = value;
-                            }
-                        } else {
-                            workerData[name] = value !== '' ? value : null;
-                        }
-                    }
-                });
-                
-                requestBody = JSON.stringify(workerData);
-                headers['Content-Type'] = 'application/json';
-                
-                // Validate required fields
-                if (!workerData.staff_fullname) {
-                    alert('Full Name is required');
-                    return;
-                }
-                if (!workerData.staff_phone) {
-                    alert('Phone Number is required');
-                    return;
-                }
-                if (!workerData.staff_dob) {
-                    alert('Date of Birth is required');
-                    return;
-                }
-                if (!workerData.staff_gender) {
-                    alert('Gender is required');
-                    return;
-                }
-            }
-            
-            // Disable save button and show loading state
-            const saveButton = event.target;
-            const originalButtonText = saveButton.innerHTML;
-            saveButton.disabled = true;
-            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-            
-            // Make PUT request to update worker
+
+            // Make POST request to update worker (POST works better with file uploads)
             const response = await fetch(`${API_BASE_URL}/staff/${workerId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: headers,
-                body: requestBody
+                body: formData
             });
-            
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Authentication failed. Please log in again.');
-                } else if (response.status === 403) {
-                    throw new Error('Access denied. You do not have permission to edit this worker.');
-                } else if (response.status === 404) {
-                    throw new Error('Worker not found.');
-                } else if (response.status === 422) {
-                    const errorData = await response.json();
-                    const errorMessages = Object.values(errorData.errors || {}).flat().join(', ');
-                    throw new Error(errorMessages || 'Validation failed. Please check your input.');
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-            }
-            
+
+            // Parse response
             const result = await response.json();
-            
+
+            if (!response.ok) {
+                // Handle API error response
+                const errorMessage = result.message || result.error || 'Failed to save changes.';
+                throw new Error(errorMessage);
+            }
+
+            if (!result.success) {
+                // Handle non-success response
+                const errorMessage = result.message || 'Failed to save changes.';
+                throw new Error(errorMessage);
+            }
+
             console.log('Save response:', result);
-            
+
             // Show success message
-            alert('Worker details updated successfully!');
-            
+            if (typeof showNotification === 'function') {
+                showNotification('Worker details updated successfully!', 'success');
+            } else {
+                alert('Worker details updated successfully!');
+            }
+
             // Close the modal
             const modalInstance = bootstrap.Modal.getInstance(modal);
             if (modalInstance) {
                 modalInstance.hide();
             }
-            
+
             // Refresh the worker list to show updated data including image
             setTimeout(() => {
-                fetchWorkersList(currentSearch, currentPage);
-            }, 300);
-            
+                if (typeof fetchWorkersList === 'function') {
+                    fetchWorkersList(currentSearch, currentPage);
+                }
+                // Reopen the modal with updated worker details to refresh image
+                if (typeof viewWorkerDetails === 'function') {
+                    viewWorkerDetails(workerId);
+                }
+            }, 1000);
+
         } catch (error) {
             console.error('Error saving worker changes:', error);
-            alert(`Failed to save changes: ${error.message}`);
             
+            // Show error message
+            const errorMessage = error.message || 'Failed to save changes. Please try again.';
+            if (typeof showNotification === 'function') {
+                showNotification(errorMessage, 'error');
+            } else {
+                alert(`Failed to save changes: ${errorMessage}`);
+            }
+
             // Re-enable save button
-            const saveButton = event.target;
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
+            const modal = document.getElementById('workerDetailsModal');
+            if (modal) {
+                const saveButton = modal.querySelector('button[onclick*="saveWorkerChanges"], .btn-primary, button[type="submit"]');
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
+                }
             }
         }
     };
@@ -1027,6 +980,42 @@
         } catch (error) {
             console.error('Error deleting worker:', error);
             alert(`Failed to delete worker: ${error.message}`);
+        }
+    };
+    
+    // Toggle worker active/inactive status
+    window.toggleWorkerStatus = async function(workerId, currentStatus) {
+        try {
+            // Show loading indicator (optional)
+            const btn = document.querySelector(`button[onclick="toggleWorkerStatus(${workerId}, ${currentStatus})"]`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Updating...';
+            }
+            // API call to update status
+            const headers = {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            const newStatus = currentStatus ? 'inactive' : 'active';
+            const requestBody = { staff_status: newStatus };
+            const response = await fetch(`${API_BASE_URL}/staff/${workerId}/status`, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(requestBody)
+            });
+            if (!response.ok) {
+                throw new Error('Failed to update status.');
+            }
+            const result = await response.json();
+            alert(result.message || 'Status updated!');
+            // Refresh list
+            fetchWorkersList(currentSearch, currentPage);
+        } catch (error) {
+            alert('Error updating status: ' + error.message);
+        } finally {
+            // Re-enable button after refresh
         }
     };
     

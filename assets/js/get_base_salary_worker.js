@@ -38,8 +38,8 @@ $(document).ready(function () {
 
   // Loading state with styling
   container.html(`
-        <div class="card p-4 shadow-sm">
-            <div class="d-flex align-items-center justify-content-center" style="min-height: 200px;">
+        <div class="salary-card-body p-4 shadow-sm">
+            <div class="d-flex align-items-center justify-content-center mb-2" style="min-height: 200px;">
                 <div class="text-center">
                     <div class="spinner-border text-success mb-3" role="status">
                          <span class="visually-hidden">Loading...</span>
@@ -62,13 +62,13 @@ $(document).ready(function () {
       : "—";
 
     const html = `
-      <div class="card p-3 shadow-sm">
-        <div class="mb-3">
+      <div class="salary-card-body p-3 shadow-sm">
+        <div class="my-3">
           <label class="form-label fw-semibold">Current Base Salary (RM)</label>
           <input type="text" class="form-control" value="${baseSalary}" disabled>
         </div>
 
-        <div class="mb-3">
+        <div class="my-3">
           <label class="form-label fw-semibold">New Base Salary (RM)</label>
           <div class="input-group">
             <span class="input-group-text">RM</span>
@@ -105,19 +105,24 @@ $(document).ready(function () {
         contentType: "application/json",
         data: JSON.stringify({ base_salary: newSalary }),
         success: function (res) {
-          console.log("Base salary updated successfully!");
+          console.log(`Base Salary updated to RM ${res.base_salary}`);
           Swal.fire({
             icon: "success",
-            text: "Base salary updated successfully!",
-            timer: 2500,
+            text: `Base Salary updated to RM ${res.base_salary}!`,
+            timer: 2000,
             timerProgressBar: true,
             showConfirmButton: false
+          }).then(() => {
+            window.location.href = "/megacessweb/pages/manage-payment-rate.html?employee=worker&type=salary";
           });
-          renderUserForm(res); // re-render with updated data
         },
         error: function (xhr) {
           console.error("Failed to update base salary:", xhr.responseText);
-          alert("Failed to update base salary. Please try again.");
+          Swal.fire({
+            icon: "error",
+            text: "Failed to update base salary. Please try again.",
+            showConfirmButton: true
+          }).
           $("#saveSalaryBtn").prop("disabled", false).text("Save Changes");
         }
       });
