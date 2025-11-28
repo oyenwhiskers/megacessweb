@@ -22,7 +22,7 @@
       </div>
       <div class="container-fluid p-4">
         <!-- Welcome Header -->
-        <h2 class="mb-4 fw-bold">Welcome, Boss!</h2>
+        <h2 class="mb-4 fw-bold" id="welcome-header">Welcome, Boss!</h2>
 
         <!-- Year and Month Filter (moved below Welcome, Boss!) -->
         <div class="row mb-4">
@@ -140,5 +140,37 @@
   <script src="assets/js/main.js"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
   <script src="assets/js/dashboard.js?v=2"></script>
+  <script>
+    // Set welcome header to "Welcome, [username]!" if available
+    document.addEventListener('DOMContentLoaded', function() {
+      var welcomeHeader = document.getElementById('welcome-header');
+      function setWelcome() {
+        if (welcomeHeader) {
+          // Try to get username from localStorage/sessionStorage
+          var username = localStorage.getItem('user_fullname') || sessionStorage.getItem('user_fullname');
+          if (!username) {
+            username = localStorage.getItem('username') || sessionStorage.getItem('username');
+          }
+          if (!username) {
+            username = localStorage.getItem('user_nickname') || sessionStorage.getItem('user_nickname');
+          }
+          // Fallback: try to get sidebar .brand username
+          if (!username) {
+            var brand = document.querySelector('.sidebar .brand');
+            if (brand && brand.textContent.trim().length > 0) {
+              username = brand.textContent.trim();
+            }
+          }
+          if (username) {
+            welcomeHeader.textContent = 'Welcome, ' + username + ' !';
+          }
+        }
+      }
+      // Run after sidebar loads
+      setTimeout(setWelcome, 300);
+      // Also run after sidebar changes (in case sidebar loads async)
+      document.getElementById('sidebar-root').addEventListener('DOMSubtreeModified', setWelcome);
+    });
+  </script>
 </body>
 </html>
