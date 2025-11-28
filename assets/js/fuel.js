@@ -274,7 +274,7 @@ document.getElementById('addFuelForm').addEventListener('submit', async (e) => {
   const saveBtn = document.getElementById('saveFuelBtn'); saveBtn.disabled = true; saveBtn.textContent = "Adding...";
   try {
     await createFuelRecord(payload);
-    bootstrap.Modal.getInstance(document.getElementById('addFuelModal')).hide();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('addFuelModal')).hide();
     getAllFuels();
     refreshFuelSummary();
   } finally { saveBtn.disabled = false; saveBtn.textContent = "Save Fuel"; }
@@ -303,7 +303,7 @@ document.getElementById('editFuelForm').addEventListener('submit', async (e) => 
   const saveBtn = document.getElementById('saveEditFuelBtn'); saveBtn.disabled = true; saveBtn.textContent = "Updating...";
   const success = await updateFuelRecord(fuelId, payload);
   if (success) {
-    bootstrap.Modal.getInstance(document.getElementById('editFuelModal')).hide();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('editFuelModal')).hide();
     showSuccess('Fuel updated successfully');
     refreshFuelSummary();
   }

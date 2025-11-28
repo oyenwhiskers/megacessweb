@@ -308,7 +308,7 @@ if (addUsageForm) {
         saveBtn.textContent = originalText;
 
         if (success) {
-            bootstrap.Modal.getInstance(document.getElementById('addUsageModal')).hide();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addUsageModal')).hide();
             addUsageForm.reset();
             selectedUsageUser = null;
             document.getElementById('usedBy').value = '';
@@ -357,7 +357,7 @@ if (editUsageForm) {
         saveBtn.textContent = originalText;
 
         if (success) {
-            bootstrap.Modal.getInstance(document.getElementById('editUsageModal')).hide();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('editUsageModal')).hide();
             getAllFuelUsages({ search: currentUsageSearch, usageFilter: currentUsageFilter });
             if (window.refreshFuelSummary) window.refreshFuelSummary();
         }

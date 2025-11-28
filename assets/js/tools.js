@@ -240,7 +240,7 @@ document.getElementById('addToolBtn').addEventListener('click', async () => {
         });
 
         showSuccess('Tool added successfully!');
-        bootstrap.Modal.getInstance(document.getElementById('addToolsModal')).hide();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addToolsModal')).hide();
         nameInput.value = '';
         statusInput.value = '';
 
@@ -304,7 +304,7 @@ document.getElementById('updateToolBtn').addEventListener('click', async (e) => 
         });
 
         showSuccess(result.message || 'Tool updated');
-        bootstrap.Modal.getInstance(document.getElementById('updateToolModal')).hide();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolModal')).hide();
 
         getAllTools({ ...toolState });
         refreshToolSummary();

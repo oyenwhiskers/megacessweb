@@ -258,7 +258,7 @@ async function openCreateToolBookingModal() {
   const createModalElement = document.getElementById('createToolBookingModal');
   if (!createModalElement) return showError("Modal element 'createToolBookingModal' not found.");
 
-  const createModal = new bootstrap.Modal(createModalElement);
+  const createModal = bootstrap.Modal.getOrCreateInstance(createModalElement);
   const form = document.getElementById('createToolBookingForm');
   if (form) form.reset();
 
@@ -328,7 +328,7 @@ async function handleCreateToolBookingSubmit(event) {
     btn.textContent = "Create Booking";
     showSuccess('Booking Created!', `New tool booking has been successfully recorded.`);
 
-    const createModalInstance = bootstrap.Modal.getInstance(document.getElementById('createToolBookingModal'));
+    const createModalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('createToolBookingModal'));
     if (createModalInstance) {
       createModalInstance.hide();
     }
@@ -357,7 +357,7 @@ async function openUpdateToolBookingModal(toolbooking) {
   // ensureUpdateToolBookingModalExists(); // Removed
 
   const modalElement = document.getElementById('updateToolBookingModal');
-  const modalInstance = new bootstrap.Modal(modalElement);
+  const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
   const form = document.getElementById('updateToolBookingForm');
 
   form.reset();
@@ -447,7 +447,7 @@ async function handleUpdateToolBookingSubmit(event) {
 
     showSuccess('Booking Updated!', `Tool booking has been updated successfully.`);
 
-    const updateModalInstance = bootstrap.Modal.getInstance(document.getElementById('updateToolBookingModal'));
+    const updateModalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('updateToolBookingModal'));
     if (updateModalInstance) updateModalInstance.hide();
 
     getAllToolBookings({
