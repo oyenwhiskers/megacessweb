@@ -445,6 +445,145 @@
     </div>
   </div>
 
+
+  <!-- View Attendance Modal -->
+  <div class="modal fade" id="viewAttendanceModal" tabindex="-1" aria-labelledby="viewAttendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" style="background: #d4f8d4; border-radius: 16px;">
+        <div class="modal-header" style="border-bottom: none; background: #d4f8d4;">
+          <h5 class="modal-title fw-bold" id="viewAttendanceModalLabel">Manage Attendance &gt; View Attendance</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="background: #d4f8d4;">
+          <div class="d-flex align-items-center mb-3" style="background: #fff; border-radius: 12px; padding: 16px;">
+            <img src="https://ui-avatars.com/api/?name=Ethan+Muller&background=cccccc&color=fff&size=96" alt="Avatar" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;">
+            <div>
+              <div class="fw-bold" style="font-size: 1.25rem;">Ethan Muller</div>
+              <div class="text-muted">Checker</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <select class="form-select w-auto" style="min-width: 160px;">
+              <option selected>Month</option>
+              <option>January</option>
+              <option>February</option>
+              <option>March</option>
+              <option>April</option>
+              <option>May</option>
+              <option>June</option>
+              <option>July</option>
+              <option>August</option>
+              <option>September</option>
+              <option>October</option>
+              <option>November</option>
+              <option>December</option>
+            </select>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="card shadow-sm" style="border-radius: 12px;">
+                <div class="card-body text-center p-3">
+                  <div class="text-muted mb-1" style="font-size: 1rem;">Attendance Rate</div>
+                  <div class="fw-bold" style="font-size: 2rem; color: #176c2f;">92%</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card shadow-sm" style="border-radius: 12px;">
+                <div class="card-body text-center p-3">
+                  <div class="text-muted mb-1" style="font-size: 1rem;">Punctuality Rate</div>
+                  <div class="fw-bold" style="font-size: 2rem; color: #176c2f;">81%</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card shadow-sm" style="border-radius: 12px;">
+                <div class="card-body text-center p-3">
+                  <div class="text-muted mb-1" style="font-size: 1rem;">Number of days absence</div>
+                  <div class="fw-bold" style="font-size: 2rem; color: #176c2f;">7</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Static attendance status list -->
+          <div class="mt-4 p-3" style="background: #d4f8d4; border-radius: 12px;">
+            <!-- Filter controls -->
+            <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+              <button class="btn btn-light fw-bold px-3" style="border-radius: 8px; border: 1px solid #ccc;">All</button>
+              <select class="form-select w-auto" style="min-width: 120px; border-radius: 8px; border: 1px solid #ccc;">
+                <option selected>Month</option>
+                <option>January</option>
+                <option>February</option>
+                <option>March</option>
+                <option>April</option>
+                <option>May</option>
+                <option>June</option>
+                <option>July</option>
+                <option>August</option>
+                <option>September</option>
+                <option>October</option>
+                <option>November</option>
+                <option>December</option>
+              </select>
+              <select class="form-select w-auto" style="min-width: 120px; border-radius: 8px; border: 1px solid #ccc;">
+                <option selected>Status</option>
+                <option>Present</option>
+                <option>Absent</option>
+                <option>Late</option>
+                <option>Annual Leave</option>
+                <option>Sick Leave</option>
+                <option>Unpaid Leave</option>
+              </select>
+            </div>
+            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
+              <div style="width: 32px; height: 100%; background: #b98b8b; border-radius: 8px 0 0 8px;"></div>
+              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">19/10/25</div>
+              <span class="badge d-flex align-items-center" style="background: #b98b8b; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
+                <i class="bi bi-calendar2-x me-1"></i> Unpaid Leave
+              </span>
+            </div>
+            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
+              <div style="width: 32px; height: 100%; background: #176c2f; border-radius: 8px 0 0 8px;"></div>
+              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">20/10/25</div>
+              <span class="badge d-flex align-items-center" style="background: #176c2f; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
+                <i class="bi bi-check2-circle me-1"></i> Present
+              </span>
+            </div>
+            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
+              <div style="width: 32px; height: 100%; background: #1cb3d3; border-radius: 8px 0 0 8px;"></div>
+              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">21/10/25</div>
+              <span class="badge d-flex align-items-center" style="background: #1cb3d3; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
+                <i class="bi bi-clipboard2-pulse me-1"></i> Sick Leave
+              </span>
+            </div>
+            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
+              <div style="width: 32px; height: 100%; background: #d30000; border-radius: 8px 0 0 8px;"></div>
+              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">22/10/25</div>
+              <span class="badge d-flex align-items-center" style="background: #d30000; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
+                <i class="bi bi-x-circle me-1"></i> Absent
+              </span>
+            </div>
+            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
+              <div style="width: 32px; height: 100%; background: #a86a2c; border-radius: 8px 0 0 8px;"></div>
+              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">23/10/25</div>
+              <span class="badge d-flex align-items-center" style="background: #a86a2c; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
+                <i class="bi bi-clock-history me-1"></i> Late
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
+              <div style="width: 32px; height: 100%; background: #174c7c; border-radius: 8px 0 0 8px;"></div>
+              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">24/10/25</div>
+              <span class="badge d-flex align-items-center" style="background: #174c7c; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
+                <i class="bi bi-calendar2-week me-1"></i> Annual Leave
+              </span>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
   <script src="/megacessweb/assets/js/manage_overtime.js?v=1.0"></script>
@@ -452,6 +591,13 @@
   <script src="/megacessweb/assets/js/list_workers_att.js?v=1.7"></script>
   <script src="/megacessweb/assets/js/list_staff_att.js?v=1.3"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
+
+  <script>
+    window.viewAttendanceDetails = function(staffId) {
+      var modal = new bootstrap.Modal(document.getElementById('viewAttendanceModal'));
+      modal.show();
+    };
+  </script>
 
   <style>
     /* Custom scrollbar for leave list */
