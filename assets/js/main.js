@@ -72,7 +72,11 @@
   }
 
   function loadSidebar() {
+<<<<<<< HEAD
 >>>>>>> af1e9aeefb72b774018831e58d1910d543ed03de
+=======
+>>>>>>> roderick
+>>>>>>> development
     var root = document.getElementById('sidebar-root');
     if (!root) {
       initActiveNav();
