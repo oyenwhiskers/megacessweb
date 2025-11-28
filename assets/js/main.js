@@ -24,7 +24,7 @@
     }
   }
 
-<<<<<<< HEAD
+
   // Initialize tabs for Manage Resources pages
   function initTabs() {
     var tabs = document.querySelectorAll('.tab-btn');
@@ -66,21 +66,7 @@
     }
   }
 
-  function loadSidebar() {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af1e9aeefb72b774018831e58d1910d543ed03de
->>>>>>> parent of 7501e6e (Merge branch 'development' into brandon)
-=======
->>>>>>> af1e9aeefb72b774018831e58d1910d543ed03de
->>>>>>> parent of 7501e6e (Merge branch 'development' into brandon)
-=======
-  function initTabs(){
-  }
-
   function loadSidebar(){
->>>>>>> parent of a445673 (Merge branch 'roderick' into development)
     var root = document.getElementById('sidebar-root');
     if(!root){
       initActiveNav();
