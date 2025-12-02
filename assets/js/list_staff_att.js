@@ -216,8 +216,7 @@
                                     <div class="mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <button type="button" class="btn btn-outline-primary" 
-                                                    onclick="viewStaffAttendanceDetails(${record.user_id})" 
-                                                    title="View">
+                                                    title="View Attendance" data-view-user-id="${record.user_id}">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-warning" 
@@ -431,113 +430,6 @@
         }
     }
     
-    // Global functions for staff attendance actions
-    window.viewStaffAttendanceDetails = function(userId) {
-        // Show the staff attendance details modal
-        var modalEl = document.getElementById('viewAttendanceModal');
-        if (!modalEl) {
-            alert('Attendance details modal not found.');
-            return;
-        }
-        var modal = new bootstrap.Modal(modalEl);
-        modal.show();
-
-        // Fetch and display staff info
-        var staffData = getCurrentStaffData(userId);
-        var nameEl = modalEl.querySelector('.worker-name');
-        var roleEl = modalEl.querySelector('.worker-role');
-        var avatarEl = modalEl.querySelector('.worker-avatar');
-        if (staffData) {
-            if (nameEl) nameEl.textContent = staffData.user_name || 'Unknown';
-            if (roleEl) roleEl.textContent = 'Staff';
-            if (avatarEl) {
-                var userImage = staffData.user_img || '';
-                var placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffData.user_name || 'User')}&background=cccccc&color=fff&size=96`;
-                // Always use placeholder if running on localhost or image is missing
-                var isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                if (isLocalhost || !userImage || userImage.length < 5 || userImage.includes('null') || userImage.includes('undefined')) {
-                    avatarEl.src = placeholderImage;
-                } else {
-                    avatarEl.src = userImage;
-                    avatarEl.onerror = function() {
-                        this.src = placeholderImage;
-                        this.onerror = null;
-                    };
-                }
-            }
-        } else {
-            if (nameEl) nameEl.textContent = 'Unknown';
-            if (roleEl) roleEl.textContent = 'Staff';
-            if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=User&background=cccccc&color=fff&size=96`;
-        }
-
-        // Set loading state for analytics
-        document.getElementById('attendanceRateValue').textContent = '...';
-        document.getElementById('punctualityRateValue').textContent = '...';
-        document.getElementById('numberAbsentValue').textContent = '...';
-
-        // Helper to get selected month
-        function getSelectedMonth() {
-            var monthSelect = modalEl.querySelector('.attendance-month-select');
-            if (monthSelect) {
-                var val = monthSelect.value;
-                if (val && val !== 'Month') {
-                    var now = new Date();
-                    var monthNum = monthSelect.selectedIndex;
-                    return `${now.getFullYear()}-${String(monthNum).padStart(2,'0')}`;
-                }
-            }
-            var now = new Date();
-            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-        }
-
-        // Fetch staff attendance analytics
-        async function fetchStaffAttendanceAnalytics(userId, month) {
-            const token = getAuthToken();
-            if (!token) return null;
-            const monthStr = month || getSelectedMonth();
-            try {
-                const response = await fetch(`${API_BASE_URL}/user-attendance/${userId}/analytics?month=${monthStr}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                });
-                if (!response.ok) return null;
-                const data = await response.json();
-                return data && data.data ? data.data : null;
-            } catch (e) {
-                return null;
-            }
-        }
-
-        // Update analytics display
-        async function updateStaffAttendanceAnalytics() {
-            var month = getSelectedMonth();
-            var analytics = await fetchStaffAttendanceAnalytics(userId, month);
-            if (analytics) {
-                document.getElementById('attendanceRateValue').textContent = analytics.attendance_rate + '%';
-                document.getElementById('punctualityRateValue').textContent = analytics.punctuality_rate + '%';
-                document.getElementById('numberAbsentValue').textContent = analytics.number_absent;
-            } else {
-                document.getElementById('attendanceRateValue').textContent = 'N/A';
-                document.getElementById('punctualityRateValue').textContent = 'N/A';
-                document.getElementById('numberAbsentValue').textContent = 'N/A';
-            }
-        }
-
-        updateStaffAttendanceAnalytics();
-        var monthSelect = modalEl.querySelector('.attendance-month-select');
-        if (monthSelect) {
-            monthSelect.onchange = function() {
-                updateStaffAttendanceAnalytics();
-            };
-        }
-    // end viewStaffAttendanceDetails
-    };
-    
     window.markStaffOvertime = function(userId) {
         console.log('Mark overtime for staff user ID:', userId);
         
@@ -584,4 +476,198 @@
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchStaffAttendanceList = fetchStaffAttendanceList;
     
+    // Add delegated event listener for View button
+    if (staffAttendanceView) {
+        staffAttendanceView.addEventListener('click', async function(e) {
+            const viewBtn = e.target.closest('button[data-view-user-id]');
+            if (viewBtn) {
+                const userId = viewBtn.getAttribute('data-view-user-id');
+                // Ensure month is always YYYY-MM
+                let month = new Date().toISOString().slice(0, 7); // Default to current month
+                // If staff data is available, try to use their attendance month if present
+                const staffData = getCurrentStaffData(userId);
+                if (staffData && staffData.month) {
+                    // Only use if matches YYYY-MM
+                    const match = /^\d{4}-\d{2}$/.test(staffData.month) ? staffData.month : null;
+                    if (match) month = staffData.month;
+                }
+                const token = getAuthToken();
+                if (!token) return;
+                // Use userId in API URL
+                const url = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/analytics`);
+                url.searchParams.append('month', month);
+                const headers = {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                try {
+                    const response = await fetch(url, { method: 'GET', headers });
+                    const result = await response.json();
+                    if (result.success && result.data) {
+                        showStaffAnalyticsModal(result.data);
+                    } else {
+                        alert(result.message || 'Failed to load analytics');
+                    }
+                } catch (err) {
+                    alert('Error fetching analytics: ' + err.message);
+                }
+            }
+        });
+    }
+
+    // Helper to show analytics modal
+    function showStaffAnalyticsModal(data) {
+        const staffData = getCurrentStaffData(data.user_id);
+        let avatar = '';
+        if (staffData && staffData.user_img) {
+            let img = staffData.user_img.trim();
+            if (img.startsWith('http')) {
+                avatar = img;
+            } else if (img.startsWith('/')) {
+                avatar = `https://mwms.megacess.com${img}`;
+            } else if (img.length > 4) {
+                avatar = `https://mwms.megacess.com/storage/user-images/${img}`;
+            } else {
+                avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffData.user_name)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
+            }
+        } else {
+            avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffData ? staffData.user_name : 'Staff')}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
+        }
+        const staffName = staffData ? staffData.user_name : 'Staff';
+        const userId = data.user_id; // <-- Fix: get userId from data
+        const currentYear = (data.month || '').split('-')[0] || new Date().getFullYear();
+        const currentMonth = (data.month || '').split('-')[1] || (new Date().getMonth()+1).toString().padStart(2, '0');
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const years = [];
+        const thisYear = new Date().getFullYear();
+        for (let y = thisYear - 5; y <= thisYear + 1; y++) years.push(y);
+        // Attendance records (dummy for now, replace with API if available)
+        let attendanceList = '';
+        if (data.attendance_days && Array.isArray(data.attendance_days)) {
+            attendanceList = data.attendance_days.map(day => {
+                let badgeClass = '';
+                let badgeText = '';
+                switch(day.status) {
+                    case 'Present': badgeClass = 'bg-success'; badgeText = 'Present'; break;
+                    case 'Absent': badgeClass = 'bg-danger'; badgeText = 'Absent'; break;
+                    case 'Sick Leave': badgeClass = 'bg-info'; badgeText = 'Sick Leave'; break;
+                    case 'Unpaid Leave': badgeClass = 'bg-secondary'; badgeText = 'Unpaid Leave'; break;
+                    case 'Annual Leave': badgeClass = 'bg-primary'; badgeText = 'Annual Leave'; break;
+                    case 'Late': badgeClass = 'bg-warning text-dark'; badgeText = 'Late'; break;
+                    default: badgeClass = 'bg-secondary'; badgeText = day.status;
+                }
+                return `<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;background:#fff;border-radius:6px;padding:8px 12px;'>
+                    <span>${day.date}</span>
+                    <span class='badge ${badgeClass}' style='font-size:1rem;'>${badgeText}</span>
+                </div>`;
+            }).join('');
+        } else {
+            attendanceList = '<div class="text-center text-muted">No daily records available.</div>';
+        }
+        // Modal HTML
+        const modalHtml = `
+        <div id='staffAnalyticsModal' class='modal' style='display:block;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:9999;'>
+          <div style='background:#d8f8d8;width:800px;height:376px;margin:40px auto 0 auto;position:relative;border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,0.15);display:flex;flex-direction:column;'>
+            <div style='padding:32px 32px 0 32px;'>
+              <div style='font-size:1.2rem;font-weight:600;margin-bottom:18px;'>Manage Attendance &gt; View Attendance</div>
+              <button onclick="document.getElementById('staffAnalyticsModal').remove()" style='position:absolute;top:24px;right:24px;background:none;border:none;font-size:1.5rem;color:#333;cursor:pointer;'>&times;</button>
+              <div style='background:#fff;border-radius:16px;padding:18px 24px;display:flex;align-items:center;gap:18px;margin-bottom:18px;'>
+                <img src='${avatar}' alt='${staffName}' style='width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;border:2px solid #b2f5b2;'>
+                <div style='font-size:1.1rem;font-weight:600;'>${staffName}</div>
+              </div>
+              <div style='display:flex;gap:12px;margin-bottom:18px;'>
+                <select id='analyticsYear' style='padding:6px 12px;border-radius:6px;border:1px solid #ccc;font-size:1rem;width:100px;'>
+                  ${years.map(y => `<option value='${y}' ${y==currentYear?'selected':''}>${y}</option>`).join('')}
+                </select>
+                <select id='analyticsMonth' style='padding:6px 12px;border-radius:6px;border:1px solid #ccc;font-size:1rem;width:140px;'>
+                  ${months.map((m,i) => `<option value='${(i+1).toString().padStart(2,'0')}' ${parseInt(currentMonth)==(i+1)?'selected':''}>${m}</option>`).join('')}
+                </select>
+              </div>
+              <div style='display:flex;gap:32px;margin-bottom:0;'>
+                <div style='flex:1;background:#fff;border-radius:10px;padding:24px 0;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);'>
+                  <div style='font-size:1.1rem;color:#888;margin-bottom:8px;'>Attendance Rate</div>
+                  <div style='font-size:2rem;font-weight:700;color:#2e7d32;'>${data.attendance_rate || 0}%</div>
+                </div>
+                <div style='flex:1;background:#fff;border-radius:10px;padding:24px 0;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);'>
+                  <div style='font-size:1.1rem;color:#888;margin-bottom:8px;'>Punctuality Rate</div>
+                  <div style='font-size:2rem;font-weight:700;color:#2e7d32;'>${data.punctuality_rate || 0}%</div>
+                </div>
+                <div style='flex:1;background:#fff;border-radius:10px;padding:24px 0;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);'>
+                  <div style='font-size:1.1rem;color:#888;margin-bottom:8px;'>Number of days absence</div>
+                  <div style='font-size:2rem;font-weight:700;color:#2e7d32;'>${data.number_absent || 0}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Year/month dropdown listeners
+        const yearSelect = document.getElementById('analyticsYear');
+        const monthSelect = document.getElementById('analyticsMonth');
+        if (yearSelect && monthSelect) {
+            yearSelect.addEventListener('change', function() {
+                const selectedYear = this.value;
+                const selectedMonth = monthSelect.value;
+                updateStaffAnalytics(userId, selectedYear, selectedMonth); // <-- use userId from above
+            });
+            monthSelect.addEventListener('change', function() {
+                const selectedYear = yearSelect.value;
+                const selectedMonth = this.value;
+                updateStaffAnalytics(userId, selectedYear, selectedMonth); // <-- use userId from above
+            });
+        }
+        
+        // Add custom dropdown arrow styling
+        const dropdownStyle = `
+          <style id='staffAnalyticsModalDropdownStyle'>
+            #staffAnalyticsModal select {
+              appearance: none;
+              -webkit-appearance: none;
+              -moz-appearance: none;
+              background: #fff url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center/18px 18px;
+              padding-right: 36px !important;
+              border: 1px solid #ccc;
+            }
+            #staffAnalyticsModal select:focus {
+              border-color: #2e7d32;
+              outline: none;
+            }
+          </style>
+        `;
+        if (!document.getElementById('staffAnalyticsModalDropdownStyle')) {
+          document.head.insertAdjacentHTML('beforeend', dropdownStyle);
+        }
+    }
+
+    // Update staff analytics data
+    async function updateStaffAnalytics(userId, year, month) {
+        const token = getAuthToken();
+        if (!token) return;
+        // Ensure month is always two digits
+        const monthInt = parseInt(month, 10);
+        const monthStr = monthInt < 10 ? '0' + monthInt : '' + monthInt;
+        const apiMonth = `${year}-${monthStr}`;
+        const url = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/analytics`);
+        url.searchParams.append('month', apiMonth);
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        try {
+            const response = await fetch(url, { method: 'GET', headers });
+            const result = await response.json();
+            if (result.success && result.data) {
+                document.getElementById('staffAnalyticsModal').remove();
+                showStaffAnalyticsModal(result.data);
+            } else {
+                alert(result.message || 'Failed to load analytics');
+            }
+        } catch (err) {
+            alert('Error fetching analytics: ' + err.message);
+        }
+    }
+
 })();
