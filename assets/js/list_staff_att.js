@@ -568,9 +568,9 @@
         // Modal HTML
         const modalHtml = `
         <div id='staffAnalyticsModal' class='modal' style='display:block;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:9999;'>
-          <div style='background:#d8f8d8;width:800px;height:376px;margin:40px auto 0 auto;position:relative;border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,0.15);display:flex;flex-direction:column;'>
+          <div style='background:#e6fae6;width:800px;height:auto;margin:40px auto 0 auto;position:relative;border-radius:24px;box-shadow:0 4px 32px rgba(0,0,0,0.15);display:flex;flex-direction:column;'>
             <div style='padding:32px 32px 0 32px;'>
-              <div style='font-size:1.2rem;font-weight:600;margin-bottom:18px;'>Manage Attendance &gt; View Attendance</div>
+              <div style='font-size:1.4rem;font-weight:700;margin-bottom:18px;color:#226622;'>Manage Attendance &gt; View Attendance</div>
               <button onclick="document.getElementById('staffAnalyticsModal').remove()" style='position:absolute;top:24px;right:24px;background:none;border:none;font-size:1.5rem;color:#333;cursor:pointer;'>&times;</button>
               <div style='background:#fff;border-radius:16px;padding:18px 24px;display:flex;align-items:center;gap:18px;margin-bottom:18px;'>
                 <img src='${avatar}' alt='${staffName}' style='width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;border:2px solid #b2f5b2;'>
@@ -598,6 +598,45 @@
                   <div style='font-size:2rem;font-weight:700;color:#2e7d32;'>${data.number_absent || 0}</div>
                 </div>
               </div>
+              <!-- Static display below analytics -->
+              <div style='margin-top:32px;'>
+                <div style='display:flex;gap:12px;margin-bottom:18px;'>
+                  <button style='padding:8px 18px;border-radius:8px;border:none;background:#fff;font-weight:600;font-size:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.04);color:#222;'>All</button>
+                  <select style='padding:8px 18px;border-radius:8px;border:none;background:#fff;font-weight:500;font-size:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.04);color:#222;'>
+                    <option>Month</option>
+                  </select>
+                  <select style='padding:8px 18px;border-radius:8px;border:none;background:#fff;font-weight:500;font-size:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.04);color:#222;'>
+                    <option>Status</option>
+                  </select>
+                </div>
+                <div style='display:flex;flex-direction:column;gap:12px;'>
+                  <div style='display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:12px 24px;'>
+                    <span style='font-size:1.1rem;'>19/10/25</span>
+                    <span style='background:#e2cfc7;color:#7c5e57;font-weight:600;padding:6px 18px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:1rem;'><i class='bi bi-calendar2-x' style='font-size:1.1rem;'></i> Unpaid Leave</span>
+                  </div>
+                  <div style='display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:12px 24px;'>
+                    <span style='font-size:1.1rem;'>20/10/25</span>
+                    <span style='background:#2e7d32;color:#fff;font-weight:600;padding:6px 18px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:1rem;'><i class='bi bi-check-circle' style='font-size:1.1rem;'></i> Present</span>
+                  </div>
+                  <div style='display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:12px 24px;'>
+                    <span style='font-size:1.1rem;'>21/10/25</span>
+                    <span style='background:#1da1f2;color:#fff;font-weight:600;padding:6px 18px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:1rem;'><i class='bi bi-thermometer-half' style='font-size:1.1rem;'></i> Sick Leave</span>
+                  </div>
+                  <div style='display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:12px 24px;'>
+                    <span style='font-size:1.1rem;'>22/10/25</span>
+                    <span style='background:#e53935;color:#fff;font-weight:600;padding:6px 18px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:1rem;'><i class='bi bi-x-circle' style='font-size:1.1rem;'></i> Absent</span>
+                  </div>
+                  <div style='display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:12px 24px;'>
+                    <span style='font-size:1.1rem;'>23/10/25</span>
+                    <span style='background:#bfa46f;color:#fff;font-weight:600;padding:6px 18px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:1rem;'><i class='bi bi-clock-history' style='font-size:1.1rem;'></i> Late</span>
+                  </div>
+                  <div style='display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:12px 24px;'>
+                    <span style='font-size:1.1rem;'>24/10/25</span>
+                    <span style='background:#1a4d7a;color:#fff;font-weight:600;padding:6px 18px;border-radius:8px;display:flex;align-items:center;gap:6px;font-size:1rem;'><i class='bi bi-calendar2-week' style='font-size:1.1rem;'></i> Annual Leave</span>
+                  </div>
+                </div>
+              </div>
+              <!-- End static display -->
             </div>
           </div>
         </div>`;
