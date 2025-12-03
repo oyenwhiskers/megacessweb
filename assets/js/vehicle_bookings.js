@@ -12,13 +12,14 @@ let bookingPaginationState = {
 
 // ==================== DATA FETCHING ====================
 
+// for dropdown in modal
 async function fetchVehicle() {
     try {
-        let allData = [];
-        let page = 1;
-        let lastPage = 1;
+        let allData = []; // Array to store all vehicle data
+        let page = 1; // Current page
+        let lastPage = 1; // Last page
 
-        const availabilityFilter = 'status=Available';
+        const availabilityFilter = 'status=Available'; // Filter for available vehicles
 
         do {
             const result = await apiFetch(`/vehicles?${availabilityFilter}&page=${page}`);
@@ -44,6 +45,7 @@ async function fetchVehicle() {
     }
 }
 
+// for dropdown in modal
 async function fetchUserAndStaff() {
     try {
         const result = await apiFetch("/users-and-staff");
