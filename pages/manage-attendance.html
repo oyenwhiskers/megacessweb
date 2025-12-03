@@ -512,78 +512,12 @@
             </div>
           </div>
           <!-- Static attendance status list -->
-          <div class="mt-4 p-3" style="background: #d4f8d4; border-radius: 12px;">
-            <!-- Filter controls -->
-            <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
-              <button class="btn btn-light fw-bold px-3" style="border-radius: 8px; border: 1px solid #ccc;">All</button>
-              <select class="form-select w-auto" style="min-width: 120px; border-radius: 8px; border: 1px solid #ccc;">
-                <option selected>Month</option>
-                <option>January</option>
-                <option>February</option>
-                <option>March</option>
-                <option>April</option>
-                <option>May</option>
-                <option>June</option>
-                <option>July</option>
-                <option>August</option>
-                <option>September</option>
-                <option>October</option>
-                <option>November</option>
-                <option>December</option>
-              </select>
-              <select class="form-select w-auto" style="min-width: 120px; border-radius: 8px; border: 1px solid #ccc;">
-                <option selected>Status</option>
-                <option>Present</option>
-                <option>Absent</option>
-                <option>Late</option>
-                <option>Annual Leave</option>
-                <option>Sick Leave</option>
-                <option>Unpaid Leave</option>
-              </select>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #b98b8b; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">19/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #b98b8b; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-calendar2-x me-1"></i> Unpaid Leave
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #176c2f; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">20/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #176c2f; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-check2-circle me-1"></i> Present
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #1cb3d3; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">21/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #1cb3d3; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-clipboard2-pulse me-1"></i> Sick Leave
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #d30000; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">22/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #d30000; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-x-circle me-1"></i> Absent
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #a86a2c; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">23/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #a86a2c; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-clock-history me-1"></i> Late
-              </span>
-            </div>
-            <div style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #174c7c; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">24/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #174c7c; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-calendar2-week me-1"></i> Annual Leave
-              </span>
-            </div>
-          </div>
+          <!-- Removed attendance status list display below analytics -->
+
+          <!-- Add below analytics cards in View Attendance modal -->
+          <div id="attendanceRecordsList" class="mt-4">
+            <h6 class="fw-bold mb-2">Attendance Records</h6>
+            <div id="attendanceRecordsTable" class="table-responsive"></div>
           </div>
         </div>
       </div>
@@ -689,6 +623,63 @@
       }
     }
 
+    // Fetch and display attendance records for workers
+    async function fetchWorkerAttendanceRecords(workerId, month) {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token') || sessionStorage.getItem('authToken') || sessionStorage.getItem('auth_token') || '';
+      if (!token) return [];
+      let url = `https://mwms.megacess.com/api/v1/staff-attendance/${workerId}/records`;
+      if (month) {
+        url += `?month=${month}`;
+      }
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data && data.data && data.data.data ? data.data.data : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function renderAttendanceRecordsTable(records) {
+      const tableDiv = document.getElementById('attendanceRecordsTable');
+      if (!tableDiv) return;
+      if (!records || records.length === 0) {
+        tableDiv.innerHTML = '<div class="text-muted">No attendance records found for this month.</div>';
+        return;
+      }
+      let html = '<table class="table table-bordered table-sm align-middle mb-0">';
+      html += '<thead><tr>' +
+        '<th>Date</th>' +
+        '<th>Status</th>' +
+        '<th>Check In</th>' +
+        '<th>Check Out</th>' +
+        '<th>Checked In By</th>' +
+        '<th>Checked Out By</th>' +
+        '<th>Remarks</th>' +
+        '</tr></thead><tbody>';
+      records.forEach(r => {
+        html += `<tr>
+          <td>${r.date || ''}</td>
+          <td>${r.status || ''}</td>
+          <td>${r.check_in ? r.check_in.split(' ')[1] : ''}</td>
+          <td>${r.check_out ? r.check_out.split(' ')[1] : ''}</td>
+          <td>${r.checkedin_by || ''}</td>
+          <td>${r.checkedout_by || ''}</td>
+          <td>${r.remark_late || r.notes || ''}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      tableDiv.innerHTML = html;
+    }
+
     window.viewAttendanceDetails = async function(staffId) {
       var modalEl = document.getElementById('viewAttendanceModal');
       var modal = new bootstrap.Modal(modalEl);
@@ -750,11 +741,36 @@
       document.getElementById('numberAbsentValue').textContent = '...';
 
       updateAttendanceAnalyticsByMonth(staffId);
+      // Fetch and render attendance records for workers
+      async function updateRecords() {
+        var monthSelect = modalEl.querySelector('.attendance-month-select');
+        var yearSelect = modalEl.querySelector('.attendance-year-select');
+        var selectedYear = yearSelect && yearSelect.value !== 'Year' ? yearSelect.value : new Date().getFullYear();
+        var monthMap = {
+          'January': 1,
+          'February': 2,
+          'March': 3,
+          'April': 4,
+          'May': 5,
+          'June': 6,
+          'July': 7,
+          'August': 8,
+          'September': 9,
+          'October': 10,
+          'November': 11,
+          'December': 12
+        };
+        var selectedMonth = monthSelect && monthMap[monthSelect.value] ? String(monthMap[monthSelect.value]).padStart(2,'0') : String(new Date().getMonth()+1).padStart(2,'0');
+        var monthStr = `${selectedYear}-${selectedMonth}`;
+        const records = await fetchWorkerAttendanceRecords(staffId, monthStr);
+        renderAttendanceRecordsTable(records);
+      }
+      await updateRecords();
       var monthSelect = modalEl.querySelector('.attendance-month-select');
       var yearSelect = modalEl.querySelector('.attendance-year-select');
       if (monthSelect && yearSelect) {
-        monthSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); };
-        yearSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); };
+        monthSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); updateRecords(); };
+        yearSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); updateRecords(); };
       }
     };
 
