@@ -143,6 +143,7 @@ function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, rende
     return allItems;
   }
 
+  // To show dropdown items
   function showDropdown(list) {
     dropdownEl.innerHTML = '';
     if (!list.length) {
@@ -164,6 +165,7 @@ function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, rende
     dropdownEl.style.display = 'block';
   }
 
+  // for dropdown in modal
   const openDropdown = async () => {
     const items = await loadItems();
     const search = inputEl.value.toLowerCase();

@@ -21,6 +21,7 @@ async function fetchVehicle() {
 
         const availabilityFilter = 'status=Available'; // Filter for available vehicles
 
+        // fetch all available vehicles until the last page
         do {
             const result = await apiFetch(`/vehicles?${availabilityFilter}&page=${page}`);
             if (result.success) {
@@ -33,6 +34,8 @@ async function fetchVehicle() {
             }
         } while (page <= lastPage);
 
+        // takes each vehicle, copies all its data, and adds a new field called name
+        // that combines the vehicle name and plate number.
         allVehicles = allData.map(v => ({
             ...v,
             name: `${v.vehicle_name} (${v.plate_number})`
@@ -69,6 +72,7 @@ async function fetchUserAndStaff() {
 
 // ==================== MAIN TABLE LOGIC ====================
 
+// Get all vehicle bookings
 async function getAllVehicleBookings({ search = '', bookingFilter = '', page = 1, per_page = 10 } = {}) {
     const loading = document.getElementById('loadingBooking');
     const tableBody = document.getElementById('vehicleBookingTableBody');
@@ -136,6 +140,7 @@ async function getAllVehicleBookings({ search = '', bookingFilter = '', page = 1
     }
 }
 
+// Render the booking table
 function populateVehicleBookingTable(bookings) {
     const tableBody = document.getElementById('vehicleBookingTableBody');
     if (!tableBody) return;
@@ -169,11 +174,13 @@ function populateVehicleBookingTable(bookings) {
 
 // ==================== PAGINATION ====================
 
+// Update pagination controls
 function updateBookingPaginationControls(meta) {
     bookingPaginationState = { ...bookingPaginationState, currentPage: meta.current_page, lastPage: meta.last_page };
     renderBookingPagination(meta.current_page, meta.last_page);
 }
 
+// Render pagination controls
 function renderBookingPagination(current, last) {
     const container = document.getElementById('vehicleBookingPagination');
     if (!container) return;
@@ -266,6 +273,7 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchUserAndStaff();
 
     // 2. Setup Autocompletes (Create Modal)
+    // vehicle
     initSearchableDropdown(
         document.getElementById("bookingVehicleInput"),
         document.getElementById("vehicleDropdown"),
@@ -275,6 +283,7 @@ window.addEventListener('DOMContentLoaded', () => {
         (v, text) => v.vehicle_name.toLowerCase().includes(text) || v.plate_number.toLowerCase().includes(text)
     );
 
+    // user and staff
     initSearchableDropdown(
         document.getElementById("usedBy"),
         document.getElementById("usedByDropdown"),
@@ -289,6 +298,7 @@ window.addEventListener('DOMContentLoaded', () => {
     );
 
     // 3. Setup Autocompletes (Update Modal)
+    // vehicle
     initSearchableDropdown(
         document.getElementById("updateBookingVehicleInput"),
         document.getElementById("updateVehicleDropdown"),
@@ -298,6 +308,7 @@ window.addEventListener('DOMContentLoaded', () => {
         (v, text) => v.vehicle_name.toLowerCase().includes(text) || v.plate_number.toLowerCase().includes(text)
     );
 
+    // user and staff
     initSearchableDropdown(
         document.getElementById("updateUsedBy"),
         document.getElementById("updateUsedByDropdown"),

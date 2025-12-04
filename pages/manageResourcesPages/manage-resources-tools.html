@@ -120,161 +120,68 @@
         </div>
       </div>
 
-      <!-- Row 3: Tabs -->
-      <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
-        <!-- Tab Selection -->
-        <div class="btn-group" role="group">
-          <a href="#" class="tab-btn active d-flex align-items-center" data-target="tools">
-            <i class="bi bi-tools me-2"></i>
-            Tools
-          </a>
-          <a href="#" class="tab-btn d-flex align-items-center" data-target="booking">
-            <i class="bi bi-calendar-check me-2"></i>
-            Booking
-          </a>
+      <!-- Row 2: Tools List Header -->
+      <div class="px-4 mb-4">
+        <h5 class="fw-semibold mb-3">List of Tools :</h5>
+
+        <!-- Search Bar + Filter + Add Button -->
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+          <!-- Search Bar -->
+          <div class="flex-grow-1">
+            <div class="input-group">
+              <input type="text" id="toolSearch" class="form-control" placeholder="Search spare parts...">
+              <button class="btn btn-secondary" id="refreshToolBtn" type="button">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Dropdown -->
+          <div>
+            <select id='toolStatus' class="form-select">
+              <option selected value="">All Status</option>
+              <option value="Available">Available</option>
+              <option value="In Use">In Use</option>
+              <option value="Broken">Broken</option>
+            </select>
+          </div>
+
+          <!-- Add Tools Button -->
+          <div>
+            <button id="addToolBookingBtn" type="button" class="btn btn-primary d-flex align-items-center"
+              data-bs-toggle="modal" data-bs-target="#addToolsModal">
+              <i class="bi bi-plus-circle me-2"></i>
+              Add Tools
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Tab Content for Tools and Booking -->
-      <div class="tab-content">
-        <!-- Tools Tab -->
-        <div class="tab-pane" data-name="tools">
-          <!-- Row 2: Tools List Header -->
-          <div class="px-4 mb-4">
-            <h5 class="fw-semibold mb-3">List of Tools :</h5>
-
-            <!-- Search Bar + Filter + Add Button -->
-            <div class="d-flex flex-wrap gap-3 align-items-center">
-              <!-- Search Bar -->
-              <div class="flex-grow-1">
-                <div class="input-group">
-                  <input type="text" id="toolSearch" class="form-control" placeholder="Search tool...">
-                  <button class="btn btn-secondary" id="refreshToolBtn" type="button">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                  </button>
-                </div>
-              </div>
-
-              <!-- Filter Dropdown -->
-              <div>
-                <select id='toolStatus' class="form-select">
-                  <option selected value="">All Status</option>
-                  <option value="Available">Available</option>
-                  <option value="In Use">In Use</option>
-                  <option value="Broken">Broken</option>
-                </select>
-              </div>
-
-              <!-- Add Tools Button -->
-              <div>
-                <button id="addToolBookingBtn" type="button" class="btn btn-primary d-flex align-items-center"
-                  data-bs-toggle="modal" data-bs-target="#addToolsModal">
-                  <i class="bi bi-plus-circle me-2"></i>
-                  Add Tools
-                </button>
-              </div>
-            </div>
+      <!-- Row 3: Tools Table -->
+      <div class="mt-4 px-4">
+        <div class="content-table mt-4">
+          <!-- Table Header -->
+          <div class="content-row content-header d-flex fw-bold border-bottom py-2">
+            <div class="col-4">Spare Part</div>
+            <div class="col-4">Using In</div>
+            <div class="col-4 text-center">Action</div>
           </div>
 
-          <!-- Row 3: Tools Table -->
-          <div class="mt-4 px-4">
-            <div class="content-table mt-4">
-              <!-- Table Header -->
-              <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                <div class="col-4">Tool Name</div>
-                <div class="col-4">Status</div>
-                <div class="col-4 text-center">Action</div>
-              </div>
-
-              <!-- 🔄 Loading indicator -->
-              <div id="loading" class="text-center my-3" style="display: none;">
-                <div class="spinner-border text-success" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-              </div>
-              <!-- Table Body -->
-              <div id="toolsTableBody" style="padding-bottom: 70px;"></div>
-
-              <!-- Pagination (Tailwind-like style requested) -->
-              <nav aria-label="Page navigation" style="padding-bottom: 35px;">
-                <ul id="toolPagination" class="pagination justify-content-center mb-0">
-                  <!-- JS will render Previous, page numbers, Next here -->
-                </ul>
-              </nav>
+          <!-- 🔄 Loading indicator -->
+          <div id="loading" class="text-center my-3" style="display: none;">
+            <div class="spinner-border text-success" role="status">
+              <span class="visually-hidden">Loading...</span>
             </div>
           </div>
-        </div>
+          <!-- Table Body -->
+          <div id="toolsTableBody" style="padding-bottom: 70px;"></div>
 
-        <!-- Booking Tab -->
-        <div class="tab-pane" data-name="booking">
-          <div class="tab-pane" data-name="booking">
-            <div class="px-4 mb-4">
-              <!-- Title -->
-              <h5 class="fw-semibold mb-3">List of Tool Bookings :</h5>
-
-              <!-- Search Bar + Filter + Add Button -->
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <!-- Search Bar -->
-                <div class="flex-grow-1">
-                  <div class="input-group">
-                    <input id="toolBookingSearch" type="text" class="form-control" placeholder="Search tools...">
-                    <button class="btn btn-secondary" id="refreshToolBookingBtn" type="button">
-                      <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Filter Dropdown -->
-                <div>
-                  <select id="toolBookingSort" class="form-select">
-                    <option selected value="">Sort by...</option>
-                    <option value="booking-asc">Booking Date ↑ (asc)</option>
-                    <option value="booking-desc">Booking Date ↓ (desc)</option>
-                    <option value="return-asc">Return Date ↑ (asc)</option>
-                    <option value="return-desc">Return Date ↓ (desc)</option>
-                  </select>
-                </div>
-
-                <!-- Add Booking Button -->
-                <div>
-                  <button id="addNewToolBookingBtn" class="btn btn-primary d-flex align-items-center">
-                    <i class="bi bi-plus-circle me-2"></i> Add Booking
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-4 px-4">
-              <!-- Tool Table-like Div -->
-              <div class="content-table mt-4">
-
-                <!-- Table Header -->
-                <div class="content-row content-header d-flex fw-bold border-bottom py-2">
-                  <div class="col">Tool Name</div>
-                  <div class="col">Assigned Person</div>
-                  <div class="col">Booking Date</div>
-                  <div class="col">Return Date</div>
-                  <div class="col text-center">Action</div>
-                </div>
-
-                <!-- loading -->
-                <div id="loadingToolBooking" class="text-center my-3" style="display: none;">
-                  <div class="spinner-border text-success" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-                <!-- Table Body -->
-                <div id="toolBookingTableBody" style="padding-bottom: 70px;"></div>
-
-                <!-- Pagination -->
-                <nav aria-label="Page navigation" style="padding-bottom: 35px;">
-                  <ul id="toolBookingPagination" class="pagination justify-content-center mb-0">
-                    <!-- JS will render Previous, page numbers, Next here -->
-                  </ul>
-                </nav>
-              </div>
-            </div>
-          </div>
+          <!-- Pagination (Tailwind-like style requested) -->
+          <nav aria-label="Page navigation" style="padding-bottom: 35px;">
+            <ul id="toolPagination" class="pagination justify-content-center mb-0">
+              <!-- JS will render Previous, page numbers, Next here -->
+            </ul>
+          </nav>
         </div>
       </div>
 
@@ -282,7 +189,7 @@
     <!-- End of Main Content -->
   </div>
 
-  <!-- Add tool Modal -->
+  <!-- Add Spare Part Modal -->
   <div class="modal fade" id="addToolsModal" tabindex="-1" aria-labelledby="addToolsModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -306,19 +213,18 @@
               <input type="text" class="form-control" id="toolName" placeholder="Enter tool name" required>
             </div>
 
-            <!-- Status -->
+            <!-- Vehicle -->
             <div class="mb-3">
-              <label for="toolStatusModal" class="form-label fw-semibold">
-                Status
+              <label for="toolVehicleInput" class="form-label fw-semibold">
+                Vehicle
                 <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                  data-bs-title="Select the status of the tool."></i>
+                  data-bs-title="Select the vehicle the spare part is associated with."></i>
               </label>
-              <select id="toolStatusModal" class="form-select" required>
-                <option value="" selected>Choose status</option>
-                <option value="Available">Available</option>
-                <option value="In Use">In Use</option>
-                <option value="Broken">Broken</option>
-              </select>
+              <input type="text" class="form-control" id="toolVehicleInput" placeholder="Enter or select a vehicle"
+                required autocomplete="off">
+
+              <!-- DROPDOWN -->
+              <ul class="dropdown-menu w-100" id="toolVehicleDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
             </div>
           </form>
         </div>
@@ -509,19 +415,8 @@
   <script src="/megacessweb/assets/js/tool_bookings.js"></script>
 
   <script>
-    $(document).ready(function () {
-      // --- Tab Handling ---
-      $(".tab-pane").first().show();
-      $(".tab-btn").click(function () {
-        const target = $(this).data("target");
-        $(".tab-pane").hide();
-        $(`.tab-pane[data-name="${target}"]`).show();
-        $(".tab-btn").removeClass("active");
-        $(this).addClass("active");
-      });
-    });
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el))
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
   </script>
   <!-- Loading overlay spinner at the very end of body -->
   <div id="loadingOverlay" class="loading-overlay d-none">
