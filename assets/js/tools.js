@@ -272,7 +272,6 @@ window.refreshToolSummary = refreshToolSummary;
 // ==================== CRUD OPERATIONS ====================
 
 // CREATE TOOL
-// CREATE TOOL
 document.getElementById("addToolBtn").addEventListener("click", async (e) => {
   e.preventDefault();
   const nameInput = document.getElementById("toolName");
@@ -281,7 +280,7 @@ document.getElementById("addToolBtn").addEventListener("click", async (e) => {
 
   const payload = {
     name: nameInput.value.trim(),
-    vehicle_id: vehicleInput.dataset.selectedId || null
+    vehicle_id: vehicleInput.dataset.selectedId || null,
   };
 
   if (!payload.name) {
@@ -290,7 +289,6 @@ document.getElementById("addToolBtn").addEventListener("click", async (e) => {
 
   btn.disabled = true;
   btn.textContent = "Adding...";
-  console.log(payload);
 
   try {
     const result = await apiFetch("/tools", {
@@ -343,8 +341,13 @@ function openUpdateModal(tool) {
   );
 
   document.getElementById("updateToolName").value = tool.name;
-  document.getElementById("updateToolVehicleInput").dataset.selectedId =
-    tool.vehicle.id;
+  if (tool.vehicle) {
+    document.getElementById("updateToolVehicleInput").value =
+      tool.vehicle.vehicle_name || null;
+  } else {
+    document.getElementById("updateToolVehicleInput").value = null;
+    delete document.getElementById("updateToolVehicleInput").dataset.selectedId;
+  }
 
   // Store ID on the update button for reference
   document.getElementById("updateToolBtn").dataset.id = tool.id;
@@ -358,12 +361,14 @@ document
   .addEventListener("click", async (e) => {
     const toolId = e.target.dataset.id;
     const name = document.getElementById("updateToolName").value.trim();
-    const vehicleId = document.getElementById("updateToolVehicleInput").dataset
-      .selectedId;
+    let vehicleId = null;
+    if (!document.getElementById("updateToolVehicleInput").value)
+      vehicleId = document.getElementById("updateToolVehicleInput").value;
+    else vehicleId = document.getElementById("updateToolVehicleInput").dataset.selectedId;
     const btn = e.target;
 
     if (!toolId) return;
-    if (!name && !vehicleId) return showError("Nothing to update.");
+    if (!name) return showError("Please enter a spare part name.");
 
     btn.disabled = true;
     btn.textContent = "Updating...";
@@ -371,7 +376,7 @@ document
     try {
       const result = await apiFetch(`/tools/${toolId}`, {
         method: "PUT",
-        body: JSON.stringify({ tool_name: name, vehicle_id: vehicleId }),
+        body: JSON.stringify({ name: name, vehicle_id: vehicleId }),
       });
 
       showSuccess(result.message || "Tool updated");
