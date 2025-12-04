@@ -242,7 +242,7 @@ async function refreshToolSummary() {
       const stats = result.data.tools_analytics;
       animateCount(
         document.getElementById("totalToolsValue"),
-        Number(stats.total_tools) || 0,
+        Number(stats.total_spare_parts) || 0,
         1200
       );
       animateCount(
@@ -252,12 +252,7 @@ async function refreshToolSummary() {
       );
       animateCount(
         document.getElementById("inUseToolsValue"),
-        Number(stats.in_use) || 0,
-        1200
-      );
-      animateCount(
-        document.getElementById("brokenToolsValue"),
-        Number(stats.broken) || 0,
+        Number(stats.used) || 0,
         1200
       );
     }

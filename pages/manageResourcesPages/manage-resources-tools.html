@@ -51,11 +51,11 @@
       <div class="container my-4 mb-4 px-4 mt-4">
         <div class="row g-4">
           <!-- Total Tools -->
-          <div class="col-md-3 col-sm-6">
+          <div class="col-md-4 col-sm-6">
             <div class="card text-white bg-primary shadow-sm stat-card">
               <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
-                  <h6 class="card-title mb-1">Total Tools</h6>
+                  <h6 class="card-title mb-1">Total Spare Parts</h6>
                   <h3 class="mb-0">
                     <span id="totalToolsValue">-</span>
                     <span id="totalToolsSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
@@ -68,7 +68,7 @@
           </div>
 
           <!-- Available -->
-          <div class="col-md-3 col-sm-6">
+          <div class="col-md-4 col-sm-6">
             <div class="card text-white bg-success shadow-sm stat-card">
               <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
@@ -85,7 +85,7 @@
           </div>
 
           <!-- In Use -->
-          <div class="col-md-3 col-sm-6">
+          <div class="col-md-4 col-sm-6">
             <div class="card text-white bg-warning text-dark shadow-sm stat-card">
               <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
@@ -97,23 +97,6 @@
                   </h3>
                 </div>
                 <i class="bi bi-gear fs-1"></i>
-              </div>
-            </div>
-          </div>
-
-          <!-- Broken -->
-          <div class="col-md-3 col-sm-6">
-            <div class="card text-white bg-danger shadow-sm stat-card">
-              <div class="card-body d-flex align-items-center justify-content-between">
-                <div>
-                  <h6 class="card-title mb-1">Broken</h6>
-                  <h3 class="mb-0">
-                    <span id="brokenToolsValue">-</span>
-                    <span id="brokenToolsSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
-                      role="status" aria-hidden="true"></span>
-                  </h3>
-                </div>
-                <i class="bi bi-tools fs-1"></i>
               </div>
             </div>
           </div>
@@ -139,10 +122,9 @@
           <!-- Filter Dropdown -->
           <div>
             <select id='toolStatus' class="form-select">
-              <option selected value="">All Status</option>
-              <option value="Available">Available</option>
-              <option value="In Use">In Use</option>
-              <option value="Broken">Broken</option>
+              <option selected value="">Sort By</option>
+              <option value="available">Available</option>
+              <option value="used">In Use</option>
             </select>
           </div>
 
@@ -151,7 +133,7 @@
             <button type="button" class="btn btn-primary d-flex align-items-center"
               data-bs-toggle="modal" data-bs-target="#addToolsModal">
               <i class="bi bi-plus-circle me-2"></i>
-              Add Tools
+              Add Spare Part
             </button>
           </div>
         </div>
