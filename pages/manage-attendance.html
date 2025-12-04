@@ -648,6 +648,46 @@
       }
     }
 
+    function getStatusBadge(status) {
+      switch (status) {
+        case 'Present':
+          return '<span class="badge" style="background:#198754;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-check2 me-1"></i>Present</span>';
+        case 'Absent':
+          return '<span class="badge" style="background:#dc3545;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-x-lg me-1"></i>Absent</span>';
+        case 'Late':
+          return '<span class="badge" style="background:#a86b32;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-alarm me-1"></i>Late</span>';
+        case 'Annual Leave':
+        case 'annual_leave':
+          return '<span class="badge" style="background:#0d6efd;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-calendar2-week me-1"></i>Annual Leave</span>';
+        case 'Sick Leave':
+        case 'sick_leave':
+          return '<span class="badge" style="background:#0dcaf0;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-thermometer-half me-1"></i>Sick Leave</span>';
+        case 'Unpaid Leave':
+        case 'unpaid_leave':
+          return '<span class="badge" style="background:#e6bfc0;color:#b94a48;font-weight:500;font-size:1rem;"><i class="bi bi-calendar-x me-1"></i>Unpaid Leave</span>';
+        case 'Check_in':
+          return '<span class="badge" style="background:#6c757d;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-box-arrow-in-right me-1"></i>Check In</span>';
+        default:
+          return `<span class="badge bg-secondary" style="font-weight:500;font-size:1rem;">${status}</span>`;
+      }
+    }
+
+    function getStatusBorderColor(status) {
+      switch (status) {
+        case 'Present': return '#198754';
+        case 'Absent': return '#dc3545';
+        case 'Late': return '#a86b32';
+        case 'Annual Leave':
+        case 'annual_leave': return '#0d6efd';
+        case 'Sick Leave':
+        case 'sick_leave': return '#0dcaf0';
+        case 'Unpaid Leave':
+        case 'unpaid_leave': return '#b94a48';
+        case 'Check_in': return '#6c757d';
+        default: return '#6c757d';
+      }
+    }
+
     function renderAttendanceRecordsTable(records) {
       const tableDiv = document.getElementById('attendanceRecordsTable');
       if (!tableDiv) return;
@@ -655,28 +695,34 @@
         tableDiv.innerHTML = '<div class="text-muted">No attendance records found for this month.</div>';
         return;
       }
-      let html = '<table class="table table-bordered table-sm align-middle mb-0">';
-      html += '<thead><tr>' +
-        '<th>Date</th>' +
-        '<th>Status</th>' +
-        '<th>Check In</th>' +
-        '<th>Check Out</th>' +
-        '<th>Checked In By</th>' +
-        '<th>Checked Out By</th>' +
-        '<th>Remarks</th>' +
-        '</tr></thead><tbody>';
-      records.forEach(r => {
-        html += `<tr>
-          <td>${r.date || ''}</td>
-          <td>${r.status || ''}</td>
-          <td>${r.check_in ? r.check_in.split(' ')[1] : ''}</td>
-          <td>${r.check_out ? r.check_out.split(' ')[1] : ''}</td>
-          <td>${r.checkedin_by || ''}</td>
-          <td>${r.checkedout_by || ''}</td>
-          <td>${r.remark_late || r.notes || ''}</td>
-        </tr>`;
+      // Filter records by allowed statuses
+      const allowedStatuses = [
+        'Present',
+        'Absent',
+        'Late',
+        'Annual Leave',
+        'annual_leave',
+        'Unpaid Leave',
+        'unpaid_leave',
+        'Sick Leave',
+        'sick_leave',
+        'Sick Leave (MC)',
+        'MC'
+      ];
+      const filteredRecords = records.filter(r => allowedStatuses.includes(r.status));
+      if (filteredRecords.length === 0) {
+        tableDiv.innerHTML = '<div class="text-muted">No attendance records found for this month.</div>';
+        return;
+      }
+      let html = '<div class="attendance-records-list" style="max-height: 370px; overflow-y: auto;">';
+      filteredRecords.forEach(r => {
+        let borderColor = getStatusBorderColor(r.status);
+        html += `<div class="attendance-record-card d-flex align-items-center justify-content-between mb-2" style="border:1px solid #b6b6b6;border-left:16px solid ${borderColor};background:#fff;padding:0.75rem 1rem;min-height:56px;border-radius:6px;">
+          <div class="fw-bold" style="font-size:1.15rem;">${r.date ? r.date.replace(/-/g,'/') : ''}</div>
+          <div class="ms-auto">${getStatusBadge(r.status)}</div>
+        </div>`;
       });
-      html += '</tbody></table>';
+      html += '</div>';
       tableDiv.innerHTML = html;
     }
 
@@ -960,13 +1006,13 @@
           avatar.src = imageSrc;
           avatar.onerror = function() {
             // Fallback to placeholder if image fails to load
-            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
             this.src = placeholderImage;
             this.onerror = null; // Prevent infinite loop
           };
         } else {
           // Generate placeholder avatar for invalid or missing images
-          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
           avatar.src = placeholderImage;
           avatar.onerror = null; // Clear any previous error handler
         }
@@ -1054,13 +1100,13 @@
           avatar.src = imageSrc;
           avatar.onerror = function() {
             // Fallback to placeholder if image fails to load
-            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
             this.src = placeholderImage;
             this.onerror = null; // Prevent infinite loop
           };
         } else {
           // Generate placeholder avatar for invalid or missing images
-          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
           avatar.src = placeholderImage;
           avatar.onerror = null; // Clear any previous error handler
         }
@@ -1479,6 +1525,7 @@
       }
 
       // Note: Filter functionality is now handled in manage_overtime.js
+
     })();
   </script>
 </body>
