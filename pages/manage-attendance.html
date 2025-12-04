@@ -515,8 +515,39 @@
           <!-- Removed attendance status list display below analytics -->
 
           <!-- Add below analytics cards in View Attendance modal -->
+          <!-- Attendance Records Filter -->
           <div id="attendanceRecordsList" class="mt-4">
             <h6 class="fw-bold mb-2">Attendance Records</h6>
+            <div class="d-flex gap-2 align-items-center mb-2">
+              <select class="form-select w-auto attendance-records-year-select" style="min-width: 100px;">
+                <option>2023</option>
+                <option>2024</option>
+                <option selected>2025</option>
+              </select>
+              <select class="form-select w-auto attendance-records-month-select" style="min-width: 160px;">
+                <option>January</option>
+                <option>February</option>
+                <option>March</option>
+                <option>April</option>
+                <option>May</option>
+                <option>June</option>
+                <option>July</option>
+                <option>August</option>
+                <option>September</option>
+                <option>October</option>
+                <option>November</option>
+                <option selected>December</option>
+              </select>
+              <select class="form-select w-auto attendance-records-status-select" style="min-width: 140px;">
+                <option value="all">All Status</option>
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="late">Late</option>
+                <option value="annual_leave">Annual Leave</option>
+                <option value="sick_leave">Sick Leave</option>
+                <option value="unpaid_leave">Unpaid Leave</option>
+              </select>
+            </div>
             <div id="attendanceRecordsTable" class="table-responsive"></div>
           </div>
         </div>
@@ -731,17 +762,15 @@
       var modal = new bootstrap.Modal(modalEl);
       modal.show();
 
-      // Set default month to current month
+      // Set default month and year for analytics filter
       var monthSelect = modalEl.querySelector('.attendance-month-select');
+      var yearSelect = modalEl.querySelector('.attendance-year-select');
+      var now = new Date();
       if (monthSelect) {
-        var now = new Date();
         var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         monthSelect.selectedIndex = now.getMonth();
       }
-      // Set default year to current year
-      var yearSelect = modalEl.querySelector('.attendance-year-select');
       if (yearSelect) {
-        var now = new Date();
         for (var i = 0; i < yearSelect.options.length; i++) {
           if (yearSelect.options[i].value == now.getFullYear()) {
             yearSelect.selectedIndex = i;
@@ -749,6 +778,21 @@
           }
         }
       }
+
+      // Set default month, year, and status for records filter (independent)
+      var recMonthSelect = modalEl.querySelector('.attendance-records-month-select');
+      var recYearSelect = modalEl.querySelector('.attendance-records-year-select');
+      var recStatusSelect = modalEl.querySelector('.attendance-records-status-select');
+      if (recMonthSelect) recMonthSelect.selectedIndex = now.getMonth();
+      if (recYearSelect) {
+        for (var i = 0; i < recYearSelect.options.length; i++) {
+          if (recYearSelect.options[i].value == now.getFullYear()) {
+            recYearSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      if (recStatusSelect) recStatusSelect.value = 'all';
 
       // Fetch and display worker info
       const workerInfo = await fetchWorkerInfo(staffId);
@@ -787,11 +831,13 @@
       document.getElementById('numberAbsentValue').textContent = '...';
 
       updateAttendanceAnalyticsByMonth(staffId);
+
       // Fetch and render attendance records for workers
       async function updateRecords() {
-        var monthSelect = modalEl.querySelector('.attendance-month-select');
-        var yearSelect = modalEl.querySelector('.attendance-year-select');
-        var selectedYear = yearSelect && yearSelect.value !== 'Year' ? yearSelect.value : new Date().getFullYear();
+        var recMonthSelect = modalEl.querySelector('.attendance-records-month-select');
+        var recYearSelect = modalEl.querySelector('.attendance-records-year-select');
+        var recStatusSelect = modalEl.querySelector('.attendance-records-status-select');
+        var selectedYear = recYearSelect && recYearSelect.value !== 'Year' ? recYearSelect.value : new Date().getFullYear();
         var monthMap = {
           'January': 1,
           'February': 2,
@@ -806,18 +852,37 @@
           'November': 11,
           'December': 12
         };
-        var selectedMonth = monthSelect && monthMap[monthSelect.value] ? String(monthMap[monthSelect.value]).padStart(2,'0') : String(new Date().getMonth()+1).padStart(2,'0');
+        var selectedMonth = recMonthSelect && monthMap[recMonthSelect.value] ? String(monthMap[recMonthSelect.value]).padStart(2,'0') : String(new Date().getMonth()+1).padStart(2,'0');
         var monthStr = `${selectedYear}-${selectedMonth}`;
         const records = await fetchWorkerAttendanceRecords(staffId, monthStr);
-        renderAttendanceRecordsTable(records);
+        // Filter by status if not 'all'
+        let filteredRecords = records;
+        if (recStatusSelect && recStatusSelect.value !== 'all') {
+          filteredRecords = records.filter(r => {
+            // Normalize status for comparison
+            let statusVal = recStatusSelect.value;
+            if (statusVal === 'present') return r.status === 'Present';
+            if (statusVal === 'absent') return r.status === 'Absent';
+            if (statusVal === 'check_in') return r.status === 'Check_in';
+            if (statusVal === 'late') return r.status === 'Late';
+            if (statusVal === 'annual_leave') return r.status === 'Annual Leave' || r.status === 'annual_leave';
+            if (statusVal === 'sick_leave') return r.status === 'Sick Leave' || r.status === 'sick_leave';
+            if (statusVal === 'unpaid_leave') return r.status === 'Unpaid Leave' || r.status === 'unpaid_leave';
+            return true;
+          });
+        }
+        renderAttendanceRecordsTable(filteredRecords);
       }
       await updateRecords();
-      var monthSelect = modalEl.querySelector('.attendance-month-select');
-      var yearSelect = modalEl.querySelector('.attendance-year-select');
-      if (monthSelect && yearSelect) {
-        monthSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); updateRecords(); };
-        yearSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); updateRecords(); };
-      }
+
+      // Add event listeners for records filter dropdowns (independent)
+      if (recMonthSelect) recMonthSelect.onchange = updateRecords;
+      if (recYearSelect) recYearSelect.onchange = updateRecords;
+      if (recStatusSelect) recStatusSelect.onchange = updateRecords;
+
+      // Add event listeners for analytics filter dropdowns (independent)
+      if (monthSelect) monthSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); };
+      if (yearSelect) yearSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); };
     };
 
     (function(){
