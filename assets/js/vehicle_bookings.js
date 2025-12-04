@@ -275,12 +275,12 @@ window.addEventListener('DOMContentLoaded', () => {
     // 2. Setup Autocompletes (Create Modal)
     // vehicle
     initSearchableDropdown(
-        document.getElementById("bookingVehicleInput"),
-        document.getElementById("vehicleDropdown"),
-        async () => allVehicles,
-        (v) => { document.getElementById("bookingVehicleInput").dataset.selectedId = v.id; },
-        (v) => `${v.vehicle_name} (${v.plate_number})`,
-        (v, text) => v.vehicle_name.toLowerCase().includes(text) || v.plate_number.toLowerCase().includes(text)
+        document.getElementById("bookingVehicleInput"), //inputEl
+        document.getElementById("vehicleDropdown"), //dropdownEl
+        async () => allVehicles, //fetchItems
+        (v) => { document.getElementById("bookingVehicleInput").dataset.selectedId = v.id; }, //onSelect
+        (v) => `${v.vehicle_name} (${v.plate_number})`, //renderItem
+        (v, text) => v.vehicle_name.toLowerCase().includes(text) || v.plate_number.toLowerCase().includes(text) //filterItem
     );
 
     // user and staff

@@ -1,9 +1,9 @@
 // ==================== GLOBAL CONSTANTS ====================
-const BASE_URL = 'https://mwms.megacess.com/api/v1';
+const BASE_URL = "https://mwms.megacess.com/api/v1";
 
 // ==================== AUTH & TOKEN ====================
 function getToken() {
-  const keys = ['authToken', 'auth_token', 'token', 'access_token'];
+  const keys = ["authToken", "auth_token", "token", "access_token"];
   for (const k of keys) {
     const v = localStorage.getItem(k) || sessionStorage.getItem(k);
     if (v) return v;
@@ -25,10 +25,10 @@ async function apiFetch(path, options = {}) {
     const response = await fetch(`${BASE_URL}${path}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...options.headers,
       },
     });
 
@@ -39,32 +39,52 @@ async function apiFetch(path, options = {}) {
     }
 
     return result;
-
   } catch (error) {
-    console.error('API Fetch Error:', error);
+    console.error("API Fetch Error:", error);
     throw error;
   }
 }
 
 // ==================== UI HELPERS (SweetAlert) ====================
-function showSuccess(title, msg = '') {
-  Swal.fire({ icon: 'success', title: title, text: msg, timer: 2000, showConfirmButton: false });
+function showSuccess(title, msg = "") {
+  Swal.fire({
+    icon: "success",
+    title: title,
+    text: msg,
+    timer: 2000,
+    showConfirmButton: false,
+  });
 }
 
 function showError(msg) {
-  Swal.fire({ icon: 'error', title: 'Error', text: msg, timer: 3000, showConfirmButton: true });
+  Swal.fire({
+    icon: "error",
+    title: "Error",
+    text: msg,
+    timer: 3000,
+    showConfirmButton: true,
+  });
 }
 
 function showErrorNoToken(msg) {
-  Swal.fire({ icon: 'error', title: 'Missing authentication token', text: msg }).then(() => {
-    window.location.replace('../log-in.html');
+  Swal.fire({
+    icon: "error",
+    title: "Missing authentication token",
+    text: msg,
+  }).then(() => {
+    window.location.replace("../log-in.html");
   });
 }
 
 function showConfirm(message, callbackYes) {
   Swal.fire({
-    title: 'Are you sure?', text: message, icon: 'warning', showCancelButton: true,
-    confirmButtonColor: '#3085d6', cancelButtonColor: '#d33', confirmButtonText: 'Yes, do it!'
+    title: "Are you sure?",
+    text: message,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, do it!",
   }).then((result) => {
     if (result.isConfirmed) callbackYes();
   });
@@ -72,17 +92,17 @@ function showConfirm(message, callbackYes) {
 
 // ==================== DOM HELPERS ====================
 function showLoading() {
-  const overlay = document.getElementById('loadingOverlay');
+  const overlay = document.getElementById("loadingOverlay");
   if (overlay) {
-    overlay.classList.remove('d-none');
+    overlay.classList.remove("d-none");
   } else {
-    console.warn('showLoading: #loadingOverlay not found');
+    console.warn("showLoading: #loadingOverlay not found");
   }
 }
 
 function hideLoading() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.add('d-none');
+  const overlay = document.getElementById("loadingOverlay");
+  if (overlay) overlay.classList.add("d-none");
 }
 
 function debounce(func, delay) {
@@ -94,7 +114,7 @@ function debounce(func, delay) {
 }
 
 function formatForDateTimeLocal(isoString) {
-  if (!isoString) return '';
+  if (!isoString) return "";
   const date = new Date(isoString);
   const offset = date.getTimezoneOffset() * 60000;
   const localTime = new Date(date.getTime() - offset);
@@ -102,11 +122,11 @@ function formatForDateTimeLocal(isoString) {
 }
 
 function formatDateDisplay(dateString) {
-  if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
+  if (!dateString) return "-";
+  return new Date(dateString).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 }
 
@@ -120,7 +140,14 @@ function formatDateDisplay(dateString) {
  * @param {Function} renderItem - Function returning HTML string for an item.
  * @param {Function} filterItem - Function returning boolean for search filtering.
  */
-function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, renderItem, filterItem) {
+function initSearchableDropdown(
+  inputEl,
+  dropdownEl,
+  fetchItems,
+  onSelect,
+  renderItem,
+  filterItem
+) {
   if (!inputEl || !dropdownEl) return;
 
   let allItems = [];
@@ -129,8 +156,9 @@ function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, rende
   async function loadItems() {
     if (!hasFetched) {
       // Show loading immediately
-      dropdownEl.innerHTML = '<li class="dropdown-item text-muted">Loading...</li>';
-      dropdownEl.style.display = 'block';
+      dropdownEl.innerHTML =
+        '<li class="dropdown-item text-muted">Loading...</li>';
+      dropdownEl.style.display = "block";
 
       try {
         allItems = await fetchItems();
@@ -145,24 +173,25 @@ function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, rende
 
   // To show dropdown items
   function showDropdown(list) {
-    dropdownEl.innerHTML = '';
+    dropdownEl.innerHTML = "";
     if (!list.length) {
-      dropdownEl.innerHTML = '<li class="dropdown-item text-muted">No results found</li>';
+      dropdownEl.innerHTML =
+        '<li class="dropdown-item text-muted">No results found</li>';
     } else {
-      list.forEach(item => {
-        const li = document.createElement('li');
-        li.classList.add('dropdown-item');
-        li.style.cursor = 'pointer';
+      list.forEach((item) => {
+        const li = document.createElement("li");
+        li.classList.add("dropdown-item");
+        li.style.cursor = "pointer";
         li.innerHTML = renderItem(item);
-        li.addEventListener('click', () => {
-          inputEl.value = item.fullname || item.name || ''; // Default fallback
-          dropdownEl.style.display = 'none';
+        li.addEventListener("click", () => {
+          inputEl.value = item.fullname || item.name || "none"; // Default fallback
+          dropdownEl.style.display = "none";
           onSelect(item);
         });
         dropdownEl.appendChild(li);
       });
     }
-    dropdownEl.style.display = 'block';
+    dropdownEl.style.display = "block";
   }
 
   // for dropdown in modal
@@ -170,23 +199,25 @@ function initSearchableDropdown(inputEl, dropdownEl, fetchItems, onSelect, rende
     const items = await loadItems();
     const search = inputEl.value.toLowerCase();
     // Filter if there is a value, otherwise show all
-    const filtered = search ? allItems.filter(item => filterItem(item, search)) : allItems;
+    const filtered = search
+      ? allItems.filter((item) => filterItem(item, search))
+      : allItems;
     showDropdown(filtered);
   };
 
-  inputEl.addEventListener('focus', openDropdown);
-  inputEl.addEventListener('click', openDropdown);
+  inputEl.addEventListener("focus", openDropdown);
+  inputEl.addEventListener("click", openDropdown);
 
-  inputEl.addEventListener('input', async () => {
+  inputEl.addEventListener("input", async () => {
     await loadItems(); // Ensure items are loaded
     const search = inputEl.value.toLowerCase();
-    const filtered = allItems.filter(item => filterItem(item, search));
+    const filtered = allItems.filter((item) => filterItem(item, search));
     showDropdown(filtered);
   });
 
-  document.addEventListener('click', (e) => {
+  document.addEventListener("click", (e) => {
     if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
-      dropdownEl.style.display = 'none';
+      dropdownEl.style.display = "none";
     }
   });
 }

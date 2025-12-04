@@ -148,7 +148,7 @@
 
           <!-- Add Tools Button -->
           <div>
-            <button id="addToolBookingBtn" type="button" class="btn btn-primary d-flex align-items-center"
+            <button type="button" class="btn btn-primary d-flex align-items-center"
               data-bs-toggle="modal" data-bs-target="#addToolsModal">
               <i class="bi bi-plus-circle me-2"></i>
               Add Tools
@@ -239,130 +239,6 @@
     </div>
   </div>
 
-  <!-- Add Tool Booking Modal -->
-  <div class="modal fade" id="createToolBookingModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-
-      <div class="modal-content">
-
-        <!-- Modal Header -->
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title" id="createToolBookingModalLabel">Add Tool Booking</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <!-- Modal Form -->
-        <form id="createToolBookingForm">
-          <div class="modal-body">
-
-            <!-- Tool -->
-            <div class="mb-3 position-relative">
-              <label class="form-label fw-semibold">
-                Tool
-                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" data-bs-title="Select the tool to book."></i>
-              </label>
-              <input type="text" class="form-control" id="bookingToolInput" placeholder="Enter or select a tool"
-                required autocomplete="off">
-
-              <!-- DROPDOWN -->
-              <ul class="dropdown-menu w-100" id="toolDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
-            </div>
-
-            <!-- Assigned Person -->
-            <div class="mb-3 position-relative">
-              <label class="form-label fw-semibold">
-                Assigned Person
-                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                  data-bs-title="Select the person to assign the tool to."></i>
-              </label>
-              <input type="text" class="form-control" id="bookingUserInput" placeholder="Enter or search user/staff"
-                required autocomplete="off">
-
-              <!-- DROPDOWN -->
-              <ul class="dropdown-menu w-100" id="userDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
-            </div>
-
-            <!-- Booking Date -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Booking Date</label>
-              <input type="datetime-local" id="bookingDateInput" class="form-control" required>
-            </div>
-
-            <!-- Return Date -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Return Date</label>
-              <input type="datetime-local" id="returnDateInput" class="form-control">
-            </div>
-
-          </div>
-
-          <!-- Modal Footer -->
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button id="createBookingBtn" type="submit" class="btn btn-primary">Create Booking</button>
-          </div>
-
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Update Tool Booking Modal -->
-  <div class="modal fade" id="updateToolBookingModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header bg-warning text-dark">
-          <h5 class="modal-title">Update Tool Booking</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <form id="updateToolBookingForm">
-          <div class="modal-body">
-            <!-- Tool -->
-            <div class="mb-3 position-relative">
-              <label class="form-label fw-semibold">
-                Tool
-                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                  data-bs-title="Select new tool to replace the old one."></i>
-              </label>
-              <input type="text" class="form-control" id="updateToolInput" placeholder="Enter or select a tool" required
-                autocomplete="off">
-              <ul class="dropdown-menu w-100" id="updateToolDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
-            </div>
-
-            <!-- Assigned Person -->
-            <div class="mb-3 position-relative">
-              <label class="form-label fw-semibold">
-                Assigned Person
-                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                  data-bs-title="Select new user/staff to replace the old one."></i>
-              </label>
-              <input type="text" class="form-control" id="updateUserInput" placeholder="Enter or search user/staff"
-                required autocomplete="off">
-              <ul class="dropdown-menu w-100" id="updateUserDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
-            </div>
-
-            <!-- Dates -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Booking Date</label>
-              <input type="datetime-local" class="form-control" id="updateBookingDateInput" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Return Date</label>
-              <input type="datetime-local" class="form-control" id="updateReturnDateInput">
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button id="updateToolBookingBtn" type="submit" class="btn btn-warning">Update Booking</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- Update Tool Modal -->
   <div class="modal fade" id="updateToolModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -378,24 +254,25 @@
           <form>
             <div class="mb-3">
               <label for="updateToolName" class="form-label fw-semibold">
-                Tool Name
+                Spare Part
                 <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                  data-bs-title="Edit the name of the tool."></i>
+                  data-bs-title="Edit the name of the spare part."></i>
               </label>
               <input type="text" class="form-control" id="updateToolName">
             </div>
 
+            <!-- Vehicle -->
             <div class="mb-3">
-              <label for="updateToolStatus" class="form-label fw-semibold">
-                Status
+              <label for="updateToolVehicleInput" class="form-label fw-semibold">
+                Vehicle
                 <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                  data-bs-title="Edit the status of the tool."></i>
+                  data-bs-title="Change vehicle the spare part is associated with."></i>
               </label>
-              <select class="form-select" id="updateToolStatus">
-                <option value="Available">Available</option>
-                <option value="In Use">In Use</option>
-                <option value="Broken">Broken</option>
-              </select>
+              <input type="text" class="form-control" id="updateToolVehicleInput" placeholder="Enter or select a vehicle"
+                required autocomplete="off">
+
+              <!-- DROPDOWN -->
+              <ul class="dropdown-menu w-100" id="updateToolVehicleDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
             </div>
           </form>
         </div>

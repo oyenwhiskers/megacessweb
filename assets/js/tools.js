@@ -14,11 +14,11 @@ async function getAllVehicles() {
   try {
     const result = await apiFetch("/vehicles?per_page=100");
     if (result.success) {
-      allVehicles = result.data.map((item) => ({
-        vehicle_id: item.vehicle_id || null,
-        vehicle_name: item.vehicle_name || null,
-        plate_number: item.plate_number || null,
-        displayLabel: `${item.vehicle_name} - ${item.plate_number}`,
+      allVehicles = result.data.map((v) => ({
+        vehicle_id: v.vehicle_id || null,
+        vehicle_name: v.vehicle_name || null,
+        plate_number: v.plate_number || null,
+        displayLabel: `${v.vehicle_name} - ${v.plate_number}`,
       }));
       console.log("🔧 Vehicles loaded:", allVehicles.length);
     } else {
@@ -338,8 +338,9 @@ function openUpdateModal(tool) {
     document.getElementById("updateToolModal")
   );
 
-  document.getElementById("updateToolName").value = tool.tool_name;
-  document.getElementById("updateToolStatus").value = tool.status;
+  document.getElementById("updateToolName").value = tool.name;
+  document.getElementById("updateToolVehicleInput").dataset.selectedId =
+    tool.vehicle.id;
 
   // Store ID on the update button for reference
   document.getElementById("updateToolBtn").dataset.id = tool.id;
@@ -353,11 +354,12 @@ document
   .addEventListener("click", async (e) => {
     const toolId = e.target.dataset.id;
     const name = document.getElementById("updateToolName").value.trim();
-    const status = document.getElementById("updateToolStatus").value;
+    const vehicleId = document.getElementById("updateToolVehicleInput").dataset
+      .selectedId;
     const btn = e.target;
 
     if (!toolId) return;
-    if (!name && !status) return showError("Nothing to update.");
+    if (!name && !vehicleId) return showError("Nothing to update.");
 
     btn.disabled = true;
     btn.textContent = "Updating...";
@@ -365,7 +367,7 @@ document
     try {
       const result = await apiFetch(`/tools/${toolId}`, {
         method: "PUT",
-        body: JSON.stringify({ tool_name: name, status: status }),
+        body: JSON.stringify({ tool_name: name, vehicle_id: vehicleId }),
       });
 
       showSuccess(result.message || "Tool updated");
@@ -390,30 +392,25 @@ window.addEventListener("DOMContentLoaded", () => {
   refreshToolSummary();
   getAllVehicles();
 
-  // 2. Setup Autocompletes (Create Modal)
+  // Setup Autocompletes (Create Modal)
   // vehicle
   initSearchableDropdown(
-    document.getElementById("toolVehicleInput"),
-    document.getElementById("toolVehicleDropdown"),
-    async () => allVehicles,
-    (v) => {
-      document.getElementById("toolVehicleInput").dataset.selectedId = v.id;
-    },
-    (v) => `${v.vehicle_name} (${v.plate_number})`,
-    (v, text) =>
-      v.vehicle_name.toLowerCase().includes(text) ||
-      v.plate_number.toLowerCase().includes(text)
-  );
+        document.getElementById("toolVehicleInput"), //inputEl
+        document.getElementById("toolVehicleDropdown"), //dropdownEl
+        async () => allVehicles, //fetchItems
+        (v) => { document.getElementById("toolVehicleInput").dataset.selectedId = v.id; }, //onSelect
+        (v) => `${v.vehicle_name} (${v.plate_number})`, //renderItem
+        (v, text) => v.vehicle_name.toLowerCase().includes(text) || v.plate_number.toLowerCase().includes(text) //filterItem
+    );
 
-  // 3. Setup Autocompletes (Update Modal)
+  // Setup Autocompletes (Update Modal)
   // vehicle
   initSearchableDropdown(
     document.getElementById("updateToolVehicleInput"),
-    document.getElementById("updateVehicleDropdown"),
+    document.getElementById("updateToolVehicleDropdown"),
     async () => allVehicles,
     (v) => {
-      document.getElementById("updateToolVehicleInput").dataset.selectedId =
-        v.id;
+      document.getElementById("updateToolVehicleInput").dataset.selectedId = v.id;
     },
     (v) => `${v.vehicle_name} (${v.plate_number})`,
     (v, text) =>
