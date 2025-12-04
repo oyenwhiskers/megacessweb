@@ -15,10 +15,12 @@ async function getAllVehicles() {
     const result = await apiFetch("/vehicles?per_page=100");
     if (result.success) {
       allVehicles = result.data.map((v) => ({
-        vehicle_id: v.vehicle_id || null,
+        id: v.id,
+        vehicle_id: v.id,
         vehicle_name: v.vehicle_name || null,
         plate_number: v.plate_number || null,
         displayLabel: `${v.vehicle_name} - ${v.plate_number}`,
+        name: `${v.vehicle_name} (${v.plate_number})`,
       }));
       console.log("🔧 Vehicles loaded:", allVehicles.length);
     } else {
@@ -270,26 +272,25 @@ window.refreshToolSummary = refreshToolSummary;
 // ==================== CRUD OPERATIONS ====================
 
 // CREATE TOOL
-document.getElementById("addToolBtn").addEventListener("click", async () => {
+// CREATE TOOL
+document.getElementById("addToolBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
   const nameInput = document.getElementById("toolName");
-  const statusInput = document.getElementById("toolStatusModal");
+  const vehicleInput = document.getElementById("toolVehicleInput");
   const btn = document.getElementById("addToolBtn");
 
   const payload = {
-    tool_name: nameInput.value.trim(),
-    status: statusInput.value,
+    name: nameInput.value.trim(),
+    vehicle_id: vehicleInput.dataset.selectedId || null
   };
 
-  if (
-    !payload.tool_name ||
-    !payload.status ||
-    payload.status === "Choose status"
-  ) {
-    return showError("Please fill in all fields.");
+  if (!payload.name) {
+    return showError("Please enter a tool name.");
   }
 
   btn.disabled = true;
   btn.textContent = "Adding...";
+  console.log(payload);
 
   try {
     const result = await apiFetch("/tools", {
@@ -301,8 +302,11 @@ document.getElementById("addToolBtn").addEventListener("click", async () => {
     bootstrap.Modal.getOrCreateInstance(
       document.getElementById("addToolsModal")
     ).hide();
+
+    // Reset form
     nameInput.value = "";
-    statusInput.value = "";
+    vehicleInput.value = "";
+    delete vehicleInput.dataset.selectedId;
 
     getAllSpareParts({ page: 1 }); // Reset to first page
     refreshToolSummary();
@@ -310,7 +314,7 @@ document.getElementById("addToolBtn").addEventListener("click", async () => {
     showError(error.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Add Tool";
+    btn.textContent = "Save Tool";
   }
 });
 
@@ -395,13 +399,17 @@ window.addEventListener("DOMContentLoaded", () => {
   // Setup Autocompletes (Create Modal)
   // vehicle
   initSearchableDropdown(
-        document.getElementById("toolVehicleInput"), //inputEl
-        document.getElementById("toolVehicleDropdown"), //dropdownEl
-        async () => allVehicles, //fetchItems
-        (v) => { document.getElementById("toolVehicleInput").dataset.selectedId = v.id; }, //onSelect
-        (v) => `${v.vehicle_name} (${v.plate_number})`, //renderItem
-        (v, text) => v.vehicle_name.toLowerCase().includes(text) || v.plate_number.toLowerCase().includes(text) //filterItem
-    );
+    document.getElementById("toolVehicleInput"), //inputEl
+    document.getElementById("toolVehicleDropdown"), //dropdownEl
+    async () => allVehicles, //fetchItems
+    (v) => {
+      document.getElementById("toolVehicleInput").dataset.selectedId = v.id;
+    }, //onSelect
+    (v) => `${v.vehicle_name} (${v.plate_number})`, //renderItem
+    (v, text) =>
+      v.vehicle_name.toLowerCase().includes(text) ||
+      v.plate_number.toLowerCase().includes(text) //filterItem
+  );
 
   // Setup Autocompletes (Update Modal)
   // vehicle
@@ -410,7 +418,8 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("updateToolVehicleDropdown"),
     async () => allVehicles,
     (v) => {
-      document.getElementById("updateToolVehicleInput").dataset.selectedId = v.id;
+      document.getElementById("updateToolVehicleInput").dataset.selectedId =
+        v.id;
     },
     (v) => `${v.vehicle_name} (${v.plate_number})`,
     (v, text) =>
