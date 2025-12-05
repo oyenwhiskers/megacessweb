@@ -65,6 +65,7 @@ function populateFuelsTable(fuels) {
   tableBody.innerHTML = "";
 
   fuels.forEach((fuel) => {
+    if (!fuel.user) fuel.user = { user_fullname: "-" };
     const row = document.createElement("div");
     row.className = "content-row d-flex border-bottom py-2 align-items-center";
 
@@ -73,7 +74,7 @@ function populateFuelsTable(fuels) {
     row.innerHTML = `
       <div class="col">${fuel.supplier_name || "Unnamed Fuel"}</div>
       <div class="col">${fuel.user.user_fullname || "-"}</div>
-      <div class="col">${fuel.fuel_type || "-"}</div> 
+      <div class="col">${fuel.fuel_type || "-"}</div>
       <div class="col">
         <span class="badge ${fuelClass} px-3 py-2 fs-6">${
       fuel.fuel_bought || "Unknown"
