@@ -251,7 +251,7 @@ async function handleDelete(e) {
 // ==================== Fetch Buyers ====================
 async function getAllBuyers() {
   try {
-    const result = await apiFetch("/users$per_page=100", { method: "GET" });
+    const result = await apiFetch("/users?per_page=100", { method: "GET" });
     return (
       result?.data?.map((u) => ({
         id: u.id,
