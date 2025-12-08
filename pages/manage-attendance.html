@@ -719,6 +719,28 @@
       }
     }
 
+    function getStatusButtonStyleAndIcon(status) {
+      switch (status) {
+        case 'Present':
+          return { color: '#118c4f', icon: '<i class="bi bi-check2"></i>' };
+        case 'Absent':
+          return { color: '#c90000', icon: '<i class="bi bi-x-lg"></i>' };
+        case 'Late':
+          return { color: '#a86b32', icon: '<i class="bi bi-alarm"></i>' };
+        case 'Annual Leave':
+        case 'annual_leave':
+          return { color: '#155fa0', icon: '<i class="bi bi-calendar2-week"></i>' };
+        case 'Sick Leave':
+        case 'sick_leave':
+          return { color: '#00a6d6', icon: '<i class="bi bi-thermometer-half"></i>' };
+        case 'Unpaid Leave':
+        case 'unpaid_leave':
+          return { color: '#b97b7b', icon: '<i class="bi bi-calendar-x"></i>' };
+        default:
+          return { color: '#6c757d', icon: '' };
+      }
+    }
+
     function renderAttendanceRecordsTable(records) {
       const tableDiv = document.getElementById('attendanceRecordsTable');
       if (!tableDiv) return;
@@ -748,13 +770,64 @@
       let html = '<div class="attendance-records-list" style="max-height: 370px; overflow-y: auto;">';
       filteredRecords.forEach(r => {
         let borderColor = getStatusBorderColor(r.status);
+        const { color, icon } = getStatusButtonStyleAndIcon(r.status);
         html += `<div class="attendance-record-card d-flex align-items-center justify-content-between mb-2" style="border:1px solid #b6b6b6;border-left:16px solid ${borderColor};background:#fff;padding:0.75rem 1rem;min-height:56px;border-radius:6px;">
-          <div class="fw-bold" style="font-size:1.15rem;">${r.date ? r.date.replace(/-/g,'/') : ''}</div>
-          <div class="ms-auto">${getStatusBadge(r.status)}</div>
+          <div><strong>${r.date}</strong></div>
+          <button class="btn" style="background:${color};color:#fff;font-weight:500;min-width:140px;box-shadow:0 2px 6px rgba(0,0,0,0.08);border-radius:10px;" onclick="showAttendanceRecordDetails('${encodeURIComponent(JSON.stringify(r))}')">${icon} ${r.status}</button>
         </div>`;
       });
       html += '</div>';
       tableDiv.innerHTML = html;
+    }
+
+    // Show details modal for a record
+    window.showAttendanceRecordDetails = function(recordJson) {
+      var record = JSON.parse(decodeURIComponent(recordJson));
+      // Get button color and icon for status
+      var statusInfo = getStatusButtonStyleAndIcon(record.status);
+      var statusBtn = `<span style="display:inline-block;background:${statusInfo.color};color:#fff;font-weight:500;min-width:120px;padding:8px 20px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1.1rem;vertical-align:middle;">${statusInfo.icon} ${record.status}</span>`;
+      var checkedBy = record.checkedin_by || record.checkedout_by || '';
+      var checkInTime = record.check_in ? (new Date(record.check_in).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })).replace(/^0/, '') : '';
+      var modalHtml = `
+        <div class='modal fade' id='attendanceRecordDetailsModal' tabindex='-1' aria-labelledby='attendanceRecordDetailsModalLabel' aria-hidden='true'>
+          <div class='modal-dialog'>
+            <div class='modal-content' style='background:#eaeaea;'>
+              <div class='modal-header' style='border-bottom:1px solid #444;'>
+                <h5 class='modal-title fw-bold' id='attendanceRecordDetailsModalLabel'>View Attendance Details</h5>
+                <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
+              </div>
+              <div class='modal-body'>
+                <div class='row mb-2'>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Type of leave:</div>
+                    ${statusBtn}
+                  </div>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Checked by:</div>
+                    <span class='fw-semibold'>${checkedBy}</span>
+                  </div>
+                </div>
+                <div class='row'>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Date:</div>
+                    <span>${record.date || ''}</span>
+                  </div>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Check in time:</div>
+                    <span class='fw-semibold'>${checkInTime}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      // Remove any existing modal
+      var oldModal = document.getElementById('attendanceRecordDetailsModal');
+      if (oldModal) oldModal.remove();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      var modal = new bootstrap.Modal(document.getElementById('attendanceRecordDetailsModal'));
+      modal.show();
     }
 
     window.viewAttendanceDetails = async function(staffId) {
@@ -1383,7 +1456,7 @@
         e.preventDefault();
         
         const overtimeDate = document.getElementById('overtimeDate').value;
-        const overtimeDuration = document.getElementById('overtimeDuration').value;
+               const overtimeDuration = document.getElementById('overtimeDuration').value;
         const overtimeRemarks = document.getElementById('overtimeRemarks').value;
         
         // Validate form
