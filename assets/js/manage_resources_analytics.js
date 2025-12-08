@@ -1,12 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
-  fetchAnalyticsData();
+  const periodSelect = document.getElementById("analyticsPeriod");
+  if (periodSelect) {
+    periodSelect.addEventListener("change", function () {
+      fetchAnalyticsData(this.value);
+    });
+    // Initial fetch
+    fetchAnalyticsData(periodSelect.value);
+  } else {
+    fetchAnalyticsData();
+  }
 });
 
-async function fetchAnalyticsData() {
+async function fetchAnalyticsData(period = "year") {
   setLoadingState();
   try {
     // Using apiFetch from utils.js
-    const response = await apiFetch("/analytics/resources-usage");
+    const response = await apiFetch(
+      `/analytics/resources-usage?period=${period}`
+    );
     if (response.success && response.data) {
       updateVehicleAnalytics(response.data.vehicle_analytics);
       updateToolAnalytics(response.data.tools_analytics);
@@ -91,7 +102,10 @@ function updateVehicleAnalytics(data) {
   if (inUseEl) inUseEl.textContent = data.in_use || 0;
   if (maintenanceEl) maintenanceEl.textContent = data.under_maintenance || 0;
 
-  if (data.monthly_bookings) {
+  if (data.bookings_trend) {
+    initVehicleChart(data.bookings_trend);
+  } else if (data.monthly_bookings) {
+    // Fallback for backward compatibility if needed, or just remove
     initVehicleChart(data.monthly_bookings);
   }
 }
@@ -151,7 +165,9 @@ function updateFuelAnalytics(data) {
     });
   }
 
-  if (data.monthly_fuel_usage) {
+  if (data.fuel_usage_trend) {
+    initFuelChart(data.fuel_usage_trend);
+  } else if (data.monthly_fuel_usage) {
     initFuelChart(data.monthly_fuel_usage);
   }
 }
@@ -161,12 +177,13 @@ let vehicleChartInstance = null;
 let toolChartInstance = null;
 let fuelChartInstance = null;
 
-function initVehicleChart(monthlyBookings) {
+function initVehicleChart(dataItems) {
   const ctx = document.getElementById("vehicleChart");
   if (!ctx) return;
 
-  const labels = monthlyBookings.map((item) => item.month_name);
-  const data = monthlyBookings.map((item) => item.bookings);
+  // Handle both new "period_label" and old "month_name"
+  const labels = dataItems.map((item) => item.period_label || item.month_name);
+  const data = dataItems.map((item) => item.bookings);
 
   if (vehicleChartInstance) vehicleChartInstance.destroy();
 
@@ -221,12 +238,12 @@ function initToolChart(statusDistribution) {
   });
 }
 
-function initFuelChart(monthlyFuelUsage) {
+function initFuelChart(dataItems) {
   const ctx = document.getElementById("fuelChart");
   if (!ctx) return;
 
-  const labels = monthlyFuelUsage.map((item) => item.month_name);
-  const data = monthlyFuelUsage.map((item) => item.fuel_used);
+  const labels = dataItems.map((item) => item.period_label || item.month_name);
+  const data = dataItems.map((item) => item.fuel_used);
 
   if (fuelChartInstance) fuelChartInstance.destroy();
 

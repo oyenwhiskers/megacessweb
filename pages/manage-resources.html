@@ -107,9 +107,19 @@
         </div>
       </div>
       <div class="container-fluid p-4">
-        <div class="mb-4">
-          <h3 class="fw-bold text-dark">Analytics Dashboard</h3>
-          <p class="text-secondary mb-0">Deep dive into resource usage and performance metrics.</p>
+        <div class="d-flex justify-content-between align-items-end mb-4">
+          <div>
+            <h3 class="fw-bold text-dark">Analytics Dashboard</h3>
+            <p class="text-secondary mb-0">Deep dive into resource usage and performance metrics.</p>
+          </div>
+          <div>
+            <select id="analyticsPeriod" class="form-select w-auto" aria-label="Select analytics period">
+              <option value="day">Daily</option>
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
+              <option value="year" selected>Yearly</option>
+            </select>
+          </div>
         </div>
 
         <!-- VEHICLE ANALYTICS -->
@@ -179,9 +189,9 @@
               </div>
             </div>
             <div class="chart-container mt-4">
-              <h5 class="chart-title mb-3">Vehicle Usage (Monthly)</h5>
+              <h5 class="chart-title mb-3">Vehicle Usage</h5>
               <div style="height: 300px;">
-                <canvas id="vehicleChart"></canvas>
+                <canvas id="vehicleChart"></canvas> 
               </div>
             </div>
           </div>
