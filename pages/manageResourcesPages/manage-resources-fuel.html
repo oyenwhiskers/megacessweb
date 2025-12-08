@@ -20,7 +20,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
-<body data-page="manage-resources">
+<body>
   <!-- Main Content -->
   <div class="app d-flex">
     <!-- Sidebar -->
@@ -44,7 +44,7 @@
         </button>
       </div>
 
-      <!-- Row 1: Back Button & Tabs -->
+      <!-- Back Button -->
       <div class="d-flex justify-content-between align-items-center mb-4 px-4 mt-4">
         <!-- Back Button -->
         <a href="/megacessweb/pages/manage-resources.html" class="btn back-btn d-flex align-items-center">
@@ -53,7 +53,7 @@
         </a>
       </div>
 
-      <!-- Row 2: Statistics Cards -->
+      <!-- Statistics Cards -->
       <div class="container my-4 mb-4 px-4 mt-4">
         <div class="row g-4">
           <!-- Fuel Remaining -->
@@ -123,11 +123,11 @@
         </div>
       </div>
 
-      <!-- Tab Content for Fuel and Booking-->
+      <!-- Tab Content for Fuel and Usage-->
       <div class="tab-content">
         <!-- Fuel Tab -->
         <div class="tab-pane" data-name="fuel">
-          <!-- Row 2: Fuel List Header -->
+          <!-- Fuel List Header -->
           <div class="px-4 mb-4">
             <h5 class="fw-semibold mb-3">Past Fuel Top Up :</h5>
 
@@ -212,7 +212,7 @@
           </div>
         </div>
 
-        <!-- Booking Tab -->
+        <!-- Usage Tab -->
         <div class="tab-pane" data-name="usage">
           <div class="px-4 mb-4">
             <!-- Title -->
@@ -286,193 +286,6 @@
         </div>
       </div>
 
-      <!-- ==================== EDIT FUEL MODAL ==================== -->
-      <div class="modal fade" id="editFuelModal" tabindex="-1" aria-labelledby="editFuelModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <form id="editFuelForm">
-              <div class="modal-header bg-warning text-white">
-                <h5 class="modal-title" id="editFuelModalLabel">Edit Fuel Record</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <!-- Hidden field to store fuel ID -->
-                <input type="hidden" id="editFuelId">
-
-                <!-- Supplier Name -->
-                <div class="mb-3">
-                  <label for="editSupplierName" class="form-label fw-semibold">
-                    Supplier Name
-                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                      data-bs-title="Edit the official supplier name."></i>
-                  </label>
-                  <input type="text" class="form-control" id="editSupplierName" required>
-                </div>
-
-                <!-- User Dropdown -->
-                <div class="mb-3 position-relative">
-                  <label for="editAssignedPerson" class="form-label fw-semibold">
-                    User
-                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                      data-bs-title="Edit the user who used the fuel."></i>
-                  </label>
-                  <input type="text" class="form-control" id="editAssignedPerson" placeholder="Select user..."
-                    autocomplete="off" required>
-                  <ul id="editBuyerDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
-                    style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
-                </div>
-
-                <!-- Fuel Bought -->
-                <div class="mb-3">
-                  <label for="editFuelBought" class="form-label fw-semibold">Fuel Bought</label>
-                  <input type="number" step="0.01" class="form-control" id="editFuelBought" required>
-                </div>
-
-                <!-- Date Bought -->
-                <div class="mb-3">
-                  <label for="editDateBought" class="form-label fw-semibold">Date Bought</label>
-                  <input type="date" class="form-control" id="editDateBought" required>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-warning" id="saveEditFuelBtn">Update Fuel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- ==================== EDIT USAGE MODAL ==================== -->
-      <div class="modal fade" id="editUsageModal" tabindex="-1" aria-labelledby="editUsageModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-
-            <!-- Modal Header -->
-            <div class="modal-header bg-warning text-white">
-              <h5 class="modal-title" id="editUsageModalLabel">Edit Usage Record</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                aria-label="Close"></button>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body">
-              <form id="editUsageForm">
-                <!-- Hidden ID -->
-                <input type="hidden" id="editUsageId">
-
-                <!-- Usage Quantity -->
-                <div class="mb-3">
-                  <label for="editUsageQuantity" class="form-label fw-semibold">
-                    Usage Quantity (Liters)
-                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                      data-bs-title="Edit the usage quantity in liters."></i>
-                  </label>
-                  <input type="number" min="0" class="form-control" id="editUsageQuantity" placeholder="Enter quantity"
-                    required>
-                </div>
-
-                <!-- Used By -->
-                <div class="mb-3 position-relative">
-                  <label for="editUsedBy" class="form-label fw-semibold">
-                    Used By
-                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                      data-bs-title="Edit the user who used the fuel."></i>
-                  </label>
-                  <input type="text" class="form-control" id="editUsedBy" placeholder="Search user..."
-                    autocomplete="off" required>
-                  <ul id="editUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
-                    style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
-                </div>
-
-                <!-- Usage Date -->
-                <div class="mb-3">
-                  <label for="editUsageDate" class="form-label fw-semibold">Usage Date</label>
-                  <input type="date" class="form-control" id="editUsageDate" required>
-                </div>
-
-                <!-- Description (Optional) -->
-                <div class="mb-3">
-                  <label for="editUsageDescription" class="form-label fw-semibold">Description (Optional)</label>
-                  <input type="text" class="form-control" id="editUsageDescription" placeholder="Enter description">
-                </div>
-              </form>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" form="editUsageForm" class="btn btn-warning" id="saveEditUsageBtn">Update
-                Usage</button>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- Add Usage Modal -->
-      <div class="modal fade" id="addUsageModal" tabindex="-1" aria-labelledby="addUsageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-
-            <!-- Modal Header -->
-            <div class="modal-header bg-success text-white">
-              <h5 class="modal-title" id="addUsageModalLabel">Add Usage Record</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                aria-label="Close"></button>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body">
-              <form id="addUsageForm">
-                <!-- Usage Quantity -->
-                <div class="mb-3">
-                  <label for="usageQuantity" class="form-label fw-semibold">
-                    Usage Quantity (Liters)
-                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                      data-bs-title="Enter the quantity of fuel used in liters."></i>
-                  </label>
-                  <input type="number" min="0" class="form-control" id="usageQuantity" placeholder="Enter quantity"
-                    required>
-                </div>
-
-                <!-- Used By -->
-                <div class="mb-3 position-relative">
-                  <label for="usedBy" class="form-label fw-semibold">
-                    Used By
-                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
-                      data-bs-title="Select the user who used the fuel."></i>
-                  </label>
-                  <input type="text" class="form-control" id="usedBy" placeholder="Search user..." autocomplete="off"
-                    required>
-                  <ul id="addUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
-                    style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
-                </div>
-
-                <!-- Usage Date -->
-                <div class="mb-3">
-                  <label for="usageDate" class="form-label fw-semibold">Usage Date</label>
-                  <input type="date" class="form-control" id="usageDate" required>
-                </div>
-
-                <!-- Description (Optional) -->
-                <div class="mb-3">
-                  <label for="usageDescription" class="form-label fw-semibold">Description (Optional)</label>
-                  <input type="text" class="form-control" id="usageDescription" placeholder="Enter description">
-                </div>
-              </form>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" form="addUsageForm" class="btn btn-success" id="saveUsageBtn">Save Usage</button>
-            </div>
-
-          </div>
-        </div>
-      </div>
     </main>
     <!-- End of Main Content -->
   </div>
@@ -516,6 +329,24 @@
               <ul class="dropdown-menu w-100" id="buyerDropdown" style="max-height: 200px; overflow-y: auto;"></ul>
             </div>
 
+            <!-- Usage Type -->
+            <div class="mb-3">
+              <label for="fuelType" class="form-label fw-semibold">
+                Fuel Type
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Select the type of fuel used."></i>
+              </label>
+              <select class="form-select" id="fuelType" required>
+                <option value="">Select Fuel Type</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Hydraulic Oil 10">Hydraulic Oil 10</option>
+                <option value="Hydraulic Oil 40">Hydraulic Oil 40</option>
+                <option value="Hydraulic Oil 68">Hydraulic Oil 68</option>
+                <option value="Hydraulic Oil 90">Hydraulic Oil 90</option>
+              </select>
+            </div>
+
             <!-- Fuel Bought -->
             <div class="mb-3">
               <label for="fuelBought" class="form-label fw-semibold">Fuel Bought (Liters)</label>
@@ -534,6 +365,209 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button id='saveFuelBtn' type="submit" form="addFuelForm" class="btn btn-primary">Save Fuel</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== EDIT FUEL MODAL ==================== -->
+  <div class="modal fade" id="editFuelModal" tabindex="-1" aria-labelledby="editFuelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editFuelForm">
+          <div class="modal-header bg-warning text-white">
+            <h5 class="modal-title" id="editFuelModalLabel">Edit Fuel Record</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Hidden field to store fuel ID -->
+            <input type="hidden" id="editFuelId">
+
+            <!-- Supplier Name -->
+            <div class="mb-3">
+              <label for="editSupplierName" class="form-label fw-semibold">
+                Supplier Name
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Edit the official supplier name."></i>
+              </label>
+              <input type="text" class="form-control" id="editSupplierName" required>
+            </div>
+
+            <!-- User Dropdown -->
+            <div class="mb-3 position-relative">
+              <label for="editAssignedPerson" class="form-label fw-semibold">
+                User
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Edit the user who used the fuel."></i>
+              </label>
+              <input type="text" class="form-control" id="editAssignedPerson" placeholder="Select user..."
+                autocomplete="off" required>
+              <ul id="editBuyerDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
+                style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
+            </div>
+
+            <!-- Usage Type -->
+            <div class="mb-3">
+              <label for="editFuelType" class="form-label fw-semibold">
+                Fuel Type
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Select the type of fuel used."></i>
+              </label>
+              <select class="form-select" id="editFuelType" required>
+                <option value="">Select Fuel Type</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Hydraulic Oil 10">Hydraulic Oil 10</option>
+                <option value="Hydraulic Oil 40">Hydraulic Oil 40</option>
+                <option value="Hydraulic Oil 68">Hydraulic Oil 68</option>
+                <option value="Hydraulic Oil 90">Hydraulic Oil 90</option>
+              </select>
+            </div>
+
+            <!-- Fuel Bought -->
+            <div class="mb-3">
+              <label for="editFuelBought" class="form-label fw-semibold">Fuel Bought</label>
+              <input type="number" step="0.01" class="form-control" id="editFuelBought" required>
+            </div>
+
+            <!-- Date Bought -->
+            <div class="mb-3">
+              <label for="editDateBought" class="form-label fw-semibold">Date Bought</label>
+              <input type="date" class="form-control" id="editDateBought" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-warning" id="saveEditFuelBtn">Update Fuel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Usage Modal -->
+  <div class="modal fade" id="addUsageModal" tabindex="-1" aria-labelledby="addUsageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="addUsageModalLabel">Add Usage Record</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <form id="addUsageForm">
+            <!-- Usage Quantity -->
+            <div class="mb-3">
+              <label for="usageQuantity" class="form-label fw-semibold">
+                Usage Quantity (Liters)
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Enter the quantity of fuel used in liters."></i>
+              </label>
+              <input type="number" min="0" class="form-control" id="usageQuantity" placeholder="Enter quantity"
+                required>
+            </div>
+
+            <!-- Used By -->
+            <div class="mb-3 position-relative">
+              <label for="usedBy" class="form-label fw-semibold">
+                Used By
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Select the user who used the fuel."></i>
+              </label>
+              <input type="text" class="form-control" id="usedBy" placeholder="Search user..." autocomplete="off"
+                required>
+              <ul id="addUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
+                style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
+            </div>
+
+            <!-- Usage Date -->
+            <div class="mb-3">
+              <label for="usageDate" class="form-label fw-semibold">Usage Date</label>
+              <input type="date" class="form-control" id="usageDate" required>
+            </div>
+
+            <!-- Description (Optional) -->
+            <div class="mb-3">
+              <label for="usageDescription" class="form-label fw-semibold">Description (Optional)</label>
+              <input type="text" class="form-control" id="usageDescription" placeholder="Enter description">
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" form="addUsageForm" class="btn btn-success" id="saveUsageBtn">Save Usage</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== EDIT USAGE MODAL ==================== -->
+  <div class="modal fade" id="editUsageModal" tabindex="-1" aria-labelledby="editUsageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header bg-warning text-white">
+          <h5 class="modal-title" id="editUsageModalLabel">Edit Usage Record</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <form id="editUsageForm">
+            <!-- Hidden ID -->
+            <input type="hidden" id="editUsageId">
+
+            <!-- Usage Quantity -->
+            <div class="mb-3">
+              <label for="editUsageQuantity" class="form-label fw-semibold">
+                Usage Quantity (Liters)
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Edit the usage quantity in liters."></i>
+              </label>
+              <input type="number" min="0" class="form-control" id="editUsageQuantity" placeholder="Enter quantity"
+                required>
+            </div>
+
+            <!-- Used By -->
+            <div class="mb-3 position-relative">
+              <label for="editUsedBy" class="form-label fw-semibold">
+                Used By
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Edit the user who used the fuel."></i>
+              </label>
+              <input type="text" class="form-control" id="editUsedBy" placeholder="Search user..." autocomplete="off"
+                required>
+              <ul id="editUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
+                style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
+            </div>
+
+            <!-- Usage Date -->
+            <div class="mb-3">
+              <label for="editUsageDate" class="form-label fw-semibold">Usage Date</label>
+              <input type="date" class="form-control" id="editUsageDate" required>
+            </div>
+
+            <!-- Description (Optional) -->
+            <div class="mb-3">
+              <label for="editUsageDescription" class="form-label fw-semibold">Description (Optional)</label>
+              <input type="text" class="form-control" id="editUsageDescription" placeholder="Enter description">
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" form="editUsageForm" class="btn btn-warning" id="saveEditUsageBtn">Update
+            Usage</button>
         </div>
 
       </div>

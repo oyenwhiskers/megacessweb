@@ -89,6 +89,7 @@ function populateFuelsTable(fuels) {
           data-supplier-name="${fuel.supplier_name || ""}"
           data-buyer-id="${fuel.user?.id || ""}"
           data-buyer-name="${fuel.user?.user_fullname || ""}"
+          data-fuel-type="${fuel.fuel_type || ""}"
           data-fuel-bought="${fuel.fuel_bought || ""}"
           data-date-bought="${
             fuel.date_bought
@@ -180,6 +181,7 @@ function renderFuelPagination(meta, search, filter, type) {
 // ==================== Create / Add Fuel ====================
 async function createFuelRecord(payload) {
   try {
+    console.log(payload);
     const result = await apiFetch("/fuels", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -187,6 +189,9 @@ async function createFuelRecord(payload) {
     result.success
       ? showSuccess("Fuel record added successfully!")
       : showError(result.message || "Failed to add fuel record.");
+    console.log(result);
+    getAllFuels();
+    refreshFuelSummary();
   } catch (err) {
     console.error(err);
     showError("Failed to add fuel record. Try again.");
@@ -207,6 +212,7 @@ async function updateFuelRecord(fuelId, payload) {
     });
     if (result.success) {
       getAllFuels();
+      refreshFuelSummary();
       return true;
     }
     showError(result.message || "Failed to update fuel");
@@ -304,6 +310,8 @@ if (editBuyerInput && editBuyerDropdownEl) {
 }
 
 // ==================== Form Handlers ====================
+
+// Add Fuel
 document.getElementById("addFuelForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -311,15 +319,18 @@ document.getElementById("addFuelForm").addEventListener("submit", async (e) => {
   const supplierName = document.getElementById("supplierName").value.trim();
   const fuelBought = document.getElementById("fuelBought").value.trim();
   const dateBought = document.getElementById("dateBought").value.trim();
+  const fuelType = document.getElementById("fuelType").value.trim();
 
   if (!supplierName) return showError("Please enter supplier name.");
   if (!selectedBuyer) return showError("Please select a buyer.");
   if (!fuelBought) return showError("Please enter fuel amount.");
   if (!dateBought) return showError("Please select date bought.");
+  if (!fuelType) return showError("Please select fuel type.");
 
   const payload = {
     supplier_name: supplierName,
     fuel_bought: fuelBought,
+    fuel_type: fuelType,
     date_bought: dateBought,
     user_id: selectedBuyer.id,
   };
@@ -339,6 +350,7 @@ document.getElementById("addFuelForm").addEventListener("submit", async (e) => {
   }
 });
 
+// Edit Fuel
 document
   .getElementById("editFuelForm")
   .addEventListener("submit", async (e) => {
@@ -355,6 +367,7 @@ document
     const editDateBought = document
       .getElementById("editDateBought")
       .value.trim();
+    const editFuelType = document.getElementById("editFuelType").value.trim();
 
     if (!editSupplierName) return showError("Please enter supplier name.");
     if (!editSelectedBuyer) return showError("Please select a buyer.");
@@ -366,6 +379,7 @@ document
       fuel_bought: editFuelBought,
       date_bought: editDateBought,
       user_id: editSelectedBuyer.id,
+      fuel_type: editFuelType,
     };
     const saveBtn = document.getElementById("saveEditFuelBtn");
     saveBtn.disabled = true;
@@ -389,8 +403,6 @@ if (!editModalEl) console.error("CRITICAL: Edit Fuel Modal not found in DOM");
 if (editModalEl) {
   // 1. Listen for the moment Bootstrap starts to show the modal
   editModalEl.addEventListener("show.bs.modal", (event) => {
-    console.log("Edit Modal Opening...");
-
     // 2. Determine which button triggered the modal
     const btn = event.relatedTarget;
 
@@ -399,12 +411,14 @@ if (editModalEl) {
     const supplierName = btn.dataset.supplierName || "";
     const buyerId = btn.dataset.buyerId || "";
     const buyerName = btn.dataset.buyerName || "";
+    const fuelType = btn.dataset.fuelType || "";
     const fuelBought = btn.dataset.fuelBought || "";
     const dateBought = btn.dataset.dateBought || "";
 
     // 4. Data Population (Mapping to your Modal's IDs)
     document.getElementById("editFuelId").value = fuelId;
     document.getElementById("editSupplierName").value = supplierName;
+    document.getElementById("editFuelType").value = fuelType;
     document.getElementById("editFuelBought").value = fuelBought;
     document.getElementById("editDateBought").value = dateBought;
 
