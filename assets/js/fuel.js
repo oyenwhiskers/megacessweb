@@ -504,6 +504,13 @@ function setStatsLoading(isLoading) {
     ["fuelRemainingSpinner", "fuelRemainingValue"],
     ["fuelTotalBoughtSpinner", "fuelTotalBoughtValue"],
     ["fuelTotalUsedSpinner", "fuelTotalUsedValue"],
+    // Fuel Types
+    ["fuelPetSpinner", "fuelPetValue"],
+    ["fuelDiesSpinner", "fuelDiesValue"],
+    ["fuelH10Spinner", "fuelH10Value"],
+    ["fuelH40Spinner", "fuelH40Value"],
+    ["fuelH68Spinner", "fuelH68Value"],
+    ["fuelH90Spinner", "fuelH90Value"],
   ];
 
   mapping.forEach(([spinnerId, valueId]) => {
@@ -527,10 +534,7 @@ async function refreshFuelSummary() {
     const result = await apiFetch("/analytics/resources-usage");
     if (result.data && result.data.fuel_analytics) {
       const stats = result.data.fuel_analytics;
-      // Use Number() to handle potential strings, and keep decimals if important?
-      // animateCount floors it. Let's assume integer is fine or the user will complain.
-      // Actually, fuel is often measured in liters which can be decimal.
-      // But for "Total Fuel Bought" etc, maybe integer is enough for the card.
+      // Totals
       animateCount(
         document.getElementById("fuelRemainingValue"),
         Number(stats.remaining_fuel) || 0,
@@ -546,6 +550,32 @@ async function refreshFuelSummary() {
         Number(stats.total_fuel_used) || 0,
         1200
       );
+
+      // Breakdown by Type
+      // We accept fuel_by_type array: [{fuel_type: "Petrol", remaining_fuel: 100}, ...]
+      let breakdownMap = {};
+
+      if (stats.fuel_by_type && Array.isArray(stats.fuel_by_type)) {
+        stats.fuel_by_type.forEach((item) => {
+          if (item.fuel_type)
+            breakdownMap[item.fuel_type] = item.remaining_fuel || 0;
+        });
+      }
+
+      // Map of "Fuel Type Name" -> "HTML ID"
+      const typeToId = {
+        Petrol: "fuelPetValue",
+        Diesel: "fuelDiesValue",
+        "Hydraulic Oil 10": "fuelH10Value",
+        "Hydraulic Oil 40": "fuelH40Value",
+        "Hydraulic Oil 68": "fuelH68Value",
+        "Hydraulic Oil 90": "fuelH90Value",
+      };
+
+      Object.entries(typeToId).forEach(([type, id]) => {
+        const val = breakdownMap[type];
+        animateCount(document.getElementById(id), Number(val) || 0, 1200);
+      });
     }
   } catch (err) {
     console.warn("Analytics fetch failed:", err);
