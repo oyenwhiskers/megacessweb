@@ -159,12 +159,12 @@
               <div>
                 <select id="fuelTypeFilter" class="form-select">
                   <option selected value="default">Type of Fuel</option>
-                  <option value="petrol">Petrol</option>
-                  <option value="diesel">Diesel</option>
-                  <option value="hydraulic oil 10">Hydraulic Oil 10</option>
-                  <option value="hydraulic oil 40">Hydraulic Oil 40</option>
-                  <option value="hydraulic oil 68">Hydraulic Oil 68</option>
-                  <option value="hydraulic oil 90">Hydraulic Oil 90</option>
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Hydraulic Oil 10">Hydraulic Oil 10</option>
+                  <option value="Hydraulic Oil 40">Hydraulic Oil 40</option>
+                  <option value="Hydraulic Oil 68">Hydraulic Oil 68</option>
+                  <option value="Hydraulic Oil 90">Hydraulic Oil 90</option>
                 </select>
               </div>
 
@@ -242,6 +242,19 @@
                 </select>
               </div>
 
+              <!-- Fuel Type Dropdown -->
+              <div>
+                <select id="usageFuelType" class="form-select">
+                  <option selected value="default">Type of Fuel</option>
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Hydraulic Oil 10">Hydraulic Oil 10</option>
+                  <option value="Hydraulic Oil 40">Hydraulic Oil 40</option>
+                  <option value="Hydraulic Oil 68">Hydraulic Oil 68</option>
+                  <option value="Hydraulic Oil 90">Hydraulic Oil 90</option>
+                </select>
+              </div>
+
               <!-- Add Usage Button -->
               <div>
                 <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
@@ -260,6 +273,7 @@
               <div class="content-row content-header d-flex fw-bold border-bottom py-2">
                 <div class="col">Usage Quantity (ℓ)</div>
                 <div class="col">Used By</div>
+                <div class="col">Fuel Type</div>
                 <div class="col">Usage Date</div>
                 <div class="col">Usage Description</div>
                 <div class="col text-center">Action</div>
@@ -484,6 +498,24 @@
                 style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
             </div>
 
+            <!-- Usage Type -->
+            <div class="mb-3">
+              <label for="usageType" class="form-label fw-semibold">
+                Usage Type
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Select the type of fuel used."></i>
+              </label>
+              <select class="form-select" id="usageType" required>
+                <option value="">Select Usage Type</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Hydraulic Oil 10">Hydraulic Oil 10</option>
+                <option value="Hydraulic Oil 40">Hydraulic Oil 40</option>
+                <option value="Hydraulic Oil 68">Hydraulic Oil 68</option>
+                <option value="Hydraulic Oil 90">Hydraulic Oil 90</option>
+              </select>
+            </div>
+
             <!-- Usage Date -->
             <div class="mb-3">
               <label for="usageDate" class="form-label fw-semibold">Usage Date</label>
@@ -547,6 +579,24 @@
                 required>
               <ul id="editUsageUserDropdown" class="dropdown-menu w-100 shadow-sm overflow-auto"
                 style="position:absolute; z-index:1000; max-height:200px; overflow-y:auto; display:none;"></ul>
+            </div>
+
+            <!-- Usage Type -->
+            <div class="mb-3">
+              <label for="editUsageType" class="form-label fw-semibold">
+                Usage Type
+                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
+                  data-bs-title="Edit the type of fuel used."></i>
+              </label>
+              <select class="form-select" id="editUsageType" required>
+                <option value="">Select Usage Type</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Hydraulic Oil 10">Hydraulic Oil 10</option>
+                <option value="Hydraulic Oil 40">Hydraulic Oil 40</option>
+                <option value="Hydraulic Oil 68">Hydraulic Oil 68</option>
+                <option value="Hydraulic Oil 90">Hydraulic Oil 90</option>
+              </select>
             </div>
 
             <!-- Usage Date -->

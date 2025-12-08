@@ -10,6 +10,7 @@ let editSelectedUsageUser = null; // For Edit Modal
 async function getAllFuelUsages({
   search = "",
   usageFilter = "",
+  fuel_type = "",
   page = 1,
   per_page = 10,
 } = {}) {
@@ -24,6 +25,8 @@ async function getAllFuelUsages({
   if (search) params.append("search", search);
   if (usageFilter && usageFilter !== "default")
     params.append("usageFilter", usageFilter);
+  if (fuel_type && fuel_type !== "default")
+    params.append("fuel_type", fuel_type);
   params.append("page", page);
   params.append("per_page", per_page);
 
@@ -38,35 +41,9 @@ async function getAllFuelUsages({
       let data = [];
       let meta = {};
 
-      // Option A: Root Meta (User's confirmed structure)
       if (result.meta) {
         data = result.data;
         meta = result.meta;
-      }
-      // Option C: Laravel Default (Nested in data)
-      else if (
-        result.data &&
-        Array.isArray(result.data.data) &&
-        result.data.current_page
-      ) {
-        data = result.data.data;
-        meta = result.data;
-      }
-      // Fallback: Client-side pagination
-      else if (Array.isArray(result.data)) {
-        const allData = result.data;
-        const total = allData.length;
-        const lastPage = Math.ceil(total / per_page) || 1;
-
-        const start = (page - 1) * per_page;
-        const end = start + per_page;
-        data = allData.slice(start, end);
-
-        meta = {
-          current_page: parseInt(page),
-          last_page: lastPage,
-          total: total,
-        };
       }
 
       if (data && data.length > 0) {
@@ -141,6 +118,7 @@ function populateFuelUsageTable(usages) {
     } Liters</span>
             </div>
             <div class="col">${assignedName}</div>
+            <div class="col">${usage.fuel_type || "-"}</div>
             <div class="col">
                 ${formatDateDisplay(usage.usage_date)}
             </div>
@@ -154,6 +132,7 @@ function populateFuelUsageTable(usages) {
                 data-user-id="${userId}"
                 data-staff-id="${staffId}"
                 data-name="${rawName}"
+                data-type="${usage.fuel_type || ""}"
                 data-date="${
                   usage.usage_date
                     ? new Date(usage.usage_date).toISOString().split("T")[0]
@@ -324,6 +303,7 @@ if (addUsageForm) {
     e.preventDefault();
 
     const quantity = document.getElementById("usageQuantity").value.trim();
+    const fuel_type = document.getElementById("usageType").value;
     const date = document.getElementById("usageDate").value;
     const description = document
       .getElementById("usageDescription")
@@ -336,6 +316,7 @@ if (addUsageForm) {
 
     const payload = {
       usage_quantity: quantity,
+      fuel_type: fuel_type,
       usage_date: date,
       usage_description: description,
     };
@@ -377,6 +358,7 @@ if (editUsageForm) {
 
     const id = document.getElementById("editUsageId").value;
     const quantity = document.getElementById("editUsageQuantity").value.trim();
+    const fuel_type = document.getElementById("editUsageType").value;
     const date = document.getElementById("editUsageDate").value;
     const description = document
       .getElementById("editUsageDescription")
@@ -390,6 +372,7 @@ if (editUsageForm) {
 
     const payload = {
       usage_quantity: quantity,
+      fuel_type: fuel_type,
       usage_date: date,
       usage_description: description,
     };
@@ -429,6 +412,7 @@ function attachUsageEditListeners() {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
       const quantity = btn.dataset.quantity;
+      const fuelType = btn.dataset.type;
       const userId = btn.dataset.userId;
       const staffId = btn.dataset.staffId;
       const name = btn.dataset.name;
@@ -437,6 +421,7 @@ function attachUsageEditListeners() {
 
       document.getElementById("editUsageId").value = id;
       document.getElementById("editUsageQuantity").value = quantity;
+      document.getElementById("editUsageType").value = fuelType;
       document.getElementById("editUsageDate").value = date;
       document.getElementById("editUsageDescription").value = description;
 
@@ -492,6 +477,10 @@ function attachDescriptionViewListeners() {
 // ==================== Search & Filter ====================
 const usageSearchInput = document.getElementById("usageSearch");
 const usageFilterSelect = document.getElementById("usageFilter");
+const usageFuelTypeSelect = document.getElementById("usageFuelType");
+currentUsageSearch = "";
+currentUsageFilter = "default";
+currentFuelTypeFilter = "default";
 
 if (usageSearchInput) {
   usageSearchInput.addEventListener(
@@ -501,6 +490,7 @@ if (usageSearchInput) {
       getAllFuelUsages({
         search: currentUsageSearch,
         usageFilter: currentUsageFilter,
+        fuel_type: currentFuelTypeFilter,
       });
     }, 300)
   );
@@ -512,6 +502,18 @@ if (usageFilterSelect) {
     getAllFuelUsages({
       search: currentUsageSearch,
       usageFilter: currentUsageFilter,
+      fuel_type: currentFuelTypeFilter,
+    });
+  });
+}
+
+if (usageFuelTypeSelect) {
+  usageFuelTypeSelect.addEventListener("change", () => {
+    currentFuelTypeFilter = usageFuelTypeSelect.value;
+    getAllFuelUsages({
+      search: currentUsageSearch,
+      usageFilter: currentUsageFilter,
+      fuel_type: currentFuelTypeFilter,
     });
   });
 }
@@ -521,8 +523,10 @@ if (refreshUsageBtn) {
   refreshUsageBtn.addEventListener("click", () => {
     if (usageSearchInput) usageSearchInput.value = "";
     if (usageFilterSelect) usageFilterSelect.value = "default";
+    if (usageFuelTypeSelect) usageFuelTypeSelect.value = "default";
     currentUsageSearch = "";
     currentUsageFilter = "default";
+    currentFuelTypeFilter = "default";
     getAllFuelUsages();
   });
 }
