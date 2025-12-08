@@ -3,46 +3,72 @@
    Created by Roderick
    ============================================================ */
 
-/* === Resource Buttons (Vehicle / Tools / Fuels) === */
-.resource-btn {
-  width: 160px;
-  height: 160px;
-  border-radius: 20px;
-  background-color: #fff;
+/* === Navigation Cards (Professional Design) === */
+.nav-card {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 1rem;
+  text-decoration: none;
   transition: all 0.3s ease;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
-/* --- Vehicle Button (Primary - Blue) --- */
-.btn-vehicle {
-  border: 2px solid #0d6efd;
+.nav-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border-color: rgba(13, 110, 253, 0.3);
+}
+
+.nav-card-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin-right: 1.25rem;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.nav-card:hover .nav-card-icon {
+  transform: scale(1.1);
+}
+
+.nav-card-content {
+  flex-grow: 1;
+}
+
+.nav-card-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #212529;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.nav-card-desc {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.nav-card-arrow {
+  color: #dee2e6;
+  transition: all 0.3s ease;
+  margin-left: 1rem;
+}
+
+.nav-card:hover .nav-card-arrow {
   color: #0d6efd;
-}
-
-.btn-vehicle:hover {
-  background-color: #0d6efd;
-  color: #fff;
-}
-
-/* --- Tools Button (Success - Green) --- */
-.btn-tools {
-  border: 2px solid #198754;
-  color: #198754;
-}
-
-.btn-tools:hover {
-  background-color: #198754;
-  color: #fff;
-}
-
-/* --- Fuels Button (Warning - Yellow) --- */
-.btn-fuels {
-  border: 2px solid #ffc107;
-  color: #ffc107;
-}
-
-.btn-fuels:hover {
-  background-color: #ffc107;
-  color: #fff;
+  transform: translateX(5px);
 }
 
 /* ============================================================
@@ -149,8 +175,8 @@
 }
 
 .content-row {
-  padding: 10px 0; /* consistent padding for rows */
-  align-items: center; /* vertical center alignment */
+    padding: 10px 0; /* consistent padding for rows */
+    align-items: center; /* vertical center alignment */
 }
 
 .content-row:hover {
@@ -159,7 +185,7 @@
 }
 
 /* Padding for first column text only */
-.content-row > div:first-child {
+.content-row>div:first-child {
   padding-left: 12px;
 }
 
@@ -202,7 +228,7 @@
 }
 
 /* Padding for first column text only */
-.tools-row > div:first-child {
+.tools-row>div:first-child {
   padding-left: 12px;
 }
 
