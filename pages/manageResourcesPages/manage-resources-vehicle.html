@@ -54,69 +54,76 @@
         <div class="row g-4">
           <!-- Total Vehicles -->
           <div class="col-md-3 col-sm-6">
-            <div class="card text-white bg-primary shadow-sm stat-card">
-              <div class="card-body d-flex align-items-center justify-content-between">
+            <div class="stat-card border-start border-4 border-primary">
+              <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="card-title mb-1">Total Vehicles</h6>
-                  <h3 class="mb-0">
+                  <div class="stat-title">Total Vehicles</div>
+                  <div class="stat-value">
                     <span id="totalVehiclesValue">-</span>
-                    <span id="totalVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
-                      role="status" aria-hidden="true"></span>
-                  </h3>
+                    <span id="totalVehiclesSpinner" class="spinner-border spinner-border-sm text-primary ms-2 d-none"
+                      role="status"></span>
+                  </div>
                 </div>
-                <i class="bi bi-truck fs-1"></i>
+                <div class="stat-icon bg-primary-subtle text-primary rounded p-3">
+                  <i class="bi bi-truck fs-4"></i>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Available -->
           <div class="col-md-3 col-sm-6">
-            <div class="card text-white bg-success shadow-sm stat-card">
-              <div class="card-body d-flex align-items-center justify-content-between">
+            <div class="stat-card border-start border-4 border-success">
+              <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="card-title mb-1">Available</h6>
-                  <h3 class="mb-0">
+                  <div class="stat-title">Available</div>
+                  <div class="stat-value">
                     <span id="availableVehiclesValue">-</span>
-                    <span id="availableVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
-                      role="status" aria-hidden="true"></span>
-                  </h3>
+                    <span id="availableVehiclesSpinner"
+                      class="spinner-border spinner-border-sm text-success ms-2 d-none" role="status"></span>
+                  </div>
                 </div>
-                <i class="bi bi-check-circle fs-1"></i>
+                <div class="stat-icon bg-success-subtle text-success rounded p-3">
+                  <i class="bi bi-check-circle fs-4"></i>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- In Use -->
           <div class="col-md-3 col-sm-6">
-            <div class="card text-white bg-warning text-dark shadow-sm stat-card">
-              <div class="card-body d-flex align-items-center justify-content-between">
+            <div class="stat-card border-start border-4 border-info">
+              <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="card-title mb-1">In Use</h6>
-                  <h3 class="mb-0">
+                  <div class="stat-title">In Use</div>
+                  <div class="stat-value">
                     <span id="inUseVehiclesValue">-</span>
-                    <span id="inUseVehiclesSpinner" class="spinner-border spinner-border-sm text-white ms-2 d-none"
-                      role="status" aria-hidden="true"></span>
-                  </h3>
+                    <span id="inUseVehiclesSpinner" class="spinner-border spinner-border-sm text-info ms-2 d-none"
+                      role="status"></span>
+                  </div>
                 </div>
-                <i class="bi bi-gear fs-1"></i>
+                <div class="stat-icon bg-info-subtle text-info rounded p-3">
+                  <i class="bi bi-gear fs-4"></i>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Under Maintenance -->
           <div class="col-md-3 col-sm-6">
-            <div class="card text-white bg-danger shadow-sm stat-card">
-              <div class="card-body d-flex align-items-center justify-content-between">
+            <div class="stat-card border-start border-4 border-danger">
+              <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="card-title mb-1">Under Maintenance</h6>
-                  <h3 class="mb-0">
+                  <div class="stat-title">Under Maintenance</div>
+                  <div class="stat-value">
                     <span id="maintenanceVehiclesValue">-</span>
                     <span id="maintenanceVehiclesSpinner"
-                      class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status"
-                      aria-hidden="true"></span>
-                  </h3>
+                      class="spinner-border spinner-border-sm text-danger ms-2 d-none" role="status"></span>
+                  </div>
                 </div>
-                <i class="bi bi-tools fs-1"></i>
+                <div class="stat-icon bg-danger-subtle text-danger rounded p-3">
+                  <i class="bi bi-tools fs-4"></i>
+                </div>
               </div>
             </div>
           </div>

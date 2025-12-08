@@ -145,6 +145,12 @@
 .content-header {
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6 !important;
+  padding: 10px 0; /* consistent padding */
+}
+
+.content-row {
+  padding: 10px 0; /* consistent padding for rows */
+  align-items: center; /* vertical center alignment */
 }
 
 .content-row:hover {
@@ -153,7 +159,7 @@
 }
 
 /* Padding for first column text only */
-.content-row>div:first-child {
+.content-row > div:first-child {
   padding-left: 12px;
 }
 
@@ -196,7 +202,7 @@
 }
 
 /* Padding for first column text only */
-.tools-row>div:first-child {
+.tools-row > div:first-child {
   padding-left: 12px;
 }
 
@@ -215,13 +221,39 @@
   /* higher than Bootstrap modals */
 }
 
+/* ============================================================
+   Updated Stat Card (Professional Look)
+   ============================================================ */
 .stat-card {
+  background-color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  padding: 1.25rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%; /* Ensure uniform height */
+  border: 1px solid rgba(0, 0, 0, 0.05); /* Slight border for definition */
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Softer shadow */
+}
+
+/* Typography for stats */
+.stat-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #212529;
+  line-height: 1.2;
 }
 
 /* Analytics Card Spinner Styles */
@@ -239,7 +271,8 @@
 }
 
 /* Opacity modifier for values while loading */
-.stat-card h3 span.opacity-50 {
-  opacity: 0.65;
+.stat-card h3 span.opacity-50,
+.stat-value.opacity-50 {
+  opacity: 0.5;
   transition: opacity 0.3s ease;
 }
