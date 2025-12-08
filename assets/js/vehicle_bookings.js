@@ -390,6 +390,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     delete uInput.dataset.selectedUserId;
                     delete uInput.dataset.selectedStaffId;
                     getAllVehicleBookings();
+                    getAllVehicles();
                     if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
                 } else {
                     showError(result.message || "Failed.");

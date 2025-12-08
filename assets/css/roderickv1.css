@@ -163,17 +163,30 @@
    ============================================================ */
 
 /* === Back Button === */
+/* === Back Button === */
 .back-btn {
-  background-color: #0d6efd;
-  /* Bootstrap danger red */
-  color: #fff;
-  border: none;
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .back-btn:hover {
-  background-color: #0b5ed7;
-  /* darker red */
-  color: #fff;
+  background-color: #e9ecef;
+  color: #212529;
+  border-color: #ced4da;
+  transform: translateX(-3px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.back-btn i {
+  font-size: 1.1em;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 /* === Selection Tabs === */
