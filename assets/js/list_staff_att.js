@@ -649,12 +649,7 @@
                           </div>
                         </div>
                         <div style='background:#fff;border-radius:12px;padding:18px 18px 8px 18px;box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-                          <div class='d-flex flex-wrap align-items-center mb-2' style='gap:12px;'>
-                            <div style='font-weight:600;font-size:1.1rem;'>Attendance Records</div>
-                            <select id='recordsYear' class='form-select form-select-sm' style='min-width:90px;'>${yearOptions}</select>
-                            <select id='recordsMonth' class='form-select form-select-sm' style='min-width:120px;'>${monthOptions}</select>
-                            <select id='recordsStatus' class='form-select form-select-sm' style='min-width:120px;'>${statusOptions}</select>
-                          </div>
+                          <div style='font-weight:600;font-size:1.1rem;margin-bottom:12px;'>Attendance Records</div>
                           <div id='attendanceRecordsList'>
                             ${attendanceList}
                           </div>
