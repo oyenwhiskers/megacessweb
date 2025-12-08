@@ -72,6 +72,93 @@
 }
 
 /* ============================================================
+   Analytics Section Header (Collapse)
+   ============================================================ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 1rem 1.5rem;
+  background: #fff; 
+  border: 1px solid #e9ecef;
+  border-bottom: none; /* If collapsed, maybe keep border? */
+  border-radius: 0.75rem 0.75rem 0 0; /* Only top radius when shown */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+  margin-bottom: 0;
+}
+
+/* When collapsed (not shown) give it full radius and bottom margin */
+.section-header.collapsed {
+  border-radius: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 1rem;
+}
+
+.section-header:hover {
+  background: #f8f9fa;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: #343a40;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.section-title i {
+  font-size: 1.25rem;
+  /* Icon color is set inline or via specific classes, 
+     but we can set a default here if needed */
+}
+
+.collapse-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f3f5; /* Light grey circle */
+  border-radius: 50%;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.section-header:hover .collapse-icon-wrapper {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.collapse.show + .section-header .collapse-icon, 
+.section-header:not(.collapsed) .collapse-icon {
+  /* This logic depends on DOM order. 
+     Bootstrap collapse toggles .collapsed class on the trigger.
+  */
+  transform: rotate(180deg);
+}
+
+/* Rotate icon when section is OPEN (trigger DOES NOT have .collapsed) */
+.section-header:not(.collapsed) .collapse-icon-wrapper {
+  background: #e7f1ff; /* Light blue when open */
+  color: #0d6efd;
+  transform: rotate(180deg);
+}
+
+.section-content {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 0.75rem 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem; /* Space after content */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+/* ============================================================
    manage-resources-vehicle.html Custom Styles
    ============================================================ */
 
