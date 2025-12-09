@@ -411,13 +411,22 @@
           const result = await response.json();
           if (result.success) {
             alert('Record added successfully!');
-            // Optionally, reset the form or close the modal
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(addAdvanceModal);
+            if (modal) modal.hide();
             addAdvanceModal.querySelector('form').reset();
             selectedInput.value = 'No one selected';
             selectedInput.dataset.id = '';
             selectedInput.dataset.type = '';
             fetchWorkerList('');
             fetchStaffList('', staffRoleFilter);
+            // Refresh the advance list
+            if (typeof fetchAdvances === 'function') {
+              fetchAdvances();
+            } else {
+              // Trigger a custom event that manage_advance.js can listen to
+              window.dispatchEvent(new CustomEvent('refreshAdvanceList'));
+            }
           } else {
             alert('Failed to add record: ' + (result.message || 'Unknown error'));
           }

@@ -186,9 +186,42 @@
               </div>
             </div>
 
+            <!-- Outstanding Balance Section -->
+            <div class="mb-3" id="outstandingBalanceSection" style="display: none;">
+              <div class="fw-bold mb-2">Outstanding Advance Balance:</div>
+              <div class="card bg-light p-3">
+                <div class="row g-2 small">
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Outstanding Balance:</span>
+                      <span class="fw-bold text-danger" id="outstandingBalance">RM 0.00</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Total Loans:</span>
+                      <span class="fw-semibold" id="totalLoanAmount">RM 0.00</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Total Paid:</span>
+                      <span class="fw-semibold text-success" id="totalPaidAmount">RM 0.00</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">No of Loans:</span>
+                      <span class="fw-semibold" id="loanCount">0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Advance Section -->
             <div class="mb-3">
-              <div class="fw-bold mb-2">Advance:</div>
+              <div class="fw-bold mb-2">Advance Repayment:</div>
               <div class="row g-2">
                 <div class="col-md-4">
                   <div class="input-group">
@@ -200,7 +233,41 @@
                   <input type="text" id="advanceRemarks" class="form-control" placeholder="Remarks (optional)">
                 </div>
               </div>
-              <div class="form-text">(change or leave it as it is)</div>
+            </div>
+
+            <!-- Employer Contributions Section -->
+            <div class="mb-3">
+              <div class="fw-bold mb-2">Employer Contributions:</div>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label small">Employer EPF</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="100" step="0.01" id="employerEpf" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Employer SOCSO</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="100" step="0.01" id="employerSocso" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Employer EIS</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="100" step="0.01" id="employerEis" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Employer PCB</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="100" step="0.01" id="employerPcb" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Hidden placeholders expected by JS (avoid runtime errors) -->
@@ -235,6 +302,43 @@
         </div>
         <div class="modal-body" id="viewPayslipModalBody">
           <!-- Payslip details will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Breakdown Modal -->
+  <div class="modal fade" id="taskBreakdownModal" tabindex="-1" aria-labelledby="taskBreakdownTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="taskBreakdownTitle">Task Breakdown</h5>
+            <div class="text-muted small" id="taskBreakdownSubtitle"></div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 align-items-end mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Month</label>
+              <select class="form-select" id="taskBreakdownMonth"></select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Year</label>
+              <input type="number" class="form-control" id="taskBreakdownYear" min="2000" max="2100" placeholder="2025">
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary w-100" id="taskBreakdownFetchBtn">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                Refresh
+              </button>
+            </div>
+            <div class="col-md-2 text-md-end">
+              <span id="taskBreakdownStatus" class="text-muted small"></span>
+            </div>
+          </div>
+          <div id="taskBreakdownContent"></div>
         </div>
       </div>
     </div>

@@ -43,6 +43,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let allWorkersData = []; // Store all workers for client-side pagination
     let staffData = [];
     let allStaffData = []; // Store all staff for client-side pagination
+
+    // Task breakdown modal elements
+    const taskBreakdownModalEl = document.getElementById('taskBreakdownModal');
+    const taskBreakdownContentEl = document.getElementById('taskBreakdownContent');
+    const taskBreakdownStatusEl = document.getElementById('taskBreakdownStatus');
+    const taskBreakdownMonthEl = document.getElementById('taskBreakdownMonth');
+    const taskBreakdownYearEl = document.getElementById('taskBreakdownYear');
+    const taskBreakdownFetchBtn = document.getElementById('taskBreakdownFetchBtn');
+    const taskBreakdownTitleEl = document.getElementById('taskBreakdownTitle');
+    const taskBreakdownSubtitleEl = document.getElementById('taskBreakdownSubtitle');
+    let currentTaskBreakdownStaffId = null;
+    let currentTaskBreakdownName = '';
     
     // Pagination variables
     let currentPage = 1;
@@ -50,8 +62,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let totalItems = 0;
     let totalPages = 0;
 
+    // Payslip pagination state (employment overview)
+    const payslipItemsPerPage = 5;
+    let currentPayslipPage = 1;
+    let currentPayslipRecords = [];
+    let payslipShowTaskButton = true;
+
     // API Configuration
     const API_BASE_URL = 'https://mwms.megacess.com/api/v1/payroll';
+    const API_BASE_URL_ADVANCES = 'https://mwms.megacess.com/api/v1/advances';
     // Get token from localStorage (matches login.js token storage)
     const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
 
@@ -802,8 +821,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                             <h4 class="mb-3">Payslip Record:</h4>
-                            <div class="payslip-records" id="payslipRecords">
-                                ${generatePayslipRecordsFromAPI(payslipsData)}
+                            <div class="payslip-records" id="payslipRecords"></div>
+                            <div class="d-flex justify-content-between align-items-center mt-3" id="payslipPagination" style="display: none;">
+                                <small class="text-muted" id="payslipPaginationInfo"></small>
+                                <nav aria-label="Payslip pagination">
+                                    <ul class="pagination pagination-sm mb-0" id="payslipPaginationControls"></ul>
+                                </nav>
                             </div>
                         </div>
                     </div>
@@ -812,6 +835,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show the employment overview
             container.innerHTML = overviewHTML;
+
+            // Render payslips with pagination (defaults to first page)
+            renderPayslipRecords(payslipsData, 1, isWorker);
             
             // Add event listener for back button
             document.getElementById('backToList').addEventListener('click', function() {
@@ -945,9 +971,50 @@ document.addEventListener('DOMContentLoaded', function() {
             throw error;
         }
     }
-    
+
+    // Normalize month/year info from payslip objects for task breakdown API
+    function extractMonthYearFromPayslip(payslip = {}) {
+        function normalizeYear(input) {
+            const yearNum = parseInt(input, 10);
+            if (isNaN(yearNum)) return null;
+            if (yearNum < 100) {
+                return 2000 + yearNum;
+            }
+            return yearNum;
+        }
+
+        let month = null;
+        let year = null;
+        const monthStr = payslip.payslip_month || payslip.month || '';
+        const createdAt = payslip.created_at || payslip.updated_at || '';
+
+        if (typeof monthStr === 'string' && monthStr.trim()) {
+            const slashMatch = monthStr.match(/(\d{1,2})[\/-](\d{2,4})/);
+            if (slashMatch) {
+                month = parseInt(slashMatch[1], 10);
+                year = normalizeYear(slashMatch[2]);
+            } else {
+                const parsed = new Date(monthStr);
+                if (!isNaN(parsed)) {
+                    month = parsed.getMonth() + 1;
+                    year = parsed.getFullYear();
+                }
+            }
+        }
+
+        if ((!month || !year) && createdAt) {
+            const parsed = new Date(createdAt);
+            if (!isNaN(parsed)) {
+                month = parsed.getMonth() + 1;
+                year = parsed.getFullYear();
+            }
+        }
+
+        return { month, year };
+    }
+
     // Generate payslip records HTML from API data
-    function generatePayslipRecordsFromAPI(payslips) {
+    function generatePayslipRecordsFromAPI(payslips, showTaskButton = true) {
         if (!payslips || payslips.length === 0) {
             return `
                 <div class="text-center py-4 text-muted">
@@ -962,6 +1029,8 @@ document.addEventListener('DOMContentLoaded', function() {
         payslips.forEach(payslip => {
             // Check if it's worker data (has total_income/total_deduction) or staff data (only net_salary)
             const hasDetailedBreakdown = payslip.hasOwnProperty('total_income') && payslip.hasOwnProperty('total_deduction');
+            const { month, year } = extractMonthYearFromPayslip(payslip);
+            const staffIdAttr = payslip.staff_id || payslip.user_id || payslip.staff?.id || payslip.user?.id || '';
             
             recordsHTML += `
                 <div class="payslip-record-item d-flex justify-content-between align-items-center p-3 mb-2 border rounded">
@@ -984,6 +1053,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="bi bi-eye"></i>
                             View
                         </button>
+
+                        ${showTaskButton ? `
+                            <button class="btn btn-secondary btn-sm d-flex align-items-center gap-2 view-task-btn"
+                                data-payslip-id="${payslip.id}"
+                                ${staffIdAttr ? `data-staff-id="${staffIdAttr}"` : ''}
+                                ${month ? `data-month="${month}"` : ''}
+                                ${year ? `data-year="${year}"` : ''}>
+                                <i class="bi bi-list-task"></i>
+                                View Task
+                            </button>
+                        ` : ''}
                         <button class="btn btn-danger btn-sm d-flex align-items-center gap-2" data-payslip-id="${payslip.id}" style="background-color:#dc3545;border-color:#dc3545;">
                             <i class="bi bi-trash"></i>
                             Delete
@@ -995,12 +1075,340 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return recordsHTML;
     }
-    
-    // Update payslip records with actual data (legacy function - now handled in generatePayslipRecordsFromAPI)
-    function updatePayslipRecords(payslips) {
-        // This function is kept for compatibility but not used anymore
-        // Real payslip data is now handled in generatePayslipRecordsFromAPI
-        console.log('updatePayslipRecords is deprecated - using generatePayslipRecordsFromAPI instead');
+
+    // Render payslip records with simple pagination
+    function renderPayslipRecords(payslips = null, page = 1, showTaskButton = true) {
+        const recordsContainer = document.getElementById('payslipRecords');
+        const paginationContainer = document.getElementById('payslipPagination');
+        const paginationInfoEl = document.getElementById('payslipPaginationInfo');
+        const paginationControlsEl = document.getElementById('payslipPaginationControls');
+
+        if (!recordsContainer) return;
+
+        // Update stored records only when a new array is provided
+        if (Array.isArray(payslips)) {
+            currentPayslipRecords = payslips;
+        }
+        payslipShowTaskButton = showTaskButton;
+
+        const totalPayslips = currentPayslipRecords.length;
+        const totalPayslipPages = Math.max(1, Math.ceil(totalPayslips / payslipItemsPerPage));
+        currentPayslipPage = Math.min(Math.max(page, 1), totalPayslipPages);
+
+        const startIndex = (currentPayslipPage - 1) * payslipItemsPerPage;
+        const endIndex = startIndex + payslipItemsPerPage;
+        const pageItems = currentPayslipRecords.slice(startIndex, endIndex);
+
+        recordsContainer.innerHTML = generatePayslipRecordsFromAPI(pageItems, payslipShowTaskButton);
+
+        if (!paginationContainer || !paginationInfoEl || !paginationControlsEl) return;
+
+        // Hide pagination when not needed
+        if (totalPayslips <= payslipItemsPerPage) {
+            paginationContainer.style.display = 'none';
+            paginationControlsEl.innerHTML = '';
+            paginationInfoEl.textContent = '';
+            return;
+        }
+
+        paginationContainer.style.display = 'flex';
+        paginationInfoEl.textContent = `Showing ${startIndex + 1} - ${Math.min(endIndex, totalPayslips)} of ${totalPayslips} payslips`;
+
+        const disablePrev = currentPayslipPage === 1;
+        const disableNext = currentPayslipPage === totalPayslipPages;
+
+        let controlsHtml = `
+            <li class="page-item ${disablePrev ? 'disabled' : ''}">
+                <button class="page-link" data-payslip-page="${currentPayslipPage - 1}" ${disablePrev ? 'disabled' : ''}>Prev</button>
+            </li>
+        `;
+
+        for (let i = 1; i <= totalPayslipPages; i++) {
+            controlsHtml += `
+                <li class="page-item ${i === currentPayslipPage ? 'active' : ''}">
+                    <button class="page-link" data-payslip-page="${i}" ${i === currentPayslipPage ? 'aria-current="page"' : ''}>${i}</button>
+                </li>
+            `;
+        }
+
+        controlsHtml += `
+            <li class="page-item ${disableNext ? 'disabled' : ''}">
+                <button class="page-link" data-payslip-page="${currentPayslipPage + 1}" ${disableNext ? 'disabled' : ''}>Next</button>
+            </li>
+        `;
+
+        paginationControlsEl.innerHTML = controlsHtml;
+    }
+
+    // Build task meta list items
+    function renderTaskMeta(meta = {}) {
+        if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return '';
+        return Object.entries(meta).map(([key, value]) => {
+            const label = key.replace(/_/g, ' ');
+            return `<span class="badge bg-light text-dark border me-1 mb-1">${label}: ${value ?? '-'}</span>`;
+        }).join('');
+    }
+
+    // Render task breakdown cards into modal body
+    function renderTaskBreakdownCards(data = []) {
+        if (!taskBreakdownContentEl) return;
+        if (!data || data.length === 0) {
+            taskBreakdownContentEl.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-card-checklist display-5"></i>
+                    <p class="mb-0 mt-2">No tasks found for the selected month.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const statusClass = {
+            completed: 'success',
+            pending: 'warning',
+            in_progress: 'info',
+            cancelled: 'secondary'
+        };
+
+        let html = '';
+        data.forEach(worker => {
+            const tasks = Array.isArray(worker.tasks) ? worker.tasks : [];
+            const taskList = tasks.map(task => {
+                const badge = statusClass[task.task_status?.toLowerCase?.()] || 'secondary';
+                const metaHtml = renderTaskMeta(task.meta);
+                return `
+                    <div class="list-group-item border-0 border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold">${task.task_name || '-'}</div>
+                                <div class="text-muted small">${task.task_type || ''}</div>
+                            </div>
+                            <span class="badge bg-${badge} text-uppercase">${task.task_status || '-'}</span>
+                        </div>
+                        <div class="text-muted small mt-1 d-flex flex-wrap gap-3">
+                            <span><i class="bi bi-calendar2-week me-1"></i>${task.task_date || '-'}</span>
+                            ${task.location?.name ? `<span><i class="bi bi-geo-alt me-1"></i>${task.location.name}</span>` : ''}
+                        </div>
+                        ${metaHtml ? `<div class="mt-2 small d-flex flex-wrap">${metaHtml}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            html += `
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div class="fw-bold h6 mb-1">${worker.worker_name || 'Worker'}</div>
+                                <div class="text-muted small">${worker.worker_phone || '-'}</div>
+                            </div>
+                            <span class="badge bg-primary">Total Tasks: ${worker.total_tasks ?? tasks.length}</span>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            ${taskList || '<div class="text-muted">No tasks.</div>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        taskBreakdownContentEl.innerHTML = html;
+    }
+
+    // Fetch task breakdown from API
+    async function fetchTaskBreakdown(staffId, month, year) {
+        if (!AUTH_TOKEN) throw new Error('Authentication required');
+        if (!staffId) throw new Error('Missing staff ID');
+        if (!month || !year) throw new Error('Month and year are required');
+
+        const url = new URL(`https://mwms.megacess.com/api/v1/tasks/staff/${staffId}/breakdown-by-worker`);
+        url.searchParams.append('month', month);
+        url.searchParams.append('year', year);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${AUTH_TOKEN}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.success === false) {
+            throw new Error(result.message || `Failed to fetch task breakdown (status ${response.status})`);
+        }
+
+        return result.data || [];
+    }
+
+    function setTaskBreakdownStatus(message, tone = 'muted') {
+        if (!taskBreakdownStatusEl) return;
+        taskBreakdownStatusEl.className = `text-${tone} small`;
+        taskBreakdownStatusEl.textContent = message;
+    }
+
+    function monthLabel(month) {
+        const date = new Date(2000, (month ?? 1) - 1, 1);
+        return date.toLocaleString('default', { month: 'long' });
+    }
+
+    function populateTaskBreakdownMonthSelect(selectedMonth) {
+        if (!taskBreakdownMonthEl) return;
+        taskBreakdownMonthEl.innerHTML = '';
+        for (let m = 1; m <= 12; m++) {
+            taskBreakdownMonthEl.innerHTML += `<option value="${m}" ${selectedMonth === m ? 'selected' : ''}>${monthLabel(m)}</option>`;
+        }
+    }
+
+    async function loadTaskBreakdown(staffId, month, year, staffName) {
+        if (!taskBreakdownContentEl) return;
+        taskBreakdownContentEl.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2 mb-0">Fetching task breakdown...</p>
+            </div>
+        `;
+
+        try {
+            const data = await fetchTaskBreakdown(staffId, month, year);
+            renderTaskBreakdownCards(data);
+            const label = `${monthLabel(month)} ${year}`;
+            if (taskBreakdownSubtitleEl) {
+                taskBreakdownSubtitleEl.textContent = `${staffName || 'Staff'} • ${label}`;
+            }
+        } catch (error) {
+            console.error('Task breakdown error:', error);
+            taskBreakdownContentEl.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <div class="fw-semibold mb-1">Unable to load task breakdown</div>
+                    <div>${error.message || 'Unknown error'}</div>
+                </div>
+            `;
+            setTaskBreakdownStatus(error.message || 'Failed to load tasks', 'danger');
+        }
+    }
+
+    function openTaskBreakdownModal({ staffId, staffName, month, year }) {
+        if (!taskBreakdownModalEl) return;
+        const fallbackDate = new Date();
+        const selectedMonth = month || (fallbackDate.getMonth() + 1);
+        const selectedYear = year || fallbackDate.getFullYear();
+
+        currentTaskBreakdownStaffId = staffId;
+        currentTaskBreakdownName = staffName || 'Staff';
+
+        populateTaskBreakdownMonthSelect(selectedMonth);
+        if (taskBreakdownYearEl) {
+            taskBreakdownYearEl.value = selectedYear;
+        }
+        if (taskBreakdownTitleEl) {
+            taskBreakdownTitleEl.textContent = 'Task Breakdown';
+        }
+        if (taskBreakdownSubtitleEl) {
+            taskBreakdownSubtitleEl.textContent = `${staffName || 'Staff'} • ${monthLabel(selectedMonth)} ${selectedYear}`;
+        }
+
+        const modal = bootstrap.Modal.getOrCreateInstance(taskBreakdownModalEl);
+        modal.show();
+
+        loadTaskBreakdown(staffId, selectedMonth, selectedYear, staffName);
+    }
+
+    // Manual refresh inside the modal
+    if (taskBreakdownFetchBtn) {
+        taskBreakdownFetchBtn.addEventListener('click', function() {
+            if (!currentTaskBreakdownStaffId) {
+                alert('No staff/worker selected.');
+                return;
+            }
+            const monthVal = parseInt(taskBreakdownMonthEl?.value, 10);
+            const yearVal = parseInt(taskBreakdownYearEl?.value, 10);
+            if (!monthVal || !yearVal) {
+                alert('Please select month and year to fetch tasks.');
+                return;
+            }
+            loadTaskBreakdown(currentTaskBreakdownStaffId, monthVal, yearVal, currentTaskBreakdownName);
+        });
+    }
+
+    // Fetch outstanding advance balance for staff/user
+    async function fetchOutstandingBalance(type, id) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+
+            const url = new URL(`${API_BASE_URL_ADVANCES}/${type}/${id}/outstanding-balance`);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                return result.data;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error fetching outstanding balance:', error);
+            return null;
+        }
+    }
+
+    // Generate staff payslip - refactored function
+    async function generateStaffPayslip(staffId, payload) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required. Please log in first.');
+            }
+
+            const isStaff = !!currentPayslipWorkerData?.user_fullname;
+            const url = isStaff
+                ? `${API_BASE_URL}/users/${staffId}/generate`
+                : `${API_BASE_URL}/staff/${staffId}/generate`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired. Please log in again.');
+            }
+
+            const result = await response.json().catch(() => ({}));
+            
+            if (!response.ok || result.success === false) {
+                throw new Error(result.message || `Failed to generate payslip (${response.status})`);
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error generating payslip:', error);
+            throw error;
+        }
     }
     
     // Helper to fill modal with real worker data (always use selected worker, never static)
@@ -1033,6 +1441,65 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof advRemEl.value !== 'undefined') advRemEl.value = '';
             else advRemEl.textContent = '';
         }
+        
+        // Fetch and display outstanding advance balance
+        const employeeId = workerData.id || workerData.staff_id || workerData.user_id || currentPayslipWorkerId;
+        const employeeType = isStaff ? 'user' : 'staff';
+        
+        if (employeeId) {
+            try {
+                const outstandingData = await fetchOutstandingBalance(employeeType, employeeId);
+                if (outstandingData) {
+                    // Update outstanding balance display
+                    const outstandingBalanceEl = document.getElementById('outstandingBalance');
+                    const totalLoanEl = document.getElementById('totalLoanAmount');
+                    const totalPaidEl = document.getElementById('totalPaidAmount');
+                    const loanCountEl = document.getElementById('loanCount');
+                    
+                    if (outstandingBalanceEl) {
+                        outstandingBalanceEl.textContent = `RM ${parseFloat(outstandingData.total_outstanding_balance || 0).toFixed(2)}`;
+                    }
+                    if (totalLoanEl) {
+                        totalLoanEl.textContent = `RM ${parseFloat(outstandingData.total_loan_amount || 0).toFixed(2)}`;
+                    }
+                    if (totalPaidEl) {
+                        totalPaidEl.textContent = `RM ${parseFloat(outstandingData.total_paid_amount || 0).toFixed(2)}`;
+                    }
+                    if (loanCountEl) {
+                        loanCountEl.textContent = outstandingData.loan_count || 0;
+                    }
+                    
+                    // Show the outstanding balance section
+                    const outstandingSection = document.getElementById('outstandingBalanceSection');
+                    if (outstandingSection) {
+                        outstandingSection.style.display = 'block';
+                    }
+                } else {
+                    // Hide section if no data
+                    const outstandingSection = document.getElementById('outstandingBalanceSection');
+                    if (outstandingSection) {
+                        outstandingSection.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading outstanding balance:', error);
+                // Hide section on error
+                const outstandingSection = document.getElementById('outstandingBalanceSection');
+                if (outstandingSection) {
+                    outstandingSection.style.display = 'none';
+                }
+            }
+        }
+        
+        // Reset employer contribution fields
+        const employerEpfEl = document.getElementById('employerEpf');
+        const employerSocsoEl = document.getElementById('employerSocso');
+        const employerEisEl = document.getElementById('employerEis');
+        const employerPcbEl = document.getElementById('employerPcb');
+        if (employerEpfEl) employerEpfEl.value = '0';
+        if (employerSocsoEl) employerSocsoEl.value = '0';
+        if (employerEisEl) employerEisEl.value = '0';
+        if (employerPcbEl) employerPcbEl.value = '0';
         // Staff details
         document.getElementById('staffDoc').textContent = workerData.staff_doc || '-';
         document.getElementById('staffBankName').textContent = workerData.staff_bank_name || '-';
@@ -1077,6 +1544,18 @@ let currentPayslipWorkerData = null;
 // Payroll button functionality
 // Only show employment overview on Payroll button
     document.addEventListener('click', function(e) {
+        const payslipPageBtn = e.target.closest('[data-payslip-page]');
+        if (payslipPageBtn) {
+            if (payslipPageBtn.disabled || payslipPageBtn.classList.contains('disabled')) {
+                return;
+            }
+            const targetPage = parseInt(payslipPageBtn.getAttribute('data-payslip-page'), 10);
+            if (!isNaN(targetPage)) {
+                renderPayslipRecords(currentPayslipRecords, targetPage, payslipShowTaskButton);
+            }
+            return;
+        }
+
         if (e.target.closest('.payroll-action button')) {
             const button = e.target.closest('.payroll-action button');
             const workerId = button.getAttribute('data-worker-id');
@@ -1177,9 +1656,27 @@ let currentPayslipWorkerData = null;
                         })();
                     }
                 } else {
-                    // View button clicked: open external payslip page
-                    if (payslipId) {
-                        const url = `https://mwms.megacess.com/payslips/staff/${payslipId}`;
+                    // View Task: open in-modal breakdown
+                    if (btn.classList.contains('view-task-btn')) {
+                        const staffId = btn.getAttribute('data-staff-id') || currentPayslipWorkerId;
+                        const monthAttr = parseInt(btn.getAttribute('data-month'), 10);
+                        const yearAttr = parseInt(btn.getAttribute('data-year'), 10);
+                        if (!staffId) {
+                            alert('Unable to determine staff/worker for tasks.');
+                            return;
+                        }
+                        const staffName = currentPayslipWorkerData?.staff_fullname || currentPayslipWorkerData?.user_fullname || 'Staff';
+                        openTaskBreakdownModal({
+                            staffId,
+                            staffName,
+                            month: isNaN(monthAttr) ? undefined : monthAttr,
+                            year: isNaN(yearAttr) ? undefined : yearAttr
+                        });
+                    } else if (payslipId) {
+                        // View payslip in new tab
+                        const isUser = currentPayslipWorkerData && !!currentPayslipWorkerData.user_fullname;
+                        const type = isUser ? 'user' : 'staff';
+                        const url = `https://mwms.megacess.com/payslips/${type}/${payslipId}`;
                         window.open(url, '_blank');
                     }
                 }
@@ -1246,9 +1743,27 @@ let currentPayslipWorkerData = null;
                     })();
                 }
             } else {
-                // View button clicked: open external payslip page
-                if (payslipId) {
-                    const url = `https://mwms.megacess.com/payslips/staff/${payslipId}`;
+                // View Task: open in-modal breakdown
+                if (btn.classList.contains('view-task-btn')) {
+                    const staffId = btn.getAttribute('data-staff-id') || currentPayslipWorkerId;
+                    const monthAttr = parseInt(btn.getAttribute('data-month'), 10);
+                    const yearAttr = parseInt(btn.getAttribute('data-year'), 10);
+                    if (!staffId) {
+                        alert('Unable to determine staff/worker for tasks.');
+                        return;
+                    }
+                    const staffName = currentPayslipWorkerData?.staff_fullname || currentPayslipWorkerData?.user_fullname || 'Staff';
+                    openTaskBreakdownModal({
+                        staffId,
+                        staffName,
+                        month: isNaN(monthAttr) ? undefined : monthAttr,
+                        year: isNaN(yearAttr) ? undefined : yearAttr
+                    });
+                } else if (payslipId) {
+                    // View payslip in new tab
+                    const isUser = currentPayslipWorkerData && !!currentPayslipWorkerData.user_fullname;
+                    const type = isUser ? 'user' : 'staff';
+                    const url = `https://mwms.megacess.com/payslips/${type}/${payslipId}`;
                     window.open(url, '_blank');
                 }
             }
@@ -1308,18 +1823,34 @@ let currentPayslipWorkerData = null;
         // Generate button: call API
         document.getElementById('generatePayslipBtn').onclick = async function() {
             try {
-                if (!currentPayslipWorkerId) return;
+                if (!currentPayslipWorkerId) {
+                    alert('No staff/worker selected. Please try again.');
+                    return;
+                }
+
+                // Validate month selection
                 const payslipMonth = document.getElementById('payslipMonth').value;
                 if (!payslipMonth || payslipMonth === 'select month') {
                     alert('Please select a payslip month.');
                     return;
                 }
-                // Gather deductions (names only per API)
+
+                // Gather deductions as objects with deduction_type and deduction_amount
                 const deductionRows = document.querySelectorAll('#deductionTableBody tr');
                 const deductions = [];
                 deductionRows.forEach(row => {
                     const type = row.children[0]?.textContent?.trim();
-                    if (type) deductions.push(type);
+                    // Get amount from data-amount attribute (source of truth) or parse from displayed text
+                    const amountAttr = row.getAttribute('data-amount');
+                    const amountText = amountAttr || row.children[1]?.textContent?.trim() || '0';
+                    const amount = parseFloat(amountText.replace(/[^\d.-]/g, '')) || 0;
+                    
+                    if (type) {
+                        deductions.push({
+                            deduction_type: type,
+                            deduction_amount: amount
+                        });
+                    }
                 });
 
                 // Advance fields
@@ -1329,44 +1860,47 @@ let currentPayslipWorkerData = null;
                 const advNum = parseFloat((advVal || '').toString());
                 const advRemarks = (advanceRemarksEl?.value || advanceRemarksEl?.textContent || '').trim();
 
+                // Employer contribution fields
+                const employerEpfEl = document.getElementById('employerEpf');
+                const employerSocsoEl = document.getElementById('employerSocso');
+                const employerEisEl = document.getElementById('employerEis');
+                const employerPcbEl = document.getElementById('employerPcb');
+                
+                const employerEpf = employerEpfEl ? parseFloat(employerEpfEl.value || '0') : 0;
+                const employerSocso = employerSocsoEl ? parseFloat(employerSocsoEl.value || '0') : 0;
+                const employerEis = employerEisEl ? parseFloat(employerEisEl.value || '0') : 0;
+                const employerPcb = employerPcbEl ? parseFloat(employerPcbEl.value || '0') : 0;
+
+                // Build payload
                 const payload = {
                     payslip_month: payslipMonth,
                     deductions: deductions
                 };
+
+                // Add advance repayment if provided
                 if (!isNaN(advNum) && advNum > 0) {
                     payload.advance_repayment_amount = advNum.toFixed(2);
                     payload.advance_repayment_remarks = advRemarks || '';
                 }
 
-                const isStaff = !!currentPayslipWorkerData?.user_fullname;
-                const url = isStaff
-                    ? `${API_BASE_URL}/users/${currentPayslipWorkerId}/generate`
-                    : `${API_BASE_URL}/staff/${currentPayslipWorkerId}/generate`;
+                // Add employer contributions if provided
+                if (employerEpf > 0) payload.employer_epf = employerEpf;
+                if (employerSocso > 0) payload.employer_socso = employerSocso;
+                if (employerEis > 0) payload.employer_eis = employerEis;
+                if (employerPcb > 0) payload.employer_pcb = employerPcb;
 
-                if (!AUTH_TOKEN) {
-                    alert('Authentication required. Please log in first.');
-                    return;
+                // Generate payslip using refactored function
+                const result = await generateStaffPayslip(currentPayslipWorkerId, payload);
+
+                if (result.success) {
+                    alert('Payslip generated successfully.');
+                } else {
+                    throw new Error(result.message || 'Failed to generate payslip');
                 }
-
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AUTH_TOKEN}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await res.json().catch(() => ({}));
-                if (!res.ok || result.success === false) {
-                    throw new Error(result.message || `Failed to generate payslip (${res.status})`);
-                }
-
-                alert('Payslip generated successfully.');
 
                 // Refresh employment overview to reflect new record
                 if (currentPayslipWorkerData) {
+                    const isStaff = !!currentPayslipWorkerData?.user_fullname;
                     const employeeData = {
                         id: currentPayslipWorkerData.id || currentPayslipWorkerId,
                         name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
@@ -1376,7 +1910,7 @@ let currentPayslipWorkerData = null;
                         staff_fullname: currentPayslipWorkerData.staff_fullname,
                         nickname: currentPayslipWorkerData.user_nickname || ''
                     };
-                    showEmploymentOverview(employeeData, !isStaff ? true : false);
+                    showEmploymentOverview(employeeData, !isStaff);
                 }
 
                 // Close modal
