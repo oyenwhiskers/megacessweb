@@ -3,46 +3,159 @@
    Created by Roderick
    ============================================================ */
 
-/* === Resource Buttons (Vehicle / Tools / Fuels) === */
-.resource-btn {
-  width: 160px;
-  height: 160px;
-  border-radius: 20px;
-  background-color: #fff;
+/* === Navigation Cards (Professional Design) === */
+.nav-card {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border-color: rgba(13, 110, 253, 0.3);
+}
+
+.nav-card-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin-right: 1.25rem;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.nav-card:hover .nav-card-icon {
+  transform: scale(1.1);
+}
+
+.nav-card-content {
+  flex-grow: 1;
+}
+
+.nav-card-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #212529;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.nav-card-desc {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.nav-card-arrow {
+  color: #dee2e6;
+  transition: all 0.3s ease;
+  margin-left: 1rem;
+}
+
+.nav-card:hover .nav-card-arrow {
+  color: #0d6efd;
+  transform: translateX(5px);
+}
+
+/* ============================================================
+   Analytics Section Header (Collapse)
+   ============================================================ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 1rem 1.5rem;
+  background: #fff; 
+  border: 1px solid #e9ecef;
+  border-bottom: none; /* If collapsed, maybe keep border? */
+  border-radius: 0.75rem 0.75rem 0 0; /* Only top radius when shown */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+  margin-bottom: 0;
+}
+
+/* When collapsed (not shown) give it full radius and bottom margin */
+.section-header.collapsed {
+  border-radius: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 1rem;
+}
+
+.section-header:hover {
+  background: #f8f9fa;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: #343a40;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.section-title i {
+  font-size: 1.25rem;
+  /* Icon color is set inline or via specific classes, 
+     but we can set a default here if needed */
+}
+
+.collapse-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f3f5; /* Light grey circle */
+  border-radius: 50%;
+  color: #6c757d;
   transition: all 0.3s ease;
 }
 
-/* --- Vehicle Button (Primary - Blue) --- */
-.btn-vehicle {
-  border: 2px solid #0d6efd;
+.section-header:hover .collapse-icon-wrapper {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.collapse.show + .section-header .collapse-icon, 
+.section-header:not(.collapsed) .collapse-icon {
+  /* This logic depends on DOM order. 
+     Bootstrap collapse toggles .collapsed class on the trigger.
+  */
+  transform: rotate(180deg);
+}
+
+/* Rotate icon when section is OPEN (trigger DOES NOT have .collapsed) */
+.section-header:not(.collapsed) .collapse-icon-wrapper {
+  background: #e7f1ff; /* Light blue when open */
   color: #0d6efd;
+  transform: rotate(180deg);
 }
 
-.btn-vehicle:hover {
-  background-color: #0d6efd;
-  color: #fff;
-}
-
-/* --- Tools Button (Success - Green) --- */
-.btn-tools {
-  border: 2px solid #198754;
-  color: #198754;
-}
-
-.btn-tools:hover {
-  background-color: #198754;
-  color: #fff;
-}
-
-/* --- Fuels Button (Warning - Yellow) --- */
-.btn-fuels {
-  border: 2px solid #ffc107;
-  color: #ffc107;
-}
-
-.btn-fuels:hover {
-  background-color: #ffc107;
-  color: #fff;
+.section-content {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 0.75rem 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem; /* Space after content */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
 }
 
 /* ============================================================
@@ -50,17 +163,30 @@
    ============================================================ */
 
 /* === Back Button === */
+/* === Back Button === */
 .back-btn {
-  background-color: #0d6efd;
-  /* Bootstrap danger red */
-  color: #fff;
-  border: none;
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .back-btn:hover {
-  background-color: #0b5ed7;
-  /* darker red */
-  color: #fff;
+  background-color: #e9ecef;
+  color: #212529;
+  border-color: #ced4da;
+  transform: translateX(-3px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.back-btn i {
+  font-size: 1.1em;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 /* === Selection Tabs === */
@@ -145,6 +271,12 @@
 .content-header {
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6 !important;
+  padding: 10px 0; /* consistent padding */
+}
+
+.content-row {
+    padding: 10px 0; /* consistent padding for rows */
+    align-items: center; /* vertical center alignment */
 }
 
 .content-row:hover {
@@ -215,13 +347,39 @@
   /* higher than Bootstrap modals */
 }
 
+/* ============================================================
+   Updated Stat Card (Professional Look)
+   ============================================================ */
 .stat-card {
+  background-color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  padding: 1.25rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%; /* Ensure uniform height */
+  border: 1px solid rgba(0, 0, 0, 0.05); /* Slight border for definition */
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Softer shadow */
+}
+
+/* Typography for stats */
+.stat-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #212529;
+  line-height: 1.2;
 }
 
 /* Analytics Card Spinner Styles */
@@ -239,7 +397,8 @@
 }
 
 /* Opacity modifier for values while loading */
-.stat-card h3 span.opacity-50 {
-  opacity: 0.65;
+.stat-card h3 span.opacity-50,
+.stat-value.opacity-50 {
+  opacity: 0.5;
   transition: opacity 0.3s ease;
 }
