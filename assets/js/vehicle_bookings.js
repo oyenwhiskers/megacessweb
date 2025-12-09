@@ -289,6 +289,7 @@ async function deleteVehicleBooking(id, vehicleInfo = null) {
 
       // Refresh main table
       getAllVehicleBookings();
+      getAllVehicles();
 
       // Refresh the 'Available Vehicles' dropdown since we just freed one up
       fetchVehicle();
