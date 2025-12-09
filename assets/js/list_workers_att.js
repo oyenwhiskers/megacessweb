@@ -465,9 +465,12 @@
     
     // Global functions for attendance actions
     window.viewAttendanceDetails = function(staffId) {
-        console.log('View attendance details for staff ID:', staffId);
-        // Implement attendance details modal/page
-        alert('View attendance details feature will be implemented');
+        // Call the global function defined in manage-attendance.html to show details modal
+        if (typeof window.viewAttendanceDetails === 'function' && window.viewAttendanceDetails !== arguments.callee) {
+            window.viewAttendanceDetails(staffId);
+        } else {
+            alert('Attendance details feature will be implemented');
+        }
     };
     
     window.markOvertime = function(staffId) {

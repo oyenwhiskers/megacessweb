@@ -215,9 +215,7 @@
                                     ${getStatusBadge(record.status)}
                                     <div class="mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-outline-primary" 
-                                                    onclick="viewStaffAttendanceDetails(${record.user_id})" 
-                                                    title="View">
+                                            <button type="button" class="btn btn-outline-primary" title="View Attendance" onclick="window.showStaffAttendanceAnalytics(${record.user_id})">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-warning" 
@@ -431,113 +429,6 @@
         }
     }
     
-    // Global functions for staff attendance actions
-    window.viewStaffAttendanceDetails = function(userId) {
-        // Show the staff attendance details modal
-        var modalEl = document.getElementById('viewAttendanceModal');
-        if (!modalEl) {
-            alert('Attendance details modal not found.');
-            return;
-        }
-        var modal = new bootstrap.Modal(modalEl);
-        modal.show();
-
-        // Fetch and display staff info
-        var staffData = getCurrentStaffData(userId);
-        var nameEl = modalEl.querySelector('.worker-name');
-        var roleEl = modalEl.querySelector('.worker-role');
-        var avatarEl = modalEl.querySelector('.worker-avatar');
-        if (staffData) {
-            if (nameEl) nameEl.textContent = staffData.user_name || 'Unknown';
-            if (roleEl) roleEl.textContent = 'Staff';
-            if (avatarEl) {
-                var userImage = staffData.user_img || '';
-                var placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffData.user_name || 'User')}&background=cccccc&color=fff&size=96`;
-                // Always use placeholder if running on localhost or image is missing
-                var isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                if (isLocalhost || !userImage || userImage.length < 5 || userImage.includes('null') || userImage.includes('undefined')) {
-                    avatarEl.src = placeholderImage;
-                } else {
-                    avatarEl.src = userImage;
-                    avatarEl.onerror = function() {
-                        this.src = placeholderImage;
-                        this.onerror = null;
-                    };
-                }
-            }
-        } else {
-            if (nameEl) nameEl.textContent = 'Unknown';
-            if (roleEl) roleEl.textContent = 'Staff';
-            if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=User&background=cccccc&color=fff&size=96`;
-        }
-
-        // Set loading state for analytics
-        document.getElementById('attendanceRateValue').textContent = '...';
-        document.getElementById('punctualityRateValue').textContent = '...';
-        document.getElementById('numberAbsentValue').textContent = '...';
-
-        // Helper to get selected month
-        function getSelectedMonth() {
-            var monthSelect = modalEl.querySelector('.attendance-month-select');
-            if (monthSelect) {
-                var val = monthSelect.value;
-                if (val && val !== 'Month') {
-                    var now = new Date();
-                    var monthNum = monthSelect.selectedIndex;
-                    return `${now.getFullYear()}-${String(monthNum).padStart(2,'0')}`;
-                }
-            }
-            var now = new Date();
-            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-        }
-
-        // Fetch staff attendance analytics
-        async function fetchStaffAttendanceAnalytics(userId, month) {
-            const token = getAuthToken();
-            if (!token) return null;
-            const monthStr = month || getSelectedMonth();
-            try {
-                const response = await fetch(`${API_BASE_URL}/user-attendance/${userId}/analytics?month=${monthStr}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                });
-                if (!response.ok) return null;
-                const data = await response.json();
-                return data && data.data ? data.data : null;
-            } catch (e) {
-                return null;
-            }
-        }
-
-        // Update analytics display
-        async function updateStaffAttendanceAnalytics() {
-            var month = getSelectedMonth();
-            var analytics = await fetchStaffAttendanceAnalytics(userId, month);
-            if (analytics) {
-                document.getElementById('attendanceRateValue').textContent = analytics.attendance_rate + '%';
-                document.getElementById('punctualityRateValue').textContent = analytics.punctuality_rate + '%';
-                document.getElementById('numberAbsentValue').textContent = analytics.number_absent;
-            } else {
-                document.getElementById('attendanceRateValue').textContent = 'N/A';
-                document.getElementById('punctualityRateValue').textContent = 'N/A';
-                document.getElementById('numberAbsentValue').textContent = 'N/A';
-            }
-        }
-
-        updateStaffAttendanceAnalytics();
-        var monthSelect = modalEl.querySelector('.attendance-month-select');
-        if (monthSelect) {
-            monthSelect.onchange = function() {
-                updateStaffAttendanceAnalytics();
-            };
-        }
-    // end viewStaffAttendanceDetails
-    };
-    
     window.markStaffOvertime = function(userId) {
         console.log('Mark overtime for staff user ID:', userId);
         
@@ -584,4 +475,253 @@
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchStaffAttendanceList = fetchStaffAttendanceList;
     
+    // Ensure showStaffAttendanceAnalytics is globally available
+    window.showStaffAttendanceAnalytics = showStaffAttendanceAnalytics;
+
+    // Add delegated event listener for View button
+    if (staffAttendanceView) {
+        staffAttendanceView.addEventListener('click', async function(e) {
+            const viewBtn = e.target.closest('button[data-view-user-id]');
+            if (viewBtn) {
+                const userId = viewBtn.getAttribute('data-view-user-id');
+                // Ensure month is always YYYY-MM
+                let month = new Date().toISOString().slice(0, 7); // Default to current month
+                // If staff data is available, try to use their attendance month if present
+                const staffData = getCurrentStaffData(userId);
+                if (staffData && staffData.month) {
+                    // Only use if matches YYYY-MM
+                    const match = /^\d{4}-\d{2}$/.test(staffData.month) ? staffData.month : null;
+                    if (match) month = staffData.month;
+                }
+                const token = getAuthToken();
+                if (!token) return;
+                // Use userId in API URL
+                const url = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/analytics`);
+                url.searchParams.append('month', month);
+                const headers = {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                try {
+                    const response = await fetch(url, { method: 'GET', headers });
+                    const result = await response.json();
+                    if (result.success && result.data) {
+                        showStaffAnalyticsModal(result.data);
+                    } else {
+                        alert(result.message || 'Failed to load analytics');
+                    }
+                } catch (err) {
+                    alert('Error fetching analytics: ' + err.message);
+                }
+            }
+        });
+    }
+
+    // Define the function outside and assign to window
+    async function showStaffAttendanceAnalytics(userId, year, month, status) {
+        const token = getAuthToken();
+        if (!token) return;
+        const now = new Date();
+        // Always default to current year/month if not provided
+        const currentYear = year || now.getFullYear();
+        const currentMonth = month || String(now.getMonth() + 1).padStart(2, '0');
+        const currentStatus = status || 'all';
+        const url = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/analytics`);
+        url.searchParams.append('month', `${currentYear}-${currentMonth}`);
+        if (currentStatus && currentStatus !== 'all') url.searchParams.append('status', currentStatus);
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        try {
+            const response = await fetch(url, { method: 'GET', headers });
+            const result = await response.json();
+            if (result.success && result.data) {
+                const data = result.data;
+                const staffData = getCurrentStaffData(userId);
+                let avatar = '';
+                if (staffData && staffData.user_img && staffData.user_img.trim() !== '') {
+                    let img = staffData.user_img.trim();
+                    if (img.startsWith('http')) {
+                        avatar = img;
+                    } else if (img.startsWith('/')) {
+                        avatar = `https://mwms.megacess.com${img}`;
+                    } else {
+                        avatar = `https://mwms.megacess.com/storage/user-images/${img}`;
+                    }
+                } else {
+                    avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffData ? staffData.user_name : 'User')}&background=cccccc&color=fff&size=96`;
+                }
+                const staffName = staffData ? staffData.user_name : 'User';
+                const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                let yearOptions = '';
+                for (let y = now.getFullYear() - 5; y <= now.getFullYear() + 1; y++) {
+                    yearOptions += `<option value='${y}' ${y==currentYear?'selected':''}>${y}</option>`;
+                }
+                let monthOptions = '';
+                for (let i = 0; i < 12; i++) {
+                    monthOptions += `<option value='${String(i+1).padStart(2,'0')}' ${(i+1)==parseInt(currentMonth)?'selected':''}>${months[i]}</option>`;
+                }
+                // Status options
+                const statusOptionsArr = [
+                  {value:'all',label:'All Status'},
+                  {value:'Present',label:'Present'},
+                  {value:'Absent',label:'Absent'},
+                  {value:'Late',label:'Late'},
+                  {value:'On_Leave',label:'On Leave'}
+                ];
+                let statusOptions = '';
+                for (const opt of statusOptionsArr) {
+                  statusOptions += `<option value='${opt.value}' ${opt.value==currentStatus?'selected':''}>${opt.label}</option>`;
+                }
+                // Attendance records list
+                let attendanceList = '';
+                if (data.attendance_days && Array.isArray(data.attendance_days) && data.attendance_days.length > 0) {
+                  attendanceList = data.attendance_days
+                    .filter(day => currentStatus==='all' || day.status===currentStatus)
+                    .map(day => {
+                      let badgeClass = '';
+                      let badgeText = '';
+                      switch(day.status) {
+                        case 'Present': badgeClass = 'bg-success'; badgeText = 'Present'; break;
+                        case 'Absent': badgeClass = 'bg-danger'; badgeText = 'Absent'; break;
+                        case 'Check_in': badgeClass = 'bg-primary'; badgeText = 'Checked In'; break;
+                        case 'Late': badgeClass = 'bg-warning text-dark'; badgeText = 'Late'; break;
+                        case 'Annual_Leave': badgeClass = 'bg-info'; badgeText = 'Annual Leave'; break;
+                        case 'Sick_Leave': badgeClass = 'bg-secondary'; badgeText = 'Sick Leave'; break;
+                        case 'Unpaid_Leave': badgeClass = 'bg-dark'; badgeText = 'Unpaid Leave'; break;
+                        default: badgeClass = 'bg-secondary'; badgeText = day.status; break;
+                      }
+                      return `
+                        <div class='d-flex align-items-center py-2 px-2 mb-1' style='background:#fff;border-radius:8px;'>
+                          <span class='badge ${badgeClass}' style='min-width:70px;'>${badgeText}</span>
+                          <div class='ms-3 flex-grow-1'>
+                            <div style='font-size:1rem;font-weight:500;'>${months[day.month-1]} ${day.day}, ${day.year}</div>
+                          </div>
+                        </div>
+                      `;
+                    }).join('');
+                } else {
+                  attendanceList = `<div class='text-center text-muted py-3'>No attendance records found for this month.</div>`;
+                }
+                // Modal HTML (cleaned layout)
+                const modalHtml = `
+                <div class='modal fade' id='staffAttendanceAnalyticsModal' tabindex='-1' aria-labelledby='staffAttendanceAnalyticsModalLabel' aria-hidden='true'>
+                  <div class='modal-dialog modal-lg'>
+                    <div class='modal-content' style='background:#e6fae6;border-radius:16px;'>
+                      <div class='modal-header' style='border-bottom:none;background:#e6fae6;'>
+                        <h5 class='modal-title fw-bold' id='staffAttendanceAnalyticsModalLabel' style='color:#226622;'>Manage Attendance &gt; View Attendance</h5>
+                        <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
+                      </div>
+                      <div class='modal-body' style='background:#e6fae6;padding:32px 32px 24px 32px;'>
+                        <div style='background:#fff;border-radius:16px;padding:18px 24px;display:flex;align-items:center;gap:18px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);'>
+                          <img src='${avatar}' alt='${staffName}' style='width:56px;height:56px;border-radius:50%;object-fit:cover;background:#fff;border:2px solid #b2f5b2;'>
+                          <div style='font-size:1.15rem;font-weight:600;'>${staffName}</div>
+                        </div>
+                        <div class='row g-3 align-items-center mb-3'>
+                          <div class='col-auto'>
+                            <select id='analyticsYear' class='form-select form-select-sm' style='min-width:90px;'>${yearOptions}</select>
+                          </div>
+                          <div class='col-auto'>
+                            <select id='analyticsMonth' class='form-select form-select-sm' style='min-width:120px;'>${monthOptions}</select>
+                          </div>
+                        </div>
+                        <div class='row g-3 mb-4'>
+                          <div class='col-md-4'>
+                            <div style='background:#fff;border-radius:10px;padding:20px 0;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);'>
+                              <div style='font-size:1.05rem;color:#888;margin-bottom:8px;'>Attendance Rate</div>
+                              <div style='font-size:1.7rem;font-weight:700;color:#2e7d32;'>${data.attendance_rate ?? 0}%</div>
+                            </div>
+                          </div>
+                          <div class='col-md-4'>
+                            <div style='background:#fff;border-radius:10px;padding:20px 0;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);'>
+                              <div style='font-size:1.05rem;color:#888;margin-bottom:8px;'>Punctuality Rate</div>
+                              <div style='font-size:1.7rem;font-weight:700;color:#2e7d32;'>${data.punctuality_rate ?? 0}%</div>
+                            </div>
+                          </div>
+                          <div class='col-md-4'>
+                            <div style='background:#fff;border-radius:10px;padding:20px 0;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);'>
+                              <div style='font-size:1.05rem;color:#888;margin-bottom:8px;'>Number of days absence</div>
+                              <div style='font-size:1.7rem;font-weight:700;color=#2e7d32;'>${data.number_absent ?? 0}</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div style='background:#fff;border-radius:12px;padding:18px 18px 8px 18px;box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
+                          <div style='font-weight:600;font-size:1.1rem;margin-bottom:12px;'>Attendance Records</div>
+                          <div id='attendanceRecordsList'>
+                            ${attendanceList}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                // Remove any existing modal
+                var oldModal = document.getElementById('staffAttendanceAnalyticsModal');
+                if (oldModal) oldModal.remove();
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                var modalElem = document.getElementById('staffAttendanceAnalyticsModal');
+                var modal = new bootstrap.Modal(modalElem, { backdrop: 'static', keyboard: true });
+                // Add smooth fade-in by adding 'show' class after a short delay
+                setTimeout(() => {
+                  modalElem.classList.add('show');
+                  modalElem.style.display = 'block';
+                  modalElem.style.opacity = '1';
+                }, 10);
+                modal.show();
+                // Smooth fade-out and remove modal from DOM after hidden
+                modalElem.addEventListener('hidden.bs.modal', function () {
+                  modalElem.classList.remove('show');
+                  modalElem.style.opacity = '0';
+                  setTimeout(() => {
+                    // Remove modal from DOM
+                    if (modalElem) modalElem.remove();
+                    // Remove any lingering Bootstrap modal backdrop
+                    document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+                      backdrop.remove();
+                    });
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                  }, 300); // Wait for fade-out
+                });
+                // Add dropdown listeners for year/month/status (both summary and records)
+                setTimeout(() => {
+                  const yearSelect = document.getElementById('analyticsYear');
+                  const monthSelect = document.getElementById('analyticsMonth');
+                  const recYear = document.getElementById('recordsYear');
+                  const recMonth = document.getElementById('recordsMonth');
+                  const recStatus = document.getElementById('recordsStatus');
+                  // Set dropdowns to current year/month on first open
+                  if (yearSelect) yearSelect.value = currentYear;
+                  if (monthSelect) monthSelect.value = String(currentMonth).padStart(2, '0');
+                  if (recYear) recYear.value = currentYear;
+                  if (recMonth) recMonth.value = String(currentMonth).padStart(2, '0');
+                  // Analytics filter: reload using analyticsYear/analyticsMonth
+                  function reloadAnalytics() {
+                    window.showStaffAttendanceAnalytics(userId, yearSelect.value, monthSelect.value, recStatus ? recStatus.value : 'all');
+                  }
+                  // Records filter: reload using recordsYear/recordsMonth/recordsStatus
+                  function reloadRecords() {
+                    window.showStaffAttendanceAnalytics(userId, recYear.value, recMonth.value, recStatus.value);
+                  }
+                  if (yearSelect && monthSelect) {
+                    yearSelect.addEventListener('change', reloadAnalytics);
+                    monthSelect.addEventListener('change', reloadAnalytics);
+                  }
+                  if (recYear && recMonth && recStatus) {
+                    recYear.addEventListener('change', reloadRecords);
+                    recMonth.addEventListener('change', reloadRecords);
+                    recStatus.addEventListener('change', reloadRecords);
+                  }
+                }, 300);
+            } else {
+                alert(result.message || 'Failed to load analytics');
+            }
+        } catch (err) {
+            alert('Error fetching analytics: ' + err.message);
+        }
+    }
+
 })();

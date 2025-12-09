@@ -463,21 +463,27 @@
             </div>
           </div>
           <div class="mb-3">
-            <select class="form-select w-auto" style="min-width: 160px;">
-              <option selected>Month</option>
-              <option>January</option>
-              <option>February</option>
-              <option>March</option>
-              <option>April</option>
-              <option>May</option>
-              <option>June</option>
-              <option>July</option>
-              <option>August</option>
-              <option>September</option>
-              <option>October</option>
-              <option>November</option>
-              <option>December</option>
-            </select>
+            <div class="d-flex gap-2 align-items-center">
+              <select class="form-select w-auto attendance-year-select" style="min-width: 100px;">
+                <option>2023</option>
+                <option>2024</option>
+                <option selected>2025</option>
+              </select>
+              <select class="form-select w-auto attendance-month-select" style="min-width: 160px;">
+                <option>January</option>
+                <option>February</option>
+                <option>March</option>
+                <option>April</option>
+                <option>May</option>
+                <option>June</option>
+                <option>July</option>
+                <option>August</option>
+                <option>September</option>
+                <option>October</option>
+                <option>November</option>
+                <option selected>December</option>
+              </select>
+            </div>
           </div>
           <div class="row g-3">
             <div class="col-md-4">
@@ -506,12 +512,19 @@
             </div>
           </div>
           <!-- Static attendance status list -->
-          <div class="mt-4 p-3" style="background: #d4f8d4; border-radius: 12px;">
-            <!-- Filter controls -->
-            <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
-              <button class="btn btn-light fw-bold px-3" style="border-radius: 8px; border: 1px solid #ccc;">All</button>
-              <select class="form-select w-auto" style="min-width: 120px; border-radius: 8px; border: 1px solid #ccc;">
-                <option selected>Month</option>
+          <!-- Removed attendance status list display below analytics -->
+
+          <!-- Add below analytics cards in View Attendance modal -->
+          <!-- Attendance Records Filter -->
+          <div id="attendanceRecordsList" class="mt-4">
+            <h6 class="fw-bold mb-2">Attendance Records</h6>
+            <div class="d-flex gap-2 align-items-center mb-2">
+              <select class="form-select w-auto attendance-records-year-select" style="min-width: 100px;">
+                <option>2023</option>
+                <option>2024</option>
+                <option selected>2025</option>
+              </select>
+              <select class="form-select w-auto attendance-records-month-select" style="min-width: 160px;">
                 <option>January</option>
                 <option>February</option>
                 <option>March</option>
@@ -523,61 +536,19 @@
                 <option>September</option>
                 <option>October</option>
                 <option>November</option>
-                <option>December</option>
+                <option selected>December</option>
               </select>
-              <select class="form-select w-auto" style="min-width: 120px; border-radius: 8px; border: 1px solid #ccc;">
-                <option selected>Status</option>
-                <option>Present</option>
-                <option>Absent</option>
-                <option>Late</option>
-                <option>Annual Leave</option>
-                <option>Sick Leave</option>
-                <option>Unpaid Leave</option>
+              <select class="form-select w-auto attendance-records-status-select" style="min-width: 140px;">
+                <option value="all">All Status</option>
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="late">Late</option>
+                <option value="annual_leave">Annual Leave</option>
+                <option value="sick_leave">Sick Leave</option>
+                <option value="unpaid_leave">Unpaid Leave</option>
               </select>
             </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #b98b8b; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">19/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #b98b8b; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-calendar2-x me-1"></i> Unpaid Leave
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #176c2f; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">20/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #176c2f; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-check2-circle me-1"></i> Present
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #1cb3d3; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">21/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #1cb3d3; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-clipboard2-pulse me-1"></i> Sick Leave
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #d30000; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">22/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #d30000; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-x-circle me-1"></i> Absent
-              </span>
-            </div>
-            <div class="mb-2" style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #a86a2c; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">23/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #a86a2c; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-clock-history me-1"></i> Late
-              </span>
-            </div>
-            <div style="display: flex; align-items: center; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-              <div style="width: 32px; height: 100%; background: #174c7c; border-radius: 8px 0 0 8px;"></div>
-              <div class="flex-grow-1 px-3 py-2 fw-bold" style="font-size: 1.1rem;">24/10/25</div>
-              <span class="badge d-flex align-items-center" style="background: #174c7c; color: #fff; font-size: 1rem; border-radius: 8px; margin-right: 12px;">
-                <i class="bi bi-calendar2-week me-1"></i> Annual Leave
-              </span>
-            </div>
-          </div>
+            <div id="attendanceRecordsTable" class="table-responsive"></div>
           </div>
         </div>
       </div>
@@ -596,13 +567,36 @@
     function updateAttendanceAnalyticsByMonth(staffId) {
       var modalEl = document.getElementById('viewAttendanceModal');
       var monthSelect = modalEl.querySelector('.attendance-month-select');
+      var yearSelect = modalEl.querySelector('.attendance-year-select');
       var selectedMonth = '';
+      var selectedYear = '';
+      // Month mapping
+      var monthMap = {
+        'January': 1,
+        'February': 2,
+        'March': 3,
+        'April': 4,
+        'May': 5,
+        'June': 6,
+        'July': 7,
+        'August': 8,
+        'September': 9,
+        'October': 10,
+        'November': 11,
+        'December': 12
+      };
+      if (yearSelect && yearSelect.value !== 'Year') {
+        selectedYear = yearSelect.value;
+      } else {
+        selectedYear = new Date().getFullYear();
+      }
       if (monthSelect) {
         var val = monthSelect.value;
-        if (val && val !== 'Month') {
-          var now = new Date();
-          var monthNum = monthSelect.selectedIndex;
-          selectedMonth = `${now.getFullYear()}-${String(monthNum).padStart(2,'0')}`;
+        if (val && val !== 'Month' && monthMap[val]) {
+          var monthNum = monthMap[val];
+          selectedMonth = `${selectedYear}-${String(monthNum).padStart(2,'0')}`;
+        } else {
+          selectedMonth = `${selectedYear}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
         }
       }
       fetchAttendanceAnalytics(staffId, selectedMonth).then(analytics => {
@@ -660,10 +654,218 @@
       }
     }
 
+    // Fetch and display attendance records for workers
+    async function fetchWorkerAttendanceRecords(workerId, month) {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token') || sessionStorage.getItem('authToken') || sessionStorage.getItem('auth_token') || '';
+      if (!token) return [];
+      let url = `https://mwms.megacess.com/api/v1/staff-attendance/${workerId}/records`;
+      if (month) {
+        url += `?month=${month}`;
+      }
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data && data.data && data.data.data ? data.data.data : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function getStatusBadge(status) {
+      switch (status) {
+        case 'Present':
+          return '<span class="badge" style="background:#198754;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-check2 me-1"></i>Present</span>';
+        case 'Absent':
+          return '<span class="badge" style="background:#dc3545;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-x-lg me-1"></i>Absent</span>';
+        case 'Late':
+          return '<span class="badge" style="background:#a86b32;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-alarm me-1"></i>Late</span>';
+        case 'Annual Leave':
+        case 'annual_leave':
+          return '<span class="badge" style="background:#0d6efd;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-calendar2-week me-1"></i>Annual Leave</span>';
+        case 'Sick Leave':
+        case 'sick_leave':
+          return '<span class="badge" style="background:#0dcaf0;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-thermometer-half me-1"></i>Sick Leave</span>';
+        case 'Unpaid Leave':
+        case 'unpaid_leave':
+          return '<span class="badge" style="background:#e6bfc0;color:#b94a48;font-weight:500;font-size:1rem;"><i class="bi bi-calendar-x me-1"></i>Unpaid Leave</span>';
+        case 'Check_in':
+          return '<span class="badge" style="background:#6c757d;color:#fff;font-weight:500;font-size:1rem;"><i class="bi bi-box-arrow-in-right me-1"></i>Check In</span>';
+        default:
+          return `<span class="badge bg-secondary" style="font-weight:500;font-size:1rem;">${status}</span>`;
+      }
+    }
+
+    function getStatusBorderColor(status) {
+      switch (status) {
+        case 'Present': return '#198754';
+        case 'Absent': return '#dc3545';
+        case 'Late': return '#a86b32';
+        case 'Annual Leave':
+        case 'annual_leave': return '#0d6efd';
+        case 'Sick Leave':
+        case 'sick_leave': return '#0dcaf0';
+        case 'Unpaid Leave':
+        case 'unpaid_leave': return '#b94a48';
+        case 'Check_in': return '#6c757d';
+        default: return '#6c757d';
+      }
+    }
+
+    function getStatusButtonStyleAndIcon(status) {
+      switch (status) {
+        case 'Present':
+          return { color: '#118c4f', icon: '<i class="bi bi-check2"></i>' };
+        case 'Absent':
+          return { color: '#c90000', icon: '<i class="bi bi-x-lg"></i>' };
+        case 'Late':
+          return { color: '#a86b32', icon: '<i class="bi bi-alarm"></i>' };
+        case 'Annual Leave':
+        case 'annual_leave':
+          return { color: '#155fa0', icon: '<i class="bi bi-calendar2-week"></i>' };
+        case 'Sick Leave':
+        case 'sick_leave':
+          return { color: '#00a6d6', icon: '<i class="bi bi-thermometer-half"></i>' };
+        case 'Unpaid Leave':
+        case 'unpaid_leave':
+          return { color: '#b97b7b', icon: '<i class="bi bi-calendar-x"></i>' };
+        default:
+          return { color: '#6c757d', icon: '' };
+      }
+    }
+
+    function renderAttendanceRecordsTable(records) {
+      const tableDiv = document.getElementById('attendanceRecordsTable');
+      if (!tableDiv) return;
+      if (!records || records.length === 0) {
+        tableDiv.innerHTML = '<div class="text-muted">No attendance records found for this month.</div>';
+        return;
+      }
+      // Filter records by allowed statuses
+      const allowedStatuses = [
+        'Present',
+        'Absent',
+        'Late',
+        'Annual Leave',
+        'annual_leave',
+        'Unpaid Leave',
+        'unpaid_leave',
+        'Sick Leave',
+        'sick_leave',
+        'Sick Leave (MC)',
+        'MC'
+      ];
+      const filteredRecords = records.filter(r => allowedStatuses.includes(r.status));
+      if (filteredRecords.length === 0) {
+        tableDiv.innerHTML = '<div class="text-muted">No attendance records found for this month.</div>';
+        return;
+      }
+      let html = '<div class="attendance-records-list" style="max-height: 370px; overflow-y: auto;">';
+      filteredRecords.forEach(r => {
+        let borderColor = getStatusBorderColor(r.status);
+        const { color, icon } = getStatusButtonStyleAndIcon(r.status);
+        html += `<div class="attendance-record-card d-flex align-items-center justify-content-between mb-2" style="border:1px solid #b6b6b6;border-left:16px solid ${borderColor};background:#fff;padding:0.75rem 1rem;min-height:56px;border-radius:6px;">
+          <div><strong>${r.date}</strong></div>
+          <button class="btn" style="background:${color};color:#fff;font-weight:500;min-width:140px;box-shadow:0 2px 6px rgba(0,0,0,0.08);border-radius:10px;" onclick="showAttendanceRecordDetails('${encodeURIComponent(JSON.stringify(r))}')">${icon} ${r.status}</button>
+        </div>`;
+      });
+      html += '</div>';
+      tableDiv.innerHTML = html;
+    }
+
+    // Show details modal for a record
+    window.showAttendanceRecordDetails = function(recordJson) {
+      var record = JSON.parse(decodeURIComponent(recordJson));
+      // Get button color and icon for status
+      var statusInfo = getStatusButtonStyleAndIcon(record.status);
+      var statusBtn = `<span style="display:inline-block;background:${statusInfo.color};color:#fff;font-weight:500;min-width:120px;padding:8px 20px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1.1rem;vertical-align:middle;">${statusInfo.icon} ${record.status}</span>`;
+      var checkedBy = record.checkedin_by || record.checkedout_by || '';
+      var checkInTime = record.check_in ? (new Date(record.check_in).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })).replace(/^0/, '') : '';
+      var modalHtml = `
+        <div class='modal fade' id='attendanceRecordDetailsModal' tabindex='-1' aria-labelledby='attendanceRecordDetailsModalLabel' aria-hidden='true'>
+          <div class='modal-dialog'>
+            <div class='modal-content' style='background:#eaeaea;'>
+              <div class='modal-header' style='border-bottom:1px solid #444;'>
+                <h5 class='modal-title fw-bold' id='attendanceRecordDetailsModalLabel'>View Attendance Details</h5>
+                <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
+              </div>
+              <div class='modal-body'>
+                <div class='row mb-2'>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Type of leave:</div>
+                    ${statusBtn}
+                  </div>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Checked by:</div>
+                    <span class='fw-semibold'>${checkedBy}</span>
+                  </div>
+                </div>
+                <div class='row'>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Date:</div>
+                    <span>${record.date || ''}</span>
+                  </div>
+                  <div class='col-12 col-md-6 mb-3'>
+                    <div class='text-muted mb-1'>Check in time:</div>
+                    <span class='fw-semibold'>${checkInTime}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      // Remove any existing modal
+      var oldModal = document.getElementById('attendanceRecordDetailsModal');
+      if (oldModal) oldModal.remove();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      var modal = new bootstrap.Modal(document.getElementById('attendanceRecordDetailsModal'));
+      modal.show();
+    }
+
     window.viewAttendanceDetails = async function(staffId) {
       var modalEl = document.getElementById('viewAttendanceModal');
       var modal = new bootstrap.Modal(modalEl);
       modal.show();
+
+      // Set default month and year for analytics filter
+      var monthSelect = modalEl.querySelector('.attendance-month-select');
+      var yearSelect = modalEl.querySelector('.attendance-year-select');
+      var now = new Date();
+      if (monthSelect) {
+        var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        monthSelect.selectedIndex = now.getMonth();
+      }
+      if (yearSelect) {
+        for (var i = 0; i < yearSelect.options.length; i++) {
+          if (yearSelect.options[i].value == now.getFullYear()) {
+            yearSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+
+      // Set default month, year, and status for records filter (independent)
+      var recMonthSelect = modalEl.querySelector('.attendance-records-month-select');
+      var recYearSelect = modalEl.querySelector('.attendance-records-year-select');
+      var recStatusSelect = modalEl.querySelector('.attendance-records-status-select');
+      if (recMonthSelect) recMonthSelect.selectedIndex = now.getMonth();
+      if (recYearSelect) {
+        for (var i = 0; i < recYearSelect.options.length; i++) {
+          if (recYearSelect.options[i].value == now.getFullYear()) {
+            recYearSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      if (recStatusSelect) recStatusSelect.value = 'all';
 
       // Fetch and display worker info
       const workerInfo = await fetchWorkerInfo(staffId);
@@ -702,12 +904,58 @@
       document.getElementById('numberAbsentValue').textContent = '...';
 
       updateAttendanceAnalyticsByMonth(staffId);
-      var monthSelect = modalEl.querySelector('.attendance-month-select');
-      if (monthSelect) {
-        monthSelect.onchange = function() {
-          updateAttendanceAnalyticsByMonth(staffId);
+
+      // Fetch and render attendance records for workers
+      async function updateRecords() {
+        var recMonthSelect = modalEl.querySelector('.attendance-records-month-select');
+        var recYearSelect = modalEl.querySelector('.attendance-records-year-select');
+        var recStatusSelect = modalEl.querySelector('.attendance-records-status-select');
+        var selectedYear = recYearSelect && recYearSelect.value !== 'Year' ? recYearSelect.value : new Date().getFullYear();
+        var monthMap = {
+          'January': 1,
+          'February': 2,
+          'March': 3,
+          'April': 4,
+          'May': 5,
+          'June': 6,
+          'July': 7,
+          'August': 8,
+          'September': 9,
+          'October': 10,
+          'November': 11,
+          'December': 12
         };
+        var selectedMonth = recMonthSelect && monthMap[recMonthSelect.value] ? String(monthMap[recMonthSelect.value]).padStart(2,'0') : String(new Date().getMonth()+1).padStart(2,'0');
+        var monthStr = `${selectedYear}-${selectedMonth}`;
+        const records = await fetchWorkerAttendanceRecords(staffId, monthStr);
+        // Filter by status if not 'all'
+        let filteredRecords = records;
+        if (recStatusSelect && recStatusSelect.value !== 'all') {
+          filteredRecords = records.filter(r => {
+            // Normalize status for comparison
+            let statusVal = recStatusSelect.value;
+            if (statusVal === 'present') return r.status === 'Present';
+            if (statusVal === 'absent') return r.status === 'Absent';
+            if (statusVal === 'check_in') return r.status === 'Check_in';
+            if (statusVal === 'late') return r.status === 'Late';
+            if (statusVal === 'annual_leave') return r.status === 'Annual Leave' || r.status === 'annual_leave';
+            if (statusVal === 'sick_leave') return r.status === 'Sick Leave' || r.status === 'sick_leave';
+            if (statusVal === 'unpaid_leave') return r.status === 'Unpaid Leave' || r.status === 'unpaid_leave';
+            return true;
+          });
+        }
+        renderAttendanceRecordsTable(filteredRecords);
       }
+      await updateRecords();
+
+      // Add event listeners for records filter dropdowns (independent)
+      if (recMonthSelect) recMonthSelect.onchange = updateRecords;
+      if (recYearSelect) recYearSelect.onchange = updateRecords;
+      if (recStatusSelect) recStatusSelect.onchange = updateRecords;
+
+      // Add event listeners for analytics filter dropdowns (independent)
+      if (monthSelect) monthSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); };
+      if (yearSelect) yearSelect.onchange = function() { updateAttendanceAnalyticsByMonth(staffId); };
     };
 
     (function(){
@@ -896,13 +1144,13 @@
           avatar.src = imageSrc;
           avatar.onerror = function() {
             // Fallback to placeholder if image fails to load
-            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
             this.src = placeholderImage;
             this.onerror = null; // Prevent infinite loop
           };
         } else {
           // Generate placeholder avatar for invalid or missing images
-          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
           avatar.src = placeholderImage;
           avatar.onerror = null; // Clear any previous error handler
         }
@@ -990,13 +1238,13 @@
           avatar.src = imageSrc;
           avatar.onerror = function() {
             // Fallback to placeholder if image fails to load
-            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
             this.src = placeholderImage;
             this.onerror = null; // Prevent infinite loop
           };
         } else {
           // Generate placeholder avatar for invalid or missing images
-          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+          const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
           avatar.src = placeholderImage;
           avatar.onerror = null; // Clear any previous error handler
         }
@@ -1208,7 +1456,7 @@
         e.preventDefault();
         
         const overtimeDate = document.getElementById('overtimeDate').value;
-        const overtimeDuration = document.getElementById('overtimeDuration').value;
+               const overtimeDuration = document.getElementById('overtimeDuration').value;
         const overtimeRemarks = document.getElementById('overtimeRemarks').value;
         
         // Validate form
@@ -1415,6 +1663,7 @@
       }
 
       // Note: Filter functionality is now handled in manage_overtime.js
+
     })();
   </script>
 </body>
