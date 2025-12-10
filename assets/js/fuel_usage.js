@@ -76,6 +76,8 @@ function populateFuelUsageTable(usages) {
   if (!tableBody) return;
   tableBody.innerHTML = "";
 
+  const fragment = document.createDocumentFragment();
+
   usages.forEach((usage) => {
     const row = document.createElement("div");
     row.className = "content-row d-flex border-bottom py-2 align-items-center";
@@ -150,13 +152,47 @@ function populateFuelUsageTable(usages) {
             </div>
         `;
 
-    tableBody.appendChild(row);
+    fragment.appendChild(row);
   });
 
-  attachUsageEditListeners();
-  attachUsageDeleteListeners();
-  attachDescriptionViewListeners();
+  tableBody.appendChild(fragment);
 }
+
+// ==================== EVENT DELEGATION ====================
+document.addEventListener("DOMContentLoaded", () => {
+  const tableBody = document.getElementById("fuelUsageTableBody");
+  if (tableBody) {
+    tableBody.addEventListener("click", (e) => {
+      // Handle Edit
+      const editBtn = e.target.closest(".update-usage-btn");
+      if (editBtn) {
+        handleUsageEdit(editBtn);
+      }
+
+      // Handle Delete
+      const deleteBtn = e.target.closest(".delete-usage-btn");
+      if (deleteBtn) {
+        handleUsageDelete(deleteBtn);
+      }
+
+      // Handle View Description
+      const viewDescBtn = e.target.closest(".view-desc-btn");
+      if (viewDescBtn) {
+        e.preventDefault();
+        const desc = decodeURIComponent(viewDescBtn.dataset.desc);
+        Swal.fire({
+          title: "Usage Description",
+          text: desc,
+          icon: "info",
+          confirmButtonText: "Close",
+          customClass: {
+            confirmButton: "btn btn-primary",
+          },
+        });
+      }
+    });
+  }
+});
 
 // ==================== Render Pagination ====================
 function renderFuelUsagePagination(meta, search, filter) {
@@ -407,71 +443,45 @@ if (editUsageForm) {
 }
 
 // ==================== Attach Listeners ====================
-function attachUsageEditListeners() {
-  document.querySelectorAll(".update-usage-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      const quantity = btn.dataset.quantity;
-      const fuelType = btn.dataset.type;
-      const userId = btn.dataset.userId;
-      const staffId = btn.dataset.staffId;
-      const name = btn.dataset.name;
-      const date = btn.dataset.date;
-      const description = btn.dataset.description;
+function handleUsageEdit(btn) {
+  const id = btn.dataset.id;
+  const quantity = btn.dataset.quantity;
+  const fuelType = btn.dataset.type;
+  const userId = btn.dataset.userId;
+  const staffId = btn.dataset.staffId;
+  const name = btn.dataset.name;
+  const date = btn.dataset.date;
+  const description = btn.dataset.description;
 
-      document.getElementById("editUsageId").value = id;
-      document.getElementById("editUsageQuantity").value = quantity;
-      document.getElementById("editUsageType").value = fuelType;
-      document.getElementById("editUsageDate").value = date;
-      document.getElementById("editUsageDescription").value = description;
+  document.getElementById("editUsageId").value = id;
+  document.getElementById("editUsageQuantity").value = quantity;
+  document.getElementById("editUsageType").value = fuelType;
+  document.getElementById("editUsageDate").value = date;
+  document.getElementById("editUsageDescription").value = description;
 
-      // Set User/Staff
-      const userInput = document.getElementById("editUsedBy");
-      if (userId || staffId) {
-        editSelectedUsageUser = {
-          user_id: userId || null,
-          staff_id: staffId || null,
-          fullname: name,
-          role: userId ? "user" : "staff",
-        };
-        userInput.value = name;
-      } else {
-        editSelectedUsageUser = null;
-        userInput.value = "";
-      }
+  // Set User/Staff
+  const userInput = document.getElementById("editUsedBy");
+  if (userId || staffId) {
+    editSelectedUsageUser = {
+      user_id: userId || null,
+      staff_id: staffId || null,
+      fullname: name,
+      role: userId ? "user" : "staff",
+    };
+    userInput.value = name;
+  } else {
+    editSelectedUsageUser = null;
+    userInput.value = "";
+  }
 
-      bootstrap.Modal.getOrCreateInstance(
-        document.getElementById("editUsageModal")
-      ).show();
-    });
-  });
+  bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("editUsageModal")
+  ).show();
 }
 
-function attachUsageDeleteListeners() {
-  document.querySelectorAll(".delete-usage-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const id = e.currentTarget.dataset.id;
-      deleteFuelUsage(id);
-    });
-  });
-}
-
-function attachDescriptionViewListeners() {
-  document.querySelectorAll(".view-desc-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const desc = decodeURIComponent(btn.dataset.desc);
-      Swal.fire({
-        title: "Usage Description",
-        text: desc,
-        icon: "info",
-        confirmButtonText: "Close",
-        customClass: {
-          confirmButton: "btn btn-primary",
-        },
-      });
-    });
-  });
+function handleUsageDelete(btn) {
+  const id = btn.dataset.id;
+  deleteFuelUsage(id);
 }
 
 // ==================== Search & Filter ====================
