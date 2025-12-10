@@ -64,6 +64,8 @@ function populateFuelsTable(fuels) {
   const tableBody = document.getElementById("fuelsTableBody");
   tableBody.innerHTML = "";
 
+  const fragment = document.createDocumentFragment();
+
   fuels.forEach((fuel) => {
     if (!fuel.user) fuel.user = { user_fullname: "-" };
     const row = document.createElement("div");
@@ -108,11 +110,24 @@ function populateFuelsTable(fuels) {
       </div>
     `;
 
-    tableBody.appendChild(row);
+    fragment.appendChild(row);
   });
 
-  attachDeleteListeners();
+  tableBody.appendChild(fragment);
 }
+
+// ==================== Event Delegation ====================
+document.addEventListener("DOMContentLoaded", () => {
+  const tableBody = document.getElementById("fuelsTableBody");
+  if (tableBody) {
+    tableBody.addEventListener("click", (e) => {
+      const deleteBtn = e.target.closest(".delete-fuel-btn");
+      if (deleteBtn) {
+        handleDelete(deleteBtn);
+      }
+    });
+  }
+});
 
 // ==================== Render Pagination ====================
 function renderFuelPagination(meta, search, filter, type) {
@@ -225,16 +240,9 @@ async function updateFuelRecord(fuelId, payload) {
 }
 
 // ==================== Delete Fuel ====================
-function attachDeleteListeners() {
-  document.querySelectorAll(".delete-fuel-btn").forEach((btn) => {
-    btn.removeEventListener("click", handleDelete);
-    btn.addEventListener("click", handleDelete);
-  });
-}
 
-async function handleDelete(e) {
-  e.preventDefault();
-  const fuelId = e.currentTarget.dataset.id;
+async function handleDelete(btn) {
+  const fuelId = btn.dataset.id;
 
   showConfirm("You want to delete this fuel?", async () => {
     showLoading();
