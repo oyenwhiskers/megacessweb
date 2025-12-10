@@ -274,6 +274,15 @@
             fetchStaffList('', staffRoleFilter);
           }
         });
+        
+        // Reset filter to "All" when modal is closed
+        addAdvanceModal.addEventListener('hidden.bs.modal', function() {
+          staffRoleFilter = '';
+          if (filterRow) {
+            filterRow.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            filterRow.querySelector('button:first-child').classList.add('active');
+          }
+        });
       }
       if (userSearch) {
         userSearch.addEventListener('input', function() {

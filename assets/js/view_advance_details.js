@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Display person summary
     const personName = document.getElementById('personName');
     const personInfo = document.getElementById('personInfo');
-    const personAvatar = document.getElementById('personAvatar');
     const totalOutstanding = document.getElementById('totalOutstanding');
     const totalLoan = document.getElementById('totalLoan');
     const totalPaid = document.getElementById('totalPaid');
@@ -103,19 +102,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     personName.textContent = data.name || '-';
     personInfo.textContent = data.type === 'staff' ? 'Worker' : 'Staff';
-
-    // Set avatar
-    if (data.img) {
-      let imgUrl = data.img;
-      if (!imgUrl.startsWith('http') && !imgUrl.startsWith('/')) {
-        imgUrl = `https://mwms.megacess.com/storage/user-images/${imgUrl}`;
-      } else if (imgUrl.startsWith('/')) {
-        imgUrl = `https://mwms.megacess.com${imgUrl}`;
-      }
-      personAvatar.innerHTML = `<img src="${imgUrl}" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;" alt="${data.name}">`;
-    } else {
-      personAvatar.innerHTML = `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:80px;height:80px;"><i class="bi bi-person text-white" style="font-size:3rem;"></i></div>`;
-    }
 
     totalOutstanding.textContent = `RM ${formatCurrency(data.total_outstanding_balance)}`;
     totalLoan.textContent = `RM ${formatCurrency(data.total_loan_amount)}`;
