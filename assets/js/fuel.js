@@ -196,7 +196,6 @@ function renderFuelPagination(meta, search, filter, type) {
 // ==================== Create / Add Fuel ====================
 async function createFuelRecord(payload) {
   try {
-    console.log(payload);
     const result = await apiFetch("/fuels", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -204,7 +203,6 @@ async function createFuelRecord(payload) {
     result.success
       ? showSuccess("Fuel record added successfully!")
       : showError(result.message || "Failed to add fuel record.");
-    console.log(result);
     getAllFuels();
     refreshFuelSummary();
   } catch (err) {

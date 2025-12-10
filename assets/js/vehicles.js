@@ -357,7 +357,6 @@ if (addVehicleBtn) {
 
       if (result.success) {
         bootstrap.Modal.getOrCreateInstance(document.getElementById('addVehicleModal')).hide();
-        console.log("modal closed");
         document.getElementById('vehicleName').value = '';
         document.getElementById('plateNo').value = '';
         statusSelect.value = 'Choose status';

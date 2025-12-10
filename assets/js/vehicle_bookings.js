@@ -61,7 +61,6 @@ async function fetchVehicle() {
       name: `${v.vehicle_name} (${v.plate_number})`,
     }));
 
-    console.log("🔧 Available Vehicles loaded:", allVehicles.length);
   } catch (error) {
     console.error("Error fetching available vehicles:", error);
   }
@@ -79,7 +78,6 @@ async function fetchUserAndStaff() {
         role: item.role,
         displayLabel: `${item.fullname} - ${item.role}`,
       }));
-      console.log("🔧 Users/Staff loaded:", allUsersAndStaff.length);
     } else {
       throw new Error(result.message);
     }
@@ -295,7 +293,6 @@ async function deleteVehicleBooking(id, vehicleInfo = null) {
               status: "Available",
             }),
           });
-          console.log(`Vehicle ${vehicleInfo.id} set to Available`);
         } catch (updateErr) {
           console.error("Failed to update vehicle status:", updateErr);
         }
