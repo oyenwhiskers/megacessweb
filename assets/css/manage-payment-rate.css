@@ -260,9 +260,19 @@ Filter for Staff tab in Salary Management
 }
 
 .filter-btn:hover {
-  background-color: #e7e7e7;
+  background-color: #c6c6c6;
   color: #0d6832;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+.btn-check:checked + .filter-btn:hover {
+  background-color: #095022;
+  color: #cdcdcd;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(13,104,50,0.4);
+}
+
 
 /* ==============================================
 List of tasks in Work-based Rate Tab (left panel)

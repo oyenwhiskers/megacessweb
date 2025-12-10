@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const roleFilterButtons = {
         all: document.getElementById('roleFilterAll'),
         mandor: document.getElementById('roleFilterMandor'),
+        manager: document.getElementById('roleFilterManager'),
         checker: document.getElementById('roleFilterChecker'),
         admin: document.getElementById('roleFilterAdmin')
     };
@@ -184,13 +185,26 @@ document.addEventListener('DOMContentLoaded', function() {
     window.goToPage = function(page) {
         if (page < 1 || page > totalPages || page === currentPage) return;
         
+        currentPage = page;
         const searchTerm = searchInput.value.trim();
         
         // Check which tab is active
         if (workerTab.classList.contains('btn-success')) {
-            handleClientSidePagination(searchTerm, page, allWorkersData);
+            // If we have cached data, use client-side pagination
+            if (allWorkersData && allWorkersData.length > 0) {
+                handleClientSidePagination(searchTerm, page, allWorkersData);
+            } else {
+                // Otherwise fetch from API
+                fetchWorkers(searchTerm, page);
+            }
         } else {
-            handleStaffClientSidePagination(searchTerm, page, allStaffData, currentRole);
+            // If we have cached data, use client-side pagination
+            if (allStaffData && allStaffData.length > 0) {
+                handleStaffClientSidePagination(searchTerm, page, allStaffData, currentRole);
+            } else {
+                // Otherwise fetch from API
+                fetchStaff(searchTerm, page, currentRole);
+            }
         }
     };
 
@@ -684,11 +698,15 @@ document.addEventListener('DOMContentLoaded', function() {
             roleFilterContainer.style.display = 'none';
         }
         
-        searchInput.placeholder = 'search name...';
-        document.querySelector('.row.mb-3 h3').textContent = 'List of existing worker:';
+        const searchLabel = document.querySelector('label[for="searchInput"]');
+        if (searchLabel) searchLabel.textContent = 'Search worker name:';
+        searchInput.placeholder = 'Enter worker name...';
+        document.querySelector('.row.mb-2 p.list-title').textContent = 'List of existing worker:';
         
-        // Reset pagination and load workers data
+        // Reset pagination state
         currentPage = 1;
+        totalPages = 0;
+        totalItems = 0;
         const searchTerm = searchInput.value.trim();
         
         // Use client-side pagination if we have data, otherwise fetch from API
@@ -716,11 +734,15 @@ document.addEventListener('DOMContentLoaded', function() {
             setActiveRoleFilter('all');
         }
         
-        searchInput.placeholder = 'search staff name...';
-        document.querySelector('.row.mb-3 h3').textContent = 'List of existing staff:';
+        const searchLabel = document.querySelector('label[for="searchInput"]');
+        if (searchLabel) searchLabel.textContent = 'Search staff name:';
+        searchInput.placeholder = 'Enter staff name...';
+        document.querySelector('.row.mb-2 p.list-title').textContent = 'List of existing staff:';
         
-        // Reset pagination and load staff data
+        // Reset pagination state
         currentPage = 1;
+        totalPages = 0;
+        totalItems = 0;
         const searchTerm = searchInput.value.trim();
         
         // Use client-side pagination if we have data, otherwise fetch from API
