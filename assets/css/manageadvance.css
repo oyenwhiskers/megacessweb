@@ -30,6 +30,11 @@ Manage Advance Styles
   width: calc(100% - 250px);
 }
 
+.advance-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #a3a3a3 !important;
+}
+
 .type-of-employee-btn {
   position: relative;
   display: inline-flex;
@@ -93,16 +98,240 @@ Manage Advance Styles
 }
 
 /* =======================================
+Modal Button Styles
+========================================== */
+/* When STAFF is selected → move slider right */
+#modalStaffBtn:checked ~ .selection-bg {
+  transform: translateX(calc(100% + 4px));
+}
+
+/* Active label should turn white */
+#modalWorkerBtn:checked + label {
+  color: white;
+  font-weight: 700;
+}
+#modalStaffBtn:checked + label {
+  color: white;
+  font-weight: 700;
+}
+
+.addAdvanceBtn {
+    background-color: #0d6832;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.addAdvanceBtn:hover {
+    background-color: #095022;
+    color: white;
+}
+
+/* =======================================
 Modal Styles
 ========================================== */
 .modal-dialog {
-    max-width: 700px;
+    max-width: 1100px;
 }
 
 .modal-content {
-    background: #d2f5d7;
+    background: #e6f7ec;
+    border: none;
 }
 
 .modal-header {
     border: none;
+    background-color: #0d6832;
+    color: white;
+}
+
+.modal-list-of-group-section {
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border-radius: 15px;
+}
+
+/* Custom Scrollbar */
+.modal-list-of-group-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-list-of-group-section::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.modal-list-of-group-section::-webkit-scrollbar-thumb {
+    background: #0d6832;
+    border-radius: 10px;
+}
+
+.modal-list-of-group-section::-webkit-scrollbar-thumb:hover {
+    background: #095022;
+}
+
+.modal-list-of-employee {
+    background-color: #ffffff;
+    border-radius: 15px;
+}
+
+.filter-section {
+    background-color: #fff;
+}
+
+.filter-btn {
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 1px solid #11634b;
+    
+}
+
+.add-advance-btn {
+  background: #11634b;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-advance-btn:hover {
+  background: #0a5528;
+}
+
+/* =======================================
+Employee List Item Styles (for dynamically injected cards)
+======================================= */
+.list-group {
+  background-color: #ffffff;
+}
+.employee-list-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.employee-list-item:hover {
+  background-color: #f8f9fa;
+  border: 1px solid #0d6832;
+}
+
+.employee-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.employee-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  background-color: #6c757d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.employee-avatar-placeholder i {
+  font-size: 2rem;
+  color: white;
+}
+
+.employee-info {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-detail {
+  color: #6c757d;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =======================================
+View Advance Details Page Styles
+========================================== */
+
+/* Green pagination active state */
+.pagination .page-item.active .page-link {
+  background-color: #0d6832;
+  border-color: #0d6832;
+  color: white;
+}
+.pagination .page-item.active .page-link:hover {
+  background-color: #095022;
+  border-color: #095022;
+}
+.pagination .page-link {
+  color: #0d6832;
+}
+.pagination .page-link:hover {
+  color: #095022;
+}
+
+/* Enhanced shadows for depth */
+.details-card-body {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+}
+
+.details-card-header {
+  background-color: #0d6832 !important;
+  color: white !important;
+  border: none;
+}
+
+/* =======================================
+Filter Button Styles
+========================================== */
+.filter-btn {
+  transition: all 0.2s ease;
+  border-radius: 10px;
+  border: 1px solid #11634b;
+
+}
+
+.filter-btn.active {
+  background-color: #0d6832 !important;
+  color: white !important;
+  border-color: #0d6832 !important;
+}
+
+.filter-btn.active:hover {
+  background-color: #095022 !important;
+  border-color: #095022 !important;
+}
+
+/* Individual advance record cards */
+#advanceRecordsList .card {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+.modal-list-of-employee,
+.modal-list-of-group-section {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }

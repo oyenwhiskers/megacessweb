@@ -9,9 +9,14 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentRole = '';
   let perPage = 15;
 
-  // Helper: get token
-  function getAuthToken() {
+  // Helper: get token - expose globally for use in HTML
+  window.getAuthToken = function() {
     return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+  };
+  
+  // Use global function internally
+  function getAuthToken() {
+    return window.getAuthToken();
   }
 
   // Helper: render advances
@@ -62,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <span class="fw-semibold text-danger">RM ${formatCurrency(item.total_outstanding_balance)}</span>
                 </div>
                 <div>
-                  <span class="text-muted">Total Loans:</span>
+                  <span class="text-muted">Total Advance:</span>
                   <span class="fw-semibold">RM ${formatCurrency(item.total_loan_amount)}</span>
                 </div>
                 <div>
@@ -78,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="d-flex align-items-center gap-3">
             <div class="border-start" style="height:60px;"></div>
-            <button type="button" class="btn btn-outline-success view-advance-btn" data-id="${personId}" data-type="${personType}"><i class="bi bi-eye"></i> View</button>
+            <button type="button" class="btn btn-success view-advance-btn" data-id="${personId}" data-type="${personType}"><i class="bi bi-eye"></i> View</button>
           </div>
         </div>
       `;
@@ -89,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchAdvances() {
     const token = getAuthToken();
     if (!token) {
-      advanceList.innerHTML = `<div class='text-center text-danger py-5'>Not authenticated</div>`;
+      advanceList.innerHTML = `<div class='text-center text-danger py-5'>Not authenticated. Please log in.</div>`;
       return;
     }
     // Use correct type for API
@@ -136,7 +141,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const personId = this.getAttribute('data-id');
         const personType = this.getAttribute('data-type');
         if (!personId || !personType) {
-          alert('Unable to load person data.');
+          console.error('Unable to load person data.');
+          Swal.fire({
+            icon: 'error',
+            text: 'Unable to load person data.',
+            confirmButtonColor: '#0d6832'
+          });
           return;
         }
         // Navigate to view advance details page
@@ -156,7 +166,13 @@ document.addEventListener('DOMContentLoaded', function() {
   async function addAdvance(data) {
     const token = getAuthToken();
     if (!token) {
-      alert('Not authenticated');
+      console.error('Not authenticated');
+      Swal.fire({
+            icon: 'warning',
+            title: 'Not authenticated',
+            text: 'Please fill in all fields and select a worker/staff.',
+            confirmButtonColor: '#0d6832'
+          });
       return { success: false, message: 'Not authenticated' };
     }
     const url = 'https://mwms.megacess.com/api/v1/advances';
@@ -195,11 +211,22 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       const result = await addAdvance(data);
       if (result.success) {
-        alert('Advance added successfully!');
+        console.log('Advance added successfully!');
+        Swal.fire({
+          icon: 'success',
+          text: 'The advance has been added successfully.',
+          timer: 2000,
+          showtimerProgressBar: true,
+        })
         fetchAdvances(); // Refresh list
         addAdvanceForm.reset();
       } else {
-        alert(result.message || 'Failed to add advance.');
+        console.error(result.message || 'Failed to add advance.');
+        Swal.fire({
+          icon: 'error',
+          text: result.message || 'Failed to add advance.',
+          confirmButtonColor: '#0d6832'
+        })
       }
     });
   }

@@ -8,6 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
   <link rel="stylesheet" href="/megacessweb/assets/css/manageadvance.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body data-page="manage-advance">
   <div class="app d-flex">
@@ -35,8 +36,8 @@
               </div>
             </div>
           <div class="ms-auto">
-            <button class="btn btn-light border shadow-sm px-4 py-2 d-flex align-items-center gap-2" id="addAdvanceBtn" data-bs-toggle="modal" data-bs-target="#addAdvanceModal">
-              <i class="bi bi-plus-lg"></i>
+            <button class="addAdvanceBtn shadow-sm px-4 py-2 d-flex align-items-center gap-3" id="addAdvanceBtn" data-bs-toggle="modal" data-bs-target="#addAdvanceModal">
+              <i class="bi bi-plus-circle"></i>
               Add advance
             </button>
           </div>
@@ -66,83 +67,67 @@
       <div class="modal-content">
         <div class="modal-header pb-3">
           <h5 class="modal-title fw-bold" id="addAdvanceModalLabel">Add new Advance & Expenses Records</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form>
             <div class="mb-3">
-              <div class="text-center fw-bold fs-5 mb-2">Select a worker/staff:</div>
-              <div class="d-flex align-items-center justify-content-center mb-2 gap-2">
-                <span style="font-size:2.2rem;"><i class="bi bi-person-lines-fill"></i></span>
-                <div class="btn-group bg-white rounded-pill shadow-sm" style="overflow:hidden;">
-                  <button type="button" class="btn btn-success d-flex align-items-center gap-2 px-3 py-1" id="modalWorkerBtn" style="background:#11634b;border:none;">
-                    <i class="bi bi-person"></i> Worker
-                  </button>
-                  <button type="button" class="btn btn-light d-flex align-items-center gap-2 px-3 py-1" id="modalStaffBtn">
-                    <i class="bi bi-people-fill"></i> Staff
-                  </button>
+              <div class="fw-bold fs-5 mb-2">Select a worker/staff:</div>
+              <!-- Employee Selection in Add new Advance Modal -->
+                <div class="employee-selection my-4">
+                  <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+                    <input type="radio" class="salary-select-employee" name="employeeType" id="modalWorkerBtn" autocomplete="off" checked>
+                    <label class="select-employee-btn" for="modalWorkerBtn"><i class="bi bi-person-fill me-2"></i>Worker</label> 
+
+                    <input type="radio" class="salary-select-employee" name="employeeType" id="modalStaffBtn" autocomplete="off">
+                    <label class="select-employee-btn" for="modalStaffBtn"><i class="bi bi-person-badge me-2"></i>Staff</label> 
+
+                    <span class="selection-bg"></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              <!-- Search Bar for Add new Advance Modal -->
               <div class="mb-2">
-                <label class="form-label fw-semibold mb-1" for="userSearch">Search:</label>
-                <input type="text" class="form-control" id="userSearch" placeholder="Search Worker/Staff Name">
+                <label class="form-label fw-bold mb-1" for="userSearch">Search:</label>
+                <input type="text" class="form-control" id="userSearch" placeholder="Search Worker/Staff Name"> <!-- Need fixing -->
               </div>
-              <div class="d-flex gap-2 mb-2 d-none" id="staffFilterRow">
-                <button type="button" class="btn btn-light border flex-fill">All</button>
-                <button type="button" class="btn btn-light border flex-fill">Manager</button>
-                <button type="button" class="btn btn-light border flex-fill">Checker</button>
-                <button type="button" class="btn btn-light border flex-fill">Admin</button>
+              <div class="filter-section d-flex gap-2 mb-2 p-3" id="staffFilterRow">
+                <button type="button" class="filter-btn border flex-fill py-2 active">All</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Mandor</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Manager</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Checker</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Admin</button>
               </div>
-              <div class="mb-3">
-                <label for="selectedPerson" class="form-label fw-semibold">Selected Worker/Staff:</label>
+              <hr>
+              <!-- Selected Worker/Staff Section -->
+              <div class="modal-list-of-employee mb-3 p-3">
+                <label for="selectedPerson" class="form-label fw-bold">Selected Worker/Staff:</label>
                 <input type="text" class="form-control" id="selectedPerson" placeholder="No one selected" readonly>
               </div>
-              <div style="max-height:220px;overflow-y:auto;">
+              <div class="modal-list-of-group-section p-3">
                 <div class="list-group">
-                  <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded">
-                    <span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>
-                    <div>
-                      <div class="fw-bold">Ethan Muller</div>
-                      <div>Checker</div>
-                    </div>
-                  </button>
-                  <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded">
-                    <span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>
-                    <div>
-                      <div class="fw-bold">Oikawa Yamaguchi</div>
-                      <div>Manager</div>
-                    </div>
-                  </button>
-                  <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded">
-                    <span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>
-                    <div>
-                      <div class="fw-bold">Olivia Wilson</div>
-                      <div>Checker</div>
-                    </div>
-                  </button>
+                  <!-- Worker/Staff list will be populated by JS -->
                 </div>
               </div>
-            </div>
-            <div class="mb-3 mt-4">
-              <label for="advanceDate" class="form-label fw-semibold">Date:</label>
+            <div class="modal-details-section mb-3 mt-3">
+              <label for="advanceDate" class="form-label fw-bold">Date:</label>
               <div class="input-group">
                 <input type="date" class="form-control" id="advanceDate" placeholder="Select date..">
-                <span class="input-group-text"><i class="bi bi-calendar"></i></span>
               </div>
             </div>
             <div class="mb-3">
-              <label for="advanceAmount" class="form-label fw-semibold">Amount:</label>
+              <label for="advanceAmount" class="form-label fw-bold">Amount:</label>
               <div class="input-group">
                 <span class="input-group-text">RM</span>
                 <input type="number" class="form-control" id="advanceAmount" placeholder="Enter amount..">
               </div>
             </div>
             <div class="mb-3">
-              <label for="advanceRemarks" class="form-label fw-semibold">Remarks:</label>
+              <label for="advanceRemarks" class="form-label fw-bold">Remarks:</label>
               <textarea class="form-control" id="advanceRemarks" rows="3" placeholder="Enter remarks.."></textarea>
             </div>
-            <div class="d-grid">
-              <button type="button" class="btn btn-success fw-bold" style="background:#11634b;border:none;">Add Record</button>
+            <div class="d-grid mb-3">
+              <button type="button" class="add-advance-btn fw-bold px-3 py-2">Add Record</button>
             </div>
           </form>
         </div>
@@ -195,14 +180,14 @@
             }
           }
           return `
-            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded" data-id="${worker.id}">
+            <button type="button" class="list-group-item list-group-item-action employee-list-item d-flex align-items-center gap-3" data-id="${worker.id}">
               ${workerImage ?
-                `<img src="${workerImage}" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;" alt="${worker.staff_fullname}">` :
-                `<span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>`
+                `<img src="${workerImage}" class="employee-avatar" alt="${worker.staff_fullname}">` :
+                `<span class="employee-avatar-placeholder"><i class="bi bi-person"></i></span>`
               }
-              <div>
-                <div class="fw-bold">${worker.staff_fullname}</div>
-                <div>${worker.staff_phone || ''}</div>
+              <div class="employee-info">
+                <div class="employee-name">${worker.staff_fullname}</div>
+                <div class="employee-detail">${worker.staff_phone || ''}</div>
               </div>
             </button>
           `;
@@ -223,21 +208,21 @@
             }
           }
           return `
-            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 mb-2 border rounded" data-id="${staff.id}">
+            <button type="button" class="list-group-item list-group-item-action employee-list-item d-flex align-items-center gap-3" data-id="${staff.id}">
               ${staffImage ?
-                `<img src="${staffImage}" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;" alt="${staff.user_fullname}">` :
-                `<span class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-person text-white" style="font-size:2rem;"></i></span>`
+                `<img src="${staffImage}" class="employee-avatar" alt="${staff.user_fullname}">` :
+                `<span class="employee-avatar-placeholder"><i class="bi bi-person"></i></span>`
               }
-              <div>
-                <div class="fw-bold">${staff.user_fullname}</div>
-                <div>${staff.user_role || ''}</div>
+              <div class="employee-info">
+                <div class="employee-name">${staff.user_fullname}</div>
+                <div class="employee-detail">${staff.user_role || ''}</div>
               </div>
             </button>
           `;
         }).join('');
     }
     function fetchWorkerList(query = '') {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) return;
       fetch(`https://mwms.megacess.com/api/v1/advances/staff/list?search=${encodeURIComponent(query)}`, {
         method: 'GET',
@@ -255,7 +240,7 @@
         });
     }
     function fetchStaffList(query = '', role = '') {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) return;
       let url = `https://mwms.megacess.com/api/v1/advances/users/list?search=${encodeURIComponent(query)}`;
       if (role && role !== 'all') url += `&role=${encodeURIComponent(role)}`;
@@ -282,7 +267,8 @@
       const filterRow = document.getElementById('staffFilterRow');
       if (addAdvanceModal) {
         addAdvanceModal.addEventListener('show.bs.modal', function() {
-          if(workerBtn.classList.contains('btn-success')) {
+          // Default to worker list on modal open
+          if(workerBtn.checked) {
             fetchWorkerList('');
           } else {
             fetchStaffList('', staffRoleFilter);
@@ -291,7 +277,7 @@
       }
       if (userSearch) {
         userSearch.addEventListener('input', function() {
-          if(workerBtn.classList.contains('btn-success')) {
+          if(workerBtn.checked) {
             fetchWorkerList(this.value);
           } else {
             fetchStaffList(this.value, staffRoleFilter);
@@ -337,7 +323,7 @@
       if (!listGroup) return;
       listGroup.querySelectorAll('button.list-group-item').forEach(btn => {
         btn.addEventListener('click', function() {
-          const name = this.querySelector('.fw-bold')?.textContent?.trim() || '';
+          const name = this.querySelector('.employee-name')?.textContent?.trim() || '';
           const id = this.dataset.id || '';
           // Also store type for correct API usage
           const selectedInput = document.getElementById('selectedPerson');
@@ -346,7 +332,7 @@
             selectedInput.dataset.id = id;
             // Store type: 'worker' or 'staff' (for Add Advance form logic)
             const workerBtn = document.getElementById('modalWorkerBtn');
-            selectedInput.dataset.type = workerBtn && workerBtn.classList.contains('btn-success') ? 'worker' : 'staff';
+            selectedInput.dataset.type = workerBtn && workerBtn.checked ? 'worker' : 'staff';
           }
         });
       });
@@ -366,7 +352,8 @@
   <script>
     // --- Add Record button handler ---
     document.addEventListener('DOMContentLoaded', function() {
-      const addRecordBtn = document.querySelector('#addAdvanceModal .btn.btn-success.fw-bold');
+      const addAdvanceModal = document.getElementById('addAdvanceModal');
+      const addRecordBtn = document.querySelector('#addAdvanceModal .add-advance-btn');
       if (!addRecordBtn) return;
       addRecordBtn.addEventListener('click', async function() {
         const selectedInput = document.getElementById('selectedPerson');
@@ -386,9 +373,14 @@
           }
         }
         if(!date || !amount || !remarks || !selectedDataId) {
-          return alert('Please fill in all fields and select a worker/staff.');
+          return Swal.fire({
+            icon: 'warning',
+            title: 'Incomplete Information',
+            text: 'Please fill in all fields and select a worker/staff.',
+            confirmButtonColor: '#0d6832'
+          });
         }
-        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const token = getAuthToken();
         if (!token) return;
         try {
           const payload = {
@@ -414,7 +406,11 @@
           });
           const result = await response.json();
           if (result.success) {
-            alert('Record added successfully!');
+            Swal.fire({
+            icon: 'success',
+            title: 'The advance has been added successfully.',
+            confirmButtonColor: '#0d6832'
+          });
             // Close modal and reset form
             const modal = bootstrap.Modal.getInstance(addAdvanceModal);
             if (modal) modal.hide();
@@ -432,11 +428,20 @@
               window.dispatchEvent(new CustomEvent('refreshAdvanceList'));
             }
           } else {
-            alert('Failed to add record: ' + (result.message || 'Unknown error'));
+            console.error('Failed to add record:', result.message);
+            Swal.fire({
+            icon: 'error',
+            text: 'Failed to add record: ' + (result.message || 'Unknown error'),
+            confirmButtonColor: '#0d6832'
+          });
           }
         } catch (error) {
           console.error('Error adding record:', error);
-          alert('An error occurred while adding the record. Please try again later.');
+          Swal.fire({
+            icon: 'error',
+            text: 'An error occurred while adding the record. Please try again later.',
+            confirmButtonColor: '#0d6832'
+          });
         }
       });
     });
