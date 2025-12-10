@@ -115,20 +115,22 @@ async function getAllVehicles({ search = '', status = '', page = 1, per_page = 1
 }
 
 function populateVehicleTable(vehicles) {
-  const tableBody = document.getElementById('vehicleTableBody');
-  if (!tableBody) return;
-  tableBody.innerHTML = '';
+const tableBody = document.getElementById('vehicleTableBody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
 
-  vehicles.forEach(vehicle => {
-    const row = document.createElement('div');
-    row.className = 'content-row d-flex border-bottom py-2 align-items-center';
+    const fragment = document.createDocumentFragment();
 
-    let statusClass = 'bg-secondary';
-    if (vehicle.status.toLowerCase() === 'available') statusClass = 'bg-success';
-    else if (vehicle.status.toLowerCase() === 'in use') statusClass = 'bg-warning text-dark';
-    else if (vehicle.status.toLowerCase() === 'under maintenance') statusClass = 'bg-danger';
+    vehicles.forEach(vehicle => {
+        const row = document.createElement('div');
+        row.className = 'content-row d-flex border-bottom py-2 align-items-center';
 
-    row.innerHTML = `
+        let statusClass = 'bg-secondary';
+        if (vehicle.status.toLowerCase() === 'available') statusClass = 'bg-success';
+        else if (vehicle.status.toLowerCase() === 'in use') statusClass = 'bg-warning text-dark';
+        else if (vehicle.status.toLowerCase() === 'under maintenance') statusClass = 'bg-danger';
+
+        row.innerHTML = `
             <div class="col ps-3">${vehicle.vehicle_name}</div>
             <div class="col">${vehicle.plate_number}</div>
             <div class="col"><span class="badge ${statusClass}">${vehicle.status}</span></div>
@@ -145,12 +147,32 @@ function populateVehicleTable(vehicles) {
                 </button>
             </div>
         `;
-    tableBody.appendChild(row);
-  });
+        fragment.appendChild(row);
+    });
 
-  attachEditListeners();
-  attachDeleteListeners();
+    tableBody.appendChild(fragment);
 }
+
+// ==================== EVENT DELEGATION ====================
+// Replaces attachEditListeners and attachDeleteListeners
+document.addEventListener('DOMContentLoaded', () => {
+    const tableBody = document.getElementById('vehicleTableBody');
+    if (tableBody) {
+        tableBody.addEventListener('click', (e) => {
+            // Handle Edit
+            const editBtn = e.target.closest('.edit-vehicle-btn');
+            if (editBtn) {
+                handleEdit(editBtn);
+            }
+
+            // Handle Delete
+            const deleteBtn = e.target.closest('.delete-vehicle-btn');
+            if (deleteBtn) {
+                handleDelete(deleteBtn);
+            }
+        });
+    }
+});
 
 // ==================== PAGINATION ====================
 function updatePaginationControls(meta) {
@@ -356,16 +378,10 @@ if (addVehicleBtn) {
 }
 
 // ==================== DELETE /vehicles ====================
-function attachDeleteListeners() {
-  const deleteButtons = document.querySelectorAll('.delete-vehicle-btn');
-  deleteButtons.forEach(btn => {
-    btn.removeEventListener('click', handleDelete);
-    btn.addEventListener('click', handleDelete);
-  });
-}
 
-async function handleDelete(e) {
-  const vehicleId = e.currentTarget.dataset.id;
+
+async function handleDelete(btn) {
+  const vehicleId = btn.dataset.id;
   showConfirm('You want to delete this vehicle?', async () => {
     showLoading();
     try {
@@ -390,16 +406,9 @@ async function handleDelete(e) {
 // ==================== UPDATE /vehicles ====================
 let currentVehicleId = null;
 
-function attachEditListeners() {
-  const editBtns = document.querySelectorAll('.edit-vehicle-btn');
-  editBtns.forEach(btn => {
-    btn.removeEventListener('click', handleEdit);
-    btn.addEventListener('click', handleEdit);
-  });
-}
 
-function handleEdit(e) {
-  const btn = e.currentTarget;
+
+function handleEdit(btn) {
   currentVehicleId = btn.dataset.id;
   document.getElementById('updateVehicleName').value = btn.dataset.name;
   document.getElementById('updatePlateNo').value = btn.dataset.plate;

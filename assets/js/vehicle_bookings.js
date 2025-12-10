@@ -15,30 +15,44 @@ let bookingPaginationState = {
 // for dropdown in modal
 async function fetchVehicle() {
   try {
-    let allData = []; // Array to store all vehicle data
-    let page = 1; // Current page
-    let lastPage = 1; // Last page
+    let allData = [];
+    const availabilityFilter = "status=Available";
 
-    const availabilityFilter = "status=Available"; // Filter for available vehicles
+    // 1. Fetch first page with larger page size to gauge total pages
+    // Using per_page=100 to minimize requests
+    const firstPageResult = await apiFetch(
+      `/vehicles?${availabilityFilter}&page=1&per_page=100`
+    );
 
-    // fetch all available vehicles until the last page
-    do {
-      const result = await apiFetch(
-        `/vehicles?${availabilityFilter}&page=${page}`
-      );
-      if (result.success) {
-        const pageData = Array.isArray(result.data)
-          ? result.data
-          : result.data.data || [];
-        allData = allData.concat(pageData);
-        lastPage = result.meta
-          ? result.meta.last_page
-          : result.data.last_page || 1;
-        page++;
-      } else {
-        throw new Error(result.message);
+    if (!firstPageResult.success) throw new Error(firstPageResult.message);
+
+    // Normalize data structure
+    const getItems = (res) =>
+      Array.isArray(res.data) ? res.data : res.data.data || [];
+    const getMeta = (res) => res.meta || res.data;
+
+    const firstItems = getItems(firstPageResult);
+    allData = allData.concat(firstItems);
+
+    const meta = getMeta(firstPageResult);
+    const lastPage = meta.last_page || 1;
+
+    // 2. Fetch remaining pages in parallel if any
+    if (lastPage > 1) {
+      const promises = [];
+      for (let p = 2; p <= lastPage; p++) {
+        promises.push(
+          apiFetch(`/vehicles?${availabilityFilter}&page=${p}&per_page=100`)
+        );
       }
-    } while (page <= lastPage);
+
+      const results = await Promise.all(promises);
+      results.forEach((res) => {
+        if (res.success) {
+          allData = allData.concat(getItems(res));
+        }
+      });
+    }
 
     // takes each vehicle, copies all its data, and adds a new field called name
     // that combines the vehicle name and plate number.
@@ -160,6 +174,8 @@ function populateVehicleBookingTable(bookings) {
   if (!tableBody) return;
   tableBody.innerHTML = "";
 
+  const fragment = document.createDocumentFragment();
+
   bookings.forEach((booking) => {
     const row = document.createElement("div");
     row.className = "content-row d-flex border-bottom py-2 align-items-center";
@@ -198,8 +214,10 @@ function populateVehicleBookingTable(bookings) {
                 </button>
             </div>
         `;
-    tableBody.appendChild(row);
+    fragment.appendChild(row);
   });
+
+  tableBody.appendChild(fragment);
 }
 
 // ==================== PAGINATION ====================
