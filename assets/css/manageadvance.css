@@ -335,3 +335,162 @@ Filter Button Styles
 .modal-list-of-group-section {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
+
+/* =======================================
+   Mobile Responsive Styles
+========================================== */
+
+@media (max-width: 991.98px) {
+  /* Adjust content when sidebar is hidden on mobile */
+  .content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Reduce padding on mobile */
+  .container-fluid {
+    padding: 1rem !important;
+  }
+
+  /* Employee selection responsive */
+  .employee-selection {
+    width: 100%;
+  }
+
+  .type-of-employee-btn {
+    width: 100%;
+  }
+
+  /* Add advance button full width on tablet */
+  .addAdvanceBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Advance cards - adjust layout */
+  .advance-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .advance-card .d-flex.align-items-center {
+    flex-direction: column;
+    align-items: flex-start !important;
+    width: 100%;
+  }
+
+  .advance-card .d-flex.gap-4 {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+
+  .advance-card .border-start {
+    display: none;
+  }
+
+  .advance-card .d-flex.align-items-center.gap-3:last-child {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .advance-card .view-advance-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Medium mobile adjustments */
+  .type-of-employee-btn {
+    width: 100%;
+  }
+
+  /* Filter buttons wrap */
+  .filter-section {
+    flex-wrap: wrap;
+  }
+
+  .filter-section .filter-btn {
+    flex: 1 1 45%;
+    min-width: 100px;
+  }
+
+  /* Pagination wrapper */
+  #advancePaginationWrapper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* Extra small devices */
+  .topbar {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .topbar .page-title {
+    font-size: 1rem !important;
+  }
+
+  /* Employee selection smaller */
+  .type-of-employee-btn {
+    width: 100%;
+    font-size: 0.875rem;
+  }
+
+  .select-employee-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Add button smaller */
+  .addAdvanceBtn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem;
+  }
+
+  /* Filter buttons full width */
+  .filter-section .filter-btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* Advance card compact */
+  .advance-card {
+    padding: 1rem !important;
+  }
+
+  .advance-card .fw-bold {
+    font-size: 1rem;
+  }
+
+  .advance-card .text-sm,
+  .advance-card .text-muted {
+    font-size: 0.75rem;
+  }
+
+  /* Avatar smaller */
+  .advance-card img,
+  .advance-card .rounded-circle {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  /* Pagination buttons smaller */
+  #advancePaginationWrapper .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Modal adjustments */
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  /* Search input */
+  .form-label {
+    font-size: 0.875rem;
+  }
+}

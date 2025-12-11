@@ -121,3 +121,150 @@ Manage Payroll Styles
   background-color: #0b5326;
   color: white;
 }
+
+/* =======================================
+   Mobile Responsive Styles
+========================================== */
+
+@media (max-width: 991.98px) {
+  /* Adjust content when sidebar is hidden on mobile */
+  .content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Reduce padding on mobile */
+  .container-fluid {
+    padding: 1rem !important;
+  }
+
+  /* Employee selection responsive */
+  .employee-selection {
+    width: 100%;
+  }
+
+  .type-of-employee-btn {
+    width: 100%;
+  }
+
+  /* Worker/Staff cards - adjust layout */
+  .worker-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .worker-card .d-flex {
+    width: 100%;
+  }
+
+  .worker-card .payroll-action {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .worker-card .payroll-action .btn {
+    width: 100%;
+  }
+
+  /* Filter buttons wrap */
+  .filter-section .btn {
+    flex: 1 1 45%;
+    min-width: 100px;
+  }
+
+  /* Pagination info stack on smaller screens */
+  .list-title {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .pagination-info {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Medium mobile adjustments */
+  
+  /* Search input */
+  .search-container label {
+    font-size: 0.875rem;
+  }
+
+  .search-container .form-control-lg {
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Pagination wrapper */
+  #paginationContainer {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* Extra small devices */
+  .topbar {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .topbar .page-title {
+    font-size: 1rem !important;
+  }
+
+  /* Employee selection smaller */
+  .type-of-employee-btn {
+    width: 100%;
+    font-size: 0.875rem;
+  }
+
+  .select-employee-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Filter buttons full width */
+  .filter-section .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* Worker card compact */
+  .worker-card {
+    padding: 1rem !important;
+  }
+
+  .worker-card h5 {
+    font-size: 1rem;
+  }
+
+  .worker-card p,
+  .worker-card small {
+    font-size: 0.75rem;
+  }
+
+  /* Avatar smaller */
+  .worker-card .worker-avatar img,
+  .worker-card .worker-avatar div {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  /* Pagination buttons smaller */
+  #paginationContainer .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    margin: 0 0.125rem;
+  }
+
+  /* Pagination info smaller */
+  #paginationInfo {
+    font-size: 0.75rem;
+  }
+
+  /* List title smaller */
+  .list-title {
+    font-size: 0.875rem;
+  }
+}

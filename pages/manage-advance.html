@@ -23,8 +23,8 @@
       <!-- Manage Advance container-->
       <div class="container-fluid p-4">
         <!-- Employee Selection -->
-        <div class="d-flex align-items-center mb-3">
-          <div class="employee-selection my-4">
+        <div class="d-flex flex-column flex-md-row align-items-md-center align-items-start gap-3 mb-3">
+          <div class="employee-selection">
               <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
               <input type="radio" class="salary-select-employee" name="employeeType" id="workerTab" autocomplete="off" checked>
               <label class="select-employee-btn" for="workerTab"><i class="bi bi-person-fill me-2"></i>Worker</label> 
@@ -35,8 +35,8 @@
               <span class="selection-bg"></span>
               </div>
             </div>
-          <div class="ms-auto">
-            <button class="addAdvanceBtn shadow-sm px-4 py-2 d-flex align-items-center gap-3" id="addAdvanceBtn" data-bs-toggle="modal" data-bs-target="#addAdvanceModal">
+          <div class="ms-md-auto w-100 w-md-auto">
+            <button class="addAdvanceBtn shadow-sm px-4 py-2 d-flex align-items-center justify-content-center gap-3 w-100 w-md-auto" id="addAdvanceBtn" data-bs-toggle="modal" data-bs-target="#addAdvanceModal">
               <i class="bi bi-plus-circle"></i>
               Add advance
             </button>
@@ -97,7 +97,7 @@
                 <label class="form-label fw-bold mb-1" for="userSearch">Search:</label>
                 <input type="text" class="form-control" id="userSearch" placeholder="Search Worker/Staff Name">
               </div>
-              <div class="filter-section d-flex gap-2 mb-2 p-3" id="staffFilterRow">
+              <div class="filter-section d-flex flex-wrap gap-2 mb-2 p-3" id="staffFilterRow">
                 <button type="button" class="filter-btn border flex-fill py-2 active">All</button>
                 <button type="button" class="filter-btn border flex-fill py-2">Mandor</button>
                 <button type="button" class="filter-btn border flex-fill py-2">Manager</button>

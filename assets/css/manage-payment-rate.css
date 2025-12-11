@@ -131,12 +131,10 @@ body, html {
 }
 
 .rate-btn:first-of-type {
-  border-top-left-radius: 50px;
-  border-bottom-left-radius: 50px;
+  border-radius: 50px;
 }
 .rate-btn:last-of-type {
-  border-top-right-radius: 50px;
-  border-bottom-right-radius: 50px;
+  border-radius: 50px;
 }
 
 .btn-check:checked + .rate-btn {
@@ -441,4 +439,156 @@ Search bar styling
 
 .search-clear-btn i {
   font-size: 0.875rem;
+}
+
+/* =======================================
+   Mobile Responsive Styles
+========================================== */
+
+@media (max-width: 991.98px) {
+  /* Adjust content when sidebar is hidden on mobile */
+  .content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Stack payment type buttons vertically on mobile */
+  .type-of-payment-slider .btn-group {
+    width: 100%;
+  }
+
+  .type-of-payment-slider .rate-btn {
+    padding: 0.75rem 1rem;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Make employee selection responsive */
+  .employee-selection .type-of-employee-btn {
+    width: 100%;
+  }
+
+  /* Adjust filter buttons */
+  .filter-group .filter-btn {
+    min-width: 80px;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Allow horizontal scroll for filter buttons if needed */
+  .filter-section .card-body {
+    overflow-x: auto;
+  }
+
+  .filter-group {
+    flex-wrap: nowrap;
+  }
+
+  /* Work-based rate panels - stack on mobile */
+  .work-based-container {
+    flex-direction: column !important;
+  }
+
+  .work-based-container .task-list,
+  .work-based-container .task-editor {
+    width: 100% !important;
+  }
+
+  /* Reduce padding on mobile */
+  .container-fluid {
+    padding: 1rem !important;
+  }
+
+  .content-inner {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* Adjust card spacing */
+  .card-body {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* Extra small devices */
+  .topbar {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .topbar .page-title {
+    font-size: 1rem !important;
+  }
+
+  /* Smaller text on mobile */
+  .type-of-payment-slider {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .rate-btn {
+    font-size: 0.875rem;
+  }
+
+  /* Filter buttons stack vertically on very small screens */
+  .filter-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .filter-group .filter-btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem !important;
+  }
+
+  .filter-group .filter-btn:first-of-type {
+    border-top-left-radius: 0.25rem !important;
+    border-top-right-radius: 0.25rem !important;
+  }
+
+  .filter-group .filter-btn:last-of-type {
+    border-bottom-left-radius: 0.25rem !important;
+    border-bottom-right-radius: 0.25rem !important;
+  }
+
+  /* Reduce pagination button size */
+  #workerPagination .btn,
+  #staffPagination .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Adjust search bar */
+  .search-section .form-label {
+    font-size: 0.875rem;
+  }
+
+  /* Card grid spacing */
+  .row.g-3 {
+    gap: 0.75rem !important;
+  }
+
+  /* Back button responsive */
+  .back-btn .btn {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  /* Form inputs responsive */
+  .category-header-section {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .category-header-section #addCategoryBtn {
+    width: 100%;
+  }
+
+  /* Stacked form columns on mobile */
+  .row.mb-3 .col-md-6,
+  .row.mb-3 .col-md-3 {
+    margin-bottom: 0.75rem;
+  }
 }

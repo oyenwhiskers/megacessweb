@@ -821,8 +821,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div id="employmentOverview" class="employment-overview">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <div class="d-flex align-items-center gap-3">
-                            <button class="btn btn-outline-secondary btn-sm" id="backToList">
-                                <i class="bi bi-arrow-left"></i> Employment Overview
+                            <button class="btn btn-success btn-sm" id="backToList">
+                                <i class="bi bi-arrow-left"></i> Back to List 
                             </button>
                         </div>
                         <button class="btn btn-primary d-flex align-items-center gap-2" id="generatePayslip">
