@@ -147,13 +147,39 @@ $(document).ready(function() {
     $prev.on("click", () => { fetchUsers(currentPage - 1); });
     $pagination.append($prev);
 
-    // Page buttons
-    for (let i = 1; i <= lastPage; i++) {
-      const $btn = $(`<button class="btn btn-sm mx-1">${i}</button>`);
-      $btn.addClass(i === currentPage ? "btn-success" : "btn-outline-success");
-      $btn.on("click", () => { fetchUsers(i); });
-      $pagination.append($btn);
+    // Smart page buttons with ellipsis (max 7 buttons)
+    let pages = [];
+    if (lastPage <= 7) {
+      // Show all pages if 7 or fewer
+      pages = Array.from({ length: lastPage }, (_, i) => i + 1);
+    } else {
+      // Smart ellipsis logic
+      if (currentPage <= 4) {
+        // Near start: [1] [2] [3] [4] [5] [...] [last]
+        pages = [1, 2, 3, 4, 5, '...', lastPage];
+      } else if (currentPage >= lastPage - 3) {
+        // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+        pages = [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
+      } else {
+        // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+        pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
+      }
     }
+
+    // Render page buttons
+    pages.forEach((page) => {
+      if (page === '...') {
+        // Ellipsis (non-clickable)
+        const $ellipsis = $('<span class="btn btn-sm btn-outline-success mx-1 disabled">...</span>');
+        $pagination.append($ellipsis);
+      } else {
+        // Page button
+        const $btn = $(`<button class="btn btn-sm mx-1">${page}</button>`);
+        $btn.addClass(page === currentPage ? "btn-success" : "btn-outline-success");
+        $btn.on("click", () => { fetchUsers(page); });
+        $pagination.append($btn);
+      }
+    });
 
     // Next button
     const $next = $('<button class="btn btn-sm btn-outline-success mx-1"><i class="bi bi-chevron-right"></i></button>');

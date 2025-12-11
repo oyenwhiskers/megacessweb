@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab functionality
+    // Tab functionality (Main Page Manage Payroll)
     const workerTab = document.getElementById('workerTab');
     const staffTab = document.getElementById('staffTab');
     const workerList = document.getElementById('workerList');
@@ -129,6 +129,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     allWorkersData = allData;
                 }
                 
+                // Calculate totalPages IMMEDIATELY to prevent race condition
+                totalItems = allData.length;
+                totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+                currentPage = Math.min(page, totalPages) || 1;
+                
                 // Always use client-side pagination for consistent behavior
                 handleClientSidePagination(searchTerm, page, allData);
             } else {
@@ -189,7 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const searchTerm = searchInput.value.trim();
         
         // Check which tab is active
-        if (workerTab.classList.contains('btn-success')) {
+        const isWorkerTab = workerTab.classList.contains('btn-success');
+        
+        if (isWorkerTab) {
             // If we have cached data, use client-side pagination
             if (allWorkersData && allWorkersData.length > 0) {
                 handleClientSidePagination(searchTerm, page, allWorkersData);
@@ -263,6 +270,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!searchTerm && role === 'all') {
                     allStaffData = allData;
                 }
+                
+                // Calculate totalPages IMMEDIATELY to prevent race condition
+                // Note: This is a rough estimate, will be refined in handleStaffClientSidePagination
+                totalItems = allData.length;
+                totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+                currentPage = Math.min(page, totalPages) || 1;
                 
                 // Always use client-side pagination for consistent behavior
                 handleStaffClientSidePagination(searchTerm, page, allData, role);
@@ -347,54 +360,52 @@ document.addEventListener('DOMContentLoaded', function() {
         // Previous button
         const prevDisabled = currentPage <= 1 ? 'disabled' : '';
         paginationHTML += `
-            <li class="page-item ${prevDisabled}">
-                <button class="page-link" onclick="goToPage(${currentPage - 1})" ${prevDisabled}>
+            <li class="page-item">
+                <button class="btn btn-sm btn-outline-success mx-1" data-page="${currentPage - 1}" ${prevDisabled}>
                     <i class="bi bi-chevron-left"></i>
                 </button>
             </li>
         `;
         
-        // Page numbers
-        const maxVisiblePages = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-        
-        // Adjust start page if we're near the end
-        if (endPage - startPage + 1 < maxVisiblePages) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-        }
-        
-        // First page if not in range
-        if (startPage > 1) {
-            paginationHTML += `<li class="page-item"><button class="page-link" onclick="goToPage(1)">1</button></li>`;
-            if (startPage > 2) {
-                paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        // Page numbers with smart ellipsis (like fuel.js)
+        let pages = [];
+        if (totalPages <= 7) {
+            // Show all pages if 7 or fewer
+            pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+        } else {
+            // Smart ellipsis logic
+            if (currentPage <= 4) {
+                // Near the start: [1] [2] [3] [4] [5] [...] [last]
+                pages = [1, 2, 3, 4, 5, '...', totalPages];
+            } else if (currentPage >= totalPages - 3) {
+                // Near the end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+                pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+            } else {
+                // In the middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+                pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
             }
         }
         
-        // Page numbers in range
-        for (let i = startPage; i <= endPage; i++) {
-            const activeClass = i === currentPage ? 'active' : '';
-            paginationHTML += `
-                <li class="page-item ${activeClass}">
-                    <button class="page-link" onclick="goToPage(${i})">${i}</button>
-                </li>
-            `;
-        }
-        
-        // Last page if not in range
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
+        // Generate page buttons
+        pages.forEach((page) => {
+            if (page === '...') {
                 paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            } else {
+                const isActive = page === currentPage;
+                const btnClass = isActive ? 'btn btn-sm btn-success mx-1' : 'btn btn-sm btn-outline-success mx-1';
+                paginationHTML += `
+                    <li class="page-item">
+                        <button class="${btnClass}" data-page="${page}">${page}</button>
+                    </li>
+                `;
             }
-            paginationHTML += `<li class="page-item"><button class="page-link" onclick="goToPage(${totalPages})">${totalPages}</button></li>`;
-        }
+        });
         
         // Next button
         const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
         paginationHTML += `
-            <li class="page-item ${nextDisabled}">
-                <button class="page-link" onclick="goToPage(${currentPage + 1})" ${nextDisabled}>
+            <li class="page-item">
+                <button class="btn btn-sm btn-outline-success mx-1" data-page="${currentPage + 1}" ${nextDisabled}>
                     <i class="bi bi-chevron-right"></i>
                 </button>
             </li>
@@ -2069,7 +2080,37 @@ let currentPayslipWorkerData = null;
     `;
     }
 
+    // Event delegation for pagination buttons
+    const paginationControls = document.getElementById('paginationControls');
+    if (paginationControls) {
+        paginationControls.addEventListener('click', (e) => {
+            const button = e.target.closest('button[data-page]');
+            if (button && !button.disabled) {
+                const page = parseInt(button.getAttribute('data-page'));
+                if (!isNaN(page) && page > 0) {
+                    e.preventDefault();
+                    goToPage(page);
+                }
+            }
+        });
+    }
+
     // Initial load of workers data
+    // Set worker tab as active on page load to match the data we're fetching
+    workerTab.classList.remove('btn-outline-secondary');
+    workerTab.classList.add('btn-success');
+    staffTab.classList.remove('btn-success');
+    staffTab.classList.add('btn-outline-secondary');
+    
+    // Show worker list, hide staff list
+    workerList.classList.remove('d-none');
+    staffList.classList.add('d-none');
+    
+    // Hide role filter on initial load (worker tab)
+    if (roleFilterContainer) {
+        roleFilterContainer.style.display = 'none';
+    }
+    
     fetchWorkers('', 1);
     
     // Initialize role filter state

@@ -6,8 +6,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let currentType = 'worker'; // 'staff' or 'worker'
   let currentPage = 1;
+  let lastPage = 1;
   let currentRole = '';
-  let perPage = 15;
+  let perPage = 5;
 
   // Helper: get token - expose globally for use in HTML
   window.getAuthToken = function() {
@@ -90,6 +91,89 @@ document.addEventListener('DOMContentLoaded', function() {
     }).join('');
   }
 
+  // Render pagination controls
+  function renderPagination() {
+    // Remove existing pagination
+    const existingPagination = document.getElementById('advancePagination');
+    if (existingPagination) existingPagination.remove();
+
+    if (lastPage <= 1) return;
+
+    const paginationContainer = document.createElement('div');
+    paginationContainer.id = 'advancePagination';
+    paginationContainer.className = 'mt-3 text-center';
+
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn btn-sm btn-success mx-1';
+    prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.addEventListener('click', () => {
+      currentPage--;
+      fetchAdvances();
+    });
+    paginationContainer.appendChild(prevBtn);
+
+    // Smart page buttons with ellipsis (max 7 buttons)
+    let pages = [];
+    if (lastPage <= 7) {
+      // Show all pages if 7 or fewer
+      pages = Array.from({ length: lastPage }, (_, i) => i + 1);
+    } else {
+      // Smart ellipsis logic
+      if (currentPage <= 4) {
+        // Near start: [1] [2] [3] [4] [5] [...] [last]
+        pages = [1, 2, 3, 4, 5, '...', lastPage];
+      } else if (currentPage >= lastPage - 3) {
+        // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+        pages = [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
+      } else {
+        // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+        pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
+      }
+    }
+
+    // Render page buttons
+    pages.forEach((page) => {
+      if (page === '...') {
+        // Ellipsis (non-clickable)
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'btn btn-lg btn-success px-1 mx-1 disabled';
+        ellipsis.textContent = '...';
+        paginationContainer.appendChild(ellipsis);
+      } else {
+        // Page button
+        const pageBtn = document.createElement('button');
+        pageBtn.className = 'btn btn-sm mx-1';
+        pageBtn.classList.add(page === currentPage ? 'btn-success' : 'btn-outline-success');
+        pageBtn.textContent = page;
+        pageBtn.addEventListener('click', () => {
+          currentPage = page;
+          fetchAdvances();
+        });
+        paginationContainer.appendChild(pageBtn);
+      }
+    });
+
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-sm btn-success mx-1';
+    nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+    nextBtn.disabled = currentPage === lastPage;
+    nextBtn.addEventListener('click', () => {
+      currentPage++;
+      fetchAdvances();
+    });
+    paginationContainer.appendChild(nextBtn);
+
+    // Append pagination to the wrapper div
+    const paginationWrapper = document.getElementById('advancePaginationWrapper');
+    if (paginationWrapper) {
+      paginationWrapper.innerHTML = '';
+      paginationWrapper.appendChild(paginationContainer);
+    }
+  }
+
   // Fetch advances from API
   async function fetchAdvances() {
     const token = getAuthToken();
@@ -117,6 +201,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const result = await res.json();
       if (res.ok && result.success) {
         renderAdvances(result.data, currentType);
+        // Store pagination metadata
+        if (result.meta) {
+          currentPage = result.meta.current_page || 1;
+          lastPage = result.meta.last_page || 1;
+        }
+        renderPagination();
       } else {
         advanceList.innerHTML = `<div class='text-center text-danger py-5'>${result.message || 'Failed to load advances.'}</div>`;
       }
@@ -242,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     staffTab.style.background = '';
     staffTab.style.border = '';
     currentType = 'worker';
+    currentPage = 1;
     fetchAdvances();
   });
   staffTab.addEventListener('click', function() {
@@ -254,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
     workerTab.style.background = '';
     workerTab.style.border = '';
     currentType = 'staff';
+    currentPage = 1;
     fetchAdvances();
   });
 
