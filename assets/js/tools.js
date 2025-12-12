@@ -122,7 +122,11 @@ function populateSparePartsTable(tools) {
     const safeJson = JSON.stringify(tool).replace(/'/g, "&apos;");
 
     row.innerHTML = `
-        <div class="col-4 ps-3">${sparePartName}</div>
+        <div class="col-5 ps-4 d-flex align-items-center">
+            <div>
+                <div class="fw-bold text-dark">${sparePartName}</div>
+            </div>
+        </div>
 
         <div class="col-4">${vehicleName}<small> (${plateNumber})</small></div>
 

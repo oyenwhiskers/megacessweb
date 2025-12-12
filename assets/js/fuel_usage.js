@@ -119,7 +119,7 @@ function populateFuelUsageTable(usages) {
       usage.usage_quantity || 0
     } Liters</span>
             </div>
-            <div class="col">${assignedName}</div>
+            <div class="col fw-bold text-dark">${assignedName}</div>
             <div class="col">${usage.fuel_type || "-"}</div>
             <div class="col">
                 ${formatDateDisplay(usage.usage_date)}

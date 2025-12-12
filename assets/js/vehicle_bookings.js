@@ -190,10 +190,10 @@ function populateVehicleBookingTable(bookings) {
       : "-";
 
     row.innerHTML = `
-            <div class="col ps-3">${booking.vehicle.vehicle_name}<br><small>(${
+            <div class="col ps-3 fw-bold text-dark">${booking.vehicle.vehicle_name}<br><small>(${
       booking.vehicle.plate_number
     })</small></div>
-            <div class="col">${userName}</div>
+            <div class="col fw-bold text-dark">${userName}</div>
             <div class="col">${dateBook}</div>
             <div class="col">${dateRet}</div>
             <div class="col text-center">

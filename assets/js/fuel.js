@@ -74,8 +74,8 @@ function populateFuelsTable(fuels) {
     let fuelClass = "bg-success text-white"; // customize based on fuel amount if needed
 
     row.innerHTML = `
-      <div class="col">${fuel.supplier_name || "Unnamed Fuel"}</div>
-      <div class="col">${fuel.user.user_fullname || "-"}</div>
+      <div class="col fw-bold text-dark">${fuel.supplier_name || "Unnamed Fuel"}</div>
+      <div class="col fw-bold text-dark">${fuel.user.user_fullname || "-"}</div>
       <div class="col">${fuel.fuel_type || "-"}</div>
       <div class="col">
         <span class="badge ${fuelClass} px-3 py-2 fs-6">${

@@ -147,7 +147,7 @@ function populateVehicleTable(vehicles) {
       statusClass = "bg-danger";
 
     row.innerHTML = `
-            <div class="col ps-3">${vehicle.vehicle_name}</div>
+            <div class="col ps-3 fw-bold text-dark">${vehicle.vehicle_name}</div>
             <div class="col">${vehicle.plate_number}</div>
             <div class="col"><span class="badge ${statusClass}">${
       vehicle.status
