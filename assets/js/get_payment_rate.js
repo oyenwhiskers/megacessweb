@@ -52,8 +52,6 @@ async function getPaymentRates() {
     if (!res.ok) throw new Error(`Failed to fetch (${res.status})`);
 
     const json = await res.json();
-    console.log(" Payment rates response:", json);
-
     if (json.success && Array.isArray(json.data)) {
       renderTaskList(json.data);
     } else {
@@ -300,7 +298,6 @@ function renderTaskEditor(task) {
     }
     
     const updatedData = collectFormData(task.id);
-    console.log("Updating payment rate:", updatedData);
     await updatePaymentRate(task.id, updatedData);
   });
 
@@ -336,7 +333,6 @@ function renderTaskEditor(task) {
       setTimeout(async () => {
         if (validateCategories()) {
           const updatedData = collectFormData(task.id);
-          console.log("Auto-saving after category addition:", updatedData);
           await updatePaymentRate(task.id, updatedData);
         }
       }, 500); // Small delay to ensure DOM is updated
@@ -531,10 +527,8 @@ async function updatePaymentRate(id, bodyData) {
     });
 
     const json = await res.json();
-    console.log("Update response:", json);
 
     if (json.success) {
-      console.log("Payment rate updated successfully!");
       Swal.fire({
         icon: "success",
         title: "Saved successfully!",
@@ -545,7 +539,6 @@ async function updatePaymentRate(id, bodyData) {
       });
       getPaymentRates(); // reload list
     } else {
-      console.log("Failed to update: " + json.message);
       console.warn("Update validation errors:", json.errors);
       Swal.fire({
         icon: "warning",

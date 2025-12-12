@@ -98,7 +98,6 @@
                  localStorage.getItem('authToken') ||
                  sessionStorage.getItem('authToken');
     if (!token) {
-      console.error('No authentication token found. Please log in.');
       window.location.href = '/megacessweb/pages/log-in.html';
       return;
     }
@@ -123,13 +122,11 @@
       if (res.status === 401) {
         // unauthorized
         showStatus('Unauthorized (401). Please login again or refresh your token.', 'danger');
-        console.error('Staff list fetch returned 401 Unauthorized');
         return;
       }
 
       if (!res.ok) {
         showStatus(`Failed to load staff list (${res.status})`, 'danger');
-        console.error('Failed to load staff list', res.statusText);
         return;
       }
 
@@ -340,7 +337,12 @@
       // Display staff details in modal
       showStaffDetailsModal(staffData);
     } catch (error) {
-      console.error('Error fetching staff details:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error Loading Staff',
+        text: error.message || 'Failed to load staff details.',
+        confirmButtonColor: '#dc3545'
+      });
       showStaffDetailsModal({
         error: error.message || 'Failed to load staff details.'
       });
@@ -750,12 +752,10 @@
     try {
         const modal = document.getElementById('staffDetailsModal');
         if (!modal) {
-            console.error('Modal not found');
             return;
         }
         const modalBody = modal.querySelector('.modal-body');
         if (!modalBody) {
-            console.error('Modal body not found');
             return;
         }
         // Collect all editable fields
@@ -824,8 +824,16 @@
             const errorMessage = result.message || 'Failed to save changes.';
             throw new Error(errorMessage);
         }
-        console.log('Save response:', result);
-        alert('Staff details updated successfully!');
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Saved!',
+            text: 'Staff details updated successfully!',
+            confirmButtonColor: '#0d6832',
+            timer: 2000,
+            timerProgressBar: true
+        });
+        
         const modalInstance = bootstrap.Modal.getInstance(modal);
         if (modalInstance) {
             modalInstance.hide();
@@ -835,8 +843,12 @@
             viewStaffDetails(staffId);
         }, 1000);
     } catch (error) {
-        console.error('Error saving staff changes:', error);
-        alert(`Failed to save changes: ${error.message || 'Please try again.'}`);
+        Swal.fire({
+            icon: 'error',
+            title: 'Save Failed',
+            text: error.message || 'Failed to save changes. Please try again.',
+            confirmButtonColor: '#dc3545'
+        });
         const modal = document.getElementById('staffDetailsModal');
         if (modal) {
             const saveButton = modal.querySelector('button[onclick*="saveStaffChanges"], .btn-primary, button[type="submit"]');
@@ -911,12 +923,21 @@
         // Refresh the staff list
         fetchStaffList(currentSearch, currentRoleFilter);
       } else {
-        alert('Failed to delete staff member.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Delete Failed',
+          text: 'Failed to delete staff member.',
+          confirmButtonColor: '#dc3545'
+        });
       }
       
     } catch (error) {
-      console.error('Error deleting staff:', error);
-      alert(`Failed to delete staff member: ${error.message}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Failed to delete staff member.',
+        confirmButtonColor: '#dc3545'
+      });
     }
   };
 

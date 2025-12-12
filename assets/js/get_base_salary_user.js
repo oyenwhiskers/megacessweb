@@ -105,7 +105,6 @@ $(document).ready(function () {
         contentType: "application/json",
         data: JSON.stringify({ base_salary: newSalary }),
         success: function (res) {
-          console.log(`Base Salary updated to RM ${res.base_salary}`);
           Swal.fire({
             icon: "success",
             text: `Base Salary updated to RM ${res.base_salary}!`,

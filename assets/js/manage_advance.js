@@ -312,7 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       const result = await addAdvance(data);
       if (result.success) {
-        console.log('Advance added successfully!');
         Swal.fire({
           icon: 'success',
           text: 'The advance has been added successfully.',

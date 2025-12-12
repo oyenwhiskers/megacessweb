@@ -18,7 +18,6 @@
                      sessionStorage.getItem('authToken');
         
         if (!token) {
-            console.error('No authentication token found. Please log in.');
             // Redirect to login page
             window.location.href = '/megacessweb/pages/log-in.html';
             return null;
@@ -308,7 +307,6 @@
             workersView.innerHTML = workersHTML;
             
         } catch (error) {
-            console.error('Error fetching workers:', error);
             showError(error.message || 'Failed to load workers. Please try again.', search);
         }
     }
@@ -354,7 +352,12 @@
             showWorkerDetailsModal(result.data);
             
         } catch (error) {
-            console.error('Error fetching worker details:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error Loading Worker',
+                text: error.message || 'Failed to load worker details.',
+                confirmButtonColor: '#dc3545'
+            });
             showWorkerDetailsModal({
                 error: error.message || 'Failed to load worker details.'
             });
@@ -745,13 +748,11 @@
         try {
             const modal = document.getElementById('workerDetailsModal');
             if (!modal) {
-                console.error('Modal not found');
                 return;
             }
 
             const modalBody = modal.querySelector('.modal-body');
             if (!modalBody) {
-                console.error('Modal body not found');
                 return;
             }
 
@@ -864,15 +865,14 @@
             }, 1000);
 
         } catch (error) {
-            console.error('Error saving worker changes:', error);
-            
             // Show error message
             const errorMessage = error.message || 'Failed to save changes. Please try again.';
-            if (typeof showNotification === 'function') {
-                showNotification(errorMessage, 'error');
-            } else {
-                alert(`Failed to save changes: ${errorMessage}`);
-            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Save Failed',
+                text: errorMessage,
+                confirmButtonColor: '#dc3545'
+            });
 
             // Re-enable save button
             const modal = document.getElementById('workerDetailsModal');
@@ -918,14 +918,25 @@
             const result = await response.json();
             
             // Show success message
-            alert(result.message || 'Worker deleted successfully!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: result.message || 'Worker deleted successfully!',
+                confirmButtonColor: '#0d6832',
+                timer: 2000,
+                timerProgressBar: true
+            });
             
             // Refresh the worker list
             fetchWorkersList(currentSearch, currentPage);
             
         } catch (error) {
-            console.error('Error deleting worker:', error);
-            alert(`Failed to delete worker: ${error.message}`);
+            Swal.fire({
+                icon: 'error',
+                title: 'Delete Failed',
+                text: error.message || 'Failed to delete worker.',
+                confirmButtonColor: '#dc3545'
+            });
         }
     };
     

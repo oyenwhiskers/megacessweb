@@ -16,7 +16,6 @@
                      sessionStorage.getItem('authToken');
         
         if (!token) {
-            console.error('No authentication token found. Please log in.');
             window.location.href = '/megacessweb/pages/log-in.html';
             return null;
         }
@@ -40,67 +39,36 @@
         }
     }
     
-    // Show success message
+    // Show success message using SweetAlert2
     function showSuccess(message, staffData) {
-        // Create success alert
-        const alertHTML = `
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i>
-                <strong>Success!</strong> ${message}
-                ${staffData ? `<br><small class="text-muted">Staff ID: ${staffData.id}</small>` : ''}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        // Insert at the top of modal body
-        const modalBody = registerStaffModal.querySelector('.modal-body');
-        modalBody.insertAdjacentHTML('afterbegin', alertHTML);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            const alert = modalBody.querySelector('.alert-success');
-            if (alert) {
-                alert.remove();
-            }
-        }, 5000);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            html: message + (staffData ? `<br><small class="text-muted">Staff ID: ${staffData.id}</small>` : ''),
+            showConfirmButton: true,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0d6832',
+            timer: 3000,
+            timerProgressBar: true
+        });
     }
     
-    // Show error message
+    // Show error message using SweetAlert2
     function showError(message) {
-        // Remove existing alerts
-        const existingAlert = registerStaffModal.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-        
-        // Create error alert
-        const alertHTML = `
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <strong>Error!</strong> ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        // Insert at the top of modal body
-        const modalBody = registerStaffModal.querySelector('.modal-body');
-        modalBody.insertAdjacentHTML('afterbegin', alertHTML);
-        
-        // Auto-remove after 8 seconds
-        setTimeout(() => {
-            const alert = modalBody.querySelector('.alert-danger');
-            if (alert) {
-                alert.remove();
-            }
-        }, 8000);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: message,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#dc3545',
+            timer: 5000,
+            timerProgressBar: true
+        });
     }
     
     // Validate form data
     function validateForm(formData) {
         const errors = [];
-        
-        // Debug: Log form data to see what we're getting
-        console.log('Staff Form Data:', formData);
         
         // Required fields
         if (!formData.ic?.trim()) {
@@ -277,11 +245,18 @@
                 }
             }
             
-            // Success
-            showSuccess(`Staff "${formData.fullname}" has been registered successfully!`, result.data);
-            
-            // Reset form after a short delay
-            setTimeout(() => {
+            // Success - show SweetAlert2
+            Swal.fire({
+                icon: 'success',
+                title: 'Staff Registered!',
+                html: `Staff "<strong>${formData.fullname}</strong>" has been registered successfully!` + 
+                      (result.data?.id ? `<br><small class="text-muted">Staff ID: ${result.data.id}</small>` : ''),
+                showConfirmButton: true,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d6832',
+                timer: 3000,
+                timerProgressBar: true
+            }).then(() => {
                 resetForm();
                 
                 // Close modal after successful registration
@@ -298,10 +273,9 @@
                     const currentRole = document.querySelector('#roleFilterContainer .btn.btn-success')?.getAttribute('data-role') || 'all';
                     window.fetchStaffList(searchInput ? searchInput.value : '', currentRole);
                 }
-            }, 2000);
+            });
             
         } catch (error) {
-            console.error('Error registering staff:', error);
             showError(error.message || 'Failed to register staff. Please try again.');
         } finally {
             showFormLoading(false);
@@ -311,7 +285,6 @@
     // Initialize the form handler
     function initializeRegisterStaff() {
         if (!registerStaffForm) {
-            console.warn('Register staff form not found');
             return;
         }
         

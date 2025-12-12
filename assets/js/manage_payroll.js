@@ -626,9 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Helper function to test staff API (for debugging)
     window.testStaffAPI = async function(staffId) {
         try {
-            console.log('Testing staff API for ID:', staffId);
             const result = await fetchStaffPayrollOverview(staffId);
-            console.log('Staff API result:', result);
             return result;
         } catch (error) {
             console.error('Staff API test failed:', error);
@@ -1445,7 +1443,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Helper to fill modal with real worker data (always use selected worker, never static)
     async function fillPayslipModal(workerData) {
-        console.log('fillPayslipModal workerData:', workerData);
         // Detect if staff or worker
         const isStaff = !!workerData.user_fullname;
         // Set name
@@ -1544,7 +1541,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Try to use staff_id if present, else fallback to currentPayslipWorkerId
         let staffIdForSalary = workerData.staff_id || currentPayslipWorkerId;
         const baseData = await fetchBaseSalaryForStaff(staffIdForSalary);
-        console.log('Base salary API response:', baseData, 'for staffId:', staffIdForSalary);
         if (baseData !== null && typeof baseData !== 'undefined') {
             baseVal = (!isNaN(parseFloat(baseData))) ? parseFloat(baseData).toFixed(2) : '0.00';
         } else {

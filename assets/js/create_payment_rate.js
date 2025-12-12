@@ -76,8 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
       categories
     };
 
-    console.log("Sending data:", body);
-
     try {
       const response = await fetch(API_BASE_URL, {
         method: "POST",
@@ -86,10 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const result = await response.json();
-      console.log("Server response:", result);
-
       if (response.ok && result.success) {
-        console.log("Payment rate created successfully!");
         Swal.fire({
           icon: "success",
           title: "Payment rate created successfully!",

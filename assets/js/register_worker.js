@@ -16,7 +16,6 @@
                      sessionStorage.getItem('authToken');
         
         if (!token) {
-            console.error('No authentication token found. Please log in.');
             window.location.href = '/megacessweb/pages/log-in.html';
             return null;
         }
@@ -65,34 +64,17 @@
         }, 5000);
     }
     
-    // Show error message
+    // Show error message using SweetAlert2
     function showError(message) {
-        // Remove existing alerts
-        const existingAlert = registerWorkerModal.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-        
-        // Create error alert
-        const alertHTML = `
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <strong>Error!</strong> ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        // Insert at the top of modal body
-        const modalBody = registerWorkerModal.querySelector('.modal-body');
-        modalBody.insertAdjacentHTML('afterbegin', alertHTML);
-        
-        // Auto-remove after 8 seconds
-        setTimeout(() => {
-            const alert = modalBody.querySelector('.alert-danger');
-            if (alert) {
-                alert.remove();
-            }
-        }, 8000);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: message,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#dc3545',
+            timer: 5000,
+            timerProgressBar: true
+        });
     }
     
     // Validate form data
@@ -240,9 +222,8 @@
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${getAuthToken()}`,
+                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
-                    // Note: Don't set Content-Type header when sending FormData
-                    // Browser will set it automatically with correct boundary
                 },
                 body: apiData
             });
@@ -252,9 +233,24 @@
             if (!response.ok) {
                 // Handle different error types
                 if (response.status === 401) {
-                    throw new Error('Authentication failed. Please log in again.');
+                    Swal.fire({
+                        "icon": "error",
+                        "title": "Authentication Failed!",
+                        "text": "Your session has expired. Please log in again.",
+                        "confirmButtonText": "Log in now."
+                    }).then((result) => {
+                        if (result.isConfirmed){
+                            window.location.href = "/megacessweb/assets/pages/log-in.html"
+                        }
+                    });
                 } else if (response.status === 403) {
-                    throw new Error('Access denied. You do not have permission to register workers.');
+                    Swal.fire({
+                        "icon": "error",
+                        "title": "Access Denied",
+                        "text": "You do not have permission to register workers.",
+                        "timer": 3000,
+                        "timerProgressBar": true,
+                    })
                 } else if (response.status === 422) {
                     // Validation errors from server
                     const errorMessages = [];
@@ -297,7 +293,6 @@
             }, 2000);
             
         } catch (error) {
-            console.error('Error registering worker:', error);
             showError(error.message || 'Failed to register worker. Please try again.');
         } finally {
             showFormLoading(false);
@@ -307,7 +302,6 @@
     // Initialize the form handler
     function initializeRegisterWorker() {
         if (!registerWorkerForm) {
-            console.warn('Register worker form not found');
             return;
         }
         
