@@ -65,8 +65,11 @@
             <h3 class="fw-bold text-dark">Analytics Dashboard</h3>
             <p class="text-secondary mb-0">Deep dive into resource usage and performance metrics.</p>
           </div>
-          <div>
-            <select id="analyticsPeriod" class="form-select w-auto" aria-label="Select analytics period">
+          <div class="d-flex gap-2">
+            <button id="toggleAllAnalyticsBtn" class="btn btn-outline-secondary shadow-sm" data-expanded="false">
+              <i class="bi bi-arrows-expand me-1"></i> Expand All
+            </button>
+            <select id="analyticsPeriod" class="form-select w-auto shadow-sm" aria-label="Select analytics period">
               <option value="day">Daily</option>
               <option value="week">Weekly</option>
               <option value="month">Monthly</option>
@@ -374,6 +377,14 @@
             </div>
           </div>
         </div>
+
+        <!-- Back to Top Button -->
+        <div class="d-flex justify-content-center mt-3 mb-2">
+          <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+            class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+            <i class="bi bi-arrow-up me-2"></i> Back to Top
+          </button>
+        </div>
       </div>
       <!-- Navigation Cards -->
       <div class="container-fluid p-4 ">
@@ -435,6 +446,27 @@
 
   <script>
     // Charts will be initialized in manage_resources_analytics.js
+
+    // Toggle All Analytics Logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleBtn = document.getElementById('toggleAllAnalyticsBtn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          const sections = document.querySelectorAll('.analytics-section .collapse');
+          const isExpanded = toggleBtn.getAttribute('data-expanded') === 'true';
+
+          sections.forEach(sec => {
+            const bsCol = bootstrap.Collapse.getOrCreateInstance(sec, { toggle: false });
+            isExpanded ? bsCol.hide() : bsCol.show();
+          });
+
+          toggleBtn.setAttribute('data-expanded', !isExpanded);
+          toggleBtn.innerHTML = !isExpanded
+            ? '<i class="bi bi-arrows-collapse me-1"></i> Collapse All'
+            : '<i class="bi bi-arrows-expand me-1"></i> Expand All';
+        });
+      }
+    });
   </script>
 </body>
 
