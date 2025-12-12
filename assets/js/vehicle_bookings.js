@@ -60,7 +60,6 @@ async function fetchVehicle() {
       ...v,
       name: `${v.vehicle_name} (${v.plate_number})`,
     }));
-
   } catch (error) {
     console.error("Error fetching available vehicles:", error);
   }
@@ -200,15 +199,16 @@ function populateVehicleBookingTable(bookings) {
             <div class="col text-center">
                 <button class="btn btn-sm btn-warning me-2 edit-btn" data-obj='${JSON.stringify(
                   booking
-                ).replace(/'/g, "&apos;")}'>
-                    <i class="bi bi-pencil"></i> Edit
+                ).replace(/'/g, "&apos;")}' title="Edit">
+                    <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-sm btn-danger delete-btn" 
                         data-id="${booking.id}"
                         data-vehicle-id="${booking.vehicle.id}"
                         data-vehicle-name="${booking.vehicle.vehicle_name}"
-                        data-vehicle-plate="${booking.vehicle.plate_number}">
-                    <i class="bi bi-trash"></i> Delete
+                        data-vehicle-plate="${booking.vehicle.plate_number}"
+                        title="Delete">
+                    <i class="bi bi-trash"></i>
                 </button>
             </div>
         `;

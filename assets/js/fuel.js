@@ -99,13 +99,14 @@ function populateFuelsTable(fuels) {
               : ""
           }"
           data-bs-toggle="modal" 
-          data-bs-target="#editFuelModal">
-          <i class="bi bi-pencil"></i> Edit
+          data-bs-target="#editFuelModal"
+          title="Edit">
+          <i class="bi bi-pencil"></i>
         </button>
         <button class="btn btn-sm btn-danger delete-fuel-btn" data-id="${
           fuel.id
-        }">
-          <i class="bi bi-trash"></i> Delete
+        }" title="Delete">
+          <i class="bi bi-trash"></i>
         </button>
       </div>
     `;

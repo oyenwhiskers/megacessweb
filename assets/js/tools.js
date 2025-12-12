@@ -127,11 +127,11 @@ function populateSparePartsTable(tools) {
         <div class="col-4">${vehicleName}<small> (${plateNumber})</small></div>
 
         <div class="col-4 text-center">
-            <button class="btn btn-sm btn-warning me-2 edit-btn" data-json='${safeJson}'>
-                <i class="bi bi-pencil"></i> Edit
+            <button class="btn btn-sm btn-warning me-2 edit-btn" data-json='${safeJson}' title="Edit">
+                <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-danger delete-btn" data-id="${tool.id}">
-                <i class="bi bi-trash"></i> Delete
+            <button class="btn btn-sm btn-danger delete-btn" data-id="${tool.id}" title="Delete">
+                <i class="bi bi-trash"></i>
             </button>
         </div>
     `;

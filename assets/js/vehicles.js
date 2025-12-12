@@ -4,29 +4,32 @@ let paginationState = {
   lastPage: 1,
   perPage: 10,
   total: 0,
-  search: '',
-  status: ''
+  search: "",
+  status: "",
 };
 
 // ==================== INITIALIZATION ====================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   getAllVehicles();
-  if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
+  if (typeof refreshVehicleSummary === "function") refreshVehicleSummary();
 
   // Search & Filter Listeners
-  const searchInput = document.getElementById('vehicleSearch');
-  const statusFilter = document.getElementById('vehicleStatus');
+  const searchInput = document.getElementById("vehicleSearch");
+  const statusFilter = document.getElementById("vehicleStatus");
 
   if (searchInput) {
-    searchInput.addEventListener('input', debounce((e) => {
-      paginationState.search = e.target.value;
-      paginationState.currentPage = 1;
-      getAllVehicles(paginationState);
-    }, 100));
+    searchInput.addEventListener(
+      "input",
+      debounce((e) => {
+        paginationState.search = e.target.value;
+        paginationState.currentPage = 1;
+        getAllVehicles(paginationState);
+      }, 100)
+    );
   }
 
   if (statusFilter) {
-    statusFilter.addEventListener('change', (e) => {
+    statusFilter.addEventListener("change", (e) => {
       paginationState.status = e.target.value;
       paginationState.currentPage = 1;
       getAllVehicles(paginationState);
@@ -34,17 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Refresh Button Listener
-  const refreshBtn = document.getElementById('refreshVehicleBtn');
+  const refreshBtn = document.getElementById("refreshVehicleBtn");
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
+    refreshBtn.addEventListener("click", () => {
       // Reset State
-      paginationState.search = '';
-      paginationState.status = '';
+      paginationState.search = "";
+      paginationState.status = "";
       paginationState.currentPage = 1;
 
       // Reset DOM elements
-      if (searchInput) searchInput.value = '';
-      if (statusFilter) statusFilter.value = '';
+      if (searchInput) searchInput.value = "";
+      if (statusFilter) statusFilter.value = "";
 
       getAllVehicles(paginationState);
       refreshVehicleSummary();
@@ -53,22 +56,27 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==================== DATA FETCHING ====================
-async function getAllVehicles({ search = '', status = '', page = 1, per_page = 10 } = {}) {
-  const loading = document.getElementById('loading');
-  const tableBody = document.getElementById('vehicleTableBody');
-  if (loading) loading.style.display = 'block';
-  if (tableBody) tableBody.innerHTML = '';
+async function getAllVehicles({
+  search = "",
+  status = "",
+  page = 1,
+  per_page = 10,
+} = {}) {
+  const loading = document.getElementById("loading");
+  const tableBody = document.getElementById("vehicleTableBody");
+  if (loading) loading.style.display = "block";
+  if (tableBody) tableBody.innerHTML = "";
 
   const params = new URLSearchParams();
-  if (search) params.append('search', search);
-  if (status) params.append('status', status);
-  params.append('page', page);
-  params.append('per_page', per_page);
+  if (search) params.append("search", search);
+  if (status) params.append("status", status);
+  params.append("page", page);
+  params.append("per_page", per_page);
 
   try {
     const result = await apiFetch(`/vehicles?${params.toString()}`);
 
-    if (loading) loading.style.display = 'none';
+    if (loading) loading.style.display = "none";
 
     if (result.success) {
       let data = [];
@@ -78,7 +86,11 @@ async function getAllVehicles({ search = '', status = '', page = 1, per_page = 1
       if (result.meta) {
         data = result.data;
         meta = result.meta;
-      } else if (result.data && Array.isArray(result.data.data) && result.data.current_page) {
+      } else if (
+        result.data &&
+        Array.isArray(result.data.data) &&
+        result.data.current_page
+      ) {
         data = result.data.data;
         meta = result.data;
       } else if (Array.isArray(result.data)) {
@@ -93,7 +105,7 @@ async function getAllVehicles({ search = '', status = '', page = 1, per_page = 1
           current_page: parseInt(page),
           last_page: lastPage,
           total: total,
-          per_page: per_page
+          per_page: per_page,
         };
       }
 
@@ -101,77 +113,86 @@ async function getAllVehicles({ search = '', status = '', page = 1, per_page = 1
         populateVehicleTable(data);
         updatePaginationControls(meta);
       } else {
-        if (tableBody) tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
-        const container = document.getElementById('vehiclePagination');
-        if (container) container.innerHTML = '';
+        if (tableBody)
+          tableBody.innerHTML = `<div class="text-center text-muted py-3">No vehicles found</div>`;
+        const container = document.getElementById("vehiclePagination");
+        if (container) container.innerHTML = "";
       }
     } else {
       showError(result.message || "Failed to fetch vehicles.");
     }
   } catch (error) {
     console.error(error);
-    if (loading) loading.style.display = 'none';
+    if (loading) loading.style.display = "none";
   }
 }
 
 function populateVehicleTable(vehicles) {
-const tableBody = document.getElementById('vehicleTableBody');
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
+  const tableBody = document.getElementById("vehicleTableBody");
+  if (!tableBody) return;
+  tableBody.innerHTML = "";
 
-    const fragment = document.createDocumentFragment();
+  const fragment = document.createDocumentFragment();
 
-    vehicles.forEach(vehicle => {
-        const row = document.createElement('div');
-        row.className = 'content-row d-flex border-bottom py-2 align-items-center';
+  vehicles.forEach((vehicle) => {
+    const row = document.createElement("div");
+    row.className = "content-row d-flex border-bottom py-2 align-items-center";
 
-        let statusClass = 'bg-secondary';
-        if (vehicle.status.toLowerCase() === 'available') statusClass = 'bg-success';
-        else if (vehicle.status.toLowerCase() === 'in use') statusClass = 'bg-warning text-dark';
-        else if (vehicle.status.toLowerCase() === 'under maintenance') statusClass = 'bg-danger';
+    let statusClass = "bg-secondary";
+    if (vehicle.status.toLowerCase() === "available")
+      statusClass = "bg-success";
+    else if (vehicle.status.toLowerCase() === "in use")
+      statusClass = "bg-warning text-dark";
+    else if (vehicle.status.toLowerCase() === "under maintenance")
+      statusClass = "bg-danger";
 
-        row.innerHTML = `
+    row.innerHTML = `
             <div class="col ps-3">${vehicle.vehicle_name}</div>
             <div class="col">${vehicle.plate_number}</div>
-            <div class="col"><span class="badge ${statusClass}">${vehicle.status}</span></div>
+            <div class="col"><span class="badge ${statusClass}">${
+      vehicle.status
+    }</span></div>
             <div class="col text-center">
                 <button class="btn btn-sm btn-warning me-2 edit-vehicle-btn" 
                         data-id="${vehicle.id}" 
                         data-name="${vehicle.vehicle_name}" 
                         data-plate="${vehicle.plate_number}" 
-                        data-status="${vehicle.status.toLowerCase()}">
-                    <i class="bi bi-pencil"></i> Edit
+                        data-status="${vehicle.status.toLowerCase()}"
+                        title="Edit">
+                    <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-danger delete-vehicle-btn" data-id="${vehicle.id}">
-                    <i class="bi bi-trash"></i> Delete
+                <button class="btn btn-sm btn-danger delete-vehicle-btn" data-id="${
+                  vehicle.id
+                }" title="Delete">
+                    <i class="bi bi-trash"></i>
                 </button>
             </div>
         `;
-        fragment.appendChild(row);
-    });
+    fragment.appendChild(row);
+  });
 
-    tableBody.appendChild(fragment);
+  tableBody.appendChild(fragment);
 }
 
 // ==================== EVENT DELEGATION ====================
 // Replaces attachEditListeners and attachDeleteListeners
-document.addEventListener('DOMContentLoaded', () => {
-    const tableBody = document.getElementById('vehicleTableBody');
-    if (tableBody) {
-        tableBody.addEventListener('click', (e) => {
-            // Handle Edit
-            const editBtn = e.target.closest('.edit-vehicle-btn');
-            if (editBtn) {
-                handleEdit(editBtn);
-            }
+document.addEventListener("DOMContentLoaded", () => {
+  const tableBody = document.getElementById("vehicleTableBody");
+  if (tableBody) {
+    tableBody.addEventListener("click", (e) => {
+      // Handle Edit
+      const editBtn = e.target.closest(".edit-vehicle-btn");
+      if (editBtn) {
+        handleEdit(editBtn);
+      }
 
-            // Handle Delete
-            const deleteBtn = e.target.closest('.delete-vehicle-btn');
-            if (deleteBtn) {
-                handleDelete(deleteBtn);
-            }
-        });
-    }
+      // Handle Delete
+      const deleteBtn = e.target.closest(".delete-vehicle-btn");
+      if (deleteBtn) {
+        handleDelete(deleteBtn);
+      }
+    });
+  }
 });
 
 // ==================== PAGINATION ====================
@@ -181,9 +202,9 @@ function updatePaginationControls(meta) {
   paginationState.perPage = meta.per_page;
   paginationState.total = meta.total;
 
-  const currentEl = document.getElementById('currentPage');
-  const totalPagesEl = document.getElementById('totalPages');
-  const totalRecordsEl = document.getElementById('totalRecords');
+  const currentEl = document.getElementById("currentPage");
+  const totalPagesEl = document.getElementById("totalPages");
+  const totalRecordsEl = document.getElementById("totalRecords");
   if (currentEl) currentEl.textContent = meta.current_page;
   if (totalPagesEl) totalPagesEl.textContent = meta.last_page;
   if (totalRecordsEl) totalRecordsEl.textContent = meta.total;
@@ -192,7 +213,7 @@ function updatePaginationControls(meta) {
 }
 
 function renderPagination(current, last) {
-  const container = document.getElementById('vehiclePagination');
+  const container = document.getElementById("vehiclePagination");
   if (!container) return;
 
   const maxButtons = 7;
@@ -202,9 +223,14 @@ function renderPagination(current, last) {
     start = Math.max(1, end - maxButtons + 1);
   }
 
-  let html = '';
+  let html = "";
   const prevDisabled = current <= 1;
-  html += `<li class="page-item ${prevDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.max(1, current - 1)}">Previous</a></li>`;
+  html += `<li class="page-item ${
+    prevDisabled ? "disabled" : ""
+  }"><a class="page-link" href="#" data-page="${Math.max(
+    1,
+    current - 1
+  )}">Previous</a></li>`;
 
   for (let i = start; i <= end; i++) {
     if (i === current) {
@@ -215,14 +241,21 @@ function renderPagination(current, last) {
   }
 
   const nextDisabled = current >= last;
-  html += `<li class="page-item ${nextDisabled ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${Math.min(last, current + 1)}">Next</a></li>`;
+  html += `<li class="page-item ${
+    nextDisabled ? "disabled" : ""
+  }"><a class="page-link" href="#" data-page="${Math.min(
+    last,
+    current + 1
+  )}">Next</a></li>`;
 
   container.innerHTML = html;
 
-  const enabledLinks = container.querySelectorAll('li.page-item:not(.disabled) a[data-page]');
-  enabledLinks.forEach(link => {
-    link.removeEventListener('click', handlePaginationClick);
-    link.addEventListener('click', handlePaginationClick);
+  const enabledLinks = container.querySelectorAll(
+    "li.page-item:not(.disabled) a[data-page]"
+  );
+  enabledLinks.forEach((link) => {
+    link.removeEventListener("click", handlePaginationClick);
+    link.addEventListener("click", handlePaginationClick);
   });
 }
 
@@ -235,7 +268,7 @@ function handlePaginationClick(e) {
     search: paginationState.search,
     status: paginationState.status,
     per_page: paginationState.perPage,
-    page: page
+    page: page,
   });
   window.scrollTo(0, 0);
 }
@@ -276,10 +309,10 @@ function animateCount(el, value, duration = 1500) {
 // Helpers to show/hide spinner indicators for analytics cards
 function setStatsLoading(isLoading) {
   const mapping = [
-    ['totalVehiclesSpinner', 'totalVehiclesValue'],
-    ['availableVehiclesSpinner', 'availableVehiclesValue'],
-    ['inUseVehiclesSpinner', 'inUseVehiclesValue'],
-    ['maintenanceVehiclesSpinner', 'maintenanceVehiclesValue']
+    ["totalVehiclesSpinner", "totalVehiclesValue"],
+    ["availableVehiclesSpinner", "availableVehiclesValue"],
+    ["inUseVehiclesSpinner", "inUseVehiclesValue"],
+    ["maintenanceVehiclesSpinner", "maintenanceVehiclesValue"],
   ];
 
   mapping.forEach(([spinnerId, valueId]) => {
@@ -288,11 +321,11 @@ function setStatsLoading(isLoading) {
     if (!spinner || !valueEl) return;
 
     if (isLoading) {
-      spinner.classList.remove('d-none');
-      valueEl.classList.add('opacity-50');
+      spinner.classList.remove("d-none");
+      valueEl.classList.add("opacity-50");
     } else {
-      spinner.classList.add('d-none');
-      valueEl.classList.remove('opacity-50');
+      spinner.classList.add("d-none");
+      valueEl.classList.remove("opacity-50");
     }
   });
 }
@@ -300,7 +333,7 @@ function setStatsLoading(isLoading) {
 // -------------------- Real Analytics (Summary) --------------------
 async function fetchResourcesUsageAnalytics() {
   try {
-    const result = await apiFetch('/analytics/resources-usage');
+    const result = await apiFetch("/analytics/resources-usage");
     if (result?.success && result?.data) {
       return result.data;
     }
@@ -323,46 +356,69 @@ async function refreshVehicleSummary() {
 
   const vehicles = analytics.vehicle_analytics;
 
-  animateCount(document.getElementById('totalVehiclesValue'), Number(vehicles.total_vehicles) || 0, 1200);
-  animateCount(document.getElementById('availableVehiclesValue'), Number(vehicles.available) || 0, 1200);
-  animateCount(document.getElementById('inUseVehiclesValue'), Number(vehicles.in_use) || 0, 1200);
-  animateCount(document.getElementById('maintenanceVehiclesValue'), Number(vehicles.under_maintenance) || 0, 1200);
+  animateCount(
+    document.getElementById("totalVehiclesValue"),
+    Number(vehicles.total_vehicles) || 0,
+    1200
+  );
+  animateCount(
+    document.getElementById("availableVehiclesValue"),
+    Number(vehicles.available) || 0,
+    1200
+  );
+  animateCount(
+    document.getElementById("inUseVehiclesValue"),
+    Number(vehicles.in_use) || 0,
+    1200
+  );
+  animateCount(
+    document.getElementById("maintenanceVehiclesValue"),
+    Number(vehicles.under_maintenance) || 0,
+    1200
+  );
 
   setStatsLoading(false);
 }
 
 // ==================== POST /vehicles ====================
-const addVehicleBtn = document.getElementById('addVehicleBtn');
+const addVehicleBtn = document.getElementById("addVehicleBtn");
 if (addVehicleBtn) {
-  addVehicleBtn.addEventListener('click', async () => {
-    const vehicleName = document.getElementById('vehicleName').value.trim();
-    const plateNo = document.getElementById('plateNo').value.trim();
-    const statusSelect = document.getElementById('addVehicleStatus');
+  addVehicleBtn.addEventListener("click", async () => {
+    const vehicleName = document.getElementById("vehicleName").value.trim();
+    const plateNo = document.getElementById("plateNo").value.trim();
+    const statusSelect = document.getElementById("addVehicleStatus");
     const status = statusSelect.value;
 
-    if (!vehicleName || !plateNo || !status || status === 'Choose status') {
-      showError('Please fill in all fields.');
+    if (!vehicleName || !plateNo || !status || status === "Choose status") {
+      showError("Please fill in all fields.");
       return;
     }
 
     addVehicleBtn.disabled = true;
     const originalText = addVehicleBtn.textContent;
-    addVehicleBtn.textContent = 'Adding...';
+    addVehicleBtn.textContent = "Adding...";
 
     try {
-      const result = await apiFetch('/vehicles', {
-        method: 'POST',
-        body: JSON.stringify({ vehicle_name: vehicleName, plate_number: plateNo, status })
+      const result = await apiFetch("/vehicles", {
+        method: "POST",
+        body: JSON.stringify({
+          vehicle_name: vehicleName,
+          plate_number: plateNo,
+          status,
+        }),
       });
 
       if (result.success) {
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('addVehicleModal')).hide();
-        document.getElementById('vehicleName').value = '';
-        document.getElementById('plateNo').value = '';
-        statusSelect.value = 'Choose status';
+        bootstrap.Modal.getOrCreateInstance(
+          document.getElementById("addVehicleModal")
+        ).hide();
+        document.getElementById("vehicleName").value = "";
+        document.getElementById("plateNo").value = "";
+        statusSelect.value = "Choose status";
 
-        if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
-        showSuccess('Success!', 'Vehicle added successfully!');
+        if (typeof refreshVehicleSummary === "function")
+          refreshVehicleSummary();
+        showSuccess("Success!", "Vehicle added successfully!");
         getAllVehicles();
       } else {
         showError(result.message);
@@ -378,19 +434,19 @@ if (addVehicleBtn) {
 
 // ==================== DELETE /vehicles ====================
 
-
 async function handleDelete(btn) {
   const vehicleId = btn.dataset.id;
-  showConfirm('You want to delete this vehicle?', async () => {
+  showConfirm("You want to delete this vehicle?", async () => {
     showLoading();
     try {
       const result = await apiFetch(`/vehicles/${vehicleId}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
       if (result.success) {
-        showSuccess('Success!', result.message);
+        showSuccess("Success!", result.message);
         getAllVehicles();
-        if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
+        if (typeof refreshVehicleSummary === "function")
+          refreshVehicleSummary();
       } else {
         showError(result.message);
       }
@@ -405,45 +461,52 @@ async function handleDelete(btn) {
 // ==================== UPDATE /vehicles ====================
 let currentVehicleId = null;
 
-
-
 function handleEdit(btn) {
   currentVehicleId = btn.dataset.id;
-  document.getElementById('updateVehicleName').value = btn.dataset.name;
-  document.getElementById('updatePlateNo').value = btn.dataset.plate;
-  document.getElementById('updateVehicleStatus').value = btn.dataset.status;
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('updateVehicleModal')).show();
+  document.getElementById("updateVehicleName").value = btn.dataset.name;
+  document.getElementById("updatePlateNo").value = btn.dataset.plate;
+  document.getElementById("updateVehicleStatus").value = btn.dataset.status;
+  bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("updateVehicleModal")
+  ).show();
 }
 
-const updateVehicleBtn = document.getElementById('updateVehicleBtn');
+const updateVehicleBtn = document.getElementById("updateVehicleBtn");
 if (updateVehicleBtn) {
-  updateVehicleBtn.addEventListener('click', async () => {
+  updateVehicleBtn.addEventListener("click", async () => {
     if (!currentVehicleId) return;
 
-    const name = document.getElementById('updateVehicleName').value.trim();
-    const plate = document.getElementById('updatePlateNo').value.trim();
-    const status = document.getElementById('updateVehicleStatus').value;
+    const name = document.getElementById("updateVehicleName").value.trim();
+    const plate = document.getElementById("updatePlateNo").value.trim();
+    const status = document.getElementById("updateVehicleStatus").value;
 
     if (!name || !plate || !status) {
-      showError('Please fill in all fields.');
+      showError("Please fill in all fields.");
       return;
     }
 
     updateVehicleBtn.disabled = true;
     const originalText = updateVehicleBtn.textContent;
-    updateVehicleBtn.textContent = 'Updating...';
+    updateVehicleBtn.textContent = "Updating...";
 
     try {
       const result = await apiFetch(`/vehicles/${currentVehicleId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ vehicle_name: name, plate_number: plate, status })
+        method: "PUT",
+        body: JSON.stringify({
+          vehicle_name: name,
+          plate_number: plate,
+          status,
+        }),
       });
 
       if (result.success) {
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('updateVehicleModal')).hide();
+        bootstrap.Modal.getOrCreateInstance(
+          document.getElementById("updateVehicleModal")
+        ).hide();
         getAllVehicles();
-        if (typeof refreshVehicleSummary === 'function') refreshVehicleSummary();
-        showSuccess('Success!', 'Vehicle updated successfully!');
+        if (typeof refreshVehicleSummary === "function")
+          refreshVehicleSummary();
+        showSuccess("Success!", "Vehicle updated successfully!");
       } else {
         showError(result.message);
       }

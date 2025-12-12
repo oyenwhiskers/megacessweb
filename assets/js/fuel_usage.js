@@ -141,13 +141,13 @@ function populateFuelUsageTable(usages) {
                     : ""
                 }"
                 data-description="${usage.usage_description || ""}"
-                >
-                <i class="bi bi-pencil"></i> Edit
+                title="Edit">
+                <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-sm btn-danger delete-usage-btn" data-id="${
                   usage.id
-                }">
-                <i class="bi bi-trash"></i> Delete
+                }" title="Delete">
+                <i class="bi bi-trash"></i>
                 </button>
             </div>
         `;
