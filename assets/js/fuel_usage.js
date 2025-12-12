@@ -119,7 +119,7 @@ function populateFuelUsageTable(usages) {
       usage.usage_quantity || 0
     } Liters</span>
             </div>
-            <div class="col">${assignedName}</div>
+            <div class="col fw-bold text-dark">${assignedName}</div>
             <div class="col">${usage.fuel_type || "-"}</div>
             <div class="col">
                 ${formatDateDisplay(usage.usage_date)}
@@ -141,13 +141,13 @@ function populateFuelUsageTable(usages) {
                     : ""
                 }"
                 data-description="${usage.usage_description || ""}"
-                >
-                <i class="bi bi-pencil"></i> Edit
+                title="Edit">
+                <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-sm btn-danger delete-usage-btn" data-id="${
                   usage.id
-                }">
-                <i class="bi bi-trash"></i> Delete
+                }" title="Delete">
+                <i class="bi bi-trash"></i>
                 </button>
             </div>
         `;

@@ -12,20 +12,47 @@ let sparePartsState = {
 // fetch vehicles for dropdown
 async function getAllVehicles() {
   try {
-    const result = await apiFetch("/vehicles?per_page=100");
-    if (result.success) {
-      allVehicles = result.data.map((v) => ({
-        id: v.id,
-        vehicle_id: v.id,
-        vehicle_name: v.vehicle_name || null,
-        plate_number: v.plate_number || null,
-        displayLabel: `${v.vehicle_name} - ${v.plate_number}`,
-        name: `${v.vehicle_name} (${v.plate_number})`,
-      }));
-      console.log("🔧 Vehicles loaded:", allVehicles.length);
-    } else {
-      throw new Error(result.message);
+    let allData = [];
+
+    // 1. Fetch first page with larger page size
+    const firstPageResult = await apiFetch("/vehicles?page=1&per_page=100");
+    if (!firstPageResult.success) throw new Error(firstPageResult.message);
+
+    // Normalize data extraction
+    const getItems = (res) =>
+      Array.isArray(res.data) ? res.data : res.data.data || [];
+    const getMeta = (res) => res.meta || res.data;
+
+    const firstItems = getItems(firstPageResult);
+    allData = allData.concat(firstItems);
+
+    const meta = getMeta(firstPageResult);
+    const lastPage = meta.last_page || 1;
+
+    // 2. Fetch remaining pages in parallel if any
+    if (lastPage > 1) {
+      const promises = [];
+      for (let p = 2; p <= lastPage; p++) {
+        promises.push(apiFetch(`/vehicles?page=${p}&per_page=1000`));
+      }
+
+      const results = await Promise.all(promises);
+      results.forEach((res) => {
+        if (res.success) {
+          allData = allData.concat(getItems(res));
+        }
+      });
     }
+
+    allVehicles = allData.map((v) => ({
+      id: v.id,
+      vehicle_id: v.id,
+      vehicle_name: v.vehicle_name || null,
+      plate_number: v.plate_number || null,
+      displayLabel: `${v.vehicle_name} - ${v.plate_number}`,
+      name: `${v.vehicle_name} (${v.plate_number})`,
+    }));
+    console.log("🔧 Vehicles loaded:", allVehicles.length);
   } catch (error) {
     console.error("Error fetching vehicles:", error);
   }
@@ -77,6 +104,8 @@ function populateSparePartsTable(tools) {
   const tableBody = document.getElementById("toolsTableBody");
   tableBody.innerHTML = "";
 
+  const fragment = document.createDocumentFragment();
+
   tools.forEach((tool) => {
     const row = document.createElement("div");
     row.className = "content-row d-flex border-bottom py-2 align-items-center";
@@ -93,22 +122,28 @@ function populateSparePartsTable(tools) {
     const safeJson = JSON.stringify(tool).replace(/'/g, "&apos;");
 
     row.innerHTML = `
-        <div class="col-4 ps-3">${sparePartName}</div>
+        <div class="col-5 ps-4 d-flex align-items-center">
+            <div>
+                <div class="fw-bold text-dark">${sparePartName}</div>
+            </div>
+        </div>
 
         <div class="col-4">${vehicleName}<small> (${plateNumber})</small></div>
 
         <div class="col-4 text-center">
-            <button class="btn btn-sm btn-warning me-2 edit-btn" data-json='${safeJson}'>
-                <i class="bi bi-pencil"></i> Edit
+            <button class="btn btn-sm btn-warning me-2 edit-btn" data-json='${safeJson}' title="Edit">
+                <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-danger delete-btn" data-id="${tool.id}">
-                <i class="bi bi-trash"></i> Delete
+            <button class="btn btn-sm btn-danger delete-btn" data-id="${tool.id}" title="Delete">
+                <i class="bi bi-trash"></i>
             </button>
         </div>
     `;
 
-    tableBody.appendChild(row);
+    fragment.appendChild(row);
   });
+
+  tableBody.appendChild(fragment);
 }
 
 // EVENT DELEGATION: Handle Table Clicks (Edit/Delete)
@@ -359,7 +394,9 @@ document
     let vehicleId = null;
     if (!document.getElementById("updateToolVehicleInput").value)
       vehicleId = document.getElementById("updateToolVehicleInput").value;
-    else vehicleId = document.getElementById("updateToolVehicleInput").dataset.selectedId;
+    else
+      vehicleId = document.getElementById("updateToolVehicleInput").dataset
+        .selectedId;
     const btn = e.target;
 
     if (!toolId) return;

@@ -60,8 +60,6 @@ async function fetchVehicle() {
       ...v,
       name: `${v.vehicle_name} (${v.plate_number})`,
     }));
-
-    console.log("🔧 Available Vehicles loaded:", allVehicles.length);
   } catch (error) {
     console.error("Error fetching available vehicles:", error);
   }
@@ -79,7 +77,6 @@ async function fetchUserAndStaff() {
         role: item.role,
         displayLabel: `${item.fullname} - ${item.role}`,
       }));
-      console.log("🔧 Users/Staff loaded:", allUsersAndStaff.length);
     } else {
       throw new Error(result.message);
     }
@@ -193,24 +190,25 @@ function populateVehicleBookingTable(bookings) {
       : "-";
 
     row.innerHTML = `
-            <div class="col ps-3">${booking.vehicle.vehicle_name}<br><small>(${
+            <div class="col ps-3 fw-bold text-dark">${booking.vehicle.vehicle_name}<br><small>(${
       booking.vehicle.plate_number
     })</small></div>
-            <div class="col">${userName}</div>
+            <div class="col fw-bold text-dark">${userName}</div>
             <div class="col">${dateBook}</div>
             <div class="col">${dateRet}</div>
             <div class="col text-center">
                 <button class="btn btn-sm btn-warning me-2 edit-btn" data-obj='${JSON.stringify(
                   booking
-                ).replace(/'/g, "&apos;")}'>
-                    <i class="bi bi-pencil"></i> Edit
+                ).replace(/'/g, "&apos;")}' title="Edit">
+                    <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-sm btn-danger delete-btn" 
                         data-id="${booking.id}"
                         data-vehicle-id="${booking.vehicle.id}"
                         data-vehicle-name="${booking.vehicle.vehicle_name}"
-                        data-vehicle-plate="${booking.vehicle.plate_number}">
-                    <i class="bi bi-trash"></i> Delete
+                        data-vehicle-plate="${booking.vehicle.plate_number}"
+                        title="Delete">
+                    <i class="bi bi-trash"></i>
                 </button>
             </div>
         `;
@@ -295,7 +293,6 @@ async function deleteVehicleBooking(id, vehicleInfo = null) {
               status: "Available",
             }),
           });
-          console.log(`Vehicle ${vehicleInfo.id} set to Available`);
         } catch (updateErr) {
           console.error("Failed to update vehicle status:", updateErr);
         }

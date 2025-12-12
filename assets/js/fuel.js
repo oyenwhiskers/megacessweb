@@ -74,8 +74,8 @@ function populateFuelsTable(fuels) {
     let fuelClass = "bg-success text-white"; // customize based on fuel amount if needed
 
     row.innerHTML = `
-      <div class="col">${fuel.supplier_name || "Unnamed Fuel"}</div>
-      <div class="col">${fuel.user.user_fullname || "-"}</div>
+      <div class="col fw-bold text-dark">${fuel.supplier_name || "Unnamed Fuel"}</div>
+      <div class="col fw-bold text-dark">${fuel.user.user_fullname || "-"}</div>
       <div class="col">${fuel.fuel_type || "-"}</div>
       <div class="col">
         <span class="badge ${fuelClass} px-3 py-2 fs-6">${
@@ -99,13 +99,14 @@ function populateFuelsTable(fuels) {
               : ""
           }"
           data-bs-toggle="modal" 
-          data-bs-target="#editFuelModal">
-          <i class="bi bi-pencil"></i> Edit
+          data-bs-target="#editFuelModal"
+          title="Edit">
+          <i class="bi bi-pencil"></i>
         </button>
         <button class="btn btn-sm btn-danger delete-fuel-btn" data-id="${
           fuel.id
-        }">
-          <i class="bi bi-trash"></i> Delete
+        }" title="Delete">
+          <i class="bi bi-trash"></i>
         </button>
       </div>
     `;
@@ -196,7 +197,6 @@ function renderFuelPagination(meta, search, filter, type) {
 // ==================== Create / Add Fuel ====================
 async function createFuelRecord(payload) {
   try {
-    console.log(payload);
     const result = await apiFetch("/fuels", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -204,7 +204,6 @@ async function createFuelRecord(payload) {
     result.success
       ? showSuccess("Fuel record added successfully!")
       : showError(result.message || "Failed to add fuel record.");
-    console.log(result);
     getAllFuels();
     refreshFuelSummary();
   } catch (err) {
