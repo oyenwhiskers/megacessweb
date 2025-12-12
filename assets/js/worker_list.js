@@ -78,7 +78,6 @@
         let imageSrc = placeholderImage;
         if (worker.staff_img && worker.staff_img.trim() !== '') {
             const imgPath = worker.staff_img.trim();
-            console.log('Worker list - Image path:', imgPath, 'for worker:', worker.staff_fullname);
             // Check if it's a full URL or relative path
             if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
                 imageSrc = imgPath;
@@ -86,9 +85,6 @@
                 // Construct full URL using API base URL
                 imageSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
             }
-            console.log('Worker list - Final image URL:', imageSrc);
-        } else {
-            console.log('Worker list - No image for worker:', worker.staff_fullname, 'staff_img:', worker.staff_img);
         }
         
         // Determine active/inactive status
@@ -108,38 +104,32 @@
                              onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="fw-semibold">${highlightedName}</div>
-                                <div class="small text-muted mb-1">
-                                    <i class="bi bi-telephone me-1"></i>${formatPhone(worker.staff_phone)}
-                                    <span class="ms-3"><i class="bi bi-person me-1"></i>${getGenderDisplay(worker.staff_gender)}</span>
-                                    <span class="ms-3"><i class="bi bi-calendar me-1"></i>${formatDate(worker.staff_dob)}</span>
-                                </div>
-                                ${worker.claimed_staff ? `
-                                    <div class="small text-muted">
-                                        <i class="bi bi-person-check me-1"></i>Claimed by: ${claimedBy}
-                                    </div>
-                                ` : ''}
+                        <div class="fw-semibold">${highlightedName}</div>
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-telephone me-1"></i>${formatPhone(worker.staff_phone)}
+                            <span class="ms-3"><span class="badge ${claimedBadge}">${claimedText}</span></span>
+                        </div>
+                        ${worker.claimed_staff ? `
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-person-check me-1"></i>Claimed by: ${claimedBy}
                             </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge ${claimedBadge}">${claimedText}</span>
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-outline-primary" 
-                                            onclick="viewWorkerDetails(${worker.id})"
-                                            title="View Details">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="deleteWorker(${worker.id})"
-                                            title="Delete Worker">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm ${statusBtnClass}" title="Toggle Active/Inactive" onclick="toggleWorkerStatus(${worker.id}, ${isActive})">
-                                        <i class="bi ${statusBtnIcon} me-1"></i>${statusBtnText}
-                                    </button>
-                                </div>
-                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-primary" 
+                                    onclick="viewWorkerDetails(${worker.id})"
+                                    title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" 
+                                    onclick="deleteWorker(${worker.id})"
+                                    title="Delete Worker">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm ${statusBtnClass}" title="Toggle Active/Inactive" onclick="toggleWorkerStatus(${worker.id}, ${isActive})">
+                                <i class="bi ${statusBtnIcon} me-1"></i>${statusBtnText}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -148,7 +138,7 @@
     }
     
     // Create pagination HTML
-    function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentGender) {
+    function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch) {
         // Always show pagination bar, even if only 1 page
         let paginationHTML = `
             <nav aria-label="Worker list pagination" class="mt-4">
@@ -157,21 +147,21 @@
         // Previous button
         paginationHTML += `
             <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
-                <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchWorkersList('${currentSearch}', ${currentPage - 1}, '${currentGender}')" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+                <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchWorkersList('${currentSearch}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
             </li>
         `;
         // Only show one page button if totalPages === 1
         if (totalPages === 1) {
             paginationHTML += `
                 <li class="page-item active">
-                    <button class="page-link" style="background:#007bff;color:#fff;border:none;">1</button>
+                    <button class="page-link" style="background:#0d6832;color:#fff;border:none;">1</button>
                 </li>
             `;
         } else {
             for (let i = 1; i <= totalPages; i++) {
                 paginationHTML += `
                     <li class="page-item${i === currentPage ? ' active' : ''}">
-                        <button class="page-link" style="${i === currentPage ? 'background:#007bff;color:#fff;border:none;' : 'background:transparent; border:none; color:#007bff;'}" onclick="fetchWorkersList('${currentSearch}', ${i}, '${currentGender}')">${i}</button>
+                        <button class="page-link" style="${i === currentPage ? 'background:#0d6832;color:#fff;border:none;' : 'background:transparent; border:none; color:#0d6832;'}" onclick="fetchWorkersList('${currentSearch}', ${i})">${i}</button>
                     </li>
                 `;
             }
@@ -179,7 +169,7 @@
         // Next button
         paginationHTML += `
             <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
-                <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchWorkersList('${currentSearch}', ${currentPage + 1}, '${currentGender}')" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+                <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchWorkersList('${currentSearch}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
             </li>
         `;
         paginationHTML += `
@@ -194,24 +184,24 @@
         workersView.innerHTML = `
             <div class="list-group text-start">
                 <div class="list-group-item text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
+                    <div class="spinner-border text-success" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mt-2 mb-0">Loading workers...</p>
+                    <p class="mt-2 mb-0">Loading worker list...</p>
                 </div>
             </div>
         `;
     }
     
     // Show error state
-    function showError(message, currentSearch, currentGender = 'all') {
+    function showError(message, currentSearch) {
         workersView.innerHTML = `
             <div class="list-group text-start">
                 <div class="list-group-item">
                     <div class="alert alert-danger mb-0" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong>Error:</strong> ${message}
-                        <button class="btn btn-outline-danger btn-sm ms-3" onclick="fetchWorkersList('${currentSearch}', ${currentPage}, '${currentGender}')">
+                        <button class="btn btn-outline-danger btn-sm ms-3" onclick="fetchWorkersList('${currentSearch}', ${currentPage})">
                             <i class="bi bi-arrow-clockwise me-1"></i>Retry
                         </button>
                     </div>
@@ -221,7 +211,7 @@
     }
     
     // Show empty state
-    function showEmpty(currentSearch, currentGender = 'all') {
+    function showEmpty(currentSearch) {
         const searchMessage = currentSearch ? 
             `No workers found matching "${currentSearch}".` : 
             'No workers have been registered yet.';
@@ -232,19 +222,13 @@
                     <i class="bi bi-people display-1 text-muted mb-3"></i>
                     <h5 class="text-muted">No workers found</h5>
                     <p class="text-muted">${searchMessage}</p>
-                    ${currentSearch ? `
-                        <button class="btn btn-outline-primary" onclick="fetchWorkersList('', 1, '${currentGender}')">
-                            <i class="bi bi-x-circle me-1"></i>Clear Search
-                        </button>
-                    ` : ''}
                 </div>
             </div>
         `;
     }
     
     // Main function to fetch workers
-    async function fetchWorkersList(search = '', page = 1, gender = 'all') {
-        const startTime = performance.now();
+    async function fetchWorkersList(search = '', page = 1) {
         try {
             showLoading();
             
@@ -257,17 +241,13 @@
             // Add query parameters
             const params = {
                 per_page: DEFAULT_PER_PAGE.toString(),
-                page: page.toString()
+                page: page.toString(),
+                role: 'worker' // Only fetch workers, not staff with other roles
             };
             
             // Add search parameter if provided
             if (search && search.trim()) {
                 params.search = search.trim();
-            }
-            
-            // Add gender parameter if not 'all'
-            if (gender && gender !== 'all') {
-                params.gender = gender;
             }
             
             Object.keys(params).forEach(key => {
@@ -303,60 +283,33 @@
                 throw new Error('Invalid response format');
             }
             
-            let filteredData = result.data;
-            let filteredMeta = result.meta;
+            const workers = result.data;
+            const meta = result.meta;
             
-            // Filter to only show workers (exclude staff with roles: checker, manager, admin)
-            filteredData = filteredData.filter(worker => {
-                // Only show entries without a role or with role explicitly set to 'worker'
-                return !worker.role || worker.role === '' || worker.role.toLowerCase() === 'worker';
-            });
-            
-            // Apply client-side filtering as fallback if API doesn't filter properly
-            if (search && search.trim() && filteredData.length > 0) {
-                const searchTerm = search.trim().toLowerCase();
-                console.log('Applying client-side search filter for:', searchTerm);
-                
-                filteredData = filteredData.filter(worker => {
-                    return worker.staff_fullname && worker.staff_fullname.toLowerCase().includes(searchTerm);
-                });
-            }
-            
-            // Update meta information for filtered results
-            if (filteredMeta) {
-                filteredMeta.total = filteredData.length;
-                filteredMeta.last_page = Math.ceil(filteredData.length / (filteredMeta.per_page || DEFAULT_PER_PAGE));
-                filteredMeta.current_page = page;
-            }
-            
-            if (filteredData.length === 0) {
-                showEmpty(search, gender);
+            if (workers.length === 0) {
+                showEmpty(search);
                 return;
             }
             
             // Render workers in list format
             let workersHTML = `
                 <div class="list-group text-start">
-                    ${filteredData.map(worker => createWorkerListItem(worker)).join('')}
+                    ${workers.map(worker => createWorkerListItem(worker)).join('')}
                 </div>
             `;
             
             // Add pagination if available
-            if (filteredMeta) {
-                const totalPages = filteredMeta.last_page || 1;
-                const totalItems = filteredMeta.total || filteredData.length;
-                workersHTML += createPaginationHTML(page, totalPages, totalItems, search, gender);
+            if (meta) {
+                const totalPages = meta.last_page || 1;
+                const totalItems = meta.total || workers.length;
+                workersHTML += createPaginationHTML(page, totalPages, totalItems, search);
             }
             
             workersView.innerHTML = workersHTML;
-            const endTime = performance.now();
-            console.log(`[WorkerList] API + render time: ${(endTime - startTime).toFixed(2)} ms`);
             
         } catch (error) {
             console.error('Error fetching workers:', error);
-            showError(error.message || 'Failed to load workers. Please try again.', search, gender);
-            const endTime = performance.now();
-            console.log(`[WorkerList] API + render time (error): ${(endTime - startTime).toFixed(2)} ms`);
+            showError(error.message || 'Failed to load workers. Please try again.', search);
         }
     }
     
@@ -437,7 +390,7 @@
         if (workerData.loading) {
             modalContent = `
                 <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
+                    <div class="spinner-border text-success" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                     <p class="mt-3">Loading worker details...</p>
@@ -464,8 +417,6 @@
             let imageSrc = placeholderImage;
             if (worker.staff_img && worker.staff_img.trim() !== '') {
                 const imgPath = worker.staff_img.trim();
-                console.log('Modal - Image path from API:', imgPath);
-                console.log('Modal - Worker data:', worker);
                 // Check if it's a full URL or relative path
                 if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
                     imageSrc = imgPath;
@@ -473,9 +424,6 @@
                     // Construct full URL using API base URL
                     imageSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
                 }
-                console.log('Modal - Final image URL:', imageSrc);
-            } else {
-                console.log('Modal - No image, worker.staff_img:', worker.staff_img);
             }
             
             // Format date for input field (YYYY-MM-DD to DD/MM/YYYY)
@@ -571,14 +519,14 @@
                             <h5 class="modal-title" id="workerDetailsModalLabel">
                                 <i class="bi bi-person-badge me-2"></i>Worker Details
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             ${modalContent}
                         </div>
                         <div class="modal-footer">
                             ${!workerData.loading && !workerData.error ? `
-                                <button type="button" class="btn btn-primary" onclick="editWorker(${workerData.id})">
+                                <button type="button" class="btn btn-success" onclick="editWorker(${workerData.id})">
                                     <i class="bi bi-pencil me-1"></i>Edit
                                 </button>
                             ` : ''}
@@ -890,8 +838,6 @@
                 const errorMessage = result.message || 'Failed to save changes.';
                 throw new Error(errorMessage);
             }
-
-            console.log('Save response:', result);
 
             // Show success message
             if (typeof showNotification === 'function') {

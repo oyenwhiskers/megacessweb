@@ -20,42 +20,71 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <!-- account type toggle -->
-        <div class="mb-3">
-          <div id="accountTypeToggle" class="btn-group" role="group" aria-label="Account type toggle">
-            <button type="button" class="btn btn-outline-primary active" data-type="workers">Workers</button>
-            <button type="button" class="btn btn-outline-primary" data-type="staff">Staff</button>
-          </div>
-          <button id="registerWorkerBtn" type="button" class="btn btn-success ms-3" data-bs-toggle="modal" data-bs-target="#registerWorkerModal">Register Worker</button>
-          <button id="registerStaffBtn" type="button" class="btn btn-success ms-3 d-none" data-bs-toggle="modal" data-bs-target="#registerStaffModal">Register Staff</button>
+        <!-- Employee Selection and Register Button -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between align-items-start gap-3">
+              <div class="employee-selection">
+                <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+                  <input type="radio" class="salary-select-employee" name="accountEmployeeType" id="workerTab" autocomplete="off" checked>
+                  <label class="select-employee-btn" for="workerTab"><i class="bi bi-person-fill me-2"></i>Workers</label> 
 
-          <!-- search bar below the toggle buttons -->
-          <div class="mt-3 d-flex justify-content-start">
-            <div class="input-group search-group">
-              <span class="input-group-text"><i class="bi bi-search"></i></span>
-              <input id="accountSearch" type="search" class="form-control" placeholder="Search by name..." aria-label="Search accounts">
-              <button class="btn btn-outline-secondary" type="button" id="clearAccountSearch" title="Clear"><i class="bi bi-x-lg"></i></button>
+                  <input type="radio" class="salary-select-employee" name="accountEmployeeType" id="staffTab" autocomplete="off">
+                  <label class="select-employee-btn" for="staffTab"><i class="bi bi-person-badge me-2"></i>Staff</label> 
+
+                  <span class="selection-bg"></span>
+                </div>
+              </div>
+              <div>
+                <button id="registerWorkerBtn" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerWorkerModal">
+                  <i class="bi bi-plus-circle me-2"></i>Register Worker
+                </button>
+                <button id="registerStaffBtn" type="button" class="btn btn-success d-none" data-bs-toggle="modal" data-bs-target="#registerStaffModal">
+                  <i class="bi bi-plus-circle me-2"></i>Register Staff
+                </button>
+              </div>
             </div>
           </div>
-          <!-- Role filter buttons -->
-          <div class="mt-2">
-            <div id="roleFilterGroup" class="btn-group" role="group" aria-label="Role filter">
-              <button type="button" class="btn btn-outline-secondary active" data-role="all">All</button>
-              <button type="button" class="btn btn-outline-secondary" data-role="manager">Manager</button>
-              <button type="button" class="btn btn-outline-secondary" data-role="mandor">Mandor</button>
-              <button type="button" class="btn btn-outline-secondary" data-role="checker">Checker</button>
-              <button type="button" class="btn btn-outline-secondary" data-role="admin">Admin</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="row mb-2">
+          <div class="col-12">
+            <div class="search-container">
+              <label for="accountSearch" class="fw-semibold mb-2">Search name:</label>
+              <input type="text" class="form-control form-control-lg" placeholder="Search by name..." id="accountSearch">
             </div>
           </div>
-          
-          <!-- Gender filter buttons for workers -->
-          <div class="mt-2 worker-filters">
-            <label class="form-label text-muted small mb-1">Filter by Gender:</label>
-            <div id="genderFilterGroup" class="btn-group" role="group" aria-label="Gender filter">
-              <button type="button" class="btn btn-outline-info btn-sm active" data-gender="all">All</button>
-              <button type="button" class="btn btn-outline-info btn-sm" data-gender="male">Male</button>
-              <button type="button" class="btn btn-outline-info btn-sm" data-gender="female">Female</button>
+        </div>
+
+        <!-- Role Filter Buttons (Initially Hidden for Staff) -->
+        <div class="row mb-2" id="roleFilterContainer" style="display: none;">
+          <div class="col-12">
+            <div class="filter-section d-flex flex-wrap p-3 gap-2">
+              <button class="btn btn-success flex-fill py-2" id="roleFilterAll" data-role="all">
+                All
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterMandor" data-role="mandor">
+                Mandor
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterManager" data-role="manager">
+                Manager
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterChecker" data-role="checker">
+                Checker
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterAdmin" data-role="admin">
+                Admin
+              </button>
             </div>
+          </div>
+        </div>
+        <hr>
+        
+        <!-- List Header -->
+        <div class="row mb-3">
+          <div class="d-flex justify-content-md-between align-items-center">
+            <p class="list-title fw-semibold">List of existing workers:</p>
           </div>
         </div>
 
@@ -87,7 +116,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="registerWorkerModalLabel">Register Worker</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form id="registerWorkerForm">
@@ -96,13 +125,10 @@
                 <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block; position:relative;">
                   <img id="workerProfilePreview" src="https://ui-avatars.com/api/?name=Worker&background=6c757d&color=fff&size=128&bold=true&rounded=true" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
                   <input type="file" id="workerProfileImageInput" name="profile_image" accept="image/*" style="display:none;">
-                  <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="document.getElementById('workerProfileImageInput').click()">
+                  <button type="button" class="btn btn-sm btn-primary mt-2" onclick="document.getElementById('workerProfileImageInput').click()">
                     <i class="bi bi-camera"></i> Choose Photo
                   </button>
                 </div>
-              </div>
-              <div class="col-auto align-self-center">
-                <button type="submit" class="btn btn-primary btn-lg">Add</button>
               </div>
             </div>
             <div class="row g-3">
@@ -154,7 +180,7 @@
               </div>
             </div>
             <div class="mt-4 text-end">
-              <button type="submit" class="btn btn-primary btn-lg">Create</button>
+              <button type="submit" class="btn btn-primary">Create</button>
             </div>
           </form>
         </div>
@@ -168,7 +194,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="registerStaffModalLabel">Register Staff</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form id="registerStaffForm">
@@ -177,13 +203,10 @@
                 <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block; position:relative;">
                   <img id="staffProfilePreview" src="https://ui-avatars.com/api/?name=Staff&background=0d6efd&color=fff&size=128&bold=true&rounded=true" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
                   <input type="file" id="staffProfileImageInput" name="profile_image" accept="image/*" style="display:none;">
-                  <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="document.getElementById('staffProfileImageInput').click()">
+                  <button type="button" class="btn btn-sm btn-primary mt-2" onclick="document.getElementById('staffProfileImageInput').click()">
                     <i class="bi bi-camera"></i> Choose Photo
                   </button>
                 </div>
-              </div>
-              <div class="col-auto align-self-center">
-                <button type="submit" class="btn btn-primary btn-lg">Add</button>
               </div>
             </div>
             <div class="row g-3">
@@ -243,12 +266,12 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">Start Date:</label>
-                <input type="date" class="form-control" name="staff_employment_start_date" required>
+                <input type="date" class="form-control" name="user_employment_start_date" required>
                 <div class="invalid-feedback">Please provide a valid start date.</div>
               </div>
             </div>
             <div class="mt-4 text-end">
-              <button type="submit" class="btn btn-primary btn-lg">Create</button>
+              <button type="submit" class="btn btn-primary">Create</button>
             </div>
           </form>
         </div>
@@ -336,22 +359,25 @@
 
   <script>
     (function(){
-      const buttons = document.querySelectorAll('#accountTypeToggle button');
+      const workerRadio = document.getElementById('workerTab');
+      const staffRadio = document.getElementById('staffTab');
       const views = {
         workers: document.getElementById('workersView'),
         staff: document.getElementById('staffView')
       };
       const registerStaffBtn = document.getElementById('registerStaffBtn');
       const registerWorkerBtn = document.getElementById('registerWorkerBtn');
-      const roleFilterGroup = document.getElementById('roleFilterGroup');
-      const genderFilterGroup = document.getElementById('genderFilterGroup');
-      const workerFilters = document.querySelector('.worker-filters');
+      const roleFilterContainer = document.getElementById('roleFilterContainer');
+      const genderFilterContainer = document.getElementById('genderFilterContainer');
+      const listTitle = document.querySelector('.list-title');
       let currentRoleFilter = 'all';
-      let currentGenderFilter = 'all';
+
+      // Helper to get current type
+      function getCurrentType() {
+        return workerRadio.checked ? 'workers' : 'staff';
+      }
 
       function show(type){
-        // toggle active class on buttons
-        buttons.forEach(b => b.classList.toggle('active', b.dataset.type === type));
         // show/hide views
         Object.keys(views).forEach(k => {
           const el = views[k];
@@ -359,6 +385,12 @@
           if (k === type) el.classList.remove('d-none');
           else el.classList.add('d-none');
         });
+        
+        // Update list title
+        if (listTitle) {
+          listTitle.textContent = type === 'workers' ? 'List of existing workers:' : 'List of existing staff:';
+        }
+        
         // show/hide Register Staff button
         if (registerStaffBtn) {
           if (type === 'staff') registerStaffBtn.classList.remove('d-none');
@@ -369,57 +401,44 @@
           if (type === 'workers') registerWorkerBtn.classList.remove('d-none');
           else registerWorkerBtn.classList.add('d-none');
         }
-        // show/hide role filter group (for staff)
-        if (roleFilterGroup) {
-          if (type === 'staff') roleFilterGroup.parentElement.classList.remove('d-none');
-          else roleFilterGroup.parentElement.classList.add('d-none');
+        
+        // show/hide role filter container (for staff)
+        if (roleFilterContainer) {
+          if (type === 'staff') {
+            roleFilterContainer.style.display = '';
+          } else {
+            roleFilterContainer.style.display = 'none';
+          }
         }
-        // show/hide gender filter group (for workers)
-        if (workerFilters) {
-          if (type === 'workers') workerFilters.classList.remove('d-none');
-          else workerFilters.classList.add('d-none');
-        }
-        // when staff view is shown, trigger staff list load (uses staff_list.js exposed function)
+        
+        // when staff view is shown, trigger staff list load
         if (type === 'staff' && window.fetchStaffList) {
           const searchEl = document.getElementById('accountSearch');
           window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
         }
-        // when workers view is shown, trigger worker list load (uses worker_list.js exposed function)
+        // when workers view is shown, trigger worker list load
         if (type === 'workers' && window.fetchWorkersList) {
           const searchEl = document.getElementById('accountSearch');
-          window.fetchWorkersList(searchEl ? searchEl.value : '', 1, currentGenderFilter);
+          window.fetchWorkersList(searchEl ? searchEl.value : '', 1);
         }
       }
 
       // Role filter logic (for staff)
-      if (roleFilterGroup) {
-        roleFilterGroup.addEventListener('click', function(e) {
+      if (roleFilterContainer) {
+        roleFilterContainer.addEventListener('click', function(e) {
           if (e.target && e.target.matches('button[data-role]')) {
             // Set active class
-            roleFilterGroup.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-            e.target.classList.add('active');
+            roleFilterContainer.querySelectorAll('button').forEach(btn => {
+              btn.classList.remove('btn-success');
+              btn.classList.add('btn-outline-secondary');
+            });
+            e.target.classList.remove('btn-outline-secondary');
+            e.target.classList.add('btn-success');
             currentRoleFilter = e.target.getAttribute('data-role');
             // Reload staff list with new filter
-            if (document.querySelector('#staffView') && !document.querySelector('#staffView').classList.contains('d-none') && window.fetchStaffList) {
+            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
               const searchEl = document.getElementById('accountSearch');
               window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
-            }
-          }
-        });
-      }
-
-      // Gender filter logic (for workers)
-      if (genderFilterGroup) {
-        genderFilterGroup.addEventListener('click', function(e) {
-          if (e.target && e.target.matches('button[data-gender]')) {
-            // Set active class
-            genderFilterGroup.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-            e.target.classList.add('active');
-            currentGenderFilter = e.target.getAttribute('data-gender');
-            // Reload workers list with new filter
-            if (document.querySelector('#workersView') && !document.querySelector('#workersView').classList.contains('d-none') && window.fetchWorkersList) {
-              const searchEl = document.getElementById('accountSearch');
-              window.fetchWorkersList(searchEl ? searchEl.value : '', 1, currentGenderFilter);
             }
           }
         });
@@ -436,7 +455,7 @@
             if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
               window.fetchStaffList(searchInput.value, currentRoleFilter);
             } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
-              window.fetchWorkersList(searchInput.value, 1, currentGenderFilter);
+              window.fetchWorkersList(searchInput.value, 1);
             }
           }, 300);
         });
@@ -446,29 +465,24 @@
             if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
               window.fetchStaffList(searchInput.value, currentRoleFilter);
             } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
-              window.fetchWorkersList(searchInput.value, 1, currentGenderFilter);
+              window.fetchWorkersList(searchInput.value, 1);
             }
           }
         });
       }
 
-      // Clear search functionality
-      const clearSearch = document.getElementById('clearAccountSearch');
-      if (clearSearch) {
-        clearSearch.addEventListener('click', function() {
-          if (searchInput) {
-            searchInput.value = '';
-            // Trigger search with empty value
-            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
-              window.fetchStaffList('', currentRoleFilter);
-            } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
-              window.fetchWorkersList('', 1, currentGenderFilter);
-            }
-          }
+      // Radio button change events
+      if (workerRadio) {
+        workerRadio.addEventListener('change', function() {
+          if (this.checked) show('workers');
         });
       }
-
-      buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.type)));
+      
+      if (staffRadio) {
+        staffRadio.addEventListener('change', function() {
+          if (this.checked) show('staff');
+        });
+      }
 
       // initial state
       show('workers');

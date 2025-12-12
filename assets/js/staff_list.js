@@ -20,6 +20,30 @@
 
   if (!staffView) return;
 
+  // Show loading state
+  function showLoading() {
+    const loadingContainer = document.createElement('div');
+    loadingContainer.className = 'list-group text-start js-status';
+    
+    const loadingItem = document.createElement('div');
+    loadingItem.className = 'list-group-item text-center py-5';
+    loadingItem.innerHTML = `
+      <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mb-0">Loading staff list...</p>
+    `;
+    
+    loadingContainer.appendChild(loadingItem);
+    
+    // Remove any previous status
+    const prev = staffView.querySelector('.js-status');
+    if (prev) prev.remove();
+    
+    staffView.innerHTML = '';
+    staffView.appendChild(loadingContainer);
+  }
+
   // helper to show status/error in the view
   function showStatus(message, type = 'muted') {
     // Create consistent list format for status messages
@@ -64,6 +88,10 @@
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
     currentPage = page;
+    
+    // Show loading animation immediately
+    showLoading();
+    
     // retrieve token from localStorage / session
     const token = localStorage.getItem('auth_token') || 
                  sessionStorage.getItem('auth_token') || 
@@ -106,13 +134,9 @@
       }
 
       const data = await res.json();
-      const endTime = performance.now();
-      console.log(`[StaffList] API + render time: ${(endTime - startTime).toFixed(2)} ms`);
       renderStaff(data, role);
     } catch (err) {
       showStatus('Network or server error while loading staff list.', 'danger');
-      const endTime = performance.now();
-      console.log(`[StaffList] API + render time (error): ${(endTime - startTime).toFixed(2)} ms`);
       renderStaff({ data: [] });
     }
   }
@@ -126,21 +150,21 @@
     // Previous button
     paginationHTML += `
       <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
-        <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+        <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
       </li>
     `;
     // Page numbers
     for (let i = 1; i <= totalPages; i++) {
       paginationHTML += `
         <li class="page-item${i === currentPage ? ' active' : ''}">
-          <button class="page-link" style="${i === currentPage ? 'background:#007bff;color:#fff;border:none;' : 'background:transparent; border:none; color:#007bff;'}" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${i})">${i}</button>
+          <button class="page-link" style="${i === currentPage ? 'background:#0d6832;color:#fff;border:none;' : 'background:transparent; border:none; color:#0d6832;'}" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${i})">${i}</button>
         </li>
       `;
     }
     // Next button
     paginationHTML += `
       <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
-        <button class="page-link" style="background:transparent; border:none; color:#007bff;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
       </li>
     `;
     paginationHTML += `
@@ -158,32 +182,15 @@
     const list = document.createElement('div');
     list.className = 'list-group text-start';
 
-    let users = Array.isArray(payload.data) ? payload.data : (payload.users || payload || []);
+    const users = Array.isArray(payload.data) ? payload.data : (payload.users || payload || []);
     
     // Update cache with current staff list
     staffListCache = users;
     
-    // Client-side filter fallback (if API doesn't filter)
-    if (roleFilter && roleFilter !== 'all') {
-      users = users.filter(u => (u.user_role || '').toLowerCase() === roleFilter.toLowerCase());
-    }
-    
-    // Apply client-side search filter as fallback
-    if (currentSearch && currentSearch.trim()) {
-      const searchTerm = currentSearch.trim().toLowerCase();
-      console.log('Applying client-side search filter for:', searchTerm);
-      
-      users = users.filter(u => {
-        const name = u.user_fullname || u.name || u.full_name || u.username || '';
-        const nickname = u.user_nickname || '';
-        return name.toLowerCase().includes(searchTerm) || nickname.toLowerCase().includes(searchTerm);
-      });
-    }
-    
-    // Pagination meta
+    // Pagination meta from API (use directly, don't recalculate)
     const meta = payload.meta || {};
     const totalItems = meta.total || users.length;
-    const totalPages = meta.last_page || Math.ceil(totalItems / DEFAULT_PER_PAGE);
+    const totalPages = meta.last_page || 1;
     
     if (!users || users.length === 0) {
       const emptyMessage = currentSearch ? 
@@ -238,43 +245,38 @@
               <img src="${imgSrc}" 
                    alt="${name}" 
                    class="rounded-circle" 
-                   style="width:48px;height:48px;object-fit:cover;background:#0d6efd;" 
+                   style="width:48px;height:48px;object-fit:cover;background:#6c757d;" 
                    onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
             </div>
             <div class="flex-grow-1 ms-3">
-              <div class="d-flex justify-content-between align-items-start">
-                <div>
-                  <div class="fw-semibold">${highlightedName}${highlightedNick}</div>
-                  <div class="small text-muted mb-1">
-                    <i class="bi bi-person-badge me-1"></i>Role: <span class="badge ${getRoleBadgeColor(role)}">${role}</span>
-                    ${staffCount > 0 ? `<span class="ms-3"><i class="bi bi-people me-1"></i>Staff: ${staffCount}</span>` : ''}
-                  </div>
-                  ${u.user_email ? `
-                    <div class="small text-muted">
-                      <i class="bi bi-envelope me-1"></i>${u.user_email}
-                    </div>
-                  ` : ''}
+              <div class="fw-semibold">${highlightedName}${highlightedNick}</div>
+              <div class="small text-muted mb-1">
+                <i class="bi bi-person-badge me-1"></i>Role: <span class="badge ${getRoleBadgeColor(role)}">${role}</span>
+                ${staffCount > 0 ? `<span class="ms-3"><i class="bi bi-people me-1"></i>Staff: ${staffCount}</span>` : ''}
+              </div>
+              ${u.user_email ? `
+                <div class="small text-muted mb-2">
+                  <i class="bi bi-envelope me-1"></i>${u.user_email}
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                  <div class="btn-group" role="group">
-                    <!-- View Details button retained -->
-                    <button class="btn btn-sm btn-outline-primary" 
-                            onclick="viewStaffDetails(${u.id || u.user_id})"
-                            title="View Details">
-                      <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" 
-                            onclick="deleteStaff(${u.id || u.user_id})"
-                            title="Delete Staff">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning" 
-                            onclick="showResetPasswordModal(${u.id || u.user_id})"
-                            title="Reset Password">
-                      <i class="bi bi-key"></i> Reset Password
-                    </button>
-                  </div>
-                </div>
+              ` : ''}
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-primary" 
+                        onclick="viewStaffDetails(${u.id || u.user_id})"
+                        title="View Details">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" 
+                        onclick="deleteStaff(${u.id || u.user_id})"
+                        title="Delete Staff">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" 
+                        onclick="showResetPasswordModal(${u.id || u.user_id})"
+                        title="Reset Password">
+                  <i class="bi bi-key"></i> Reset Password
+                </button>
               </div>
             </div>
           </div>
@@ -373,7 +375,7 @@
     if (staffData.loading) {
       modalContent = `
         <div class="text-center py-5">
-          <div class="spinner-border text-primary" role="status">
+          <div class="spinner-border text-success" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
           <p class="mt-3">Loading staff details...</p>
@@ -508,14 +510,14 @@
               <h5 class="modal-title" id="staffDetailsModalLabel">
                 <i class="bi bi-person-badge me-2"></i>Staff Details
               </h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               ${modalContent}
             </div>
             <div class="modal-footer">
               ${!staffData.loading && !staffData.error ? `
-                <button type="button" class="btn btn-primary" onclick="editStaff(${staffData.id})">
+                <button type="button" class="btn btn-success" onclick="editStaff(${staffData.id})">
                   <i class="bi bi-pencil me-1"></i>Edit
                 </button>
               ` : ''}
@@ -965,7 +967,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="resetPasswordModalLabel">Reset Password</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <form id="resetPasswordForm">
             <div class="modal-body">
