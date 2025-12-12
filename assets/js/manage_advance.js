@@ -60,8 +60,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="d-flex align-items-center gap-3 flex-grow-1">
             ${avatar}
             <div class="flex-grow-1">
-              <div class="fw-bold fs-5">${name}</div>
-              <div class="text-muted">${phone || role}</div>
+              <div class="fw-bold fs-5">${item.name}</div>
+              <div class="text-muted">${item.role || role}</div>
               <div class="mt-2 d-flex gap-4 text-sm">
                 <div>
                   <span class="text-muted">Outstanding:</span>
@@ -137,9 +137,11 @@ document.addEventListener('DOMContentLoaded', function() {
     pages.forEach((page) => {
       if (page === '...') {
         // Ellipsis (non-clickable)
-        const ellipsis = document.createElement('span');
-        ellipsis.className = 'btn btn-lg btn-success px-1 mx-1 disabled';
+        const ellipsis = document.createElement('button');
+        ellipsis.className = 'btn btn-sm btn-success mx-1';
+        ellipsis.disabled = true;
         ellipsis.textContent = '...';
+        ellipsis.style.cursor = 'default';
         paginationContainer.appendChild(ellipsis);
       } else {
         // Page button
@@ -181,14 +183,20 @@ document.addEventListener('DOMContentLoaded', function() {
       advanceList.innerHTML = `<div class='text-center text-danger py-5'>Not authenticated. Please log in.</div>`;
       return;
     }
-    // Use correct type for API
-    const type = currentType === 'worker' ? 'staff' : 'user';
+    // Use correct type for API - staff tab shows users, worker tab shows staff
+    const type = currentType === 'staff' ? 'user' : 'staff';
     const search = searchInput.value.trim();
     let url = `https://mwms.megacess.com/api/v1/advances?type=${type}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (currentRole) url += `&role=${encodeURIComponent(currentRole)}`;
     url += `&per_page=${perPage}&page=${currentPage}`;
     try {
+      // Clear pagination during loading
+      const paginationWrapper = document.getElementById('advancePaginationWrapper');
+      if (paginationWrapper) {
+        paginationWrapper.innerHTML = '';
+      }
+      
       advanceList.innerHTML = `<div class='text-center py-5'><div class='spinner-border text-success'></div></div>`;
       const res = await fetch(url, {
         method: 'GET',
@@ -201,10 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const result = await res.json();
       if (res.ok && result.success) {
         renderAdvances(result.data, currentType);
-        // Store pagination metadata
+        // Store pagination metadata - check both meta and pagination objects
         if (result.meta) {
           currentPage = result.meta.current_page || 1;
           lastPage = result.meta.last_page || 1;
+        } else if (result.pagination) {
+          currentPage = result.pagination.current_page || 1;
+          lastPage = result.pagination.last_page || 1;
         }
         renderPagination();
       } else {

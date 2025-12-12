@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalLoan = document.getElementById('totalLoan');
     const totalPaid = document.getElementById('totalPaid');
     const loanCount = document.getElementById('loanCount');
-
+    
     personName.textContent = data.name || '-';
     personInfo.textContent = data.type === 'staff' ? 'Worker' : 'Staff';
 
