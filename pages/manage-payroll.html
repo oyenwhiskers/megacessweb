@@ -72,8 +72,8 @@
         <hr>
         
         <!-- Worker List Header -->
-        <div class="row mb-2">
-          <div class="col-12 justify-content-between d-flex align-items-center">
+        <div class="row mb-3">
+          <div class="d-flex justify-content-md-between align-items-center">
             <p class="list-title fw-semibold">List of existing worker:</p>
               <div class="pagination-info">
                 <span class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 items</span>
@@ -127,9 +127,9 @@
   <div class="modal fade" id="payslipModal" tabindex="-1" aria-labelledby="payslipModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header border-0 pb-0">
-          <h2 class="modal-title w-100 text-center fw-bold" id="payslipModalLabel">Payslip Generation</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-header border-0 pb-3">
+          <h2 class="modal-title w-100 text-center fw-semibold" id="payslipModalLabel">Payslip Generation</h2>
+          <button type="button" class="btn-close btn-close-light" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="container-fluid">
@@ -173,7 +173,7 @@
                   </div>
                 </div>
                 <div class="col-md-2 d-grid">
-                  <button class="btn btn-primary" id="addDeductionBtn">ADD</button>
+                  <button class="btn btn-primary" id="addDeductionBtn">Add</button>
                 </div>
               </div>
               <div class="table-responsive mt-3">
@@ -295,7 +295,7 @@
 
             <!-- Generate Button -->
             <div class="d-grid mt-4">
-              <button class="btn btn-primary btn-lg" id="generatePayslipBtn">GENERATE</button>
+              <button class="btn btn-success btn-md" id="generatePayslipBtn">Generate Payslip</button>
             </div>
           </div>
         </div>
@@ -325,7 +325,7 @@
         <div class="modal-header">
           <div>
             <h5 class="modal-title fw-bold mb-0" id="taskBreakdownTitle">Task Breakdown</h5>
-            <div class="text-muted small" id="taskBreakdownSubtitle"></div>
+            <div class="text-white small fw-semibold" id="taskBreakdownSubtitle"></div>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>

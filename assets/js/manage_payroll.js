@@ -771,7 +771,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading first
         container.innerHTML = `
             <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-success" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="mt-2 text-muted">Loading employment overview...</p>
@@ -820,14 +820,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const overviewHTML = `
                 <div id="employmentOverview" class="employment-overview">
                     <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <button class="btn btn-success btn-sm" id="backToList">
+                        <div class="d-flex align-items-center text-white gap-3">
+                            <button class="btn btn-success d-flex align-items-center gap-2" id="backToList">
                                 <i class="bi bi-arrow-left"></i> Back to List 
                             </button>
                         </div>
-                        <button class="btn btn-primary d-flex align-items-center gap-2" id="generatePayslip">
-                            <i class="bi bi-plus-circle"></i>
-                            Generate Payslip
+                        <button class="btn btn-success d-flex align-items-center gap-2" id="generatePayslip">
+                            <i class="bi bi-plus-circle"></i>Generate Payslip
                         </button>
                     </div>
                     <div class="card shadow-sm">
@@ -853,9 +852,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                 </div>
                             </div>
-                            <h4 class="mb-3">Payslip Record:</h4>
+                            <h4 class="mb-4">Payslip Record:</h4>
                             <div class="payslip-records" id="payslipRecords"></div>
-                            <div class="d-flex justify-content-between align-items-center mt-3" id="payslipPagination" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mt-4" id="payslipPagination" style="display: none;">
                                 <small class="text-muted" id="payslipPaginationInfo"></small>
                                 <nav aria-label="Payslip pagination">
                                     <ul class="pagination pagination-sm mb-0" id="payslipPaginationControls"></ul>
@@ -1642,51 +1641,79 @@ let currentPayslipWorkerData = null;
                     // Only allow delete for Worker or Staff option
                     if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
                         if (!payslipId) return;
-                        if (!confirm('Are you sure you want to delete this payslip? This action cannot be undone.')) return;
-                        (async function() {
-                            try {
-                                const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
-                                if (!AUTH_TOKEN) throw new Error('No auth token');
-                                let url;
-                                if (workerTab.classList.contains('btn-success')) {
-                                    url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
-                                } else {
-                                    url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
-                                }
-                                const res = await fetch(url, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Authorization': `Bearer ${AUTH_TOKEN}`,
-                                        'Content-Type': 'application/json',
-                                        'Accept': 'application/json'
+                        
+                        Swal.fire({
+                            title: 'Delete Payslip?',
+                            text: 'This action cannot be undone.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, delete it',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                (async function() {
+                                    try {
+                                        const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+                                        if (!AUTH_TOKEN) throw new Error('No auth token');
+                                        let url;
+                                        if (workerTab.classList.contains('btn-success')) {
+                                            url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
+                                        } else {
+                                            url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
+                                        }
+                                        const res = await fetch(url, {
+                                            method: 'DELETE',
+                                            headers: {
+                                                'Authorization': `Bearer ${AUTH_TOKEN}`,
+                                                'Content-Type': 'application/json',
+                                                'Accept': 'application/json'
+                                            }
+                                        });
+                                        const response = await res.json();
+                                        if (res.ok && response.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Deleted!',
+                                                text: 'Payslip deleted successfully.',
+                                                confirmButtonColor: '#0d6832'
+                                            });
+                                            // Refresh the employment overview to update the list
+                                            if (currentPayslipWorkerData) {
+                                                const employeeData = {
+                                                    id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                                                    name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                                                    joinedSince: currentPayslipWorkerData.joined_since,
+                                                    role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                                    age: currentPayslipWorkerData.age || 'N/A',
+                                                    staff_fullname: currentPayslipWorkerData.staff_fullname,
+                                                    nickname: currentPayslipWorkerData.user_nickname || ''
+                                                };
+                                                showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
+                                            } else {
+                                                location.reload();
+                                            }
+                                        } else {
+                                            let msg = response.message || 'Unknown error';
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Delete Failed',
+                                                text: msg,
+                                                confirmButtonColor: '#0d6832'
+                                            });
+                                        }
+                                    } catch (err) {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Error',
+                                            text: err.message,
+                                            confirmButtonColor: '#0d6832'
+                                        });
                                     }
-                                });
-                                const result = await res.json();
-                                if (res.ok && result.success) {
-                                    alert('Payslip deleted successfully!');
-                                    // Refresh the employment overview to update the list
-                                    if (currentPayslipWorkerData) {
-                                        const employeeData = {
-                                            id: currentPayslipWorkerData.id || currentPayslipWorkerId,
-                                            name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
-                                            joinedSince: currentPayslipWorkerData.joined_since,
-                                            role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
-                                            age: currentPayslipWorkerData.age || 'N/A',
-                                            staff_fullname: currentPayslipWorkerData.staff_fullname,
-                                            nickname: currentPayslipWorkerData.user_nickname || ''
-                                        };
-                                        showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
-                                    } else {
-                                        location.reload();
-                                    }
-                                } else {
-                                    let msg = result.message || 'Unknown error';
-                                    alert('Delete failed: ' + msg);
-                                }
-                            } catch (err) {
-                                alert('Error: ' + err.message);
+                                })();
                             }
-                        })();
+                        });
                     }
                 } else {
                     // View Task: open in-modal breakdown
@@ -1729,51 +1756,79 @@ let currentPayslipWorkerData = null;
                 // Only allow delete for Worker or Staff option
                 if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
                     if (!payslipId) return;
-                    if (!confirm('Are you sure you want to delete this payslip? This action cannot be undone.')) return;
-                    (async function() {
-                        try {
-                            const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
-                            if (!AUTH_TOKEN) throw new Error('No auth token');
-                            let url;
-                            if (workerTab.classList.contains('btn-success')) {
-                                url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
-                            } else {
-                                url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
-                            }
-                            const res = await fetch(url, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Authorization': `Bearer ${AUTH_TOKEN}`,
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
+                    
+                    Swal.fire({
+                        title: 'Delete Payslip?',
+                        text: 'This action cannot be undone.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, delete it',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            (async function() {
+                                try {
+                                    const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+                                    if (!AUTH_TOKEN) throw new Error('No auth token');
+                                    let url;
+                                    if (workerTab.classList.contains('btn-success')) {
+                                        url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
+                                    } else {
+                                        url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
+                                    }
+                                    const res = await fetch(url, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'Authorization': `Bearer ${AUTH_TOKEN}`,
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json'
+                                        }
+                                    });
+                                    const response = await res.json();
+                                    if (res.ok && response.success) {
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Deleted!',
+                                            text: 'Payslip deleted successfully.',
+                                            confirmButtonColor: '#0d6832'
+                                        });
+                                        // Refresh the employment overview to update the list
+                                        if (currentPayslipWorkerData) {
+                                            const employeeData = {
+                                                id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                                                name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                                                joinedSince: currentPayslipWorkerData.joined_since,
+                                                role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                                age: currentPayslipWorkerData.age || 'N/A',
+                                                staff_fullname: currentPayslipWorkerData.staff_fullname,
+                                                nickname: currentPayslipWorkerData.user_nickname || ''
+                                            };
+                                            showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
+                                        } else {
+                                            location.reload();
+                                        }
+                                    } else {
+                                        let msg = response.message || 'Unknown error';
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Delete Failed',
+                                            text: msg,
+                                            confirmButtonColor: '#0d6832'
+                                        });
+                                    }
+                                } catch (err) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: err.message,
+                                        confirmButtonColor: '#0d6832'
+                                    });
                                 }
-                            });
-                            const result = await res.json();
-                            if (res.ok && result.success) {
-                                alert('Payslip deleted successfully!');
-                                // Refresh the employment overview to update the list
-                                if (currentPayslipWorkerData) {
-                                    const employeeData = {
-                                        id: currentPayslipWorkerData.id || currentPayslipWorkerId,
-                                        name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
-                                        joinedSince: currentPayslipWorkerData.joined_since,
-                                        role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
-                                        age: currentPayslipWorkerData.age || 'N/A',
-                                        staff_fullname: currentPayslipWorkerData.staff_fullname,
-                                        nickname: currentPayslipWorkerData.user_nickname || ''
-                                    };
-                                    showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
-                                } else {
-                                    location.reload();
-                                }
-                            } else {
-                                let msg = result.message || 'Unknown error';
-                                alert('Delete failed: ' + msg);
-                            }
-                        } catch (err) {
-                            alert('Error: ' + err.message);
+                            })();
                         }
-                    })();
+                    });
                 }
             } else {
                 // View Task: open in-modal breakdown
@@ -1926,7 +1981,12 @@ let currentPayslipWorkerData = null;
                 const result = await generateStaffPayslip(currentPayslipWorkerId, payload);
 
                 if (result.success) {
-                    alert('Payslip generated successfully.');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Payslip generated successfully.',
+                        confirmButtonColor: '#0d6832'
+                    });
                 } else {
                     throw new Error(result.message || 'Failed to generate payslip');
                 }
@@ -2111,7 +2171,9 @@ let currentPayslipWorkerData = null;
         roleFilterContainer.style.display = 'none';
     }
     
+    // Fetch both worker and staff data on initial load
     fetchWorkers('', 1);
+    fetchStaff('', 1, 'all');
     
     // Initialize role filter state
     setActiveRoleFilter('all');
