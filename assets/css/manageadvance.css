@@ -197,6 +197,7 @@ Modal Styles
   color: white;
   border-radius: 8px;
   cursor: pointer;
+  display: inline-flex;
 }
 
 .add-advance-btn:hover {
@@ -361,10 +362,13 @@ Filter Button Styles
     width: 100%;
   }
 
-  /* Add advance button full width on tablet */
-  .addAdvanceBtn {
+  /* Add advance button wrapper full width on mobile */
+  .add-advance-btn-wrapper {
     width: 100%;
-    justify-content: center;
+  }
+
+  .add-advance-btn-wrapper .addAdvanceBtn {
+    width: 100%;
   }
 
   /* Advance cards - adjust layout */
@@ -445,6 +449,7 @@ Filter Button Styles
   .addAdvanceBtn {
     padding: 0.5rem 1rem !important;
     font-size: 0.875rem;
+    width: 100%;
   }
 
   /* Filter buttons full width */
