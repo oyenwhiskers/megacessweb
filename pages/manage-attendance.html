@@ -44,13 +44,24 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <!-- attendance type toggle -->
-        <div class="mb-3">
-          <div id="attendanceTypeToggle" class="btn-group" role="group" aria-label="Attendance type toggle">
-            <button type="button" class="btn btn-outline-primary active" data-type="workers">Workers</button>
-            <button type="button" class="btn btn-outline-primary" data-type="staff">Staff</button>
-          </div>
+        <!-- Employee Selection -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="employee-selection my-4">
+              <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+                <input type="radio" class="salary-select-employee" name="attendanceEmployeeType" id="workersTab" autocomplete="off" checked>
+                <label class="select-employee-btn" for="workersTab"><i class="bi bi-person-fill me-2"></i>Workers</label> 
 
+                <input type="radio" class="salary-select-employee" name="attendanceEmployeeType" id="staffAttTab" autocomplete="off">
+                <label class="select-employee-btn" for="staffAttTab"><i class="bi bi-person-badge me-2"></i>Staff</label> 
+
+                <span class="selection-bg"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
           <!-- search bar below the toggle buttons -->
           <div class="mt-3 d-flex justify-content-start">
             <div class="input-group search-group">
@@ -959,7 +970,8 @@
     };
 
     (function(){
-      const buttons = document.querySelectorAll('#attendanceTypeToggle button');
+      const workersRadio = document.getElementById('workersTab');
+      const staffRadio = document.getElementById('staffAttTab');
       const views = {
         workers: document.getElementById('workersAttendanceView'),
         staff: document.getElementById('staffAttendanceView')
@@ -970,9 +982,6 @@
       document.getElementById('attendanceDate').value = today;
       
       function show(type){
-        // toggle active class on buttons
-        buttons.forEach(b => b.classList.toggle('active', b.dataset.type === type));
-        
         // show/hide views
         Object.keys(views).forEach(k => {
           const el = views[k];
@@ -1010,6 +1019,10 @@
         return 1;
       }
       
+      function getCurrentType() {
+        return workersRadio.checked ? 'workers' : 'staff';
+      }
+      
       // Search functionality
       const searchInput = document.getElementById('attendanceSearch');
       const dateInput = document.getElementById('attendanceDate');
@@ -1020,7 +1033,7 @@
         searchInput.addEventListener('input', function() {
           clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
-            const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+            const currentType = getCurrentType();
             if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
               const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
               const statusValue = statusSelect.value;
@@ -1038,7 +1051,7 @@
       
       if (dateInput) {
         dateInput.addEventListener('change', function() {
-          const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+          const currentType = getCurrentType();
           if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
             const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
             const statusValue = statusSelect.value;
@@ -1055,7 +1068,7 @@
       
       if (statusSelect) {
         statusSelect.addEventListener('change', function() {
-          const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+          const currentType = getCurrentType();
           if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
             const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
             window.fetchWorkerAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusSelect.value);
@@ -1073,7 +1086,7 @@
       if (clearSearch) {
         clearSearch.addEventListener('click', function() {
           searchInput.value = '';
-          const currentType = document.querySelector('#attendanceTypeToggle button.active').dataset.type;
+          const currentType = getCurrentType();
           if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
             const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
             const statusValue = statusSelect.value;
@@ -1088,8 +1101,14 @@
         });
       }
       
-      // Toggle event listeners
-      buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.type)));
+      // Radio button event listeners
+      workersRadio.addEventListener('change', function() {
+        if (this.checked) show('workers');
+      });
+      
+      staffRadio.addEventListener('change', function() {
+        if (this.checked) show('staff');
+      });
       
       // Initial state
       show('workers');
