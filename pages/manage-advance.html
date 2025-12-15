@@ -147,6 +147,8 @@
       var staffBtn = document.getElementById('modalStaffBtn');
       var filterRow = document.getElementById('staffFilterRow');
       if(workerBtn && staffBtn && filterRow) {
+        filterRow.classList.add('d-none');
+      
         workerBtn.addEventListener('click', function() {
           workerBtn.classList.add('btn-success');
           workerBtn.classList.remove('btn-light');
@@ -171,6 +173,11 @@
   <script>
     // Worker and Staff list population for Add Advance modal
     let staffRoleFilter = '';
+    function showLoadingState() {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading...</span></div><p class="text-muted mt-2">Loading...</p></div>';
+    }
     function renderWorkerList(workers) {
       const listGroup = document.querySelector('#addAdvanceModal .list-group');
       if (!listGroup) return;
@@ -230,6 +237,7 @@
     function fetchWorkerList(query = '') {
       const token = getAuthToken();
       if (!token) return;
+      showLoadingState();
       fetch(`https://mwms.megacess.com/api/v1/advances/staff/list?search=${encodeURIComponent(query)}`, {
         method: 'GET',
         headers: {
@@ -242,12 +250,20 @@
         .then(result => {
           if (result.success && Array.isArray(result.data)) {
             renderWorkerList(result.data);
+          } else {
+            const listGroup = document.querySelector('#addAdvanceModal .list-group');
+            if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Failed to load workers.</div>';
           }
+        })
+        .catch(err => {
+          const listGroup = document.querySelector('#addAdvanceModal .list-group');
+          if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Error loading workers.</div>';
         });
     }
     function fetchStaffList(query = '', role = '') {
       const token = getAuthToken();
       if (!token) return;
+      showLoadingState();
       let url = `https://mwms.megacess.com/api/v1/advances/users/list?search=${encodeURIComponent(query)}`;
       if (role && role !== 'all') url += `&role=${encodeURIComponent(role)}`;
       fetch(url, {
@@ -262,7 +278,14 @@
         .then(result => {
           if (result.success && Array.isArray(result.data)) {
             renderStaffList(result.data);
+          } else {
+            const listGroup = document.querySelector('#addAdvanceModal .list-group');
+            if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Failed to load staff.</div>';
           }
+        })
+        .catch(err => {
+          const listGroup = document.querySelector('#addAdvanceModal .list-group');
+          if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Error loading staff.</div>';
         });
     }
     document.addEventListener('DOMContentLoaded', function() {

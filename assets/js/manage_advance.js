@@ -306,8 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loan_date: formData.get('loan_date'),
         loan_remarks: formData.get('loan_remarks'),
         loan_status: formData.get('loan_status'),
-        // Add other fields as needed
-        type: currentType === 'worker' ? 'staff' : 'user',
+        type: currentType === 'worker' ? 'worker' : 'staff',
         person_id: formData.get('person_id') // staff_id or user_id
       };
       const result = await addAdvance(data);
