@@ -620,6 +620,17 @@
                         </div>
                         <div style='border-radius:12px;padding:18px 18px 8px 18px;box-shadow:0 2px 8px rgba(0,0,0,0.03);margin-top:24px;'>
                           <div style='font-weight:600;font-size:1.1rem;margin-bottom:12px;'>Attendance Records</div>
+                          <div class="row g-2 align-items-center mb-2">
+                            <div class="col-auto">
+                              <select id="recordsYear" class="form-select form-select-sm" style="min-width:90px;"></select>
+                            </div>
+                            <div class="col-auto">
+                              <select id="recordsMonth" class="form-select form-select-sm" style="min-width:120px;"></select>
+                            </div>
+                            <div class="col-auto">
+                              <select id="recordsStatus" class="form-select form-select-sm" style="min-width:120px;"></select>
+                            </div>
+                          </div>
                           <div id='staffAttendanceRecordsTable'><div class='text-center text-muted py-3'>Loading records...</div></div>
                         </div>
                       </div>
@@ -661,33 +672,76 @@
                   const recYear = document.getElementById('recordsYear');
                   const recMonth = document.getElementById('recordsMonth');
                   const recStatus = document.getElementById('recordsStatus');
+                  // Populate records filter dropdowns
+                  if (recYear && recMonth && recStatus) {
+                    // Years: 5 years back to next year
+                    let recYearOptions = '';
+                    for (let y = now.getFullYear() - 5; y <= now.getFullYear() + 1; y++) {
+                      recYearOptions += `<option value='${y}' ${y==currentYear?'selected':''}>${y}</option>`;
+                    }
+                    recYear.innerHTML = recYearOptions;
+                    // Months
+                    let recMonthOptions = '';
+                    for (let i = 0; i < 12; i++) {
+                      recMonthOptions += `<option value='${String(i+1).padStart(2,'0')}' ${(i+1)==parseInt(currentMonth)?'selected':''}>${months[i]}</option>`;
+                    }
+                    recMonth.innerHTML = recMonthOptions;
+                    // Status
+                    const recStatusOptionsArr = [
+                      {value:'all',label:'All Status'},
+                      {value:'Present',label:'Present'},
+                      {value:'Absent',label:'Absent'},
+                      {value:'Late',label:'Late'},
+                      {value:'Check_in',label:'Check In'},
+                      {value:'Annual_Leave',label:'Annual Leave'},
+                      {value:'Sick_Leave',label:'Sick Leave'},
+                      {value:'Unpaid_Leave',label:'Unpaid Leave'}
+                    ];
+                    let recStatusOptions = '';
+                    for (const opt of recStatusOptionsArr) {
+                      recStatusOptions += `<option value='${opt.value}' ${opt.value==currentStatus?'selected':''}>${opt.label}</option>`;
+                    }
+                    recStatus.innerHTML = recStatusOptions;
+                  }
                   // Set dropdowns to current year/month on first open
                   if (yearSelect) yearSelect.value = currentYear;
                   if (monthSelect) monthSelect.value = String(currentMonth).padStart(2, '0');
                   if (recYear) recYear.value = currentYear;
                   if (recMonth) recMonth.value = String(currentMonth).padStart(2, '0');
+                  if (recStatus) recStatus.value = currentStatus;
                   // Analytics filter: reload using analyticsYear/analyticsMonth
                   function reloadAnalytics() {
-                    window.showStaffAttendanceAnalytics(userId, yearSelect.value, monthSelect.value, recStatus ? recStatus.value : 'all');
+                    window.showStaffAttendanceAnalytics(userId, yearSelect.value, monthSelect.value, currentStatus);
                   }
-                  // Records filter: reload using recordsYear/recordsMonth/recordsStatus
-                  function reloadRecords() {
-                    window.showStaffAttendanceAnalytics(userId, recYear.value, recMonth.value, recStatus.value);
+                  // Records filter: only reload records, not analytics
+                  function reloadRecordsOnly() {
+                    fetchAndRenderAttendanceRecords();
                   }
                   if (yearSelect && monthSelect) {
                     yearSelect.addEventListener('change', reloadAnalytics);
                     monthSelect.addEventListener('change', reloadAnalytics);
                   }
                   if (recYear && recMonth && recStatus) {
-                    recYear.addEventListener('change', reloadRecords);
-                    recMonth.addEventListener('change', reloadRecords);
-                    recStatus.addEventListener('change', reloadRecords);
+                    recYear.addEventListener('change', reloadRecordsOnly);
+                    recMonth.addEventListener('change', reloadRecordsOnly);
+                    recStatus.addEventListener('change', reloadRecordsOnly);
                   }
                 }, 300);
                 // Fetch and render attendance records for this user and month
                 async function fetchAndRenderAttendanceRecords() {
                   const recordsUrl = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/records`);
-                  recordsUrl.searchParams.append('month', `${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                  // Use selected filters if available
+                  let recYearVal = currentYear, recMonthVal = String(currentMonth).padStart(2, '0'), recStatusVal = currentStatus;
+                  const recYear = document.getElementById('recordsYear');
+                  const recMonth = document.getElementById('recordsMonth');
+                  const recStatus = document.getElementById('recordsStatus');
+                  if (recYear && recMonth && recStatus) {
+                    recYearVal = recYear.value;
+                    recMonthVal = recMonth.value;
+                    recStatusVal = recStatus.value;
+                  }
+                  recordsUrl.searchParams.append('month', `${recYearVal}-${recMonthVal}`);
+                  if (recStatusVal && recStatusVal !== 'all') recordsUrl.searchParams.append('status', recStatusVal);
                   const recordsHeaders = {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
