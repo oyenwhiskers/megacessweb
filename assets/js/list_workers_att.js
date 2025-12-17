@@ -209,17 +209,17 @@
                                     <div class="mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <button type="button" class="btn btn-outline-primary" 
-                                                    onclick="viewAttendanceDetails(${record.staff_id})" 
+                                                    onclick="window.location.href='/megacessweb/pages/view-attendance-details.html?id=${record.staff_id}&type=worker'" 
                                                     title="View">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-warning" 
-                                                    onclick="markOvertime(${record.staff_id})" 
+                                                    onclick="window.location.href='/megacessweb/pages/view-overtime-details.html?id=${record.staff_id}&type=worker'" 
                                                     title="Overtime">
                                                 <i class="bi bi-clock"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-info" 
-                                                    onclick="window.openLeaveModal(${record.staff_id}, 'worker')" 
+                                                    onclick="window.location.href='/megacessweb/pages/view-leave-details.html?id=${record.staff_id}&type=worker'" 
                                                     title="On-Leave">
                                                 <i class="bi bi-door-open"></i>
                                             </button>
