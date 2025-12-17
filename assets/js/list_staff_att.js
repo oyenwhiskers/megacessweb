@@ -90,7 +90,7 @@
         
         staffAttendanceView.innerHTML = `
             <div class="text-center py-4">
-                <div class="spinner-border text-success" role="status">
+                <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="mt-2">Loading staff attendance...</p>
@@ -215,17 +215,16 @@
                                     ${getStatusBadge(record.status)}
                                     <div class="mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-primary" title="View Attendance" onclick="window.location.href='/megacessweb/pages/view-attendance-details.html?id=' + ${record.user_id} + '&type=staff'">
+                                            <button type="button" class="btn btn-outline-primary" title="View Attendance" onclick="window.showStaffAttendanceAnalytics(${record.user_id})">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-warning" 
-                                                    onclick="window.location.href='/megacessweb/pages/view-overtime-details.html?id=${record.user_id}&type=staff'" 
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="markStaffOvertime(${record.user_id})" 
                                                     title="Overtime">
                                                 <i class="bi bi-clock"></i>
                                             </button>
-                                            <button type="button" class="btn btn-info" 
-                                                    onclick="window.location.href='/megacessweb/pages/view-leave-details.html?id=${record.user_id}&type=staff'" 
-                                                    title="On-Leave">
+                                            <button type="button" class="btn btn-outline-info" 
+                                                    title="On-Leave" disabled>
                                                 <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
@@ -577,36 +576,6 @@
                 for (const opt of statusOptionsArr) {
                   statusOptions += `<option value='${opt.value}' ${opt.value==currentStatus?'selected':''}>${opt.label}</option>`;
                 }
-                // Attendance records list
-                let attendanceList = '';
-                if (data.attendance_days && Array.isArray(data.attendance_days) && data.attendance_days.length > 0) {
-                  attendanceList = data.attendance_days
-                    .filter(day => currentStatus==='all' || day.status===currentStatus)
-                    .map(day => {
-                      let badgeClass = '';
-                      let badgeText = '';
-                      switch(day.status) {
-                        case 'Present': badgeClass = 'bg-success'; badgeText = 'Present'; break;
-                        case 'Absent': badgeClass = 'bg-danger'; badgeText = 'Absent'; break;
-                        case 'Check_in': badgeClass = 'bg-primary'; badgeText = 'Checked In'; break;
-                        case 'Late': badgeClass = 'bg-warning text-dark'; badgeText = 'Late'; break;
-                        case 'Annual_Leave': badgeClass = 'bg-info'; badgeText = 'Annual Leave'; break;
-                        case 'Sick_Leave': badgeClass = 'bg-secondary'; badgeText = 'Sick Leave'; break;
-                        case 'Unpaid_Leave': badgeClass = 'bg-dark'; badgeText = 'Unpaid Leave'; break;
-                        default: badgeClass = 'bg-secondary'; badgeText = day.status; break;
-                      }
-                      return `
-                        <div class='d-flex align-items-center py-2 px-2 mb-1' style='background:#fff;border-radius:8px;'>
-                          <span class='badge ${badgeClass}' style='min-width:70px;'>${badgeText}</span>
-                          <div class='ms-3 flex-grow-1'>
-                            <div style='font-size:1rem;font-weight:500;'>${months[day.month-1]} ${day.day}, ${day.year}</div>
-                          </div>
-                        </div>
-                      `;
-                    }).join('');
-                } else {
-                  attendanceList = `<div class='text-center text-muted py-3'>No attendance records found for this month.</div>`;
-                }
                 // Modal HTML (cleaned layout)
                 const modalHtml = `
                 <div class='modal fade' id='staffAttendanceAnalyticsModal' tabindex='-1' aria-labelledby='staffAttendanceAnalyticsModalLabel' aria-hidden='true'>
@@ -649,11 +618,20 @@
                             </div>
                           </div>
                         </div>
-                        <div style='background:#fff;border-radius:12px;padding:18px 18px 8px 18px;box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
+                        <div style='border-radius:12px;padding:18px 18px 8px 18px;box-shadow:0 2px 8px rgba(0,0,0,0.03);margin-top:24px;'>
                           <div style='font-weight:600;font-size:1.1rem;margin-bottom:12px;'>Attendance Records</div>
-                          <div id='attendanceRecordsList'>
-                            ${attendanceList}
+                          <div class="row g-2 align-items-center mb-2">
+                            <div class="col-auto">
+                              <select id="recordsYear" class="form-select form-select-sm" style="min-width:90px;"></select>
+                            </div>
+                            <div class="col-auto">
+                              <select id="recordsMonth" class="form-select form-select-sm" style="min-width:120px;"></select>
+                            </div>
+                            <div class="col-auto">
+                              <select id="recordsStatus" class="form-select form-select-sm" style="min-width:120px;"></select>
+                            </div>
                           </div>
+                          <div id='staffAttendanceRecordsTable'><div class='text-center text-muted py-3'>Loading records...</div></div>
                         </div>
                       </div>
                     </div>
@@ -694,28 +672,165 @@
                   const recYear = document.getElementById('recordsYear');
                   const recMonth = document.getElementById('recordsMonth');
                   const recStatus = document.getElementById('recordsStatus');
+                  // Populate records filter dropdowns
+                  if (recYear && recMonth && recStatus) {
+                    // Years: 5 years back to next year
+                    let recYearOptions = '';
+                    for (let y = now.getFullYear() - 5; y <= now.getFullYear() + 1; y++) {
+                      recYearOptions += `<option value='${y}' ${y==currentYear?'selected':''}>${y}</option>`;
+                    }
+                    recYear.innerHTML = recYearOptions;
+                    // Months
+                    let recMonthOptions = '';
+                    for (let i = 0; i < 12; i++) {
+                      recMonthOptions += `<option value='${String(i+1).padStart(2,'0')}' ${(i+1)==parseInt(currentMonth)?'selected':''}>${months[i]}</option>`;
+                    }
+                    recMonth.innerHTML = recMonthOptions;
+                    // Status
+                    const recStatusOptionsArr = [
+                      {value:'all',label:'All Status'},
+                      {value:'Present',label:'Present'},
+                      {value:'Absent',label:'Absent'},
+                      {value:'Late',label:'Late'},
+                      {value:'Check_in',label:'Check In'},
+                      {value:'Annual_Leave',label:'Annual Leave'},
+                      {value:'Sick_Leave',label:'Sick Leave'},
+                      {value:'Unpaid_Leave',label:'Unpaid Leave'}
+                    ];
+                    let recStatusOptions = '';
+                    for (const opt of recStatusOptionsArr) {
+                      recStatusOptions += `<option value='${opt.value}' ${opt.value==currentStatus?'selected':''}>${opt.label}</option>`;
+                    }
+                    recStatus.innerHTML = recStatusOptions;
+                  }
                   // Set dropdowns to current year/month on first open
                   if (yearSelect) yearSelect.value = currentYear;
                   if (monthSelect) monthSelect.value = String(currentMonth).padStart(2, '0');
                   if (recYear) recYear.value = currentYear;
                   if (recMonth) recMonth.value = String(currentMonth).padStart(2, '0');
+                  if (recStatus) recStatus.value = currentStatus;
                   // Analytics filter: reload using analyticsYear/analyticsMonth
                   function reloadAnalytics() {
-                    window.showStaffAttendanceAnalytics(userId, yearSelect.value, monthSelect.value, recStatus ? recStatus.value : 'all');
+                    window.showStaffAttendanceAnalytics(userId, yearSelect.value, monthSelect.value, currentStatus);
                   }
-                  // Records filter: reload using recordsYear/recordsMonth/recordsStatus
-                  function reloadRecords() {
-                    window.showStaffAttendanceAnalytics(userId, recYear.value, recMonth.value, recStatus.value);
+                  // Records filter: only reload records, not analytics
+                  function reloadRecordsOnly() {
+                    fetchAndRenderAttendanceRecords();
                   }
                   if (yearSelect && monthSelect) {
                     yearSelect.addEventListener('change', reloadAnalytics);
                     monthSelect.addEventListener('change', reloadAnalytics);
                   }
                   if (recYear && recMonth && recStatus) {
-                    recYear.addEventListener('change', reloadRecords);
-                    recMonth.addEventListener('change', reloadRecords);
-                    recStatus.addEventListener('change', reloadRecords);
+                    recYear.addEventListener('change', reloadRecordsOnly);
+                    recMonth.addEventListener('change', reloadRecordsOnly);
+                    recStatus.addEventListener('change', reloadRecordsOnly);
                   }
+                }, 300);
+                // Fetch and render attendance records for this user and month
+                async function fetchAndRenderAttendanceRecords() {
+                  const recordsUrl = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/records`);
+                  // Use selected filters if available
+                  let recYearVal = currentYear, recMonthVal = String(currentMonth).padStart(2, '0'), recStatusVal = currentStatus;
+                  const recYear = document.getElementById('recordsYear');
+                  const recMonth = document.getElementById('recordsMonth');
+                  const recStatus = document.getElementById('recordsStatus');
+                  if (recYear && recMonth && recStatus) {
+                    recYearVal = recYear.value;
+                    recMonthVal = recMonth.value;
+                    recStatusVal = recStatus.value;
+                  }
+                  recordsUrl.searchParams.append('month', `${recYearVal}-${recMonthVal}`);
+                  if (recStatusVal && recStatusVal !== 'all') recordsUrl.searchParams.append('status', recStatusVal);
+                  const recordsHeaders = {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                  };
+                  try {
+                    const recordsResponse = await fetch(recordsUrl, { method: 'GET', headers: recordsHeaders });
+                    const recordsResult = await recordsResponse.json();
+                    if (recordsResult.success && recordsResult.data && Array.isArray(recordsResult.data.data)) {
+                      renderAttendanceRecordsTable(recordsResult.data);
+                    } else {
+                      document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-muted py-3'>No attendance records found for this month.</div>`;
+                    }
+                  } catch (err) {
+                    document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-danger py-3'>Error loading attendance records.</div>`;
+                  }
+                }
+                // Render records in card/list style (matching Worker Option, with button style as pasted image)
+                function renderAttendanceRecordsTable(recordsData) {
+                  const records = recordsData.data;
+                  if (!records || records.length === 0) {
+                    document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-muted py-3'>No attendance records found for this month.</div>`;
+                    return;
+                  }
+                  let listHtml = `<div style='max-height:340px;overflow-y:auto;padding-right:2px;'>`;
+                  for (const rec of records) {
+                    // Worker-style color and badge logic (Bootstrap icons)
+                    let statusColor = '#888';
+                    let btnBg = '#adb5bd';
+                    let btnText = '#222';
+                    let btnIcon = '';
+                    let btnLabel = rec.status || '';
+                    if (rec.status === 'Present') {
+                      statusColor = '#198754'; btnBg = '#198754'; btnText = '#fff'; btnIcon = '<i class="bi bi-check-lg"></i>'; btnLabel = 'Present';
+                    } else if (rec.status === 'Absent') {
+                      statusColor = '#dc3545'; btnBg = '#dc3545'; btnText = '#fff'; btnIcon = '<i class="bi bi-x-lg"></i>'; btnLabel = 'Absent';
+                    } else if (rec.status === 'Check_in') {
+                      statusColor = '#0d6efd'; btnBg = '#0d6efd'; btnText = '#fff'; btnIcon = '<i class="bi bi-record-circle"></i>'; btnLabel = 'Check In';
+                    } else if (rec.status === 'Late') {
+                      statusColor = '#ffc107'; btnBg = '#ffc107'; btnText = '#222'; btnIcon = '<i class="bi bi-clock-history"></i>'; btnLabel = 'Late';
+                    } else if (rec.status === 'Annual_Leave') {
+                      statusColor = '#0dcaf0'; btnBg = '#0dcaf0'; btnText = '#222'; btnIcon = '<i class="bi bi-umbrella"></i>'; btnLabel = 'Annual Leave';
+                    } else if (rec.status === 'Sick_Leave') {
+                      statusColor = '#6c757d'; btnBg = '#6c757d'; btnText = '#fff'; btnIcon = '<i class="bi bi-emoji-dizzy"></i>'; btnLabel = 'Sick Leave';
+                    } else if (rec.status === 'Unpaid_Leave') {
+                      statusColor = '#212529'; btnBg = '#212529'; btnText = '#fff'; btnIcon = '<i class="bi bi-cash"></i>'; btnLabel = 'Unpaid Leave';
+                    }
+                    listHtml += `
+                      <div style='display:flex;align-items:center;background:#fff;border-radius:12px;margin-bottom:12px;border-left:10px solid ${statusColor};padding:0 16px 0 0;'>
+                        <div style='flex:1;min-width:0;padding:18px 0 18px 18px;'>
+                          <div style='font-size:1.05rem;font-weight:600;color:#222;'>${rec.date || ''}</div>
+                        </div>
+                        <div style='flex-shrink:0;'>
+                          <button type='button' style='background:${btnBg};color:${btnText};border:none;border-radius:10px;font-size:1rem;font-weight:600;padding:0 24px;height:38px;display:inline-flex;align-items:center;gap:8px;box-shadow:none;outline:none;min-width:110px;justify-content:center;'>
+                            ${btnIcon} <span style="font-size:1rem;">${btnLabel}</span>
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  }
+                  listHtml += `</div>`;
+                  document.getElementById('staffAttendanceRecordsTable').innerHTML = listHtml;
+                }
+                // Fetch records for a specific page
+                async function fetchAndRenderAttendanceRecordsPage(page) {
+                  const recordsUrl = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/records`);
+                  recordsUrl.searchParams.append('month', `${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                  recordsUrl.searchParams.append('page', page);
+                  const recordsHeaders = {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                  };
+                  try {
+                    const recordsResponse = await fetch(recordsUrl, { method: 'GET', headers: recordsHeaders });
+                    const recordsResult = await recordsResponse.json();
+                    if (recordsResult.success && recordsResult.data && Array.isArray(recordsResult.data.data)) {
+                      renderAttendanceRecordsTable(recordsResult.data);
+                    } else {
+                      document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-muted py-3'>No attendance records found for this month.</div>`;
+                    }
+                  } catch (err) {
+                    document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-danger py-3'>Error loading attendance records.</div>`;
+                  }
+                }
+                // After modal is inserted, fetch and render records
+                setTimeout(() => {
+                  fetchAndRenderAttendanceRecords();
+                  // ...existing code for dropdown listeners...
                 }, 300);
             } else {
                 alert(result.message || 'Failed to load analytics');
