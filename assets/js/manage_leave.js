@@ -66,9 +66,27 @@
         };
     }
     
+    // Show loading state in leave list
+    function showLeaveLoading() {
+        const leaveList = document.getElementById('leaveList');
+        if (!leaveList) return;
+        
+        leaveList.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading leave records...</p>
+            </div>
+        `;
+    }
+    
     // Load user leave data
     async function loadUserLeaveData(userId, userType) {
         console.log('Loading leave data for user with ID:', userId, 'userType:', userType);
+        
+        // Show loading state
+        showLeaveLoading();
         
         // Store current user context for form submission
         window.currentLeaveUserId = userId;
@@ -425,7 +443,28 @@
     async function openLeaveModal(userId, userType) {
         console.log('Opening leave modal for user:', userId, 'type:', userType);
         
-        // Fetch user info first
+        // Open the modal first
+        const leaveModal = document.getElementById('manageLeaveModal');
+        if (!leaveModal) {
+            console.error('Leave modal not found');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(leaveModal);
+        modal.show();
+        
+        // Show loading states in modal
+        const userNameElement = document.getElementById('leaveUserName');
+        const userRoleElement = document.getElementById('leaveUserRole');
+        const avatarElement = document.getElementById('leaveUserAvatar');
+        
+        if (userNameElement) userNameElement.textContent = 'Loading...';
+        if (userRoleElement) userRoleElement.textContent = 'Loading...';
+        if (avatarElement) avatarElement.src = 'https://ui-avatars.com/api/?name=Loading&background=cccccc&color=fff&size=96';
+        
+        showLeaveLoading();
+        
+        // Fetch user info
         try {
             const token = getAuthToken();
             if (!token) {
@@ -531,17 +570,9 @@
             // Load the user's leave data
             loadUserLeaveData(userId, userType);
             
-            // Open the modal
-            const leaveModal = document.getElementById('manageLeaveModal');
-            if (leaveModal) {
-                const modal = new bootstrap.Modal(leaveModal);
-                modal.show();
-            } else {
-                console.error('Leave modal not found');
-            }
-            
         } catch (error) {
             console.error('Error opening leave modal:', error);
+            showLeaveError('Failed to load user information. Please try again.');
         }
     }
     

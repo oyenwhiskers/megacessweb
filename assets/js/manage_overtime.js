@@ -361,7 +361,7 @@
         // Show loading state
         overtimeList.innerHTML = `
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-success" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="mt-2">Loading overtime records...</p>
