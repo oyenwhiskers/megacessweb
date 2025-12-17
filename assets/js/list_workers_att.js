@@ -83,7 +83,7 @@
         
         workersAttendanceView.innerHTML = `
             <div class="text-center py-4">
-                <div class="spinner-border text-success" role="status">
+                <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="mt-2">Loading worker attendance...</p>
@@ -208,19 +208,18 @@
                                     ${getStatusBadge(record.status)}
                                     <div class="mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-primary" 
-                                                    onclick="window.location.href='/megacessweb/pages/view-attendance-details.html?id=${record.staff_id}&type=worker'" 
+                                            <button type="button" class="btn btn-outline-primary" 
+                                                    onclick="viewAttendanceDetails(${record.staff_id})" 
                                                     title="View">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-warning" 
-                                                    onclick="window.location.href='/megacessweb/pages/view-overtime-details.html?id=${record.staff_id}&type=worker'" 
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="markOvertime(${record.staff_id})" 
                                                     title="Overtime">
                                                 <i class="bi bi-clock"></i>
                                             </button>
-                                            <button type="button" class="btn btn-info" 
-                                                    onclick="window.location.href='/megacessweb/pages/view-leave-details.html?id=${record.staff_id}&type=worker'" 
-                                                    title="On-Leave">
+                                            <button type="button" class="btn btn-outline-info" 
+                                                    title="On-Leave" disabled>
                                                 <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
