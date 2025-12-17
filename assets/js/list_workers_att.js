@@ -208,17 +208,17 @@
                                     ${getStatusBadge(record.status)}
                                     <div class="mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-outline-primary" 
+                                            <button type="button" class="btn btn-primary" 
                                                     onclick="window.location.href='/megacessweb/pages/view-attendance-details.html?id=${record.staff_id}&type=worker'" 
                                                     title="View">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-warning" 
+                                            <button type="button" class="btn btn-warning" 
                                                     onclick="window.location.href='/megacessweb/pages/view-overtime-details.html?id=${record.staff_id}&type=worker'" 
                                                     title="Overtime">
                                                 <i class="bi bi-clock"></i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-info" 
+                                            <button type="button" class="btn btn-info" 
                                                     onclick="window.location.href='/megacessweb/pages/view-leave-details.html?id=${record.staff_id}&type=worker'" 
                                                     title="On-Leave">
                                                 <i class="bi bi-door-open"></i>
