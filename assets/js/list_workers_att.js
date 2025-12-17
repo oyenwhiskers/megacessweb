@@ -83,7 +83,7 @@
         
         workersAttendanceView.innerHTML = `
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-success" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="mt-2">Loading worker attendance...</p>
@@ -219,7 +219,8 @@
                                                 <i class="bi bi-clock"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-info" 
-                                                    title="On-Leave" disabled>
+                                                    onclick="window.openLeaveModal(${record.staff_id}, 'worker')" 
+                                                    title="On-Leave">
                                                 <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
