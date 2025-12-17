@@ -66,27 +66,9 @@
         };
     }
     
-    // Show loading state in leave list
-    function showLeaveLoading() {
-        const leaveList = document.getElementById('leaveList');
-        if (!leaveList) return;
-        
-        leaveList.innerHTML = `
-            <div class="text-center py-4">
-                <div class="spinner-border text-success" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 text-muted">Loading leave records...</p>
-            </div>
-        `;
-    }
-    
     // Load user leave data
     async function loadUserLeaveData(userId, userType) {
         console.log('Loading leave data for user with ID:', userId, 'userType:', userType);
-        
-        // Show loading state
-        showLeaveLoading();
         
         // Store current user context for form submission
         window.currentLeaveUserId = userId;
@@ -439,148 +421,10 @@
         console.log('Leave management initialized');
     }
     
-    // Function to open leave modal for a user
-    async function openLeaveModal(userId, userType) {
-        console.log('Opening leave modal for user:', userId, 'type:', userType);
-        
-        // Open the modal first
-        const leaveModal = document.getElementById('manageLeaveModal');
-        if (!leaveModal) {
-            console.error('Leave modal not found');
-            return;
-        }
-        
-        const modal = new bootstrap.Modal(leaveModal);
-        modal.show();
-        
-        // Show loading states in modal
-        const userNameElement = document.getElementById('leaveUserName');
-        const userRoleElement = document.getElementById('leaveUserRole');
-        const avatarElement = document.getElementById('leaveUserAvatar');
-        
-        if (userNameElement) userNameElement.textContent = 'Loading...';
-        if (userRoleElement) userRoleElement.textContent = 'Loading...';
-        if (avatarElement) avatarElement.src = 'https://ui-avatars.com/api/?name=Loading&background=cccccc&color=fff&size=96';
-        
-        showLeaveLoading();
-        
-        // Fetch user info
-        try {
-            const token = getAuthToken();
-            if (!token) {
-                console.error('No authentication token found');
-                return;
-            }
-            
-            // Choose API endpoint based on user type
-            let apiUrl;
-            if (userType === 'worker') {
-                apiUrl = `https://mwms.megacess.com/api/v1/staff/${userId}`;
-            } else if (userType === 'staff') {
-                apiUrl = `https://mwms.megacess.com/api/v1/users/${userId}`;
-            } else {
-                console.error('Invalid user type:', userType);
-                return;
-            }
-            
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Failed to fetch user info: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            const userData = result.data;
-            
-            // Set user information in modal
-            const userNameElement = document.getElementById('leaveUserName');
-            const userRoleElement = document.getElementById('leaveUserRole');
-            const avatarElement = document.getElementById('leaveUserAvatar');
-            
-            if (userType === 'worker') {
-                if (userNameElement) userNameElement.textContent = userData.staff_fullname || 'Unknown Worker';
-                if (userRoleElement) userRoleElement.textContent = 'Worker';
-                
-                // Set avatar for worker
-                if (avatarElement) {
-                    let cleanImageUrl = '';
-                    if (userData.staff_img && typeof userData.staff_img === 'string' && userData.staff_img.trim() !== '') {
-                        cleanImageUrl = userData.staff_img.replace(/:\d+$/, '').trim();
-                        
-                        if (cleanImageUrl.length > 5 && !cleanImageUrl.includes('null') && !cleanImageUrl.includes('undefined')) {
-                            let imageSrc = cleanImageUrl;
-                            if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
-                                imageSrc = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
-                            } else if (cleanImageUrl.startsWith('/')) {
-                                imageSrc = `https://mwms.megacess.com${cleanImageUrl}`;
-                            }
-                            
-                            avatarElement.src = imageSrc;
-                            avatarElement.onerror = function() {
-                                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.staff_fullname || 'Worker')}&background=cccccc&color=fff&size=96`;
-                                this.onerror = null;
-                            };
-                        } else {
-                            avatarElement.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.staff_fullname || 'Worker')}&background=cccccc&color=fff&size=96`;
-                        }
-                    } else {
-                        avatarElement.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.staff_fullname || 'Worker')}&background=cccccc&color=fff&size=96`;
-                    }
-                }
-            } else {
-                // Staff user
-                if (userNameElement) userNameElement.textContent = userData.user_fullname || 'Unknown Staff';
-                if (userRoleElement) userRoleElement.textContent = userData.user_role || 'Staff';
-                
-                // Set avatar for staff
-                if (avatarElement) {
-                    let cleanImageUrl = '';
-                    if (userData.user_img && typeof userData.user_img === 'string' && userData.user_img.trim() !== '') {
-                        cleanImageUrl = userData.user_img.replace(/:\d+$/, '').trim();
-                        
-                        if (cleanImageUrl.length > 5 && !cleanImageUrl.includes('null') && !cleanImageUrl.includes('undefined')) {
-                            let imageSrc = cleanImageUrl;
-                            if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
-                                imageSrc = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
-                            } else if (cleanImageUrl.startsWith('/')) {
-                                imageSrc = `https://mwms.megacess.com${cleanImageUrl}`;
-                            }
-                            
-                            avatarElement.src = imageSrc;
-                            avatarElement.onerror = function() {
-                                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.user_fullname || 'Staff')}&background=cccccc&color=fff&size=96`;
-                                this.onerror = null;
-                            };
-                        } else {
-                            avatarElement.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.user_fullname || 'Staff')}&background=cccccc&color=fff&size=96`;
-                        }
-                    } else {
-                        avatarElement.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.user_fullname || 'Staff')}&background=cccccc&color=fff&size=96`;
-                    }
-                }
-            }
-            
-            // Load the user's leave data
-            loadUserLeaveData(userId, userType);
-            
-        } catch (error) {
-            console.error('Error opening leave modal:', error);
-            showLeaveError('Failed to load user information. Please try again.');
-        }
-    }
-    
     // Expose functions globally
     window.loadUserLeaveData = loadUserLeaveData;
     window.submitLeaveApplication = markStaffOnLeave;  // Use different name to avoid conflict
     window.filterLeaveRecords = filterLeaveRecords;
-    window.openLeaveModal = openLeaveModal;
     
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
