@@ -384,30 +384,10 @@
                 // Apply client-side status filtering as fallback
                 if (statusFilter && statusFilter !== 'all' && filteredData.data && Array.isArray(filteredData.data)) {
                     console.log('Applying client-side status filter for:', statusFilter);
-                    
                     filteredData.data = filteredData.data.filter(record => {
                         if (!record.status) return false;
-                        
-                        // Normalize status for comparison
-                        const recordStatus = record.status.toLowerCase();
-                        const filterStatus = statusFilter.toLowerCase();
-                        
-                        // Map status values for better matching
-                        const statusMapping = {
-                            'present': ['present'],
-                            'absent': ['absent'],
-                            'check_in': ['check_in', 'checked_in'],
-                            'late': ['late'],
-                            'annual_leave': ['annual_leave', 'annual leave'],
-                            'sick_leave': ['sick_leave', 'sick leave'],
-                            'unpaid_leave': ['unpaid_leave', 'unpaid leave']
-                        };
-                        
-                        if (statusMapping[filterStatus]) {
-                            return statusMapping[filterStatus].includes(recordStatus);
-                        }
-                        
-                        return recordStatus === filterStatus;
+                        // Case-insensitive substring match
+                        return record.status.toLowerCase().includes(statusFilter.toLowerCase());
                     });
                 }
                 
@@ -677,13 +657,13 @@
                     // Years: 5 years back to next year
                     let recYearOptions = '';
                     for (let y = now.getFullYear() - 5; y <= now.getFullYear() + 1; y++) {
-                      recYearOptions += `<option value='${y}' ${y==currentYear?'selected':''}>${y}</option>`;
+                      recYearOptions += `<option value='${y}' ${y==now.getFullYear()?'selected':''}>${y}</option>`;
                     }
                     recYear.innerHTML = recYearOptions;
                     // Months
                     let recMonthOptions = '';
                     for (let i = 0; i < 12; i++) {
-                      recMonthOptions += `<option value='${String(i+1).padStart(2,'0')}' ${(i+1)==parseInt(currentMonth)?'selected':''}>${months[i]}</option>`;
+                      recMonthOptions += `<option value='${String(i+1).padStart(2,'0')}' ${(i+1)==(now.getMonth()+1)?'selected':''}>${months[i]}</option>`;
                     }
                     recMonth.innerHTML = recMonthOptions;
                     // Status
@@ -699,33 +679,63 @@
                     ];
                     let recStatusOptions = '';
                     for (const opt of recStatusOptionsArr) {
-                      recStatusOptions += `<option value='${opt.value}' ${opt.value==currentStatus?'selected':''}>${opt.label}</option>`;
+                      recStatusOptions += `<option value='${opt.value}' ${opt.value=='all'?'selected':''}>${opt.label}</option>`;
                     }
                     recStatus.innerHTML = recStatusOptions;
+                    // Set dropdowns to current year/month/status on first open
+                    recYear.value = now.getFullYear();
+                    recMonth.value = String(now.getMonth()+1).padStart(2, '0');
+                    recStatus.value = 'all';
                   }
-                  // Set dropdowns to current year/month on first open
-                  if (yearSelect) yearSelect.value = currentYear;
-                  if (monthSelect) monthSelect.value = String(currentMonth).padStart(2, '0');
-                  if (recYear) recYear.value = currentYear;
-                  if (recMonth) recMonth.value = String(currentMonth).padStart(2, '0');
-                  if (recStatus) recStatus.value = currentStatus;
-                  // Analytics filter: reload using analyticsYear/analyticsMonth
-                  function reloadAnalytics() {
-                    window.showStaffAttendanceAnalytics(userId, yearSelect.value, monthSelect.value, currentStatus);
+                  // Set analytics dropdowns to current year/month
+                  if (yearSelect) yearSelect.value = now.getFullYear();
+                  if (monthSelect) monthSelect.value = String(now.getMonth()+1).padStart(2, '0');
+                  // Analytics filter: reload only analytics summary (not records)
+                  async function reloadAnalyticsOnly() {
+                    // Fetch analytics summary for selected year/month/status, update only the summary section
+                    const selectedYear = yearSelect.value;
+                    const selectedMonth = monthSelect.value;
+                    const selectedStatus = currentStatus; // keep status as before, or add a status dropdown if needed
+                    const analyticsUrl = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/analytics`);
+                    analyticsUrl.searchParams.append('month', `${selectedYear}-${selectedMonth}`);
+                    if (selectedStatus && selectedStatus !== 'all') analyticsUrl.searchParams.append('status', selectedStatus);
+                    try {
+                      const analyticsResponse = await fetch(analyticsUrl, { method: 'GET', headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                      }});
+                      const analyticsResult = await analyticsResponse.json();
+                      if (analyticsResult.success && analyticsResult.data) {
+                        // Update only the analytics summary section
+                        const data = analyticsResult.data;
+                        // Update the summary cards
+                        const summaryCards = modalElem.querySelectorAll('.row.g-3.mb-4 .col-md-4');
+                        if (summaryCards.length === 3) {
+                          summaryCards[0].querySelector('div > div:last-child').innerHTML = `${data.attendance_rate ?? 0}%`;
+                          summaryCards[1].querySelector('div > div:last-child').innerHTML = `${data.punctuality_rate ?? 0}%`;
+                          summaryCards[2].querySelector('div > div:last-child').innerHTML = `${data.number_absent ?? 0}`;
+                        }
+                      }
+                    } catch (err) {
+                      // Optionally show error in summary section
+                    }
                   }
                   // Records filter: only reload records, not analytics
                   function reloadRecordsOnly() {
                     fetchAndRenderAttendanceRecords();
                   }
                   if (yearSelect && monthSelect) {
-                    yearSelect.addEventListener('change', reloadAnalytics);
-                    monthSelect.addEventListener('change', reloadAnalytics);
+                    yearSelect.addEventListener('change', reloadAnalyticsOnly);
+                    monthSelect.addEventListener('change', reloadAnalyticsOnly);
                   }
                   if (recYear && recMonth && recStatus) {
                     recYear.addEventListener('change', reloadRecordsOnly);
                     recMonth.addEventListener('change', reloadRecordsOnly);
                     recStatus.addEventListener('change', reloadRecordsOnly);
                   }
+                  // Fetch records for current month on first open
+                  fetchAndRenderAttendanceRecords();
                 }, 300);
                 // Fetch and render attendance records for this user and month
                 async function fetchAndRenderAttendanceRecords() {
@@ -767,7 +777,7 @@
                     return;
                   }
                   let listHtml = `<div style='max-height:340px;overflow-y:auto;padding-right:2px;'>`;
-                  for (const rec of records) {
+                  records.forEach((rec, idx) => {
                     // Worker-style color and badge logic (Bootstrap icons)
                     let statusColor = '#888';
                     let btnBg = '#adb5bd';
@@ -795,43 +805,109 @@
                           <div style='font-size:1.05rem;font-weight:600;color:#222;'>${rec.date || ''}</div>
                         </div>
                         <div style='flex-shrink:0;'>
-                          <button type='button' style='background:${btnBg};color:${btnText};border:none;border-radius:10px;font-size:1rem;font-weight:600;padding:0 24px;height:38px;display:inline-flex;align-items:center;gap:8px;box-shadow:none;outline:none;min-width:110px;justify-content:center;'>
+                          <button type='button' class='attendance-record-detail-btn' data-record-idx='${idx}' style='background:${btnBg};color:${btnText};border:none;border-radius:10px;font-size:1rem;font-weight:600;padding:0 24px;height:38px;display:inline-flex;align-items:center;gap:8px;box-shadow:none;outline:none;min-width:110px;justify-content:center;'>
                             ${btnIcon} <span style="font-size:1rem;">${btnLabel}</span>
                           </button>
                         </div>
                       </div>
                     `;
-                  }
+                  });
                   listHtml += `</div>`;
                   document.getElementById('staffAttendanceRecordsTable').innerHTML = listHtml;
+
+                  // Add event listeners for detail buttons
+                  const detailBtns = document.querySelectorAll('.attendance-record-detail-btn');
+                  detailBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                      const idx = this.getAttribute('data-record-idx');
+                      if (records[idx]) showAttendanceRecordDetailModal(records[idx]);
+                    });
+                  });
                 }
-                // Fetch records for a specific page
-                async function fetchAndRenderAttendanceRecordsPage(page) {
-                  const recordsUrl = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/records`);
-                  recordsUrl.searchParams.append('month', `${currentYear}-${String(currentMonth).padStart(2, '0')}`);
-                  recordsUrl.searchParams.append('page', page);
-                  const recordsHeaders = {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                  };
-                  try {
-                    const recordsResponse = await fetch(recordsUrl, { method: 'GET', headers: recordsHeaders });
-                    const recordsResult = await recordsResponse.json();
-                    if (recordsResult.success && recordsResult.data && Array.isArray(recordsResult.data.data)) {
-                      renderAttendanceRecordsTable(recordsResult.data);
-                    } else {
-                      document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-muted py-3'>No attendance records found for this month.</div>`;
-                    }
-                  } catch (err) {
-                    document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-danger py-3'>Error loading attendance records.</div>`;
+                
+                // Show modal with attendance record details
+                function showAttendanceRecordDetailModal(record) {
+                  // Remove any existing modal
+                  let oldModal = document.getElementById('attendanceRecordDetailModal');
+                  if (oldModal) oldModal.remove();
+
+                  // Badge for type of leave/status
+                  let badgeHtml = '';
+                  let badgeColor = '#adb5bd';
+                  let badgeText = record.status || '';
+                  let badgeIcon = '';
+                  if (record.status === 'Present') {
+                    badgeColor = '#198754'; badgeIcon = '<i class="bi bi-check-lg"></i>'; badgeText = 'Present';
+                  } else if (record.status === 'Absent') {
+                    badgeColor = '#dc3545'; badgeIcon = '<i class="bi bi-x-lg"></i>'; badgeText = 'Absent';
+                  } else if (record.status === 'Check_in') {
+                    badgeColor = '#0d6efd'; badgeIcon = '<i class="bi bi-record-circle"></i>'; badgeText = 'Check In';
+                  } else if (record.status === 'Late') {
+                    badgeColor = '#ffc107'; badgeIcon = '<i class="bi bi-clock-history"></i>'; badgeText = 'Late';
+                  } else if (record.status === 'Annual_Leave') {
+                    badgeColor = '#0dcaf0'; badgeIcon = '<i class="bi bi-umbrella"></i>'; badgeText = 'Annual Leave';
+                  } else if (record.status === 'Sick_Leave') {
+                    badgeColor = '#6c757d'; badgeIcon = '<i class="bi bi-emoji-dizzy"></i>'; badgeText = 'Sick Leave';
+                  } else if (record.status === 'Unpaid_Leave') {
+                    badgeColor = '#212529'; badgeIcon = '<i class="bi bi-cash"></i>'; badgeText = 'Unpaid Leave';
                   }
+                  badgeHtml = `<span style="display:inline-flex;align-items:center;gap:6px;background:${badgeColor};color:#fff;font-weight:600;padding:4px 16px;border-radius:8px;font-size:1rem;"><span style='font-size:1.2em;'>${badgeIcon}</span> ${badgeText}</span>`;
+
+                  // Build modal HTML
+                  const modalHtml = `
+                    <div class='modal fade' id='attendanceRecordDetailModal' tabindex='-1' aria-labelledby='attendanceRecordDetailModalLabel' aria-hidden='true'>
+                      <div class='modal-dialog'>
+                        <div class='modal-content' style='border-radius:12px;background:#f4f4f4;'>
+                          <div class='modal-header' style='background:#ededed;border-bottom:none;'>
+                            <h5 class='modal-title fw-semibold' id='attendanceRecordDetailModalLabel'>View Attendance Details</h5>
+                            <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
+                          </div>
+                          <div class='modal-body' style='padding:28px 24px 24px 24px;'>
+                            <div class='container-fluid'>
+                              <div class='row mb-3'>
+                                <div class='col-6'><span style='font-weight:500;'>Type of leave:</span></div>
+                                <div class='col-6'><span style='font-weight:500;'>Checked by:</span></div>
+                              </div>
+                              <div class='row align-items-center mb-3'>
+                                <div class='col-6'>${badgeHtml}</div>
+                                <div class='col-6'>${record.checkedin_by || ''}</div>
+                              </div>
+                              <div class='row mb-2'>
+                                <div class='col-6'><span style='font-weight:500;'>Date:</span></div>
+                                <div class='col-6'><span style='font-weight:500;'>Check in time:</span></div>
+                              </div>
+                              <div class='row'>
+                                <div class='col-6'>${record.date || ''}</div>
+                                <div class='col-6'>${record.check_in || ''}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                  document.body.insertAdjacentHTML('beforeend', modalHtml);
+                  const modalElem = document.getElementById('attendanceRecordDetailModal');
+                  var modal = new bootstrap.Modal(modalElem, { backdrop: 'static', keyboard: true });
+                  setTimeout(() => {
+                    modalElem.classList.add('show');
+                    modalElem.style.display = 'block';
+                    modalElem.style.opacity = '1';
+                  }, 10);
+                  modal.show();
+                  modalElem.addEventListener('hidden.bs.modal', function () {
+                    modalElem.classList.remove('show');
+                    modalElem.style.opacity = '0';
+                    setTimeout(() => {
+                      if (modalElem) modalElem.remove();
+                      document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+                        backdrop.remove();
+                      });
+                      document.body.classList.remove('modal-open');
+                      document.body.style.overflow = '';
+                    }, 300);
+                  });
                 }
-                // After modal is inserted, fetch and render records
-                setTimeout(() => {
-                  fetchAndRenderAttendanceRecords();
-                  // ...existing code for dropdown listeners...
-                }, 300);
             } else {
                 alert(result.message || 'Failed to load analytics');
             }
