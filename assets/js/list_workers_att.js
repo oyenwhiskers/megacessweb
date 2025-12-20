@@ -154,7 +154,7 @@
             // Generate avatar placeholder from worker name
             const workerName = record.staff_name || 'Worker';
             const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(workerName)}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
-            
+
             // Clean up the image URL to remove problematic suffixes
             let workerImage = '';
             if (record.staff_img && typeof record.staff_img === 'string') {
@@ -163,7 +163,7 @@
                 workerImage = workerImage.replace(/\.png:.*$/, '.png');
                 workerImage = workerImage.replace(/\.jpeg:.*$/, '.jpeg');
                 workerImage = workerImage.replace(/\.gif:.*$/, '.gif');
-                
+
                 // Check if the cleaned URL is still valid
                 if (workerImage.length < 5 || workerImage.includes('null') || workerImage.includes('undefined') || workerImage.includes('…')) {
                     workerImage = '';
@@ -175,9 +175,9 @@
                     workerImage = `https://mwms.megacess.com${workerImage}`;
                 }
             }
-            
+
             const imgSrc = (workerImage && workerImage.trim() !== '') ? workerImage : placeholderImage;
-            
+
             return `
                 <div class="list-group-item worker-attendance-item">
                     <div class="d-flex align-items-center">
@@ -219,7 +219,7 @@
                                                 <i class="bi bi-clock"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-info" 
-                                                    title="On-Leave" disabled>
+                                                    title="Leave" onclick="showWorkerNameAsImage(${record.staff_id})">
                                                 <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
@@ -231,6 +231,196 @@
                 </div>
             `;
         }).join('');
+    // Display worker name, image, and leave records when Leave button is clicked
+    window.showWorkerNameAsImage = async function(staffId) {
+        const staffData = getCurrentStaffData(staffId);
+        const workerName = staffData && staffData.staff_name ? staffData.staff_name : 'Worker';
+
+        // Create a canvas and draw the name
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const width = 320;
+        const height = 100;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Background
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw name
+        ctx.font = 'bold 32px Arial';
+        ctx.fillStyle = '#343a40';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(workerName, width / 2, height / 2);
+
+        // Convert to image
+        const dataUrl = canvas.toDataURL('image/png');
+
+        // Get worker image (same logic as in renderAttendanceRecords)
+        let workerImage = '';
+        if (staffData && staffData.staff_img && typeof staffData.staff_img === 'string') {
+            workerImage = staffData.staff_img.replace(/:\d+$/, '').trim();
+            workerImage = workerImage.replace(/\.jpg:.*$/, '.jpg');
+            workerImage = workerImage.replace(/\.png:.*$/, '.png');
+            workerImage = workerImage.replace(/\.jpeg:.*$/, '.jpeg');
+            workerImage = workerImage.replace(/\.gif:.*$/, '.gif');
+            if (workerImage.length < 5 || workerImage.includes('null') || workerImage.includes('undefined') || workerImage.includes('…')) {
+                workerImage = '';
+            } else if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+                workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+            } else if (workerImage.startsWith('/')) {
+                workerImage = `https://mwms.megacess.com${workerImage}`;
+            }
+        }
+        const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(workerName)}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+        const imgSrc = (workerImage && workerImage.trim() !== '') ? workerImage : placeholderImage;
+
+        // --- Filter State ---
+        const now = new Date();
+        let filterMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+        let filterYear = now.getFullYear().toString();
+        let filterType = '';
+
+        // Fetch leave records from API
+        let leaves = [];
+        let leaveTypes = new Set();
+        let leaveHtml = '<div class="text-center text-muted">Loading leave records...</div>';
+        try {
+            const token = getAuthToken();
+            const url = `${API_BASE_URL}/staff-attendance/${staffId}/leaves`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data && result.data.data && Array.isArray(result.data.data)) {
+                    leaves = result.data.data;
+                    leaveTypes = new Set(leaves.map(l => l.type_of_leave).filter(Boolean));
+                }
+            }
+        } catch (err) {}
+
+        // Helper to filter leaves
+        function filterLeaves(leavesArr, type, month, year) {
+            return leavesArr.filter(leave => {
+                // Parse date (format: DD-MM-YYYY)
+                let [d, m, y] = (leave.date || '').split('-');
+                let match = true;
+                if (type && leave.type_of_leave !== type) match = false;
+                if (month && m !== month) match = false;
+                if (year && y !== year) match = false;
+                return match;
+            });
+        }
+
+        // Render filter UI
+        function renderFilterUI() {
+            // Restrict to only these leave types
+            const allowedTypes = ['Annual Leave', 'Sick Leave', 'Unpaid Leave'];
+            let typeOptions = `<option value="">All Types</option>`;
+            allowedTypes.forEach(type => {
+                typeOptions += `<option value="${type}"${filterType === type ? ' selected' : ''}>${type}</option>`;
+            });
+            // Month options
+            const months = [
+                '01','02','03','04','05','06','07','08','09','10','11','12'
+            ];
+            let monthOptions = '';
+            months.forEach((m, idx) => {
+                const label = new Date(2000, idx, 1).toLocaleString('en-US', { month: 'short' });
+                monthOptions += `<option value="${m}"${filterMonth === m ? ' selected' : ''}>${label}</option>`;
+            });
+            // Year options
+            let years = Array.from(new Set(leaves.map(l => (l.date || '').split('-')[2]).filter(Boolean)));
+            if (!years.includes(filterYear)) years.push(filterYear);
+            years = years.filter(Boolean).sort((a, b) => b - a);
+            let yearOptions = '';
+            years.forEach(y => {
+                yearOptions += `<option value="${y}"${filterYear === y ? ' selected' : ''}>${y}</option>`;
+            });
+            return `
+                <form id="leaveFilterForm" class="mb-3 d-flex flex-wrap gap-2 justify-content-center align-items-center">
+                    <select id="leaveTypeFilter" class="form-select form-select-sm" style="max-width:120px;">
+                        ${typeOptions}
+                    </select>
+                    <select id="leaveMonthFilter" class="form-select form-select-sm" style="max-width:100px;">
+                        ${monthOptions}
+                    </select>
+                    <select id="leaveYearFilter" class="form-select form-select-sm" style="max-width:100px;">
+                        ${yearOptions}
+                    </select>
+                </form>
+            `;
+        }
+
+        // Render leave records
+        function renderLeaveHtml() {
+            const filtered = filterLeaves(leaves, filterType, filterMonth, filterYear);
+            if (filtered.length === 0) {
+                return '<div class="text-center text-muted">No leave records found.</div>';
+            }
+            return `<div class="mt-3"><h6 class="mb-2">Leave Records</h6><ul class="list-group">` +
+                filtered.map(leave => `
+                    <li class="list-group-item">
+                        <div><strong>${leave.type_of_leave}</strong> <span class="text-muted">(${leave.date})</span></div>
+                        <div class="small text-muted">${leave.remarks ? leave.remarks : ''}</div>
+                        <div class="small">Created by: ${leave.created_by}</div>
+                        <div class="small">Start: ${leave.start_date} | End: ${leave.end_date}</div>
+                    </li>
+                `).join('') + '</ul></div>';
+        }
+
+        // Show in a modal (create if not exists)
+        let modal = document.getElementById('workerNameImageModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'workerNameImageModal';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100vw';
+            modal.style.height = '100vh';
+            modal.style.background = 'rgba(0,0,0,0.5)';
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.zIndex = '9999';
+            document.body.appendChild(modal);
+        }
+        // Render modal content
+        function updateModalContent() {
+            modal.innerHTML = `
+                <div style="background:#fff;padding:24px 32px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:center;position:relative;max-width:400px;">
+                    <img id="workerPhotoDisplay" src="${imgSrc}" alt="${workerName}" style="max-width:120px;max-height:120px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 16px auto;border:2px solid #dee2e6;" onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
+                    <img id="workerNameImageDisplay" src="${dataUrl}" alt="${workerName}" style="max-width:100%;height:auto;display:block;margin:0 auto 16px auto;" />
+                    <div id="leaveFilterContainer">${renderFilterUI()}</div>
+                    <div id="workerLeaveRecords">${renderLeaveHtml()}</div>
+                    <button id="closeWorkerNameImageModal" class="btn btn-secondary mt-3">Close</button>
+                </div>
+            `;
+        }
+        updateModalContent();
+        modal.style.display = 'flex';
+
+        // Add filter event listeners
+        setTimeout(() => {
+            const typeSel = modal.querySelector('#leaveTypeFilter');
+            const monthSel = modal.querySelector('#leaveMonthFilter');
+            const yearSel = modal.querySelector('#leaveYearFilter');
+            if (typeSel) typeSel.onchange = function() { filterType = this.value; updateModalContent(); };
+            if (monthSel) monthSel.onchange = function() { filterMonth = this.value; updateModalContent(); };
+            if (yearSel) yearSel.onchange = function() { filterYear = this.value; updateModalContent(); };
+            const closeBtn = modal.querySelector('#closeWorkerNameImageModal');
+            if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+        }, 0);
+    };
         
         // Create pagination
         const paginationHtml = createPaginationHtml(current_page, last_page, total, from, to, per_page);
