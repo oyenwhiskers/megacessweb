@@ -751,7 +751,6 @@
                     recStatusVal = recStatus.value;
                   }
                   recordsUrl.searchParams.append('month', `${recYearVal}-${recMonthVal}`);
-                  if (recStatusVal && recStatusVal !== 'all') recordsUrl.searchParams.append('status', recStatusVal);
                   const recordsHeaders = {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
@@ -760,8 +759,23 @@
                   try {
                     const recordsResponse = await fetch(recordsUrl, { method: 'GET', headers: recordsHeaders });
                     const recordsResult = await recordsResponse.json();
+                    let recordsArr = [];
                     if (recordsResult.success && recordsResult.data && Array.isArray(recordsResult.data.data)) {
-                      renderAttendanceRecordsTable(recordsResult.data);
+                      recordsArr = recordsResult.data.data;
+                      // Client-side status filter
+                      if (recStatusVal && recStatusVal !== 'all') {
+                        const selectedStatus = recStatusVal.trim().toLowerCase();
+                        recordsArr = recordsArr.filter(r => {
+                          if (!r.status) return false;
+                          let recordStatus = r.status.trim().toLowerCase();
+                          if (recordStatus === 'annual_leave') recordStatus = 'annual leave';
+                          if (recordStatus === 'sick_leave') recordStatus = 'sick leave';
+                          if (recordStatus === 'unpaid_leave') recordStatus = 'unpaid leave';
+                          if (recordStatus === 'check_in') recordStatus = 'check in';
+                          return recordStatus === selectedStatus;
+                        });
+                      }
+                      renderAttendanceRecordsTable({data: recordsArr});
                     } else {
                       document.getElementById('staffAttendanceRecordsTable').innerHTML = `<div class='text-muted py-3'>No attendance records found for this month.</div>`;
                     }
