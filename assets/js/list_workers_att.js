@@ -30,15 +30,58 @@
     
     // Format date for display
     function formatDateTime(dateTimeString) {
-        if (!dateTimeString) return 'N/A';
-        const date = new Date(dateTimeString);
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    if (!dateTimeString) return 'N/A';
+    const date = new Date(dateTimeString);
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Helper to build month string for API
+function getMonthString(year, month) {
+    if (!year || !month) return '';
+    return `${year}-${month}`;
+}
+
+// Fetch leave records from API
+async function fetchLeavesFromAPI(staffId, year, month, type) {
+    const token = localStorage.getItem('auth_token') || 
+                sessionStorage.getItem('auth_token') || 
+                localStorage.getItem('authToken') || 
+                sessionStorage.getItem('authToken');
+    if (!token) return {leaves: [], leaveTypes: []};
+    let url = `https://mwms.megacess.com/api/v1/staff-attendance/${staffId}/leaves?`;
+    const params = [];
+    if (year && month) {
+        params.push(`month=${year}-${month}`);
     }
+    if (type && type !== '') {
+        params.push(`status=\"${type}\"`);
+    }
+    params.push('page=1');
+    params.push('per_page=10');
+    url += params.join('&');
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        if (!response.ok) return {leaves: [], leaveTypes: []};
+        const data = await response.json();
+        const leaves = (data && data.data && data.data.data) ? data.data.data : [];
+        const leaveTypes = Array.from(new Set(leaves.map(l => l.status)));
+        return {leaves, leaveTypes};
+    } catch (err) {
+        return {leaves: [], leaveTypes: []};
+    }
+}
     
     // Format time only
     function formatTime(dateTimeString) {
@@ -154,7 +197,7 @@
             // Generate avatar placeholder from worker name
             const workerName = record.staff_name || 'Worker';
             const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(workerName)}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
-            
+
             // Clean up the image URL to remove problematic suffixes
             let workerImage = '';
             if (record.staff_img && typeof record.staff_img === 'string') {
@@ -163,7 +206,7 @@
                 workerImage = workerImage.replace(/\.png:.*$/, '.png');
                 workerImage = workerImage.replace(/\.jpeg:.*$/, '.jpeg');
                 workerImage = workerImage.replace(/\.gif:.*$/, '.gif');
-                
+
                 // Check if the cleaned URL is still valid
                 if (workerImage.length < 5 || workerImage.includes('null') || workerImage.includes('undefined') || workerImage.includes('…')) {
                     workerImage = '';
@@ -175,9 +218,9 @@
                     workerImage = `https://mwms.megacess.com${workerImage}`;
                 }
             }
-            
+
             const imgSrc = (workerImage && workerImage.trim() !== '') ? workerImage : placeholderImage;
-            
+
             return `
                 <div class="list-group-item worker-attendance-item">
                     <div class="d-flex align-items-center">
@@ -219,7 +262,7 @@
                                                 <i class="bi bi-clock"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-info" 
-                                                    title="On-Leave" disabled>
+                                                    title="Leave" onclick="showWorkerNameAsImage(${record.staff_id})">
                                                 <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
@@ -231,6 +274,317 @@
                 </div>
             `;
         }).join('');
+    // Display worker name, image, and leave records when Leave button is clicked
+    window.showWorkerNameAsImage = async function(staffId) {
+        const staffData = getCurrentStaffData(staffId);
+        const workerName = staffData && staffData.staff_name ? staffData.staff_name : 'Worker';
+
+        // Create a canvas and draw the name
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const width = 320;
+        const height = 100;
+        canvas.width = width;
+        canvas.height = height;
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, width, height);
+        ctx.font = 'bold 32px Arial';
+        ctx.fillStyle = '#343a40';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(workerName, width / 2, height / 2);
+        const dataUrl = canvas.toDataURL('image/png');
+
+        // Get worker image (same logic as in renderAttendanceRecords)
+        let workerImage = '';
+        if (staffData && staffData.staff_img && typeof staffData.staff_img === 'string') {
+            workerImage = staffData.staff_img.replace(/:\d+$/, '').trim();
+            workerImage = workerImage.replace(/\.jpg:.*$/, '.jpg');
+            workerImage = workerImage.replace(/\.png:.*$/, '.png');
+            workerImage = workerImage.replace(/\.jpeg:.*$/, '.jpeg');
+            workerImage = workerImage.replace(/\.gif:.*$/, '.gif');
+            if (workerImage.length < 5 || workerImage.includes('null') || workerImage.includes('undefined') || workerImage.includes('…')) {
+                workerImage = '';
+            } else if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+                workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+            } else if (workerImage.startsWith('/')) {
+                workerImage = `https://mwms.megacess.com${workerImage}`;
+            }
+        }
+        const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(workerName)}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+        const imgSrc = (workerImage && workerImage.trim() !== '') ? workerImage : placeholderImage;
+
+        // --- Filter State ---
+        const now = new Date();
+        let filterMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+        let filterYear = now.getFullYear().toString();
+        let filterType = '';
+
+        // Map UI leave type to API status value
+        function getApiStatus(type) {
+            if (!type) return '';
+            switch (type) {
+                case 'Sick Leave': return 'sick_leave';
+                case 'Annual Leave': return 'annual_leave';
+                case 'Unpaid Leave': return 'unpaid_leave';
+                default: return '';
+            }
+        }
+
+        // Helper to build month string for API
+        function getMonthString(year, month) {
+            if (!year || !month) return '';
+            return `${year}-${month}`;
+        }
+
+        // Fetch leave records from API
+        async function fetchLeavesFromAPI(staffId, year, month, type) {
+            const token = localStorage.getItem('auth_token') || 
+                        sessionStorage.getItem('auth_token') || 
+                        localStorage.getItem('authToken') || 
+                        sessionStorage.getItem('authToken');
+            if (!token) return {leaves: [], leaveTypes: []};
+            let url = `https://mwms.megacess.com/api/v1/staff-attendance/${staffId}/leaves?`;
+            const params = [];
+            if (year && month) {
+                params.push(`month=${year}-${month}`);
+            }
+            const apiStatus = getApiStatus(type);
+            if (apiStatus) {
+                params.push(`status=${apiStatus}`);
+            }
+            params.push('page=1');
+            params.push('per_page=10');
+            url += params.join('&');
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!response.ok) return {leaves: [], leaveTypes: []};
+                const data = await response.json();
+                const leaves = (data && data.data && data.data.data) ? data.data.data : [];
+                const leaveTypes = Array.from(new Set(leaves.map(l => l.status)));
+                return {leaves, leaveTypes};
+            } catch (err) {
+                return {leaves: [], leaveTypes: []};
+            }
+        }
+
+        // Render filter UI
+        function renderFilterUI(leaveTypes) {
+            let months = [
+                { value: '01', label: 'January' },
+                { value: '02', label: 'February' },
+                { value: '03', label: 'March' },
+                { value: '04', label: 'April' },
+                { value: '05', label: 'May' },
+                { value: '06', label: 'June' },
+                { value: '07', label: 'July' },
+                { value: '08', label: 'August' },
+                { value: '09', label: 'September' },
+                { value: '10', label: 'October' },
+                { value: '11', label: 'November' },
+                { value: '12', label: 'December' }
+            ];
+            let years = [];
+            const thisYear = now.getFullYear();
+            for (let y = thisYear; y >= thisYear - 5; y--) {
+                years.push(y.toString());
+            }
+            // Only show allowed types in UI
+            const allowedTypes = ['Annual Leave', 'Sick Leave', 'Unpaid Leave'];
+            let leaveTypeOptions = '<option value="">All Types</option>';
+            allowedTypes.forEach(type => {
+                leaveTypeOptions += `<option value="${type}"${filterType === type ? ' selected' : ''}>${type}</option>`;
+            });
+            let monthOptions = months.map(m => `<option value="${m.value}"${filterMonth === m.value ? ' selected' : ''}>${m.label}</option>`).join('');
+            let yearOptions = years.map(y => `<option value="${y}"${filterYear === y ? ' selected' : ''}>${y}</option>`).join('');
+            return `
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <select class="form-select form-select-sm" id="leaveFilterMonth">
+                            ${monthOptions}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select class="form-select form-select-sm" id="leaveFilterYear">
+                            ${yearOptions}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select class="form-select form-select-sm" id="leaveFilterType">
+                            ${leaveTypeOptions}
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render leave records
+        function renderLeaveHtml(leaves) {
+            if (!leaves || leaves.length === 0) {
+                return '<div class="text-center text-muted">No leave records found for the selected filters.</div>';
+            }
+            // Helper for status color and label
+            function getStatusStyleAndLabel(type) {
+                const t = (type || '').toLowerCase().replace(/_/g, ' ');
+                if (t === 'sick leave') return { color: '#009dc4', label: 'Sick Leave', icon: '<i class="bi bi-x-lg me-1"></i>' };
+                if (t === 'annual leave') return { color: '#0c4b7f', label: 'Annual Leave', icon: '<i class="bi bi-check2 me-1"></i>' };
+                if (t === 'unpaid leave') return { color: '#dc3545', label: 'Unpaid Leave', icon: '<i class="bi bi-dash-lg me-1"></i>' };
+                return { color: '#6c757d', label: type, icon: '' };
+            }
+            // Add a global handler for leave details modal
+            if (!window.showLeaveDetailsModal) {
+                window.showLeaveDetailsModal = function(leaveJson) {
+                    const leave = JSON.parse(decodeURIComponent(leaveJson));
+                    let modal = document.getElementById('leaveDetailsModal');
+                    if (!modal) {
+                        modal = document.createElement('div');
+                        modal.id = 'leaveDetailsModal';
+                        modal.style.position = 'fixed';
+                        modal.style.top = '0';
+                        modal.style.left = '0';
+                        modal.style.width = '100vw';
+                        modal.style.height = '100vh';
+                        modal.style.background = 'rgba(0,0,0,0.5)';
+                        modal.style.display = 'flex';
+                        modal.style.alignItems = 'center';
+                        modal.style.justifyContent = 'center';
+                        modal.style.zIndex = '10000';
+                        document.body.appendChild(modal);
+                    }
+                    // Get color/icon for leave type
+                    const type = leave.type_of_leave || leave.status || '';
+                    const t = (type || '').toLowerCase().replace(/_/g, ' ');
+                    let color = '#6c757d', icon = '', label = type;
+                    if (t === 'sick leave') { color = '#009dc4'; icon = '<i class="bi bi-x-lg me-1"></i>'; label = 'Sick Leave'; }
+                    if (t === 'annual leave') { color = '#0c4b7f'; icon = '<i class="bi bi-check2 me-1"></i>'; label = 'Annual Leave'; }
+                    if (t === 'unpaid leave') { color = '#dc3545'; icon = '<i class="bi bi-dash-lg me-1"></i>'; label = 'Unpaid Leave'; }
+                    // Format date utility
+                    function fmt(d) {
+                        if (!d) return '-';
+                        if (/\d{4}-\d{2}-\d{2}/.test(d)) return d.split('-').reverse().join('/');
+                        if (/\d{2}-\d{2}-\d{4}/.test(d)) return d;
+                        return d;
+                    }
+                    modal.innerHTML = `
+                        <div style="background:#e5e5e5;padding:32px 40px;border-radius:14px;max-width:540px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:left;position:relative;">
+                            <div style="font-size:1.4rem;font-weight:700;margin-bottom:8px;">Applied Leave Details</div>
+                            <hr style="margin:0 0 18px 0;">
+                            <div style="margin-bottom:18px;">
+                                <div style="color:#666;font-size:1.05rem;margin-bottom:6px;">Type of leave:</div>
+                                <span style="display:inline-flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:600;min-width:150px;height:38px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1.08rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;">${icon}${label}</span>
+                            </div>
+                            <div class="row" style="display:flex;flex-wrap:wrap;margin-bottom:12px;">
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">Created by:</div>
+                                    <div style="font-size:1.08rem;">${leave.created_by || '-'}</div>
+                                </div>
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">Created at:</div>
+                                    <div style="font-size:1.08rem;">${fmt(leave.created_at ? leave.created_at.split('T')[0] : leave.date || leave.start_date || leave.from_date || '')}</div>
+                                </div>
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">Start Date:</div>
+                                    <div style="font-size:1.08rem;">${fmt(leave.start_date || leave.date || '-')}</div>
+                                </div>
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">End Date:</div>
+                                    <div style="font-size:1.08rem;">${fmt(leave.end_date || '-')}</div>
+                                </div>
+                            </div>
+                            <div style="color:#666;font-size:1.01rem;">Remarks:</div>
+                            <div style="font-size:1.08rem;">${leave.remarks || leave.notes || '-'}</div>
+                            <button id="closeLeaveDetailsModal" class="btn btn-secondary mt-3" style="min-width:100px;margin-top:24px;">Close</button>
+                        </div>
+                    `;
+                    modal.style.display = 'flex';
+                    setTimeout(() => {
+                        const closeBtn = modal.querySelector('#closeLeaveDetailsModal');
+                        if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+                    }, 0);
+                };
+            }
+            return `
+                <div class="attendance-records-list" style="background:#eafbe7;padding:12px;border-radius:10px;max-width:900px;margin:0 auto;">
+                    <div class="mb-2 fw-bold" style="font-size:1.1rem;">Leave Records</div>
+                    <div style="max-height:340px;overflow-y:auto;">
+                    ${leaves.map(l => {
+                        const status = l.type_of_leave || (l.status ? l.status.replace(/_/g, ' ') : 'Leave');
+                        const date = l.date || l.start_date || l.from_date || '';
+                        const statusInfo = getStatusStyleAndLabel(status);
+                        const leaveJson = encodeURIComponent(JSON.stringify(l));
+                        return `
+                        <div class="d-flex align-items-center mb-2" style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border-left:8px solid ${statusInfo.color};min-height:54px;">
+                            <div class="px-3 py-2 flex-grow-1 d-flex align-items-center">
+                                <div class="fw-bold" style="font-size:1.1rem;min-width:110px;">${date}</div>
+                                <div class="ms-3 text-muted small">${l.remarks || l.notes || ''}</div>
+                            </div>
+                            <div class="px-3">
+                                <span style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;background:${statusInfo.color};color:#fff;font-weight:600;min-width:130px;height:36px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;" onclick="window.showLeaveDetailsModal('${leaveJson}')">${statusInfo.icon}${statusInfo.label}</span>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show in a modal (create if not exists)
+        let modal = document.getElementById('workerNameImageModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'workerNameImageModal';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100vw';
+            modal.style.height = '100vh';
+            modal.style.background = 'rgba(0,0,0,0.5)';
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.zIndex = '9999';
+            document.body.appendChild(modal);
+        }
+
+        // Render modal content
+        async function updateModalContent() {
+            const {leaves} = await fetchLeavesFromAPI(staffId, filterYear, filterMonth, filterType);
+            const filterUI = renderFilterUI();
+            const leaveHtml = renderLeaveHtml(leaves);
+            modal.innerHTML = `
+                <div style="background:#fff;padding:24px 32px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.15);position:relative;max-width:900px;width:100%;">
+                    <div class="d-flex align-items-center mb-4" style="gap:24px;text-align:left;">
+                        <img id="workerPhotoDisplay" src="${imgSrc}" alt="${workerName}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;" onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
+                        <span class="fw-bold" style="font-size:1.5rem;">${workerName}</span>
+                    </div>
+                    <div id="leaveFilterContainer">${filterUI}</div>
+                    <div id="workerLeaveRecords">${leaveHtml}</div>
+                    <button id="closeWorkerNameImageModal" class="btn btn-secondary mt-3">Close</button>
+                </div>
+            `;
+            // Add filter event listeners
+            setTimeout(() => {
+                const monthSel = modal.querySelector('#leaveFilterMonth');
+                const yearSel = modal.querySelector('#leaveFilterYear');
+                const typeSel = modal.querySelector('#leaveFilterType');
+                if (monthSel) monthSel.onchange = function() { filterMonth = this.value; updateModalContent(); };
+                if (yearSel) yearSel.onchange = function() { filterYear = this.value; updateModalContent(); };
+                if (typeSel) typeSel.onchange = function() { filterType = this.value; updateModalContent(); };
+                const closeBtn = modal.querySelector('#closeWorkerNameImageModal');
+                if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+            }, 0);
+        }
+        updateModalContent();
+        modal.style.display = 'flex';
+    };
         
         // Create pagination
         const paginationHtml = createPaginationHtml(current_page, last_page, total, from, to, per_page);
