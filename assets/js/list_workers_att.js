@@ -430,14 +430,37 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             if (!leaves || leaves.length === 0) {
                 return '<div class="text-center text-muted">No leave records found for the selected filters.</div>';
             }
-            return leaves.map(l => {
-                // Try to display type_of_leave if available, else fallback to status
-                const status = l.type_of_leave || (l.status ? l.status.replace(/_/g, ' ') : 'Leave');
-                const from = l.start_date ? l.start_date : (l.from_date ? new Date(l.from_date).toLocaleDateString() : '');
-                const to = l.end_date ? l.end_date : (l.to_date ? new Date(l.to_date).toLocaleDateString() : '');
-                const notes = l.remarks || l.notes || '';
-                return `<div class="card mb-2"><div class="card-body p-2"><div class="d-flex justify-content-between align-items-center"><div><span class="badge bg-info me-2">${status}</span> ${from} - ${to}</div><div class="text-muted small">${notes}</div></div></div></div>`;
-            }).join('');
+            // Helper for status color and label
+            function getStatusStyleAndLabel(type) {
+                const t = (type || '').toLowerCase().replace(/_/g, ' ');
+                if (t === 'sick leave') return { color: '#009dc4', label: 'Sick Leave', icon: '<i class="bi bi-x-lg me-1"></i>' };
+                if (t === 'annual leave') return { color: '#0c4b7f', label: 'Annual Leave', icon: '<i class="bi bi-check2 me-1"></i>' };
+                if (t === 'unpaid leave') return { color: '#dc3545', label: 'Unpaid Leave', icon: '<i class="bi bi-dash-lg me-1"></i>' };
+                return { color: '#6c757d', label: type, icon: '' };
+            }
+            return `
+                <div class="attendance-records-list" style="background:#eafbe7;padding:12px;border-radius:10px;max-width:900px;margin:0 auto;">
+                    <div class="mb-2 fw-bold" style="font-size:1.1rem;">Leave Records</div>
+                    <div style="max-height:340px;overflow-y:auto;">
+                    ${leaves.map(l => {
+                        const status = l.type_of_leave || (l.status ? l.status.replace(/_/g, ' ') : 'Leave');
+                        const date = l.date || l.start_date || l.from_date || '';
+                        const statusInfo = getStatusStyleAndLabel(status);
+                        return `
+                        <div class="d-flex align-items-center mb-2" style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border-left:8px solid ${statusInfo.color};min-height:54px;">
+                            <div class="px-3 py-2 flex-grow-1 d-flex align-items-center">
+                                <div class="fw-bold" style="font-size:1.1rem;min-width:110px;">${date}</div>
+                                <div class="ms-3 text-muted small">${l.remarks || l.notes || ''}</div>
+                            </div>
+                            <div class="px-3">
+                                    <span style="display:inline-flex;align-items:center;justify-content:center;background:${statusInfo.color};color:#fff;font-weight:600;min-width:130px;height:36px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;">${statusInfo.icon}${statusInfo.label}</span>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         // Show in a modal (create if not exists)
@@ -464,9 +487,11 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             const filterUI = renderFilterUI();
             const leaveHtml = renderLeaveHtml(leaves);
             modal.innerHTML = `
-                <div style="background:#fff;padding:24px 32px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:center;position:relative;max-width:400px;">
-                    <img id="workerPhotoDisplay" src="${imgSrc}" alt="${workerName}" style="max-width:120px;max-height:120px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 16px auto;border:2px solid #dee2e6;" onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
-                    <img id="workerNameImageDisplay" src="${dataUrl}" alt="${workerName}" style="max-width:100%;height:auto;display:block;margin:0 auto 16px auto;" />
+                <div style="background:#fff;padding:24px 32px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.15);position:relative;max-width:900px;width:100%;">
+                    <div class="d-flex align-items-center mb-4" style="gap:24px;text-align:left;">
+                        <img id="workerPhotoDisplay" src="${imgSrc}" alt="${workerName}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;" onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
+                        <span class="fw-bold" style="font-size:1.5rem;">${workerName}</span>
+                    </div>
                     <div id="leaveFilterContainer">${filterUI}</div>
                     <div id="workerLeaveRecords">${leaveHtml}</div>
                     <button id="closeWorkerNameImageModal" class="btn btn-secondary mt-3">Close</button>
