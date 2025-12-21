@@ -276,6 +276,75 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         }).join('');
     // Display worker name, image, and leave records when Leave button is clicked
     window.showWorkerNameAsImage = async function(staffId) {
+                // --- Add Leave Button Handler ---
+                function handleAddLeave() {
+                    // Create or get the modal
+                    let addLeaveModal = document.getElementById('addLeaveRecordModal');
+                    if (!addLeaveModal) {
+                        addLeaveModal = document.createElement('div');
+                        addLeaveModal.id = 'addLeaveRecordModal';
+                        addLeaveModal.style.position = 'fixed';
+                        addLeaveModal.style.top = '0';
+                        addLeaveModal.style.left = '0';
+                        addLeaveModal.style.width = '100vw';
+                        addLeaveModal.style.height = '100vh';
+                        addLeaveModal.style.background = 'rgba(0,0,0,0.5)';
+                        addLeaveModal.style.display = 'flex';
+                        addLeaveModal.style.alignItems = 'center';
+                        addLeaveModal.style.justifyContent = 'center';
+                        addLeaveModal.style.zIndex = '10001';
+                        document.body.appendChild(addLeaveModal);
+                    }
+                    addLeaveModal.innerHTML = `
+                        <div style="background:#e5e5e5;padding:32px 32px 24px 32px;border-radius:14px;max-width:420px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:left;position:relative;">
+                            <div style="font-size:1.4rem;font-weight:700;margin-bottom:2px;">Add new leave record</div>
+                            <div style="color:#666;font-size:1.08rem;margin-bottom:10px;">Insert the required details with the correct information</div>
+                            <hr style="margin:0 0 18px 0;">
+                            <form id="addLeaveForm">
+                                <div class="mb-3">
+                                    <label for="leaveTypeInput" style="font-weight:600;">Type of leave:</label>
+                                    <select id="leaveTypeInput" class="form-select" style="margin-top:4px;">
+                                        <option value="">Choose type of leave..</option>
+                                        <option value="annual_leave">Annual Leave</option>
+                                        <option value="sick_leave">Sick Leave</option>
+                                        <option value="unpaid_leave">Unpaid Leave</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="leaveStartDateInput" style="font-weight:600;">Start Date:</label>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <input id="leaveStartDateInput" type="date" class="form-control" style="flex:1;" placeholder="Select start date..">
+                                        <span style="font-size:1.3em;color:#888;"><i class='bi bi-calendar'></i></span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="leaveEndDateInput" style="font-weight:600;">End Date:</label>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <input id="leaveEndDateInput" type="date" class="form-control" style="flex:1;" placeholder="Select end date..">
+                                        <span style="font-size:1.3em;color:#888;"><i class='bi bi-calendar'></i></span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="leaveRemarksInput" style="font-weight:600;">Remarks:</label>
+                                    <textarea id="leaveRemarksInput" class="form-control" rows="3" placeholder="Enter remarks.."></textarea>
+                                </div>
+                                <div class="d-flex justify-content-end" style="gap:10px;">
+                                    <button type="button" class="btn btn-secondary" id="cancelAddLeaveBtn">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    `;
+                    addLeaveModal.style.display = 'flex';
+                    // Cancel button closes modal
+                    setTimeout(() => {
+                        const cancelBtn = document.getElementById('cancelAddLeaveBtn');
+                        if (cancelBtn) cancelBtn.onclick = function() { addLeaveModal.style.display = 'none'; };
+                        // Prevent form submit for now
+                        const form = document.getElementById('addLeaveForm');
+                        if (form) form.onsubmit = function(e) { e.preventDefault(); addLeaveModal.style.display = 'none'; };
+                    }, 0);
+                }
         const staffData = getCurrentStaffData(staffId);
         const workerName = staffData && staffData.staff_name ? staffData.staff_name : 'Worker';
 
@@ -405,6 +474,11 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             let monthOptions = months.map(m => `<option value="${m.value}"${filterMonth === m.value ? ' selected' : ''}>${m.label}</option>`).join('');
             let yearOptions = years.map(y => `<option value="${y}"${filterYear === y ? ' selected' : ''}>${y}</option>`).join('');
             return `
+                <div class="d-flex align-items-center mb-3">
+                    <img src="${imgSrc}" alt="${workerName}" class="rounded-circle me-2" style="width:48px;height:48px;object-fit:cover;">
+                    <span class="fw-bold fs-5">${workerName}</span>
+                    <button type="button" class="btn btn-success btn-sm ms-3" id="addLeaveBtn"><i class="bi bi-plus-circle me-1"></i>Add Leave</button>
+                </div>
                 <div class="row g-2 mb-3">
                     <div class="col-4">
                         <select class="form-select form-select-sm" id="leaveFilterMonth">
@@ -561,16 +635,12 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             const leaveHtml = renderLeaveHtml(leaves);
             modal.innerHTML = `
                 <div style="background:#fff;padding:24px 32px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.15);position:relative;max-width:900px;width:100%;">
-                    <div class="d-flex align-items-center mb-4" style="gap:24px;text-align:left;">
-                        <img id="workerPhotoDisplay" src="${imgSrc}" alt="${workerName}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;" onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
-                        <span class="fw-bold" style="font-size:1.5rem;">${workerName}</span>
-                    </div>
                     <div id="leaveFilterContainer">${filterUI}</div>
                     <div id="workerLeaveRecords">${leaveHtml}</div>
                     <button id="closeWorkerNameImageModal" class="btn btn-secondary mt-3">Close</button>
                 </div>
             `;
-            // Add filter event listeners
+            // Add filter event listeners and Add Leave button handler
             setTimeout(() => {
                 const monthSel = modal.querySelector('#leaveFilterMonth');
                 const yearSel = modal.querySelector('#leaveFilterYear');
@@ -580,6 +650,8 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 if (typeSel) typeSel.onchange = function() { filterType = this.value; updateModalContent(); };
                 const closeBtn = modal.querySelector('#closeWorkerNameImageModal');
                 if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+                const addLeaveBtn = modal.querySelector('#addLeaveBtn');
+                if (addLeaveBtn) addLeaveBtn.onclick = handleAddLeave;
             }, 0);
         }
         updateModalContent();
