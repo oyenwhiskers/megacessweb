@@ -438,6 +438,78 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 if (t === 'unpaid leave') return { color: '#dc3545', label: 'Unpaid Leave', icon: '<i class="bi bi-dash-lg me-1"></i>' };
                 return { color: '#6c757d', label: type, icon: '' };
             }
+            // Add a global handler for leave details modal
+            if (!window.showLeaveDetailsModal) {
+                window.showLeaveDetailsModal = function(leaveJson) {
+                    const leave = JSON.parse(decodeURIComponent(leaveJson));
+                    let modal = document.getElementById('leaveDetailsModal');
+                    if (!modal) {
+                        modal = document.createElement('div');
+                        modal.id = 'leaveDetailsModal';
+                        modal.style.position = 'fixed';
+                        modal.style.top = '0';
+                        modal.style.left = '0';
+                        modal.style.width = '100vw';
+                        modal.style.height = '100vh';
+                        modal.style.background = 'rgba(0,0,0,0.5)';
+                        modal.style.display = 'flex';
+                        modal.style.alignItems = 'center';
+                        modal.style.justifyContent = 'center';
+                        modal.style.zIndex = '10000';
+                        document.body.appendChild(modal);
+                    }
+                    // Get color/icon for leave type
+                    const type = leave.type_of_leave || leave.status || '';
+                    const t = (type || '').toLowerCase().replace(/_/g, ' ');
+                    let color = '#6c757d', icon = '', label = type;
+                    if (t === 'sick leave') { color = '#009dc4'; icon = '<i class="bi bi-x-lg me-1"></i>'; label = 'Sick Leave'; }
+                    if (t === 'annual leave') { color = '#0c4b7f'; icon = '<i class="bi bi-check2 me-1"></i>'; label = 'Annual Leave'; }
+                    if (t === 'unpaid leave') { color = '#dc3545'; icon = '<i class="bi bi-dash-lg me-1"></i>'; label = 'Unpaid Leave'; }
+                    // Format date utility
+                    function fmt(d) {
+                        if (!d) return '-';
+                        if (/\d{4}-\d{2}-\d{2}/.test(d)) return d.split('-').reverse().join('/');
+                        if (/\d{2}-\d{2}-\d{4}/.test(d)) return d;
+                        return d;
+                    }
+                    modal.innerHTML = `
+                        <div style="background:#e5e5e5;padding:32px 40px;border-radius:14px;max-width:540px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:left;position:relative;">
+                            <div style="font-size:1.4rem;font-weight:700;margin-bottom:8px;">Applied Leave Details</div>
+                            <hr style="margin:0 0 18px 0;">
+                            <div style="margin-bottom:18px;">
+                                <div style="color:#666;font-size:1.05rem;margin-bottom:6px;">Type of leave:</div>
+                                <span style="display:inline-flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:600;min-width:150px;height:38px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1.08rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;">${icon}${label}</span>
+                            </div>
+                            <div class="row" style="display:flex;flex-wrap:wrap;margin-bottom:12px;">
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">Created by:</div>
+                                    <div style="font-size:1.08rem;">${leave.created_by || '-'}</div>
+                                </div>
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">Created at:</div>
+                                    <div style="font-size:1.08rem;">${fmt(leave.created_at ? leave.created_at.split('T')[0] : leave.date || leave.start_date || leave.from_date || '')}</div>
+                                </div>
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">Start Date:</div>
+                                    <div style="font-size:1.08rem;">${fmt(leave.start_date || leave.date || '-')}</div>
+                                </div>
+                                <div style="flex:1 1 180px;margin-bottom:10px;">
+                                    <div style="color:#666;font-size:1.01rem;">End Date:</div>
+                                    <div style="font-size:1.08rem;">${fmt(leave.end_date || '-')}</div>
+                                </div>
+                            </div>
+                            <div style="color:#666;font-size:1.01rem;">Remarks:</div>
+                            <div style="font-size:1.08rem;">${leave.remarks || leave.notes || '-'}</div>
+                            <button id="closeLeaveDetailsModal" class="btn btn-secondary mt-3" style="min-width:100px;margin-top:24px;">Close</button>
+                        </div>
+                    `;
+                    modal.style.display = 'flex';
+                    setTimeout(() => {
+                        const closeBtn = modal.querySelector('#closeLeaveDetailsModal');
+                        if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+                    }, 0);
+                };
+            }
             return `
                 <div class="attendance-records-list" style="background:#eafbe7;padding:12px;border-radius:10px;max-width:900px;margin:0 auto;">
                     <div class="mb-2 fw-bold" style="font-size:1.1rem;">Leave Records</div>
@@ -446,6 +518,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                         const status = l.type_of_leave || (l.status ? l.status.replace(/_/g, ' ') : 'Leave');
                         const date = l.date || l.start_date || l.from_date || '';
                         const statusInfo = getStatusStyleAndLabel(status);
+                        const leaveJson = encodeURIComponent(JSON.stringify(l));
                         return `
                         <div class="d-flex align-items-center mb-2" style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border-left:8px solid ${statusInfo.color};min-height:54px;">
                             <div class="px-3 py-2 flex-grow-1 d-flex align-items-center">
@@ -453,7 +526,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                                 <div class="ms-3 text-muted small">${l.remarks || l.notes || ''}</div>
                             </div>
                             <div class="px-3">
-                                    <span style="display:inline-flex;align-items:center;justify-content:center;background:${statusInfo.color};color:#fff;font-weight:600;min-width:130px;height:36px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;">${statusInfo.icon}${statusInfo.label}</span>
+                                <span style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;background:${statusInfo.color};color:#fff;font-weight:600;min-width:130px;height:36px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;" onclick="window.showLeaveDetailsModal('${leaveJson}')">${statusInfo.icon}${statusInfo.label}</span>
                             </div>
                         </div>
                         `;
