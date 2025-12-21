@@ -30,15 +30,58 @@
     
     // Format date for display
     function formatDateTime(dateTimeString) {
-        if (!dateTimeString) return 'N/A';
-        const date = new Date(dateTimeString);
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    if (!dateTimeString) return 'N/A';
+    const date = new Date(dateTimeString);
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Helper to build month string for API
+function getMonthString(year, month) {
+    if (!year || !month) return '';
+    return `${year}-${month}`;
+}
+
+// Fetch leave records from API
+async function fetchLeavesFromAPI(staffId, year, month, type) {
+    const token = localStorage.getItem('auth_token') || 
+                sessionStorage.getItem('auth_token') || 
+                localStorage.getItem('authToken') || 
+                sessionStorage.getItem('authToken');
+    if (!token) return {leaves: [], leaveTypes: []};
+    let url = `https://mwms.megacess.com/api/v1/staff-attendance/${staffId}/leaves?`;
+    const params = [];
+    if (year && month) {
+        params.push(`month=${year}-${month}`);
     }
+    if (type && type !== '') {
+        params.push(`status=\"${type}\"`);
+    }
+    params.push('page=1');
+    params.push('per_page=10');
+    url += params.join('&');
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        if (!response.ok) return {leaves: [], leaveTypes: []};
+        const data = await response.json();
+        const leaves = (data && data.data && data.data.data) ? data.data.data : [];
+        const leaveTypes = Array.from(new Set(leaves.map(l => l.status)));
+        return {leaves, leaveTypes};
+    } catch (err) {
+        return {leaves: [], leaveTypes: []};
+    }
+}
     
     // Format time only
     function formatTime(dateTimeString) {
@@ -243,19 +286,13 @@
         const height = 100;
         canvas.width = width;
         canvas.height = height;
-
-        // Background
         ctx.fillStyle = '#f8f9fa';
         ctx.fillRect(0, 0, width, height);
-
-        // Draw name
         ctx.font = 'bold 32px Arial';
         ctx.fillStyle = '#343a40';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(workerName, width / 2, height / 2);
-
-        // Convert to image
         const dataUrl = canvas.toDataURL('image/png');
 
         // Get worker image (same logic as in renderAttendanceRecords)
@@ -283,98 +320,124 @@
         let filterYear = now.getFullYear().toString();
         let filterType = '';
 
-        // Fetch leave records from API
-        let leaves = [];
-        let leaveTypes = new Set();
-        let leaveHtml = '<div class="text-center text-muted">Loading leave records...</div>';
-        try {
-            const token = getAuthToken();
-            const url = `${API_BASE_URL}/staff-attendance/${staffId}/leaves`;
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success && result.data && result.data.data && Array.isArray(result.data.data)) {
-                    leaves = result.data.data;
-                    leaveTypes = new Set(leaves.map(l => l.type_of_leave).filter(Boolean));
-                }
+        // Map UI leave type to API status value
+        function getApiStatus(type) {
+            if (!type) return '';
+            switch (type) {
+                case 'Sick Leave': return 'sick_leave';
+                case 'Annual Leave': return 'annual_leave';
+                case 'Unpaid Leave': return 'unpaid_leave';
+                default: return '';
             }
-        } catch (err) {}
+        }
 
-        // Helper to filter leaves
-        function filterLeaves(leavesArr, type, month, year) {
-            return leavesArr.filter(leave => {
-                // Parse date (format: DD-MM-YYYY)
-                let [d, m, y] = (leave.date || '').split('-');
-                let match = true;
-                if (type && leave.type_of_leave !== type) match = false;
-                if (month && m !== month) match = false;
-                if (year && y !== year) match = false;
-                return match;
-            });
+        // Helper to build month string for API
+        function getMonthString(year, month) {
+            if (!year || !month) return '';
+            return `${year}-${month}`;
+        }
+
+        // Fetch leave records from API
+        async function fetchLeavesFromAPI(staffId, year, month, type) {
+            const token = localStorage.getItem('auth_token') || 
+                        sessionStorage.getItem('auth_token') || 
+                        localStorage.getItem('authToken') || 
+                        sessionStorage.getItem('authToken');
+            if (!token) return {leaves: [], leaveTypes: []};
+            let url = `https://mwms.megacess.com/api/v1/staff-attendance/${staffId}/leaves?`;
+            const params = [];
+            if (year && month) {
+                params.push(`month=${year}-${month}`);
+            }
+            const apiStatus = getApiStatus(type);
+            if (apiStatus) {
+                params.push(`status=${apiStatus}`);
+            }
+            params.push('page=1');
+            params.push('per_page=10');
+            url += params.join('&');
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!response.ok) return {leaves: [], leaveTypes: []};
+                const data = await response.json();
+                const leaves = (data && data.data && data.data.data) ? data.data.data : [];
+                const leaveTypes = Array.from(new Set(leaves.map(l => l.status)));
+                return {leaves, leaveTypes};
+            } catch (err) {
+                return {leaves: [], leaveTypes: []};
+            }
         }
 
         // Render filter UI
-        function renderFilterUI() {
-            // Restrict to only these leave types
-            const allowedTypes = ['Annual Leave', 'Sick Leave', 'Unpaid Leave'];
-            let typeOptions = `<option value="">All Types</option>`;
-            allowedTypes.forEach(type => {
-                typeOptions += `<option value="${type}"${filterType === type ? ' selected' : ''}>${type}</option>`;
-            });
-            // Month options
-            const months = [
-                '01','02','03','04','05','06','07','08','09','10','11','12'
+        function renderFilterUI(leaveTypes) {
+            let months = [
+                { value: '01', label: 'January' },
+                { value: '02', label: 'February' },
+                { value: '03', label: 'March' },
+                { value: '04', label: 'April' },
+                { value: '05', label: 'May' },
+                { value: '06', label: 'June' },
+                { value: '07', label: 'July' },
+                { value: '08', label: 'August' },
+                { value: '09', label: 'September' },
+                { value: '10', label: 'October' },
+                { value: '11', label: 'November' },
+                { value: '12', label: 'December' }
             ];
-            let monthOptions = '';
-            months.forEach((m, idx) => {
-                const label = new Date(2000, idx, 1).toLocaleString('en-US', { month: 'short' });
-                monthOptions += `<option value="${m}"${filterMonth === m ? ' selected' : ''}>${label}</option>`;
+            let years = [];
+            const thisYear = now.getFullYear();
+            for (let y = thisYear; y >= thisYear - 5; y--) {
+                years.push(y.toString());
+            }
+            // Only show allowed types in UI
+            const allowedTypes = ['Annual Leave', 'Sick Leave', 'Unpaid Leave'];
+            let leaveTypeOptions = '<option value="">All Types</option>';
+            allowedTypes.forEach(type => {
+                leaveTypeOptions += `<option value="${type}"${filterType === type ? ' selected' : ''}>${type}</option>`;
             });
-            // Year options
-            let years = Array.from(new Set(leaves.map(l => (l.date || '').split('-')[2]).filter(Boolean)));
-            if (!years.includes(filterYear)) years.push(filterYear);
-            years = years.filter(Boolean).sort((a, b) => b - a);
-            let yearOptions = '';
-            years.forEach(y => {
-                yearOptions += `<option value="${y}"${filterYear === y ? ' selected' : ''}>${y}</option>`;
-            });
+            let monthOptions = months.map(m => `<option value="${m.value}"${filterMonth === m.value ? ' selected' : ''}>${m.label}</option>`).join('');
+            let yearOptions = years.map(y => `<option value="${y}"${filterYear === y ? ' selected' : ''}>${y}</option>`).join('');
             return `
-                <form id="leaveFilterForm" class="mb-3 d-flex flex-wrap gap-2 justify-content-center align-items-center">
-                    <select id="leaveTypeFilter" class="form-select form-select-sm" style="max-width:120px;">
-                        ${typeOptions}
-                    </select>
-                    <select id="leaveMonthFilter" class="form-select form-select-sm" style="max-width:100px;">
-                        ${monthOptions}
-                    </select>
-                    <select id="leaveYearFilter" class="form-select form-select-sm" style="max-width:100px;">
-                        ${yearOptions}
-                    </select>
-                </form>
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <select class="form-select form-select-sm" id="leaveFilterMonth">
+                            ${monthOptions}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select class="form-select form-select-sm" id="leaveFilterYear">
+                            ${yearOptions}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select class="form-select form-select-sm" id="leaveFilterType">
+                            ${leaveTypeOptions}
+                        </select>
+                    </div>
+                </div>
             `;
         }
 
         // Render leave records
-        function renderLeaveHtml() {
-            const filtered = filterLeaves(leaves, filterType, filterMonth, filterYear);
-            if (filtered.length === 0) {
-                return '<div class="text-center text-muted">No leave records found.</div>';
+        function renderLeaveHtml(leaves) {
+            if (!leaves || leaves.length === 0) {
+                return '<div class="text-center text-muted">No leave records found for the selected filters.</div>';
             }
-            return `<div class="mt-3"><h6 class="mb-2">Leave Records</h6><ul class="list-group">` +
-                filtered.map(leave => `
-                    <li class="list-group-item">
-                        <div><strong>${leave.type_of_leave}</strong> <span class="text-muted">(${leave.date})</span></div>
-                        <div class="small text-muted">${leave.remarks ? leave.remarks : ''}</div>
-                        <div class="small">Created by: ${leave.created_by}</div>
-                        <div class="small">Start: ${leave.start_date} | End: ${leave.end_date}</div>
-                    </li>
-                `).join('') + '</ul></div>';
+            return leaves.map(l => {
+                // Try to display type_of_leave if available, else fallback to status
+                const status = l.type_of_leave || (l.status ? l.status.replace(/_/g, ' ') : 'Leave');
+                const from = l.start_date ? l.start_date : (l.from_date ? new Date(l.from_date).toLocaleDateString() : '');
+                const to = l.end_date ? l.end_date : (l.to_date ? new Date(l.to_date).toLocaleDateString() : '');
+                const notes = l.remarks || l.notes || '';
+                return `<div class="card mb-2"><div class="card-body p-2"><div class="d-flex justify-content-between align-items-center"><div><span class="badge bg-info me-2">${status}</span> ${from} - ${to}</div><div class="text-muted small">${notes}</div></div></div></div>`;
+            }).join('');
         }
 
         // Show in a modal (create if not exists)
@@ -394,32 +457,35 @@
             modal.style.zIndex = '9999';
             document.body.appendChild(modal);
         }
+
         // Render modal content
-        function updateModalContent() {
+        async function updateModalContent() {
+            const {leaves} = await fetchLeavesFromAPI(staffId, filterYear, filterMonth, filterType);
+            const filterUI = renderFilterUI();
+            const leaveHtml = renderLeaveHtml(leaves);
             modal.innerHTML = `
                 <div style="background:#fff;padding:24px 32px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:center;position:relative;max-width:400px;">
                     <img id="workerPhotoDisplay" src="${imgSrc}" alt="${workerName}" style="max-width:120px;max-height:120px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 16px auto;border:2px solid #dee2e6;" onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
                     <img id="workerNameImageDisplay" src="${dataUrl}" alt="${workerName}" style="max-width:100%;height:auto;display:block;margin:0 auto 16px auto;" />
-                    <div id="leaveFilterContainer">${renderFilterUI()}</div>
-                    <div id="workerLeaveRecords">${renderLeaveHtml()}</div>
+                    <div id="leaveFilterContainer">${filterUI}</div>
+                    <div id="workerLeaveRecords">${leaveHtml}</div>
                     <button id="closeWorkerNameImageModal" class="btn btn-secondary mt-3">Close</button>
                 </div>
             `;
+            // Add filter event listeners
+            setTimeout(() => {
+                const monthSel = modal.querySelector('#leaveFilterMonth');
+                const yearSel = modal.querySelector('#leaveFilterYear');
+                const typeSel = modal.querySelector('#leaveFilterType');
+                if (monthSel) monthSel.onchange = function() { filterMonth = this.value; updateModalContent(); };
+                if (yearSel) yearSel.onchange = function() { filterYear = this.value; updateModalContent(); };
+                if (typeSel) typeSel.onchange = function() { filterType = this.value; updateModalContent(); };
+                const closeBtn = modal.querySelector('#closeWorkerNameImageModal');
+                if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
+            }, 0);
         }
         updateModalContent();
         modal.style.display = 'flex';
-
-        // Add filter event listeners
-        setTimeout(() => {
-            const typeSel = modal.querySelector('#leaveTypeFilter');
-            const monthSel = modal.querySelector('#leaveMonthFilter');
-            const yearSel = modal.querySelector('#leaveYearFilter');
-            if (typeSel) typeSel.onchange = function() { filterType = this.value; updateModalContent(); };
-            if (monthSel) monthSel.onchange = function() { filterMonth = this.value; updateModalContent(); };
-            if (yearSel) yearSel.onchange = function() { filterYear = this.value; updateModalContent(); };
-            const closeBtn = modal.querySelector('#closeWorkerNameImageModal');
-            if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
-        }, 0);
     };
         
         // Create pagination
