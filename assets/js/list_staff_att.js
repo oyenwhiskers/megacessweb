@@ -224,8 +224,9 @@
                                                 <i class="bi bi-clock"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-info" 
-                                                    title="On-Leave" disabled>
-                                                <i class="bi bi-door-open"></i>
+                                                title="On-Leave" 
+                                                onclick="window.showStaffLeaveModal(${record.user_id})">
+                                              <i class="bi bi-door-open"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -457,6 +458,58 @@
     
     // Ensure showStaffAttendanceAnalytics is globally available
     window.showStaffAttendanceAnalytics = showStaffAttendanceAnalytics;
+
+    // Show Staff Leave Modal function
+    window.showStaffLeaveModal = function(userId) {
+      // Find the record data for this staff member
+      const staffData = getCurrentStaffData(userId);
+      let staffName = staffData && staffData.user_name ? staffData.user_name : 'Staff Member';
+      let staffImg = '';
+      if (staffData && staffData.user_img && staffData.user_img.trim() !== '') {
+        let userImage = staffData.user_img.replace(/:\d+$/, '').trim();
+        userImage = userImage.replace(/\.jpg:.*$/, '.jpg');
+        userImage = userImage.replace(/\.png:.*$/, '.png');
+        userImage = userImage.replace(/\.jpeg:.*$/, '.jpeg');
+        userImage = userImage.replace(/\.gif:.*$/, '.gif');
+        if (userImage.length < 5 || userImage.includes('null') || userImage.includes('undefined') || userImage.includes('…')) {
+          staffImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
+        } else if (!userImage.startsWith('http') && !userImage.startsWith('/')) {
+          staffImg = `https://mwms.megacess.com/storage/user-images/${userImage}`;
+        } else if (userImage.startsWith('/')) {
+          staffImg = `https://mwms.megacess.com${userImage}`;
+        } else {
+          staffImg = userImage;
+        }
+      } else {
+        staffImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
+      }
+      // Create modal HTML
+      const modalHtml = `
+        <div id="staffLeaveModal" class="modal" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Staff Leave Info</h5>
+                <button type="button" class="btn-close" onclick="document.getElementById('staffLeaveModal').remove();"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img src="${staffImg}" alt="${staffName}" class="rounded-circle mb-3" style="width:80px;height:80px;object-fit:cover;"
+                  onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true';">
+                <h6 class="fw-semibold mb-2">${staffName}</h6>
+                <p class="text-muted">This staff member is on leave.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('staffLeaveModal').remove();">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      // Remove any existing modal first
+      const oldModal = document.getElementById('staffLeaveModal');
+      if (oldModal) oldModal.remove();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    };
 
     // Add delegated event listener for View button
     if (staffAttendanceView) {
