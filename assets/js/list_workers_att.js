@@ -276,34 +276,56 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         }).join('');
     // Display worker name, image, and leave records when Leave button is clicked
     window.showWorkerNameAsImage = async function(staffId) {
-                        // Add Leave modal state
-                        let addLeaveFormVisible = false;
-                        function renderAddLeaveForm() {
-                            return `
-                                <form id="addLeaveForm" class="mt-3">
-                                    <div class="mb-2">
-                                        <label for="leaveType" class="form-label">Leave Type</label>
-                                        <select id="leaveType" name="leaveType" class="form-select" required>
-                                            <option value="annual_leave">Annual Leave</option>
-                                            <option value="sick_leave">Sick Leave</option>
+                // Add Leave modal state
+                let addLeaveFormVisible = false;
+                function renderAddLeaveForm() {
+                    // Remove any existing modal
+                    let oldModal = document.getElementById('addLeaveModal');
+                    if (oldModal) oldModal.remove();
+                    // Show form modal (matches screenshot)
+                    document.body.insertAdjacentHTML('beforeend', `
+                        <div id='addLeaveModal' style='position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10001;'>
+                            <div style='background:#fff;padding:32px 40px;border-radius:16px;max-width:420px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:left;position:relative;'>
+                                <button type="button" class="btn-close" style="position:absolute;top:18px;right:18px;z-index:2;" onclick="document.getElementById('addLeaveModal').remove();"></button>
+                                <div style='font-size:1.5rem;font-weight:700;margin-bottom:8px;'>Add Leave</div>
+                                <hr style='margin:0 0 24px 0;'>
+                                <form id='addLeaveForm'>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>Type of Leave</label>
+                                        <select class='form-select' name='leaveType' required>
+                                            <option value=''>Select type</option>
+                                            <option value='annual_leave'>Annual leave</option>
+                                            <option value='sick_leave'>Sick leave</option>
+                                            <option value='unpaid_leave'>Unpaid leave</option>
                                         </select>
                                     </div>
-                                    <div class="mb-2">
-                                        <label for="fromDate" class="form-label">From Date</label>
-                                        <input type="date" id="fromDate" name="fromDate" class="form-control" required>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>From Date</label>
+                                        <input type='date' class='form-control' id='fromDate' name='fromDate' required>
                                     </div>
-                                    <div class="mb-2">
-                                        <label for="toDate" class="form-label">To Date</label>
-                                        <input type="date" id="toDate" name="toDate" class="form-control" required>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>To Date</label>
+                                        <input type='date' class='form-control' id='toDate' name='toDate' required>
                                     </div>
-                                    <div class="mb-2">
-                                        <label for="notes" class="form-label">Notes</label>
-                                        <textarea id="notes" name="notes" class="form-control" rows="2"></textarea>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>Notes</label>
+                                        <textarea class='form-control' id='notes' name='notes' rows='2' placeholder=''></textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-success w-100">Submit Leave</button>
+                                    <div class='d-flex justify-content-end gap-2'>
+                                        <button type='button' class='btn btn-secondary' id='closeAddLeaveModal'>Cancel</button>
+                                        <button type='submit' class='btn btn-success'>Submit</button>
+                                    </div>
                                 </form>
-                            `;
-                        }
+                            </div>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('closeAddLeaveModal').onclick = function() {
+                            document.getElementById('addLeaveModal').remove();
+                        };
+                        document.getElementById('addLeaveForm').onsubmit = submitLeaveForm;
+                    }, 0);
+                }
 
                         async function submitLeaveForm(e) {
                                         // Helper to format date to YYYY-MM-DD
