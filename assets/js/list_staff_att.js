@@ -239,7 +239,9 @@
         }).join('');
         
         // Create pagination
+        console.log('Staff Pagination data:', { current_page, last_page, total, from, to, per_page });
         const paginationHtml = createStaffPaginationHtml(current_page, last_page, total, from, to, per_page);
+        console.log('Staff Pagination HTML length:', paginationHtml ? paginationHtml.length : 0);
         
         staffAttendanceView.innerHTML = `
             <div class="card">
@@ -259,7 +261,10 @@
     
     // Create pagination HTML
     function createStaffPaginationHtml(currentPage, lastPage, total, from, to, perPage) {
-        if (lastPage <= 1) return '';
+        // Calculate last page if not provided or invalid
+        if (!lastPage || lastPage < 1) {
+            lastPage = Math.ceil(total / perPage) || 1;
+        }
         
         let paginationItems = '';
         

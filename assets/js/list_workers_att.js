@@ -274,38 +274,99 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 </div>
             `;
         }).join('');
+        
+        // Create pagination
+        console.log('Pagination data:', { current_page, last_page, total, from, to, per_page });
+        const paginationHtml = createPaginationHtml(current_page, last_page, total, from, to, per_page);
+        console.log('Pagination HTML length:', paginationHtml ? paginationHtml.length : 0);
+        
+        // Render the attendance list with pagination
+        workersAttendanceView.innerHTML = `
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Worker Attendance Records</h5>
+                    <small class="text-muted">Showing ${from}-${to} of ${total} records</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        ${recordsHtml}
+                    </div>
+                </div>
+                ${paginationHtml}
+            </div>
+        `;
+    }
+    
     // Display worker name, image, and leave records when Leave button is clicked
     window.showWorkerNameAsImage = async function(staffId) {
-                        // Add Leave modal state
-                        let addLeaveFormVisible = false;
-                        function renderAddLeaveForm() {
-                            return `
-                                <form id="addLeaveForm" class="mt-3">
-                                    <div class="mb-2">
-                                        <label for="leaveType" class="form-label">Leave Type</label>
-                                        <select id="leaveType" name="leaveType" class="form-select" required>
-                                            <option value="annual_leave">Annual Leave</option>
-                                            <option value="sick_leave">Sick Leave</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label for="fromDate" class="form-label">From Date</label>
-                                        <input type="date" id="fromDate" name="fromDate" class="form-control" required>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label for="toDate" class="form-label">To Date</label>
-                                        <input type="date" id="toDate" name="toDate" class="form-control" required>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label for="notes" class="form-label">Notes</label>
-                                        <textarea id="notes" name="notes" class="form-control" rows="2"></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-success w-100">Submit Leave</button>
-                                </form>
-                            `;
-                        }
+        // Function to show add leave modal overlay for workers with unique ID
+        function showWorkerAddLeaveModal() {
+            let addLeaveModal = document.getElementById('addWorkerLeaveModal');
+            if (!addLeaveModal) {
+                addLeaveModal = document.createElement('div');
+                addLeaveModal.id = 'addWorkerLeaveModal';
+                addLeaveModal.style.position = 'fixed';
+                addLeaveModal.style.top = '0';
+                addLeaveModal.style.left = '0';
+                addLeaveModal.style.width = '100vw';
+                addLeaveModal.style.height = '100vh';
+                addLeaveModal.style.background = 'rgba(0,0,0,0.7)';
+                addLeaveModal.style.display = 'none';
+                addLeaveModal.style.alignItems = 'center';
+                addLeaveModal.style.justifyContent = 'center';
+                addLeaveModal.style.zIndex = '10002';
+                document.body.appendChild(addLeaveModal);
+            }
+            const staffData = getCurrentStaffData(staffId);
+            const workerName = staffData && staffData.staff_name ? staffData.staff_name : 'Worker';
+            addLeaveModal.innerHTML = `
+                <div style="background:#fff;padding:0;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.3);max-width:600px;width:90%;">
+                    <div style="background:#198754;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0" style="color:#fff;"><i class="bi bi-plus-circle me-2"></i>Add New Leave - ${workerName}</h5>
+                            <button type="button" class="btn-close btn-close-white" id="closeAddWorkerLeaveModal"></button>
+                        </div>
+                    </div>
+                    <div style="padding:24px;">
+                        <form id="addWorkerLeaveForm">
+                            <div class="mb-3"><label class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
+                                <select id="workerLeaveType" name="leaveType" class="form-select" required>
+                                    <option value="annual_leave">Annual Leave</option>
+                                    <option value="sick_leave">Sick Leave</option>
+                                    <option value="unpaid_leave">Unpaid Leave</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3"><label class="form-label fw-semibold">From Date <span class="text-danger">*</span></label>
+                                    <input type="date" id="workerFromDate" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-3"><label class="form-label fw-semibold">To Date <span class="text-danger">*</span></label>
+                                    <input type="date" id="workerToDate" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="mb-3"><label class="form-label fw-semibold">Notes (Optional)</label>
+                                <textarea id="workerNotes" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success flex-grow-1"><i class="bi bi-check-circle me-1"></i>Submit Leave</button>
+                                <button type="button" class="btn btn-outline-secondary" id="cancelAddWorkerLeaveBtn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            addLeaveModal.style.display = 'flex';
+            setTimeout(() => {
+                const closeBtn = addLeaveModal.querySelector('#closeAddWorkerLeaveModal');
+                const cancelBtn = addLeaveModal.querySelector('#cancelAddWorkerLeaveBtn');
+                const form = addLeaveModal.querySelector('#addWorkerLeaveForm');
+                if (closeBtn) closeBtn.onclick = function() { addLeaveModal.style.display = 'none'; };
+                if (cancelBtn) cancelBtn.onclick = function() { addLeaveModal.style.display = 'none'; };
+                if (form) form.onsubmit = submitWorkerLeaveForm;
+            }, 0);
+        }
 
-                        async function submitLeaveForm(e) {
+        async function submitWorkerLeaveForm(e) {
                                         // Helper to format date to YYYY-MM-DD
                                         function formatDateToYMD(dateStr) {
                                             if (!dateStr) return '';
@@ -320,17 +381,17 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                                             return `${yyyy}-${mm}-${dd}`;
                                         }
                             e.preventDefault();
-                            // Always get leaveType from the form being submitted, not from filter UI
+                            // Get values from worker-specific form fields
                             const form = e.target.closest('form');
                             const leaveTypeSelect = form ? form.querySelector('select[name="leaveType"]') : null;
                             let leaveType = leaveTypeSelect ? leaveTypeSelect.value : '';
-                            const allowedLeaveTypes = ['annual_leave', 'sick_leave'];
+                            const allowedLeaveTypes = ['annual_leave', 'sick_leave', 'unpaid_leave'];
                             if (!allowedLeaveTypes.includes(leaveType)) leaveType = '';
-                            let fromDateRaw = (document.getElementById('fromDate')?.value || '').trim();
-                            let toDateRaw = (document.getElementById('toDate')?.value || '').trim();
+                            let fromDateRaw = (document.getElementById('workerFromDate')?.value || '').trim();
+                            let toDateRaw = (document.getElementById('workerToDate')?.value || '').trim();
                             let fromDate = formatDateToYMD(fromDateRaw);
                             let toDate = formatDateToYMD(toDateRaw);
-                            const notes = (document.getElementById('notes')?.value || '').trim();
+                            const notes = (document.getElementById('workerNotes')?.value || '').trim();
                             console.log('DEBUG: leaveType:', leaveType, 'fromDate:', fromDate, 'toDate:', toDate, 'notes:', notes);
                             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
                             // Validation
@@ -384,7 +445,10 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                                 }
                                 if (result && result.success) {
                                     alert(result.message || 'Leave record submitted successfully.');
-                                    addLeaveFormVisible = false;
+                                    // Close the worker add leave modal
+                                    const addLeaveModal = document.getElementById('addWorkerLeaveModal');
+                                    if (addLeaveModal) addLeaveModal.style.display = 'none';
+                                    // Refresh the leave list
                                     updateModalContent();
                                 } else {
                                     alert((result && result.message) || 'Failed to submit leave record.');
@@ -525,14 +589,12 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             let monthOptions = months.map(m => `<option value="${m.value}"${filterMonth === m.value ? ' selected' : ''}>${m.label}</option>`).join('');
             let yearOptions = years.map(y => `<option value="${y}"${filterYear === y ? ' selected' : ''}>${y}</option>`).join('');
             let addLeaveBtn = `<button type="button" class="btn btn-success btn-sm ms-3" id="addLeaveBtn"><i class="bi bi-plus-circle me-1"></i>Add Leave</button>`;
-            let addLeaveFormHtml = addLeaveFormVisible ? renderAddLeaveForm() : '';
             return `
                 <div class="d-flex align-items-center mb-3">
                     <img src="${imgSrc}" alt="${workerName}" class="rounded-circle me-2" style="width:48px;height:48px;object-fit:cover;">
                     <span class="fw-bold fs-5">${workerName}</span>
                     ${addLeaveBtn}
                 </div>
-                ${addLeaveFormHtml}
                 <div class="row g-2 mb-3">
                     <div class="col-4">
                         <select class="form-select form-select-sm" id="leaveFilterMonth">
@@ -705,42 +767,20 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 if (closeBtn) closeBtn.onclick = function() { modal.style.display = 'none'; };
                 const addLeaveBtn = modal.querySelector('#addLeaveBtn');
                 if (addLeaveBtn) addLeaveBtn.onclick = function() {
-                    addLeaveFormVisible = true;
-                    updateModalContent();
+                    showWorkerAddLeaveModal();
                 };
-                // Always attach submit handler after render
-                setTimeout(() => {
-                    const addLeaveForm = modal.querySelector('#addLeaveForm');
-                    if (addLeaveForm) addLeaveForm.onsubmit = submitLeaveForm;
-                }, 0);
             }, 0);
         }
         updateModalContent();
         modal.style.display = 'flex';
     };
-        
-        // Create pagination
-        const paginationHtml = createPaginationHtml(current_page, last_page, total, from, to, per_page);
-        
-        workersAttendanceView.innerHTML = `
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Worker Attendance Records</h5>
-                    <small class="text-muted">Showing ${from}-${to} of ${total} records</small>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        ${recordsHtml}
-                    </div>
-                </div>
-                ${paginationHtml}
-            </div>
-        `;
-    }
     
     // Create pagination HTML
     function createPaginationHtml(currentPage, lastPage, total, from, to, perPage) {
-        if (lastPage <= 1) return '';
+        // Calculate last page if not provided or invalid
+        if (!lastPage || lastPage < 1) {
+            lastPage = Math.ceil(total / perPage) || 1;
+        }
         
         let paginationItems = '';
         
