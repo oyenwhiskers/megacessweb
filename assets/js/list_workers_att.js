@@ -299,74 +299,58 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
     
     // Display worker name, image, and leave records when Leave button is clicked
     window.showWorkerNameAsImage = async function(staffId) {
-        // Function to show add leave modal overlay for workers with unique ID
-        function showWorkerAddLeaveModal() {
-            let addLeaveModal = document.getElementById('addWorkerLeaveModal');
-            if (!addLeaveModal) {
-                addLeaveModal = document.createElement('div');
-                addLeaveModal.id = 'addWorkerLeaveModal';
-                addLeaveModal.style.position = 'fixed';
-                addLeaveModal.style.top = '0';
-                addLeaveModal.style.left = '0';
-                addLeaveModal.style.width = '100vw';
-                addLeaveModal.style.height = '100vh';
-                addLeaveModal.style.background = 'rgba(0,0,0,0.7)';
-                addLeaveModal.style.display = 'none';
-                addLeaveModal.style.alignItems = 'center';
-                addLeaveModal.style.justifyContent = 'center';
-                addLeaveModal.style.zIndex = '10002';
-                document.body.appendChild(addLeaveModal);
-            }
-            const staffData = getCurrentStaffData(staffId);
-            const workerName = staffData && staffData.staff_name ? staffData.staff_name : 'Worker';
-            addLeaveModal.innerHTML = `
-                <div style="background:#fff;padding:0;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.3);max-width:600px;width:90%;">
-                    <div style="background:#198754;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0" style="color:#fff;"><i class="bi bi-plus-circle me-2"></i>Add New Leave - ${workerName}</h5>
-                            <button type="button" class="btn-close btn-close-white" id="closeAddWorkerLeaveModal"></button>
+                // Add Leave modal state
+                let addLeaveFormVisible = false;
+                function renderAddLeaveForm() {
+                    // Remove any existing modal
+                    let oldModal = document.getElementById('addLeaveModal');
+                    if (oldModal) oldModal.remove();
+                    // Show form modal (matches screenshot)
+                    document.body.insertAdjacentHTML('beforeend', `
+                        <div id='addLeaveModal' style='position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10001;'>
+                            <div style='background:#fff;padding:32px 40px;border-radius:16px;max-width:420px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:left;position:relative;'>
+                                <button type="button" class="btn-close" style="position:absolute;top:18px;right:18px;z-index:2;" onclick="document.getElementById('addLeaveModal').remove();"></button>
+                                <div style='font-size:1.5rem;font-weight:700;margin-bottom:8px;'>Add Leave</div>
+                                <hr style='margin:0 0 24px 0;'>
+                                <form id='addLeaveForm'>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>Type of Leave</label>
+                                        <select class='form-select' name='leaveType' required>
+                                            <option value=''>Select type</option>
+                                            <option value='annual_leave'>Annual leave</option>
+                                            <option value='sick_leave'>Sick leave</option>
+                                            <option value='unpaid_leave'>Unpaid leave</option>
+                                        </select>
+                                    </div>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>From Date</label>
+                                        <input type='date' class='form-control' id='fromDate' name='fromDate' required>
+                                    </div>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>To Date</label>
+                                        <input type='date' class='form-control' id='toDate' name='toDate' required>
+                                    </div>
+                                    <div class='mb-3'>
+                                        <label class='form-label'>Notes</label>
+                                        <textarea class='form-control' id='notes' name='notes' rows='2' placeholder=''></textarea>
+                                    </div>
+                                    <div class='d-flex justify-content-end gap-2'>
+                                        <button type='button' class='btn btn-secondary' id='closeAddLeaveModal'>Cancel</button>
+                                        <button type='submit' class='btn btn-success'>Submit</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                    <div style="padding:24px;">
-                        <form id="addWorkerLeaveForm">
-                            <div class="mb-3"><label class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
-                                <select id="workerLeaveType" name="leaveType" class="form-select" required>
-                                    <option value="annual_leave">Annual Leave</option>
-                                    <option value="sick_leave">Sick Leave</option>
-                                    <option value="unpaid_leave">Unpaid Leave</option>
-                                </select>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3"><label class="form-label fw-semibold">From Date <span class="text-danger">*</span></label>
-                                    <input type="date" id="workerFromDate" class="form-control" required>
-                                </div>
-                                <div class="col-md-6 mb-3"><label class="form-label fw-semibold">To Date <span class="text-danger">*</span></label>
-                                    <input type="date" id="workerToDate" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="mb-3"><label class="form-label fw-semibold">Notes (Optional)</label>
-                                <textarea id="workerNotes" class="form-control" rows="3"></textarea>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-success flex-grow-1"><i class="bi bi-check-circle me-1"></i>Submit Leave</button>
-                                <button type="button" class="btn btn-outline-secondary" id="cancelAddWorkerLeaveBtn">Cancel</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            `;
-            addLeaveModal.style.display = 'flex';
-            setTimeout(() => {
-                const closeBtn = addLeaveModal.querySelector('#closeAddWorkerLeaveModal');
-                const cancelBtn = addLeaveModal.querySelector('#cancelAddWorkerLeaveBtn');
-                const form = addLeaveModal.querySelector('#addWorkerLeaveForm');
-                if (closeBtn) closeBtn.onclick = function() { addLeaveModal.style.display = 'none'; };
-                if (cancelBtn) cancelBtn.onclick = function() { addLeaveModal.style.display = 'none'; };
-                if (form) form.onsubmit = submitWorkerLeaveForm;
-            }, 0);
-        }
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('closeAddLeaveModal').onclick = function() {
+                            document.getElementById('addLeaveModal').remove();
+                        };
+                        document.getElementById('addLeaveForm').onsubmit = submitLeaveForm;
+                    }, 0);
+                }
 
-        async function submitWorkerLeaveForm(e) {
+                        async function submitLeaveForm(e) {
                                         // Helper to format date to YYYY-MM-DD
                                         function formatDateToYMD(dateStr) {
                                             if (!dateStr) return '';
