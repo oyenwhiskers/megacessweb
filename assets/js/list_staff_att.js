@@ -461,6 +461,95 @@
 
     // Show Staff Leave Modal function
     window.showStaffLeaveModal = function(userId) {
+            // Add Leave button handler and modal
+            // Attach Add Leave button event directly after modal is rendered
+            document.addEventListener('click', function(e) {
+              const addBtn = e.target.closest('#addLeaveBtn');
+              if (addBtn) {
+                // Remove any existing modal
+                let oldModal = document.getElementById('addLeaveModal');
+                if (oldModal) oldModal.remove();
+                // Show form modal
+                document.body.insertAdjacentHTML('beforeend', `
+                  <div id='addLeaveModal' style='position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10001;'>
+                    <div style='background:#fff;padding:32px 40px;border-radius:14px;max-width:420px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:left;position:relative;'>
+                      <div style='font-size:1.3rem;font-weight:700;margin-bottom:8px;'>Add Leave</div>
+                      <hr style='margin:0 0 18px 0;'>
+                      <form id='addLeaveForm'>
+                        <div class='mb-3'>
+                          <label class='form-label'>Type of Leave</label>
+                          <select class='form-select' name='status' required>
+                            <option value=''>Select type</option>
+                            <option value='annual_leave'>Annual Leave</option>
+                            <option value='sick_leave'>Sick Leave</option>
+                            <option value='unpaid_leave'>Unpaid Leave</option>
+                          </select>
+                        </div>
+                        <div class='mb-3'>
+                          <label class='form-label'>From Date</label>
+                          <input type='date' class='form-control' name='from_date' required>
+                        </div>
+                        <div class='mb-3'>
+                          <label class='form-label'>To Date</label>
+                          <input type='date' class='form-control' name='to_date' required>
+                        </div>
+                        <div class='mb-3'>
+                          <label class='form-label'>Notes</label>
+                          <textarea class='form-control' name='notes' rows='2'></textarea>
+                        </div>
+                        <div class='d-flex justify-content-end gap-2'>
+                          <button type='button' class='btn btn-secondary' id='closeAddLeaveModal'>Cancel</button>
+                          <button type='submit' class='btn btn-success'>Submit</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                `);
+                setTimeout(() => {
+                  document.getElementById('closeAddLeaveModal').onclick = function() {
+                    document.getElementById('addLeaveModal').remove();
+                  };
+                  document.getElementById('addLeaveForm').onsubmit = async function(e) {
+                    e.preventDefault();
+                    const form = e.target;
+                    const status = form.status.value;
+                    const from_date = form.from_date.value;
+                    const to_date = form.to_date.value;
+                    const notes = form.notes.value;
+                    const token = getAuthToken();
+                    if (!token) return;
+                    const payload = {
+                      user_id: userId,
+                      from_date,
+                      to_date,
+                      status,
+                      notes
+                    };
+                    try {
+                      const resp = await fetch(`${API_BASE_URL}/user-attendance/mark-leave`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                          'Content-Type': 'application/json',
+                          'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                      });
+                      const result = await resp.json();
+                      if (result.success) {
+                        document.getElementById('addLeaveModal').remove();
+                        fetchAndRenderLeaves();
+                        alert(result.message || 'Leave added successfully');
+                      } else {
+                        alert(result.message || 'Failed to add leave');
+                      }
+                    } catch (err) {
+                      alert('Error adding leave: ' + err.message);
+                    }
+                  };
+                }, 0);
+              }
+            });
       // Find the record data for this staff member
       const staffData = getCurrentStaffData(userId);
       let staffName = staffData && staffData.user_name ? staffData.user_name : 'Staff Member';
@@ -499,10 +588,13 @@
             <div class="d-flex align-items-center mb-3">
               <img src="${staffImg}" alt="${staffName}" class="rounded-circle me-3" style="width:80px;height:80px;object-fit:cover;"
                 onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true';">
-              <div>
-                <h4 class="fw-bold mb-1">${staffName}</h4>
-                <div class="text-muted">Leave Records</div>
+              <div class="d-flex align-items-center">
+                <h4 class="fw-bold mb-1 me-3">${staffName}</h4>
+                <button type="button" class="btn btn-success btn-sm" id="addLeaveBtn" style="margin-left:4px;">
+                  <i class="bi bi-plus-lg me-1"></i> Add Leave
+                </button>
               </div>
+             
             </div>
             <div id="staffLeaveFilterContainer" class="mb-3"></div>
             <div id="staffLeaveModalBody">
