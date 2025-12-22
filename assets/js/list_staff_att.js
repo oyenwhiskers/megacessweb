@@ -483,32 +483,181 @@
       } else {
         staffImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
       }
-      // Create modal HTML
-      const modalHtml = `
-        <div id="staffLeaveModal" class="modal" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Staff Leave Info</h5>
-                <button type="button" class="btn-close" onclick="document.getElementById('staffLeaveModal').remove();"></button>
-              </div>
-              <div class="modal-body text-center">
-                <img src="${staffImg}" alt="${staffName}" class="rounded-circle mb-3" style="width:80px;height:80px;object-fit:cover;"
-                  onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true';">
-                <h6 class="fw-semibold mb-2">${staffName}</h6>
-                <p class="text-muted">This staff member is on leave.</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="document.getElementById('staffLeaveModal').remove();">Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
       // Remove any existing modal first
       const oldModal = document.getElementById('staffLeaveModal');
       if (oldModal) oldModal.remove();
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      // Filter state
+      let filterYear, filterMonth, filterType = '';
+      const now = new Date();
+      filterYear = now.getFullYear();
+      filterMonth = String(now.getMonth()+1).padStart(2,'0');
+      // Modal shell with filter UI
+      document.body.insertAdjacentHTML('beforeend', `
+        <div id="staffLeaveModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+          <div style="background:#fff;padding:24px 32px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.15);position:relative;max-width:900px;width:100%;">
+            <button type="button" class="btn-close" style="position:absolute;top:18px;right:18px;z-index:2;" onclick="document.getElementById('staffLeaveModal').remove();"></button>
+            <div class="d-flex align-items-center mb-3">
+              <img src="${staffImg}" alt="${staffName}" class="rounded-circle me-3" style="width:80px;height:80px;object-fit:cover;"
+                onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true';">
+              <div>
+                <h4 class="fw-bold mb-1">${staffName}</h4>
+                <div class="text-muted">Leave Records</div>
+              </div>
+            </div>
+            <div id="staffLeaveFilterContainer" class="mb-3"></div>
+            <div id="staffLeaveModalBody">
+              <div class="py-3 text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>
+            </div>
+            <button type="button" class="btn btn-secondary mt-3" onclick="document.getElementById('staffLeaveModal').remove();">Close</button>
+          </div>
+        </div>
+      `);
+
+      // Fetch and render leave records with filter
+      async function fetchAndRenderLeaves() {
+        const token = getAuthToken();
+        if (!token) return;
+        const page = 1;
+        const perPage = 10;
+        const url = new URL(`${API_BASE_URL}/user-attendance/${userId}/leaves`);
+        url.searchParams.append('month', `${filterYear}-${filterMonth}`);
+        if (filterType) {
+          // Map display value to API value
+          let apiType = filterType;
+          if (apiType === 'Sick Leave') apiType = 'sick_leave';
+          else if (apiType === 'Annual Leave') apiType = 'annual_leave';
+          else if (apiType === 'Unpaid Leave') apiType = 'unpaid_leave';
+          url.searchParams.append('status', apiType);
+        }
+        url.searchParams.append('page', page);
+        url.searchParams.append('per_page', perPage);
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        };
+        const bodyDiv = document.getElementById('staffLeaveModalBody');
+        if (bodyDiv) bodyDiv.innerHTML = `<div class='py-3 text-center'><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></div>`;
+        try {
+          const resp = await fetch(url, { method: 'GET', headers });
+          const result = await resp.json();
+          if (result.success && result.data && Array.isArray(result.data.data)) {
+            const leaves = result.data.data;
+            // Get unique leave types for filter
+            const leaveTypes = Array.from(new Set(leaves.map(l => l.type_of_leave))).filter(Boolean);
+            // Render filter UI
+            const filterDiv = document.getElementById('staffLeaveFilterContainer');
+            if (filterDiv) {
+              let yearOptions = '';
+              for (let y = now.getFullYear() - 5; y <= now.getFullYear() + 1; y++) {
+                  yearOptions += `<option value='${y}' ${y==filterYear?'selected':''}>${y}</option>`;
+              }
+              const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+              let monthOptions = '';
+              for (let m = 1; m <= 12; m++) {
+                  monthOptions += `<option value='${m}' ${String(m).padStart(2,'0')==filterMonth?'selected':''}>${months[m-1]}</option>`;
+              }
+              let typeOptions = `<option value=''>All Types</option>`;
+              const allowedTypes = ['Annual Leave','Sick Leave','Unpaid Leave'];
+              for (const t of allowedTypes) {
+                  typeOptions += `<option value='${t}'>${t}</option>`;
+              }
+              filterDiv.innerHTML = `
+                  <div class='d-flex gap-2 align-items-center'>
+                    <select id='staffLeaveFilterYear' class='form-select form-select-sm' style='max-width:100px;'>${yearOptions}</select>
+                    <select id='staffLeaveFilterMonth' class='form-select form-select-sm' style='max-width:120px;'>${monthOptions}</select>
+                    <select id='staffLeaveFilterType' class='form-select form-select-sm' style='max-width:140px;'>${typeOptions}</select>
+                  </div>
+                `;
+                setTimeout(() => {
+                  document.getElementById('staffLeaveFilterYear').onchange = e => { filterYear = e.target.value; fetchAndRenderLeaves(); };
+                  document.getElementById('staffLeaveFilterMonth').onchange = e => { filterMonth = String(e.target.value).padStart(2,'0'); fetchAndRenderLeaves(); };
+                  document.getElementById('staffLeaveFilterType').onchange = e => { filterType = e.target.value; fetchAndRenderLeaves(); };
+                }, 0);
+            }
+            // Render leave list (same as before)
+            if (leaves.length === 0) {
+              bodyDiv.innerHTML = `<p class='text-muted mt-3'>No leave records found for this staff.</p>`;
+              return;
+            }
+            let leaveHtml = `<div style='max-height:340px;overflow-y:auto;'>`;
+            for (const leave of leaves) {
+              let color = '#0d6efd';
+              let icon = '';
+              let label = leave.type_of_leave || 'Leave';
+              if (label.toLowerCase().includes('annual')) { color = '#0dcaf0'; icon = '<i class="bi bi-calendar-heart me-1"></i>'; }
+              else if (label.toLowerCase().includes('sick')) { color = '#6c757d'; icon = '<i class="bi bi-emoji-frown me-1"></i>'; }
+              else if (label.toLowerCase().includes('unpaid')) { color = '#212529'; icon = '<i class="bi bi-cash me-1"></i>'; }
+              else if (label.toLowerCase().includes('late')) { color = '#ffc107'; icon = '<i class="bi bi-clock-history me-1"></i>'; }
+              else if (label.toLowerCase().includes('absent')) { color = '#dc3545'; icon = '<i class="bi bi-x-circle me-1"></i>'; }
+
+              leaveHtml += `
+                <div class='d-flex align-items-center mb-2' style='background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border-left:8px solid ${color};min-height:54px;'>
+                  <div class='px-3 py-2 flex-grow-1 d-flex align-items-center'>
+                    <div class='fw-bold' style='font-size:1.1rem;min-width:110px;'>${leave.date || leave.start_date || '-'}</div>
+                    <div class='ms-3 text-muted small'>${leave.remarks || ''}</div>
+                  </div>
+                  <div class='px-3'>
+                    <span style='cursor:pointer;display:inline-flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:600;min-width:130px;height:36px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;' onclick='window.showStaffLeaveDetailsModal(${JSON.stringify(leave).replace(/'/g,"&#39;")})'>${icon}${label}</span>
+                  </div>
+                </div>
+              `;
+            }
+            leaveHtml += `</div>`;
+            bodyDiv.innerHTML = leaveHtml;
+          } else {
+            bodyDiv.innerHTML = `<p class='text-danger mt-3'>Failed to load leave records.</p>`;
+          }
+        } catch {
+          if (bodyDiv) bodyDiv.innerHTML = `<p class='text-danger mt-3'>Error loading leave records.</p>`;
+        }
+      }
+      fetchAndRenderLeaves();
+
+      // Details modal function
+      window.showStaffLeaveDetailsModal = function(leave) {
+        // Remove any existing details modal
+        let detailsModal = document.getElementById('staffLeaveDetailsModal');
+        if (detailsModal) detailsModal.remove();
+        // Render details
+        document.body.insertAdjacentHTML('beforeend', `
+          <div id='staffLeaveDetailsModal' style='position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;'>
+            <div style='background:#e5e5e5;padding:32px 40px;border-radius:14px;max-width:540px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.15);text-align:left;position:relative;'>
+              <div style='font-size:1.4rem;font-weight:700;margin-bottom:8px;'>Leave Details</div>
+              <hr style='margin:0 0 18px 0;'>
+              <div style='margin-bottom:18px;'>
+                <div style='color:#666;font-size:1.05rem;margin-bottom:6px;'>Type of leave:</div>
+                <span style='display:inline-flex;align-items:center;justify-content:center;background:#0d6efd;color:#fff;font-weight:600;min-width:150px;height:38px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-size:1.08rem;vertical-align:middle;letter-spacing:0.01em;white-space:nowrap;padding:0 18px;'>${leave.type_of_leave}</span>
+              </div>
+              <div class='row' style='display:flex;flex-wrap:wrap;margin-bottom:12px;'>
+                <div style='flex:1 1 180px;margin-bottom:10px;'>
+                  <div style='color:#666;font-size:1.01rem;'>Created by:</div>
+                  <div style='font-size:1.08rem;'>${leave.created_by || '-'}</div>
+                </div>
+                <div style='flex:1 1 180px;margin-bottom:10px;'>
+                  <div style='color:#666;font-size:1.01rem;'>Created at:</div>
+                  <div style='font-size:1.08rem;'>${leave.created_at ? leave.created_at.split('T')[0] : leave.date || leave.start_date || '-'}</div>
+                </div>
+                <div style='flex:1 1 180px;margin-bottom:10px;'>
+                  <div style='color:#666;font-size:1.01rem;'>Start Date:</div>
+                  <div style='font-size:1.08rem;'>${leave.start_date || leave.date || '-'}</div>
+                </div>
+                <div style='flex:1 1 180px;margin-bottom:10px;'>
+                  <div style='color:#666;font-size:1.01rem;'>End Date:</div>
+                  <div style='font-size:1.08rem;'>${leave.end_date || '-'}</div>
+                </div>
+              </div>
+              <div style='color:#666;font-size:1.01rem;'>Remarks:</div>
+              <div style='font-size:1.08rem;'>${leave.remarks || '-'}</div>
+              <button id='closeStaffLeaveDetailsModal' class='btn btn-secondary mt-3' style='min-width:100px;margin-top:24px;'>Close</button>
+            </div>
+          </div>
+        `);
+        setTimeout(() => {
+          const closeBtn = document.getElementById('closeStaffLeaveDetailsModal');
+          if (closeBtn) closeBtn.onclick = function() { document.getElementById('staffLeaveDetailsModal').remove(); };
+        }, 0);
+      };
     };
 
     // Add delegated event listener for View button
