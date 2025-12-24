@@ -61,21 +61,11 @@
           console.warn('Login succeeded but no token found in response', data);
         }
 
-        // Store username/fullname for greeting
-        let username = '';
-        if (data && data.user_fullname) {
-          username = data.user_fullname;
-        } else if (data && data.data && data.data.user_fullname) {
-          username = data.data.user_fullname;
-        } else if (data && data.username) {
-          username = data.username;
-        } else if (data && data.data && data.data.username) {
-          username = data.data.username;
-        }
-        if (username) {
+        // Store user_nickname (login input) for sidebar display
+        if (user && user.value) {
           try {
-            localStorage.setItem('user_fullname', username);
-            sessionStorage.setItem('user_fullname', username);
+            localStorage.setItem('user_nickname', user.value.trim());
+            sessionStorage.setItem('user_nickname', user.value.trim());
           } catch(e) {}
         }
 

@@ -1,8 +1,21 @@
 <div class="user-badge mb-3">
   <div class="avatar"><i class="bi bi-person-fill fs-5"></i></div>
   <div>
-    <div class="brand">User1</div>
+    <div class="brand" id="sidebarUsername"></div>
   </div>
+</div>
+<script>
+// Sidebar username display logic
+function updateSidebarUsername() {
+  var el = document.getElementById('sidebarUsername');
+  if (!el) return;
+  var name = localStorage.getItem('user_nickname') || sessionStorage.getItem('user_nickname');
+  el.textContent = (name && name.trim().length > 0) ? name : '';
+}
+// Run on DOMContentLoaded and expose for reloads
+document.addEventListener('DOMContentLoaded', updateSidebarUsername);
+window.loadSidebar = updateSidebarUsername;
+</script>
 </div>
 <nav class="nav flex-column gap-1">
   <a class="nav-link d-flex align-items-center" href="/megacessweb/index.html" data-page="dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>

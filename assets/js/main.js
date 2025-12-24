@@ -81,6 +81,17 @@
         root.innerHTML = html;
         initActiveNav();
         initSidebarToggle();
+        // Run sidebar username update if present
+        if (typeof window.updateSidebarUsername === 'function') {
+          window.updateSidebarUsername();
+        } else {
+          // Try to run if defined in sidebar
+          var el = document.getElementById('sidebarUsername');
+          if (el) {
+            var name = localStorage.getItem('user_nickname') || sessionStorage.getItem('user_nickname');
+            el.textContent = (name && name.trim().length > 0) ? name : '';
+          }
+        }
           // Hide Log in link if user is logged in
           var isLoggedIn = false;
           var keys = ['accessToken', 'token', 'authToken', 'mwmsToken', 'megacess_token'];
