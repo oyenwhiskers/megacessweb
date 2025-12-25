@@ -274,6 +274,10 @@ label.field-label{display:block; font-size:13px; color:rgba(0,0,0,0.85); margin-
   color: rgba(0,0,0,0.85);
 }
 
+.muted-link:hover {
+  color: #20946f;
+}
+
 /* submit error spacing that was inline */
 #submitError { margin-top: 8px; }
 
