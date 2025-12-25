@@ -5,6 +5,35 @@
   function qs(sel){ return document.querySelector(sel); }
   function show(el, txt){ if(!el) return; el.style.display='block'; if(txt!==undefined) el.textContent = txt; }
   function hide(el){ if(!el) return; el.style.display='none'; }
+  // Remember password helpers
+  function savePasswordIfRemembered(user, password, remember) {
+    try {
+      if (remember && user && password) {
+        localStorage.setItem('rememberedUser', user);
+        localStorage.setItem('rememberedPassword', password);
+      } else {
+        localStorage.removeItem('rememberedUser');
+        localStorage.removeItem('rememberedPassword');
+      }
+    } catch(e) {}
+  }
+
+  function prefillRememberedCredentials() {
+    try {
+      var user = localStorage.getItem('rememberedUser');
+      var password = localStorage.getItem('rememberedPassword');
+      if (user) {
+        var userInput = qs('#email');
+        if (userInput) userInput.value = user;
+      }
+      if (password) {
+        var pwdInput = qs('#password');
+        if (pwdInput) pwdInput.value = password;
+        var rememberBox = qs('#remember');
+        if (rememberBox) rememberBox.checked = true;
+      }
+    } catch(e) {}
+  }
 
   function togglePassword(e){
     var btn = e.currentTarget;
@@ -29,6 +58,9 @@
     if(!user || !user.value || user.value.trim().length < 2){ show(emailError); ok = false; }
     if(!password || !password.value || password.value.trim().length < 1){ show(passwordError); ok = false; }
     if(!ok) return;
+
+      // Save password if 'Remember' is checked
+      savePasswordIfRemembered(user.value.trim(), password.value, remember && remember.checked);
 
     if(btn){ btn.disabled = true; var origText = btn.textContent; btn.textContent = 'Logging in...'; }
 
@@ -93,6 +125,8 @@
   document.addEventListener('DOMContentLoaded', function(){
     var form = qs('#loginForm');
     if(!form) return;
+      // Pre-fill remembered credentials
+      prefillRememberedCredentials();
     // wire up submit
     form.addEventListener('submit', submitLogin, {passive:false});
 
