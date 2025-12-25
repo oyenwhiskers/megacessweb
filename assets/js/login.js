@@ -134,6 +134,15 @@
     var eyeBtn = qs('.show-pass');
     if(eyeBtn) eyeBtn.addEventListener('click', togglePassword);
 
+    // wire up forgot password link
+    var forgot = qs('#forgotPasswordLink');
+    if (forgot) {
+      forgot.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Please contact your Admin to Change Password');
+      });
+    }
+
     // expose simple helper for manual submit (optional)
     form.login = submitLogin;
   });
