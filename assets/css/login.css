@@ -1,3 +1,12 @@
+/* Company title above welcome */
+.company-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.10);
+}
 .login-green-title {
   color: #086d4d;
   font-size: 1.35rem;
