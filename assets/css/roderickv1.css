@@ -495,7 +495,7 @@
   
   /* Topbar */
   .topbar {
-    padding: 0.75rem 1rem !important;
+    margin-left: 260px;
   }
 
   .topbar .page-title {

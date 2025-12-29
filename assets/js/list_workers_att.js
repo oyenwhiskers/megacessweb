@@ -126,7 +126,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         
         workersAttendanceView.innerHTML = `
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-success" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="mt-2">Loading worker attendance...</p>
@@ -168,11 +168,6 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                     <div class="text-center py-4">
                         <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
                         <p class="mt-3 text-muted">${finalMessage}</p>
-                        ${currentSearch ? `
-                            <button class="btn btn-outline-primary" onclick="window.fetchWorkerAttendanceList('', 1, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
-                                <i class="bi bi-x-circle me-1"></i>Clear Search
-                            </button>
-                        ` : ''}
                     </div>
                 </div>
             </div>
