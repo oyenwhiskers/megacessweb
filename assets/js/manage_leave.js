@@ -376,7 +376,9 @@
             modal.show();
         }
         
-        // Handle add leave form submission
+        // --------------------------------------------------------------
+        // ADD LEAVE FORM SUBMISSION LOGIC
+        // --------------------------------------------------------------
         async function handleAddLeave(e) {
             e.preventDefault();
             
