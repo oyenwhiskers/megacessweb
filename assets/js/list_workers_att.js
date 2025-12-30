@@ -524,13 +524,42 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         }
     }
     
-    // Global functions for attendance actions
+    // View attendance details - Navigate to dedicated page
     window.viewAttendanceDetails = function(staffId) {
-        // Call the global function defined in manage-attendance.html to show details modal
-        if (typeof window.viewAttendanceDetails === 'function' && window.viewAttendanceDetails !== arguments.callee) {
-            window.viewAttendanceDetails(staffId);
+        console.log('View attendance details for staff ID:', staffId);
+        
+        // Find the record data for this staff member
+        const staffData = getCurrentStaffData(staffId);
+        
+        if (staffData) {
+            // Clean up the image URL
+            let cleanImageUrl = '';
+            if (staffData.staff_img && typeof staffData.staff_img === 'string') {
+                cleanImageUrl = staffData.staff_img.replace(/:\d+$/, '').trim();
+                if (cleanImageUrl.length < 5 || cleanImageUrl.includes('null') || cleanImageUrl.includes('undefined')) {
+                    cleanImageUrl = '';
+                }
+            }
+            
+            // Navigate to attendance details page with user data
+            const params = new URLSearchParams({
+                userId: staffId,
+                userName: staffData.staff_name || 'Worker',
+                userRole: staffData.staff_role || 'Worker',
+                userImage: cleanImageUrl,
+                userType: 'worker'
+            });
+            window.location.href = `/megacessweb/pages/view-attendance-details.html?${params.toString()}`;
         } else {
-            alert('Attendance details feature will be implemented');
+            // Fallback if data not found
+            const params = new URLSearchParams({
+                userId: staffId,
+                userName: 'Worker',
+                userRole: 'Worker',
+                userImage: '',
+                userType: 'worker'
+            });
+            window.location.href = `/megacessweb/pages/view-attendance-details.html?${params.toString()}`;
         }
     };
     
