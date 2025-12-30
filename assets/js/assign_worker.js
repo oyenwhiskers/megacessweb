@@ -164,32 +164,80 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderMandorPagination() {
         const container = document.getElementById('mandorList');
+        
+        // Don't show pagination if only 1 page
+        if (mandorTotalPages <= 1) return;
+        
         const paginationDiv = document.createElement('div');
-        paginationDiv.className = 'd-flex justify-content-center my-3';
-        let html = '';
-        html += `<nav><ul class="pagination">`;
-        html += `<li class="page-item${mandorCurrentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="prev">Previous</a></li>`;
-        for (let i = 1; i <= mandorTotalPages; i++) {
-            html += `<li class="page-item${mandorCurrentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-        }
-        html += `<li class="page-item${mandorCurrentPage === mandorTotalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="next">Next</a></li>`;
-        html += `</ul></nav>`;
-        paginationDiv.innerHTML = html;
-        container.appendChild(paginationDiv);
-        paginationDiv.querySelectorAll('.page-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.getAttribute('data-page');
-                if (page === 'prev' && mandorCurrentPage > 1) {
-                    mandorCurrentPage--;
-                } else if (page === 'next' && mandorCurrentPage < mandorTotalPages) {
-                    mandorCurrentPage++;
-                } else if (!isNaN(parseInt(page))) {
-                    mandorCurrentPage = parseInt(page);
-                }
+        paginationDiv.className = 'mt-3 text-center';
+        
+        // Previous button with chevron icon
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn btn-sm btn-outline-success mx-1';
+        prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+        prevBtn.disabled = mandorCurrentPage === 1;
+        prevBtn.addEventListener('click', () => {
+            if (mandorCurrentPage > 1) {
+                mandorCurrentPage--;
                 renderMandorPage();
-            });
+            }
         });
+        paginationDiv.appendChild(prevBtn);
+        
+        // Smart page buttons with ellipsis (max 7 buttons)
+        let pages = [];
+        if (mandorTotalPages <= 7) {
+            // Show all pages if 7 or fewer
+            pages = Array.from({ length: mandorTotalPages }, (_, i) => i + 1);
+        } else {
+            // Smart ellipsis logic
+            if (mandorCurrentPage <= 4) {
+                // Near start: [1] [2] [3] [4] [5] [...] [last]
+                pages = [1, 2, 3, 4, 5, '...', mandorTotalPages];
+            } else if (mandorCurrentPage >= mandorTotalPages - 3) {
+                // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+                pages = [1, '...', mandorTotalPages - 4, mandorTotalPages - 3, mandorTotalPages - 2, mandorTotalPages - 1, mandorTotalPages];
+            } else {
+                // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+                pages = [1, '...', mandorCurrentPage - 1, mandorCurrentPage, mandorCurrentPage + 1, '...', mandorTotalPages];
+            }
+        }
+        
+        // Render page buttons
+        pages.forEach((page) => {
+            if (page === '...') {
+                // Ellipsis (non-clickable)
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'btn btn-sm btn-outline-success mx-1 disabled';
+                ellipsis.textContent = '...';
+                paginationDiv.appendChild(ellipsis);
+            } else {
+                // Page button
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn btn-sm mx-1 ${page === mandorCurrentPage ? 'btn-success' : 'btn-outline-success'}`;
+                pageBtn.textContent = page;
+                pageBtn.addEventListener('click', () => {
+                    mandorCurrentPage = page;
+                    renderMandorPage();
+                });
+                paginationDiv.appendChild(pageBtn);
+            }
+        });
+        
+        // Next button with chevron icon
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-sm btn-outline-success mx-1';
+        nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+        nextBtn.disabled = mandorCurrentPage === mandorTotalPages;
+        nextBtn.addEventListener('click', () => {
+            if (mandorCurrentPage < mandorTotalPages) {
+                mandorCurrentPage++;
+                renderMandorPage();
+            }
+        });
+        paginationDiv.appendChild(nextBtn);
+        
+        container.appendChild(paginationDiv);
     }
 
     // Fetch workers by mandor (placeholder function)
@@ -404,32 +452,80 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderWorkerPagination() {
         const container = document.getElementById('workerList');
+        
+        // Don't show pagination if only 1 page
+        if (workerTotalPages <= 1) return;
+        
         const paginationDiv = document.createElement('div');
-        paginationDiv.className = 'd-flex justify-content-center my-3';
-        let html = '';
-        html += `<nav><ul class="pagination">`;
-        html += `<li class="page-item${workerCurrentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="prev">Previous</a></li>`;
-        for (let i = 1; i <= workerTotalPages; i++) {
-            html += `<li class="page-item${workerCurrentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-        }
-        html += `<li class="page-item${workerCurrentPage === workerTotalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="next">Next</a></li>`;
-        html += `</ul></nav>`;
-        paginationDiv.innerHTML = html;
-        container.appendChild(paginationDiv);
-        paginationDiv.querySelectorAll('.page-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.getAttribute('data-page');
-                if (page === 'prev' && workerCurrentPage > 1) {
-                    workerCurrentPage--;
-                } else if (page === 'next' && workerCurrentPage < workerTotalPages) {
-                    workerCurrentPage++;
-                } else if (!isNaN(parseInt(page))) {
-                    workerCurrentPage = parseInt(page);
-                }
+        paginationDiv.className = 'mt-3 text-center';
+        
+        // Previous button with chevron icon
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn btn-sm btn-outline-success mx-1';
+        prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+        prevBtn.disabled = workerCurrentPage === 1;
+        prevBtn.addEventListener('click', () => {
+            if (workerCurrentPage > 1) {
+                workerCurrentPage--;
                 renderWorkerPage();
-            });
+            }
         });
+        paginationDiv.appendChild(prevBtn);
+        
+        // Smart page buttons with ellipsis (max 7 buttons)
+        let pages = [];
+        if (workerTotalPages <= 7) {
+            // Show all pages if 7 or fewer
+            pages = Array.from({ length: workerTotalPages }, (_, i) => i + 1);
+        } else {
+            // Smart ellipsis logic
+            if (workerCurrentPage <= 4) {
+                // Near start: [1] [2] [3] [4] [5] [...] [last]
+                pages = [1, 2, 3, 4, 5, '...', workerTotalPages];
+            } else if (workerCurrentPage >= workerTotalPages - 3) {
+                // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+                pages = [1, '...', workerTotalPages - 4, workerTotalPages - 3, workerTotalPages - 2, workerTotalPages - 1, workerTotalPages];
+            } else {
+                // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+                pages = [1, '...', workerCurrentPage - 1, workerCurrentPage, workerCurrentPage + 1, '...', workerTotalPages];
+            }
+        }
+        
+        // Render page buttons
+        pages.forEach((page) => {
+            if (page === '...') {
+                // Ellipsis (non-clickable)
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'btn btn-sm btn-outline-success mx-1 disabled';
+                ellipsis.textContent = '...';
+                paginationDiv.appendChild(ellipsis);
+            } else {
+                // Page button
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn btn-sm mx-1 ${page === workerCurrentPage ? 'btn-success' : 'btn-outline-success'}`;
+                pageBtn.textContent = page;
+                pageBtn.addEventListener('click', () => {
+                    workerCurrentPage = page;
+                    renderWorkerPage();
+                });
+                paginationDiv.appendChild(pageBtn);
+            }
+        });
+        
+        // Next button with chevron icon
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-sm btn-outline-success mx-1';
+        nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+        nextBtn.disabled = workerCurrentPage === workerTotalPages;
+        nextBtn.addEventListener('click', () => {
+            if (workerCurrentPage < workerTotalPages) {
+                workerCurrentPage++;
+                renderWorkerPage();
+            }
+        });
+        paginationDiv.appendChild(nextBtn);
+        
+        container.appendChild(paginationDiv);
     }
 
     // Display unassigned workers in modal
