@@ -5,7 +5,7 @@ function getToken() {
   const keys = ['authToken', 'auth_token', 'token', 'access_token'];
   for (const k of keys) {
     const v = localStorage.getItem(k) || sessionStorage.getItem(k);
-    if (v) return v;
+    if (v) return v;  
   }
   console.warn(" No token found in storage");
   return null;
@@ -23,7 +23,7 @@ async function getPaymentRates() {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/assets/pages/log-in.html"
+        window.location.href = "/megacessweb/pages/log-in.html"
       }
     });
     return;
@@ -509,7 +509,7 @@ async function updatePaymentRate(id, bodyData) {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/assets/pages/log-in.html"
+        window.location.href = "/megacessweb/pages/log-in.html"
       }
     });
     return;

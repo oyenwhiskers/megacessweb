@@ -11,7 +11,7 @@ $(document).ready(function() {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/assets/pages/log-in.html"
+        window.location.href = "/megacessweb/pages/log-in.html"
       }
     });
     return;

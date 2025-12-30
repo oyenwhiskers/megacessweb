@@ -9,12 +9,24 @@ function getToken() {
     const token = localStorage.getItem(key) || sessionStorage.getItem(key);
     if (token) return token;
   }
-  console.error("No authentication token found.");
+  Swal.fire({
+    icon: "error",
+    title: "Authentication Required!",
+    text: "Please login first before proceeding.",
+    confirmButtonText: "Log in now."
+  }).then((result) => {
+    if (result.isConfirmed){
+      window.location.href = "/megacessweb/pages/log-in.html";
+    }
+  });
   return null;
-}
+} 
 
 function getHeaders() {
   const token = getToken();
+  if (!token) {
+    throw new Error("No authentication token available");
+  }
   return {
     "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json",
@@ -107,10 +119,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (error) {
       console.error("Error creating payment rate:", error);
-      Swal.fire({
-        icon: "error",
-        text: "An unexpected error occurred while creating the payment rate."
-      });
+      // Don't show error if it's just the auth token missing (already shown by getToken())
+      if (error.message !== "No authentication token available") {
+        Swal.fire({
+          icon: "error",
+          text: "An unexpected error occurred while creating the payment rate."
+        });
+      }
     }
   });
 

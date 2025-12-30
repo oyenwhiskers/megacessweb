@@ -9,7 +9,7 @@ $(document).ready(function() {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then(() => {
-      window.location.href = "/megacessweb/assets/pages/log-in.html";
+      window.location.href = "/megacessweb/pages/log-in.html";
     });
     return;
   }

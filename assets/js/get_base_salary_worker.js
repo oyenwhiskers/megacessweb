@@ -13,7 +13,7 @@ $(document).ready(function () {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/assets/pages/log-in.html"
+        window.location.href = "/megacessweb/pages/log-in.html"
       }
     });
     return;
@@ -121,7 +121,7 @@ $(document).ready(function () {
             icon: "error",
             text: "Failed to update base salary. Please try again.",
             showConfirmButton: true
-          }).
+          });
           $("#saveSalaryBtn").prop("disabled", false).text("Save Changes");
         }
       });
