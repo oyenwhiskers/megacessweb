@@ -361,7 +361,7 @@
         // Show loading state
         overtimeList.innerHTML = `
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-success" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="mt-2">Loading overtime records...</p>
@@ -378,9 +378,6 @@
                     <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
                     <p class="mt-3 text-danger">Failed to load overtime records.</p>
                     <p class="text-muted">${error.message}</p>
-                    <button class="btn btn-outline-primary btn-sm" onclick="retryLoadOvertimeData()">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Retry
-                    </button>
                 </div>
             `;
         }
@@ -445,7 +442,12 @@
         const record = currentRecords.find(r => r.id == recordId);
         
         if (!record) {
-            alert('Record not found. Please refresh the list and try again.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Record Not Found',
+                text: 'The record was not found. Please refresh the list and try again.',
+                confirmButtonColor: '#dc3545'
+            });
             return;
         }
 
@@ -466,25 +468,42 @@
 
     // Delete overtime record with API integration
     window.deleteOvertimeRecord = async function(recordId) {
-        // Show confirmation dialog
-        if (!confirm('Are you sure you want to delete this overtime record?\n\nThis action cannot be undone.')) {
+        // Show confirmation dialog with SweetAlert2
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: 'Do you want to delete this overtime record? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) {
             return;
         }
 
         try {
-            // Show loading state (you might want to add a loading indicator here)
+            // Show loading state
             const deleteButton = document.querySelector(`button[onclick="deleteOvertimeRecord(${recordId})"]`);
             if (deleteButton) {
                 const originalContent = deleteButton.innerHTML;
-                deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
                 deleteButton.disabled = true;
 
                 try {
                     // Call the API delete function
-                    const result = await window.deleteOvertimeRecordAPI(recordId);
+                    await window.deleteOvertimeRecordAPI(recordId);
 
                     // Show success message
-                    alert('Overtime record deleted successfully!');
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'Overtime record has been deleted successfully',
+                        confirmButtonColor: '#198754',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
 
                     // Refresh the overtime list to remove the deleted record
                     if (window.loadUserOvertimeData && window.currentOvertimeUserId && window.currentOvertimeUserType) {
@@ -497,8 +516,16 @@
                 }
             } else {
                 // If button not found, still call the API
-                const result = await window.deleteOvertimeRecordAPI(recordId);
-                alert('Overtime record deleted successfully!');
+                await window.deleteOvertimeRecordAPI(recordId);
+                
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted!',
+                    text: 'Overtime record has been deleted successfully',
+                    confirmButtonColor: '#198754',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
 
                 // Refresh the overtime list
                 if (window.loadUserOvertimeData && window.currentOvertimeUserId && window.currentOvertimeUserType) {
@@ -519,19 +546,234 @@
             } else if (error.message.includes('403')) {
                 errorMessage = 'You do not have permission to delete this overtime record.';
             } else if (error.message) {
-                errorMessage = `Error: ${error.message}`;
+                errorMessage = error.message;
             }
             
-            alert(errorMessage);
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMessage,
+                confirmButtonColor: '#dc3545'
+            });
         }
     };
+
+    // Show overtime modal with user information
+    function showOvertimeModal(userId, userName, userRole, userImage, userType) {
+        // Store current user context for filtering
+        window.currentOvertimeUserId = userId;
+        window.currentOvertimeUserType = userType;
+        
+        // Set user information
+        const userNameEl = document.getElementById('overtimeUserName');
+        const userRoleEl = document.getElementById('overtimeUserRole');
+        if (userNameEl) userNameEl.textContent = userName || 'Unknown User';
+        if (userRoleEl) userRoleEl.textContent = userRole || 'Unknown Role';
+        
+        // Set user avatar with comprehensive error handling
+        const avatar = document.getElementById('overtimeUserAvatar');
+        if (avatar) {
+            // Clean and validate the image URL
+            let cleanImageUrl = '';
+            if (userImage && typeof userImage === 'string' && userImage.trim() !== '') {
+                // Remove problematic suffixes like :1, :2, etc.
+                cleanImageUrl = userImage.replace(/:\d+$/, '').trim();
+                
+                // Additional cleaning for malformed URLs
+                cleanImageUrl = cleanImageUrl.replace(/\.jpg:.*$/, '.jpg');
+                cleanImageUrl = cleanImageUrl.replace(/\.png:.*$/, '.png');
+                cleanImageUrl = cleanImageUrl.replace(/\.jpeg:.*$/, '.jpeg');
+                cleanImageUrl = cleanImageUrl.replace(/\.gif:.*$/, '.gif');
+                
+                // Check if the cleaned URL is still valid
+                if (cleanImageUrl.length < 5 || 
+                    cleanImageUrl.includes('null') || 
+                    cleanImageUrl.includes('undefined') ||
+                    cleanImageUrl.includes('…') || // Sometimes URLs get truncated with ellipsis
+                    cleanImageUrl.endsWith(':')) {
+                    cleanImageUrl = '';
+                }
+            }
+            
+            if (cleanImageUrl && cleanImageUrl.trim() !== '') {
+                // Try to construct the full URL
+                let imageSrc = cleanImageUrl;
+                
+                // If it's not a full URL, construct the proper path
+                if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
+                    imageSrc = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
+                } else if (cleanImageUrl.startsWith('/')) {
+                    imageSrc = `https://mwms.megacess.com${cleanImageUrl}`;
+                }
+                
+                // Set the image with error fallback
+                avatar.src = imageSrc;
+                avatar.onerror = function() {
+                    // Fallback to placeholder if image fails to load
+                    const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
+                    this.src = placeholderImage;
+                    this.onerror = null; // Prevent infinite loop
+                };
+            } else {
+                // Generate placeholder avatar for invalid or missing images
+                const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
+                avatar.src = placeholderImage;
+                avatar.onerror = null; // Clear any previous error handler
+            }
+        }
+        
+        // Reset filter buttons
+        const allFilterBtn = document.getElementById('overtimeFilterAll');
+        const monthFilterBtn = document.getElementById('overtimeFilterMonth');
+        if (allFilterBtn) allFilterBtn.classList.add('active');
+        if (monthFilterBtn) monthFilterBtn.textContent = 'Month';
+        
+        // Load overtime data for this user using the real API
+        loadUserOvertimeData(userId, userType);
+        
+        // Show the modal
+        const modalEl = document.getElementById('manageOvertimeModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    }
+
+    // Save overtime record with UI feedback
+    async function saveOvertimeRecord(overtimeData) {
+        const saveButton = document.querySelector('#addOvertimeForm button[type="submit"]');
+        
+        try {
+            // Show loading state
+            if (saveButton) {
+                const originalContent = saveButton.innerHTML;
+                saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+                saveButton.disabled = true;
+            }
+
+            // Use the API function
+            const result = await createOvertimeRecord(overtimeData);
+
+            // Close the add overtime modal first
+            const addOvertimeModal = bootstrap.Modal.getInstance(document.getElementById('addOvertimeModal'));
+            if (addOvertimeModal) {
+                addOvertimeModal.hide();
+            }
+
+            // Success feedback with SweetAlert2
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Overtime record has been saved successfully',
+                confirmButtonColor: '#198754',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Refresh the overtime list
+            if (window.currentOvertimeUserId && window.currentOvertimeUserType) {
+                loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
+            }
+        } catch (error) {
+            console.error('Error saving overtime:', error);
+            
+            // Provide specific error messages
+            let errorMessage = 'Failed to save overtime record.';
+            if (error.message.includes('token')) {
+                errorMessage = 'Authentication failed. Please login again.';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMessage,
+                confirmButtonColor: '#dc3545'
+            });
+        } finally {
+            // Reset button state
+            if (saveButton) {
+                saveButton.innerHTML = '<i class="bi bi-floppy me-2"></i>Save';
+                saveButton.disabled = false;
+            }
+        }
+    }
+
+    // Update overtime record wrapper with UI feedback
+    async function updateOvertimeRecordWithUI(overtimeData) {
+        const updateButton = document.querySelector('#editOvertimeForm button[type="submit"]');
+        
+        try {
+            // Show loading state
+            if (updateButton) {
+                const originalContent = updateButton.innerHTML;
+                updateButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+                updateButton.disabled = true;
+            }
+
+            // Use the API function
+            const result = await updateOvertimeRecord(overtimeData);
+
+            // Close the edit overtime modal first
+            const editOvertimeModal = bootstrap.Modal.getInstance(document.getElementById('editOvertimeModal'));
+            if (editOvertimeModal) {
+                editOvertimeModal.hide();
+            }
+
+            // Success feedback with SweetAlert2
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Overtime record has been updated successfully',
+                confirmButtonColor: '#198754',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Refresh the overtime list
+            if (window.currentOvertimeUserId && window.currentOvertimeUserType) {
+                loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
+            }
+        } catch (error) {
+            console.error('Error updating overtime:', error);
+            
+            // Provide specific error messages
+            let errorMessage = 'Failed to update overtime record.';
+            if (error.message.includes('token')) {
+                errorMessage = 'Authentication failed. Please login again.';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMessage,
+                confirmButtonColor: '#dc3545'
+            });
+        } finally {
+            // Reset button state
+            if (updateButton) {
+                updateButton.innerHTML = '<i class="bi bi-floppy me-2"></i>Update';
+                updateButton.disabled = false;
+            }
+        }
+    }
 
     // Export the main function to global scope
     window.loadUserOvertimeData = loadUserOvertimeData;
     window.filterOvertimeByMonth = filterOvertimeByMonth;
     window.showAllOvertimeRecords = showAllOvertimeRecords;
+    window.showOvertimeModal = showOvertimeModal;
     window.createOvertimeRecord = createOvertimeRecord;
     window.updateOvertimeRecord = updateOvertimeRecord;
+    window.saveOvertimeRecord = saveOvertimeRecord;
+    window.updateOvertimeRecordWithUI = updateOvertimeRecordWithUI;
     window.deleteOvertimeRecordAPI = deleteOvertimeRecord; // Export the API function with different name
 
     // Initialize event listeners when DOM is ready
@@ -571,6 +813,178 @@
                 filterOvertimeByMonth(month);
             });
         });
+
+        // Add overtime button functionality
+        const addOvertimeBtn = document.getElementById('addOvertimeBtn');
+        if (addOvertimeBtn) {
+            addOvertimeBtn.addEventListener('click', function() {
+                // Show the add overtime modal
+                const addOvertimeModal = new bootstrap.Modal(document.getElementById('addOvertimeModal'));
+                addOvertimeModal.show();
+                
+                // Set today's date as default
+                const today = new Date().toISOString().split('T')[0];
+                const overtimeDateInput = document.getElementById('overtimeDate');
+                if (overtimeDateInput) overtimeDateInput.value = today;
+                
+                // Clear form fields
+                const durationInput = document.getElementById('overtimeDuration');
+                const remarksInput = document.getElementById('overtimeRemarks');
+                if (durationInput) durationInput.value = '';
+                if (remarksInput) remarksInput.value = '';
+            });
+        }
+
+        // Add overtime form submission
+        const addOvertimeForm = document.getElementById('addOvertimeForm');
+        if (addOvertimeForm) {
+            addOvertimeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const overtimeDate = document.getElementById('overtimeDate').value;
+                const overtimeDuration = document.getElementById('overtimeDuration').value;
+                const overtimeRemarks = document.getElementById('overtimeRemarks').value;
+                
+                // Validate form
+                if (!overtimeDate) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Missing Information',
+                        text: 'Please select an overtime date',
+                        confirmButtonColor: '#198754'
+                    });
+                    return;
+                }
+                
+                if (!overtimeDuration || overtimeDuration <= 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Duration',
+                        text: 'Please enter a valid duration (greater than 0)',
+                        confirmButtonColor: '#198754'
+                    });
+                    return;
+                }
+                
+                // Get current user context
+                const userId = window.currentOvertimeUserId;
+                const userType = window.currentOvertimeUserType;
+                
+                if (!userId || !userType) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'User Context Not Found',
+                        text: 'User context not found. Please go back to the attendance page and try again.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
+                // Prepare data for API
+                const overtimeData = {
+                    date: overtimeDate,
+                    duration: parseFloat(overtimeDuration) * 60, // Convert hours to minutes
+                    remark: overtimeRemarks || '',
+                    status: 'approved'
+                };
+                
+                // Add user_id or staff_id based on type
+                if (userType === 'staff') {
+                    overtimeData.user_id = parseInt(userId);
+                } else if (userType === 'worker') {
+                    overtimeData.staff_id = parseInt(userId);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid User Type',
+                        text: 'Invalid user type. Please try again.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
+                console.log('Submitting overtime data:', overtimeData);
+                
+                // Call API to save overtime
+                saveOvertimeRecord(overtimeData);
+            });
+        }
+
+        // Edit overtime form submission
+        const editOvertimeForm = document.getElementById('editOvertimeForm');
+        if (editOvertimeForm) {
+            editOvertimeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const overtimeId = document.getElementById('editOvertimeId').value;
+                const overtimeDate = document.getElementById('editOvertimeDate').value;
+                const overtimeDuration = document.getElementById('editOvertimeDuration').value;
+                const overtimeRemarks = document.getElementById('editOvertimeRemarks').value;
+                
+                // Validate form
+                if (!overtimeDate) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Missing Information',
+                        text: 'Please select an overtime date',
+                        confirmButtonColor: '#198754'
+                    });
+                    return;
+                }
+                
+                if (!overtimeDuration || overtimeDuration <= 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Duration',
+                        text: 'Please enter a valid duration (greater than 0)',
+                        confirmButtonColor: '#198754'
+                    });
+                    return;
+                }
+                
+                // Get current user context
+                const userId = window.currentOvertimeUserId;
+                const userType = window.currentOvertimeUserType;
+                
+                if (!userId || !userType) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'User Context Not Found',
+                        text: 'User context not found. Please go back to the attendance page and try again.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
+                // Prepare data for API
+                const overtimeData = {
+                    id: parseInt(overtimeId),
+                    date: overtimeDate,
+                    duration: parseFloat(overtimeDuration) * 60, // Convert hours to minutes
+                    remark: overtimeRemarks || ''
+                };
+                
+                // Add user_id or staff_id based on type
+                if (userType === 'staff') {
+                    overtimeData.user_id = parseInt(userId);
+                } else if (userType === 'worker') {
+                    overtimeData.staff_id = parseInt(userId);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid User Type',
+                        text: 'Invalid user type. Please try again.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
+                console.log('Updating overtime data:', overtimeData);
+                
+                // Call API to update overtime
+                updateOvertimeRecordWithUI(overtimeData);
+            });
+        }
     });
 
 })();

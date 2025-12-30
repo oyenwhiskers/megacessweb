@@ -98,7 +98,6 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         const statusMap = {
             'Present': { class: 'bg-success', text: 'Present' },
             'Check_in': { class: 'bg-primary', text: 'Check In' },
-            'Absent': { class: 'bg-danger', text: 'Absent' },
             'Late': { class: 'bg-warning text-dark', text: 'Late' },
             'Annual_Leave': { class: 'bg-info', text: 'Annual Leave' },
             'Sick_Leave': { class: 'bg-secondary', text: 'Sick Leave' },
@@ -292,19 +291,22 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         `;
     }
     
-    // Display worker leave management modal - now using shared manage_leave.js
+    // Display worker leave details - Navigate to dedicated leave page
     window.showWorkerNameAsImage = function(staffId) {
         const staffData = getCurrentStaffData(staffId);
         const workerName = staffData && staffData.staff_name ? staffData.staff_name : 'Worker';
+        const workerRole = staffData && staffData.staff_role ? staffData.staff_role : 'Worker';
         const workerImage = staffData && staffData.staff_img ? staffData.staff_img : '';
         
-        // Call the centralized leave management function from manage_leave.js
-        if (window.showWorkerLeaveModal) {
-            window.showWorkerLeaveModal(staffId, workerName, workerImage);
-        } else {
-            console.error('showWorkerLeaveModal not found. Make sure manage_leave.js is loaded.');
-            alert('Leave management module not loaded. Please refresh the page.');
-        }
+        // Navigate to leave details page with user data
+        const params = new URLSearchParams({
+            userId: staffId,
+            userName: workerName,
+            userRole: workerRole,
+            userType: 'worker',
+            userImage: workerImage
+        });
+        window.location.href = `/megacessweb/pages/manage-leave-details.html?${params.toString()}`;
     };
     
     // Create pagination HTML
@@ -550,17 +552,25 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 }
             }
             
-            // Show the overtime modal with user data
-            window.showOvertimeModal(
-                staffId, 
-                staffData.staff_name || 'Worker', 
-                'Worker', 
-                cleanImageUrl, 
-                'worker'
-            );
+            // Navigate to overtime details page with user data
+            const params = new URLSearchParams({
+                userId: staffId,
+                userName: staffData.staff_name || 'Worker',
+                userRole: staffData.staff_role || 'Worker',
+                userImage: cleanImageUrl,
+                userType: 'worker'
+            });
+            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
         } else {
             // Fallback if data not found
-            window.showOvertimeModal(staffId, 'Worker', 'Worker', '', 'worker');
+            const params = new URLSearchParams({
+                userId: staffId,
+                userName: 'Worker',
+                userRole: 'Worker',
+                userImage: '',
+                userType: 'worker'
+            });
+            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
         }
     };
 

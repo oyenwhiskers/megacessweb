@@ -428,17 +428,25 @@
                 }
             }
             
-            // Show the overtime modal with user data
-            window.showOvertimeModal(
-                userId, 
-                staffData.user_name || 'Staff Member', 
-                'Staff', 
-                cleanImageUrl, 
-                'staff'
-            );
+            // Navigate to overtime details page with user data
+            const params = new URLSearchParams({
+                userId: userId,
+                userName: staffData.user_name || 'Staff Member',
+                userRole: 'Staff',
+                userImage: cleanImageUrl,
+                userType: 'staff'
+            });
+            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
         } else {
             // Fallback if data not found
-            window.showOvertimeModal(userId, 'Staff Member', 'Staff', '', 'staff');
+            const params = new URLSearchParams({
+                userId: userId,
+                userName: 'Staff Member',
+                userRole: 'Staff',
+                userImage: '',
+                userType: 'staff'
+            });
+            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
         }
     };
 
@@ -459,22 +467,20 @@
     // Ensure showStaffAttendanceAnalytics is globally available
     window.showStaffAttendanceAnalytics = showStaffAttendanceAnalytics;
 
-    // Store reference to the centralized function from manage_leave.js before we override it
-    const centralizedStaffLeaveModal = window.showStaffLeaveModal;
-
-    // Show Staff Leave Modal function - Refactored to use centralized manage_leave.js
+    // Show Staff Leave Details - Navigate to dedicated leave page
     window.showStaffLeaveModal = function(userId) {
         const staffData = getCurrentStaffData(userId);
         const staffName = staffData && staffData.user_name ? staffData.user_name : 'Staff Member';
         const staffImage = staffData && staffData.user_img ? staffData.user_img : '';
         
-        // Call the centralized function from manage_leave.js
-        if (centralizedStaffLeaveModal && typeof centralizedStaffLeaveModal === 'function') {
-            centralizedStaffLeaveModal(userId, staffName, staffImage);
-        } else {
-            console.error('Centralized showStaffLeaveModal not found in manage_leave.js. Please ensure manage_leave.js is loaded before list_staff_att.js');
-            alert('Leave management module not loaded. Please refresh the page.');
-        }
+        // Navigate to leave details page with user data
+        const params = new URLSearchParams({
+            userId: userId,
+            userName: staffName,
+            userType: 'staff',
+            userImage: staffImage
+        });
+        window.location.href = `/megacessweb/pages/manage-leave-details.html?${params.toString()}`;
     };
 
     // Add delegated event listener for View button
