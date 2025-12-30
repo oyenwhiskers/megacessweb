@@ -286,8 +286,8 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                         ${recordsHtml}
                     </div>
                 </div>
-                ${paginationHtml}
             </div>
+            ${paginationHtml}
         `;
     }
     
@@ -309,62 +309,72 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         window.location.href = `/megacessweb/pages/manage-leave-details.html?${params.toString()}`;
     };
     
-    // Create pagination HTML
+    // Create pagination HTML (matching salary management style)
     function createPaginationHtml(currentPage, lastPage, total, from, to, perPage) {
-        // Calculate last page if not provided or invalid
-        if (!lastPage || lastPage < 1) {
-            lastPage = Math.ceil(total / perPage) || 1;
-        }
+        // Ensure currentPage and lastPage are numbers
+        currentPage = parseInt(currentPage) || 1;
+        lastPage = parseInt(lastPage) || Math.ceil(total / perPage) || 1;
+        
+        // Don't show pagination if only 1 page
+        if (lastPage <= 1) return '';
         
         let paginationItems = '';
         
-        // Previous button
+        // Previous button with chevron icon
         paginationItems += `
-            <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${currentPage - 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">Previous</a>
-            </li>
+            <button class="btn btn-sm btn-outline-success mx-1" ${currentPage <= 1 ? 'disabled' : ''} 
+                    onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${currentPage - 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                <i class="bi bi-chevron-left"></i>
+            </button>
         `;
         
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(lastPage, currentPage + 2);
-        
-        if (startPage > 1) {
-            paginationItems += `<li class="page-item"><a class="page-link" href="#" onclick="window.fetchWorkerAttendanceList('${currentSearch}', 1, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">1</a></li>`;
-            if (startPage > 2) {
-                paginationItems += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        // Smart page buttons with ellipsis (max 7 buttons)
+        let pages = [];
+        if (lastPage <= 7) {
+            // Show all pages if 7 or fewer
+            pages = Array.from({ length: lastPage }, (_, i) => i + 1);
+        } else {
+            // Smart ellipsis logic
+            if (currentPage <= 4) {
+                // Near start: [1] [2] [3] [4] [5] [...] [last]
+                pages = [1, 2, 3, 4, 5, '...', lastPage];
+            } else if (currentPage >= lastPage - 3) {
+                // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+                pages = [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
+            } else {
+                // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+                pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
             }
         }
         
-        for (let i = startPage; i <= endPage; i++) {
-            paginationItems += `
-                <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${i}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">${i}</a>
-                </li>
-            `;
-        }
-        
-        if (endPage < lastPage) {
-            if (endPage < lastPage - 1) {
-                paginationItems += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        // Render page buttons
+        pages.forEach((page) => {
+            if (page === '...') {
+                // Ellipsis (non-clickable)
+                paginationItems += `<span class="btn btn-sm btn-outline-success mx-1 disabled">...</span>`;
+            } else {
+                // Page button - ensure type match for comparison
+                const btnClass = parseInt(page) === parseInt(currentPage) ? 'btn-success' : 'btn-outline-success';
+                paginationItems += `
+                    <button class="btn btn-sm ${btnClass} mx-1" 
+                            onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${page}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                        ${page}
+                    </button>
+                `;
             }
-            paginationItems += `<li class="page-item"><a class="page-link" href="#" onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${lastPage}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">${lastPage}</a></li>`;
-        }
+        });
         
-        // Next button
+        // Next button with chevron icon
         paginationItems += `
-            <li class="page-item ${currentPage >= lastPage ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${currentPage + 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">Next</a>
-            </li>
+            <button class="btn btn-sm btn-outline-success mx-1" ${currentPage >= lastPage ? 'disabled' : ''} 
+                    onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${currentPage + 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                <i class="bi bi-chevron-right"></i>
+            </button>
         `;
         
         return `
-            <div class="card-footer">
-                <nav aria-label="Attendance pagination">
-                    <ul class="pagination pagination-sm justify-content-center mb-0">
-                        ${paginationItems}
-                    </ul>
-                </nav>
+            <div class="mt-3 text-center">
+                ${paginationItems}
             </div>
         `;
     }
@@ -440,6 +450,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             if (result.success && result.data) {
                 // Apply client-side filtering as fallback if API doesn't filter properly
                 let filteredData = result.data;
+                let clientSideFilterApplied = false;
                 
                 // If we have a search term but got all records, filter client-side
                 if (search && search.trim() && filteredData.data && Array.isArray(filteredData.data)) {
@@ -449,6 +460,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                     filteredData.data = filteredData.data.filter(record => {
                         return record.staff_name && record.staff_name.toLowerCase().includes(searchTerm);
                     });
+                    clientSideFilterApplied = true;
                 }
                 
                 // Apply client-side status filtering as fallback
@@ -479,13 +491,29 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                         
                         return recordStatus === filterStatus;
                     });
+                    clientSideFilterApplied = true;
                 }
                 
-                // Update the totals to reflect filtered results
-                if (filteredData.data && Array.isArray(filteredData.data)) {
-                    filteredData.total = filteredData.data.length;
-                    filteredData.to = Math.min(filteredData.from + filteredData.data.length - 1, filteredData.total);
-                    filteredData.last_page = Math.ceil(filteredData.total / filteredData.per_page);
+                // Only update pagination if we applied client-side filtering
+                // Otherwise, use the API's pagination values directly
+                if (clientSideFilterApplied && filteredData.data && Array.isArray(filteredData.data)) {
+                    const recordCount = filteredData.data.length;
+                    const perPageValue = filteredData.per_page || perPage || DEFAULT_PER_PAGE;
+                    
+                    // Calculate pagination values
+                    filteredData.total = recordCount;
+                    filteredData.last_page = Math.ceil(recordCount / perPageValue);
+                    filteredData.current_page = page;
+                    filteredData.per_page = perPageValue;
+                    
+                    // Calculate from and to based on current page
+                    filteredData.from = recordCount > 0 ? ((page - 1) * perPageValue) + 1 : 0;
+                    filteredData.to = Math.min(page * perPageValue, recordCount);
+                    
+                    // Slice the data to show only current page records
+                    const startIndex = (page - 1) * perPageValue;
+                    const endIndex = startIndex + perPageValue;
+                    filteredData.data = filteredData.data.slice(startIndex, endIndex);
                 }
                 
                 renderAttendanceRecords(filteredData);
