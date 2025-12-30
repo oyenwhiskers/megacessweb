@@ -1,436 +1,471 @@
-// Leave Management for Workers and Staff
+// Leave Management - Navigation and Details Page
 (function() {
-    // Configuration
     const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
     
-    // Token management
-    function getAuthToken() {
-        const token = localStorage.getItem('auth_token') || 
-                     sessionStorage.getItem('auth_token') || 
-                     localStorage.getItem('authToken') ||
-                     sessionStorage.getItem('authToken');
+    // ===========================
+    // NAVIGATION FUNCTIONS
+    // ===========================
+    
+    // Navigate to worker leave details page
+    function showWorkerLeaveModal(staffId, staffName, staffImage) {
+        const params = new URLSearchParams({
+            userId: staffId,
+            userType: 'worker',
+            userName: encodeURIComponent(staffName || 'Worker'),
+            userImage: encodeURIComponent(staffImage || '')
+        });
+        window.location.href = `/megacessweb/pages/manage-leave-details.html?${params.toString()}`;
+    }
+    
+    // Navigate to staff leave details page
+    function showStaffLeaveModal(userId, staffName, staffImage) {
+        const params = new URLSearchParams({
+            userId: userId,
+            userType: 'staff',
+            userName: encodeURIComponent(staffName || 'Staff Member'),
+            userImage: encodeURIComponent(staffImage || '')
+        });
+        window.location.href = `/megacessweb/pages/manage-leave-details.html?${params.toString()}`;
+    }
+    
+    // Expose navigation functions globally
+    window.showWorkerLeaveModal = showWorkerLeaveModal;
+    window.showStaffLeaveModal = showStaffLeaveModal;
+    
+    // ===========================
+    // LEAVE DETAILS PAGE LOGIC
+    // ===========================
+    
+    // Only run details page logic if we're on the details page
+    if (window.location.pathname.includes('manage-leave-details')) {
         
-        if (!token) {
-            console.error('No authentication token found. Please log in.');
-            return null;
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId');
+        const userType = urlParams.get('userType');
+        const userName = urlParams.get('userName') || 'User';
+        const userImage = urlParams.get('userImage') || '';
+        
+        let filterYear = new Date().getFullYear().toString();
+        let filterMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+        let filterType = '';
+        
+        // Pagination state
+        let currentPage = 1;
+        let totalPages = 1;
+        let perPage = 15;
+        let totalRecords = 0;
+        
+        // Token management
+        function getAuthToken() {
+            const token = localStorage.getItem('auth_token') || 
+                         sessionStorage.getItem('auth_token') || 
+                         localStorage.getItem('authToken') ||
+                         sessionStorage.getItem('authToken');
+            
+            if (!token) {
+                console.error('No authentication token found. Please log in.');
+                window.location.href = '/megacessweb/pages/log-in.html';
+                return null;
+            }
+            
+            return token;
         }
         
-        return token;
-    }
-    
-    // Format date for display (DD/MM/YY)
-    function formatDateShort(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear().toString().slice(-2);
-        return `${day}/${month}/${year}`;
-    }
-    
-    // Get leave type badge HTML
-    function getLeaveTypeBadge(status) {
-        const leaveTypes = {
-            'annual_leave': {
-                color: '#0d6efd',
-                bgClass: 'bg-primary',
-                icon: 'bi-calendar-check',
-                text: 'Annual Leave'
-            },
-            'sick_leave': {
-                color: '#20c997',
-                bgClass: 'bg-info',
-                icon: 'bi-thermometer-half',
-                text: 'Sick Leave'
-            },
-            'unpaid_leave': {
-                color: '#dc3545',
-                bgClass: 'bg-danger',
-                icon: 'bi-calendar-x',
-                text: 'Unpaid Leave'
-            }
-        };
-        
-        const leaveType = leaveTypes[status] || {
-            color: '#6c757d',
-            bgClass: 'bg-secondary',
-            icon: 'bi-calendar',
-            text: status
-        };
-        
-        return {
-            borderColor: leaveType.color,
-            badge: `<span class="badge ${leaveType.bgClass} px-3 py-2">
-                <i class="${leaveType.icon} me-1"></i>${leaveType.text}
-            </span>`
-        };
-    }
-    
-    // Load user leave data
-    async function loadUserLeaveData(userId, userType) {
-        console.log('Loading leave data for user with ID:', userId, 'userType:', userType);
-        
-        // Store current user context for form submission
-        window.currentLeaveUserId = userId;
-        window.currentLeaveUserType = userType;
-        
-        try {
-            // Choose API endpoint based on user type
-            let apiEndpoint, idParam;
-            if (userType === 'worker') {
-                apiEndpoint = 'staff-attendance';
-                idParam = 'staff_id';
-            } else if (userType === 'staff') {
-                apiEndpoint = 'user-attendance';
-                idParam = 'user_id';
-            } else {
-                throw new Error('Invalid user type: ' + userType);
+        // Initialize page
+        function initializePage() {
+            // Check if user data is available
+            if (!userId || !userType) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Missing user information. Redirecting back...',
+                    confirmButtonColor: '#dc3545'
+                }).then(() => {
+                    window.location.href = '/megacessweb/pages/manage-attendance.html';
+                });
+                return;
             }
             
-            // Fetch attendance records filtered by specific user ID
-            const url = new URL(`${API_BASE_URL}/${apiEndpoint}`);
+            // Set user info
+            const userNameEl = document.getElementById('userName');
+            const userTypeEl = document.getElementById('userType');
             
-            // Add query parameters including user ID filter
-            const params = {
-                [idParam]: userId, // Filter by specific user's ID
-                date_attendance_id: 1, // Current attendance period
-                per_page: 100, // Get more records to find leaves
-                page: 1
+            if (!userNameEl || !userTypeEl) return;
+            
+            userNameEl.textContent = decodeURIComponent(userName);
+            userTypeEl.textContent = userType === 'worker' ? 'Worker' : 'Staff Member';
+            
+            // Set user avatar
+            const avatarEl = document.getElementById('userAvatar');
+            if (!avatarEl) return;
+            
+            let cleanImageUrl = '';
+            if (userImage && userImage !== 'null' && userImage !== 'undefined') {
+                cleanImageUrl = decodeURIComponent(userImage);
+                cleanImageUrl = cleanImageUrl.replace(/:\d+$/, '').trim();
+                cleanImageUrl = cleanImageUrl.replace(/\.jpg:.*$/, '.jpg');
+                cleanImageUrl = cleanImageUrl.replace(/\.png:.*$/, '.png');
+                cleanImageUrl = cleanImageUrl.replace(/\.jpeg:.*$/, '.jpeg');
+                cleanImageUrl = cleanImageUrl.replace(/\.gif:.*$/, '.gif');
+                
+                if (cleanImageUrl.length < 5 || cleanImageUrl.includes('null') || cleanImageUrl.includes('undefined')) {
+                    cleanImageUrl = '';
+                } else if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
+                    cleanImageUrl = `https://mwms.megacess.com/storage/${userType === 'worker' ? 'staff-images' : 'user-images'}/${cleanImageUrl}`;
+                } else if (cleanImageUrl.startsWith('/')) {
+                    cleanImageUrl = `https://mwms.megacess.com${cleanImageUrl}`;
+                }
+            }
+            
+            if (!cleanImageUrl) {
+                cleanImageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
+            }
+            avatarEl.src = cleanImageUrl;
+            avatarEl.onerror = function() {
+                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
             };
             
-            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+            // Populate year filter
+            populateYearFilter();
             
-            const headers = {
-                'Authorization': `Bearer ${getAuthToken()}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
-            
-            console.log('Fetching leave data from:', url.toString());
-            console.log('API parameters:', params);
-            console.log('Using endpoint:', apiEndpoint, 'with ID parameter:', idParam);
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            // Set current month
+            const filterMonthEl = document.getElementById('filterMonth');
+            if (filterMonthEl) {
+                filterMonthEl.value = filterMonth;
             }
             
-            const result = await response.json();
-            console.log('Leave API Response for', userType, 'ID', userId, ':', result);
+            // Load leave records
+            loadLeaveRecords();
             
-            if (result.success && result.data) {
-                // Handle both paginated and non-paginated responses
-                let records = [];
-                if (result.data.data && Array.isArray(result.data.data)) {
-                    records = result.data.data;
-                } else if (Array.isArray(result.data)) {
-                    records = result.data;
+            // Event listeners
+            const addLeaveBtn = document.getElementById('addLeaveBtn');
+            const addLeaveForm = document.getElementById('addLeaveForm');
+            const filterYearEl = document.getElementById('filterYear');
+            const filterTypeEl = document.getElementById('filterType');
+            
+            if (addLeaveBtn) addLeaveBtn.addEventListener('click', showAddLeaveModal);
+            if (addLeaveForm) addLeaveForm.addEventListener('submit', handleAddLeave);
+            if (filterYearEl) {
+                filterYearEl.addEventListener('change', (e) => {
+                    filterYear = e.target.value;
+                    currentPage = 1;
+                    loadLeaveRecords();
+                });
+            }
+            if (filterMonthEl) {
+                filterMonthEl.addEventListener('change', (e) => {
+                    filterMonth = e.target.value;
+                    currentPage = 1;
+                    loadLeaveRecords();
+                });
+            }
+            if (filterTypeEl) {
+                filterTypeEl.addEventListener('change', (e) => {
+                    filterType = e.target.value;
+                    currentPage = 1;
+                    loadLeaveRecords();
+                });
+            }
+        }
+        
+        // Populate year filter
+        function populateYearFilter() {
+            const yearSelect = document.getElementById('filterYear');
+            const currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = '';
+            
+            for (let y = currentYear; y >= currentYear - 5; y--) {
+                const option = document.createElement('option');
+                option.value = y;
+                option.textContent = y;
+                if (y === currentYear) option.selected = true;
+                yearSelect.appendChild(option);
+            }
+        }
+        
+        // Load leave records
+        async function loadLeaveRecords() {
+            const token = getAuthToken();
+            if (!token) return;
+            
+            const listContainer = document.getElementById('leaveRecordsList');
+            if (!listContainer) return;
+            listContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-success" role="status" style="width: 2.5rem; height: 2.5rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Loading leave records...</p>
+                </div>
+            `;
+            
+            try {
+                let apiEndpoint = userType === 'worker' ? 'staff-attendance' : 'user-attendance';
+                const url = new URL(`${API_BASE_URL}/${apiEndpoint}/${userId}/leaves`);
+                url.searchParams.append('month', `${filterYear}-${filterMonth}`);
+                
+                if (filterType) {
+                    let apiType = filterType;
+                    if (apiType === 'Sick Leave') apiType = 'sick_leave';
+                    else if (apiType === 'Annual Leave') apiType = 'annual_leave';
+                    else if (apiType === 'Unpaid Leave') apiType = 'unpaid_leave';
+                    url.searchParams.append('status', apiType);
                 }
                 
-                console.log('All attendance records for', userType, 'ID', userId, ':', records);
+                url.searchParams.append('page', currentPage);
+                url.searchParams.append('per_page', perPage);
                 
-                // Filter records for leave types only (since we already filtered by user ID in API)
-                const userLeaveRecords = records.filter(record => {
-                    const hasLeaveStatus = record.status && 
-                           ['annual_leave', 'sick_leave', 'unpaid_leave'].includes(record.status);
-                    console.log('Record', record.id, 'status:', record.status, 'is leave:', hasLeaveStatus);
-                    return hasLeaveStatus;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
                 });
                 
-                console.log('Filtered leave records for', userType, 'ID', userId, ':', userLeaveRecords);
-                renderLeaveRecords(userLeaveRecords);
-            } else {
-                console.log('No leave data found for', userType, 'ID:', userId, 'API response:', result);
-                renderLeaveRecords([]);
+                const result = await response.json();
+                
+                if (result.success && result.data && Array.isArray(result.data.data)) {
+                    totalRecords = result.data.total || 0;
+                    currentPage = result.data.current_page || 1;
+                    totalPages = result.data.last_page || 1;
+                    
+                    renderLeaveRecords(result.data.data);
+                    renderPagination();
+                } else {
+                    listContainer.innerHTML = '<div class="text-center text-muted py-4">No leave records found.</div>';
+                    renderPagination();
+                }
+            } catch (error) {
+                console.error('Error loading leave records:', error);
+                listContainer.innerHTML = '<div class="text-center text-danger py-4">Error loading leave records.</div>';
+            }
+        }
+        
+        // Render leave records
+        function renderLeaveRecords(leaves) {
+            const listContainer = document.getElementById('leaveRecordsList');
+            
+            if (!leaves || leaves.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-muted py-4">No leave records found for the selected period.</div>';
+                return;
             }
             
-        } catch (error) {
-            console.error('Error loading leave data for', userType, 'ID', userId, ':', error);
-            showLeaveError(`Failed to load leave records for ${userType} ID ${userId}. Please try again.`);
-        }
-    }
-    
-    // Render leave records in the modal
-    function renderLeaveRecords(leaveRecords) {
-        const leaveList = document.getElementById('leaveList');
-        if (!leaveList) return;
-        
-        if (!leaveRecords || leaveRecords.length === 0) {
-            leaveList.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
-                    <p class="mt-3 text-muted">No leave records found for this user.</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Sort records by date (newest first)
-        const sortedRecords = leaveRecords.sort((a, b) => {
-            return new Date(b.created_at) - new Date(a.created_at);
-        });
-        
-        const recordsHtml = sortedRecords.map(record => {
-            const leaveInfo = getLeaveTypeBadge(record.status);
-            const displayDate = record.date_attendance?.date || record.created_at;
+            let html = '<div class="row g-3">';
             
-            return `
-                <div class="bg-white rounded p-3 mb-3 d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div style="width: 4px; height: 60px; background-color: ${leaveInfo.borderColor}; border-radius: 2px;" class="me-3"></div>
-                        <div>
-                            <h6 class="mb-0 fw-semibold">${formatDateShort(displayDate)}</h6>
-                            ${record.notes ? `<small class="text-muted">${record.notes}</small>` : ''}
+            leaves.forEach(leave => {
+                const statusType = leave.type_of_leave || (leave.status ? leave.status.replace(/_/g, ' ') : 'Leave');
+                const date = leave.date || leave.start_date || leave.from_date || '';
+                const t = (statusType || '').toLowerCase();
+                
+                let color = '#6c757d';
+                let icon = '';
+                let label = statusType;
+                
+                if (t.includes('sick')) { 
+                    color = '#009dc4'; 
+                    icon = '<i class="bi bi-emoji-frown me-2"></i>'; 
+                    label = 'Sick Leave'; 
+                } else if (t.includes('annual')) { 
+                    color = '#0c4b7f'; 
+                    icon = '<i class="bi bi-calendar-heart me-2"></i>'; 
+                    label = 'Annual Leave'; 
+                } else if (t.includes('unpaid')) { 
+                    color = '#dc3545'; 
+                    icon = '<i class="bi bi-cash me-2"></i>'; 
+                    label = 'Unpaid Leave'; 
+                }
+                
+                html += `
+                    <div class="col-12">
+                        <div class="d-flex align-items-center" style="background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 8px solid ${color}; min-height: 70px; padding: 12px;">
+                            <div class="flex-grow-1 px-3">
+                                <div class="fw-bold" style="font-size: 1.15rem; color: #333;">${date}</div>
+                                <div class="text-muted small mt-1">${leave.remarks || leave.notes || 'No remarks'}</div>
+                            </div>
+                            <div class="px-3">
+                                <button class="btn" style="background: ${color}; color: #fff; font-weight: 600; padding: 10px 24px; border-radius: 8px; font-size: 1rem; border: none;" onclick="window.showLeaveDetails(${JSON.stringify(leave).replace(/"/g, '&quot;')})">
+                                    ${icon}${label}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    ${leaveInfo.badge}
-                </div>
+                `;
+            });
+            
+            html += '</div>';
+            listContainer.innerHTML = html;
+        }
+        
+        // Render pagination controls
+        function renderPagination() {
+            const paginationContainer = document.getElementById('paginationControls');
+            if (!paginationContainer) return;
+            
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            let html = '<div class="mt-3 text-center">';
+            
+            // Previous button
+            html += `
+                <button class="btn btn-sm btn-outline-success mx-1" ${currentPage === 1 ? 'disabled' : ''} onclick="window.goToPage(${currentPage - 1}); return false;">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
             `;
-        }).join('');
-        
-        leaveList.innerHTML = recordsHtml;
-    }
-    
-    // Show error message in leave list
-    function showLeaveError(message) {
-        const leaveList = document.getElementById('leaveList');
-        if (!leaveList) return;
-        
-        leaveList.innerHTML = `
-            <div class="alert alert-danger" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <strong>Error:</strong> ${message}
-            </div>
-        `;
-    }
-    
-    // Mark user as on leave (Workers and Staff)
-    async function markStaffOnLeave(userId, fromDate, toDate, leaveType, notes = '') {
-        console.log('Marking user on leave - ID:', userId, 'dates:', fromDate, 'to', toDate, 'type:', leaveType);
-        
-        const userType = window.currentLeaveUserType;
-        console.log('User type:', userType);
-        
-        // Input validation
-        if (!userId) {
-            return {
-                success: false,
-                message: 'User ID is required.'
-            };
-        }
-        
-        if (!fromDate || !toDate) {
-            return {
-                success: false,
-                message: 'From date and to date are required.'
-            };
-        }
-        
-        if (!leaveType || !['annual_leave', 'sick_leave', 'unpaid_leave'].includes(leaveType)) {
-            return {
-                success: false,
-                message: 'Valid leave type is required.'
-            };
-        }
-        
-        if (!userType || !['worker', 'staff'].includes(userType)) {
-            return {
-                success: false,
-                message: 'Invalid user type. Please refresh and try again.'
-            };
-        }
-        
-        // Date validation
-        const fromDateObj = new Date(fromDate);
-        const toDateObj = new Date(toDate);
-        
-        if (fromDateObj > toDateObj) {
-            return {
-                success: false,
-                message: 'From date cannot be later than to date.'
-            };
-        }
-        
-        // Check for authentication token
-        const authToken = getAuthToken();
-        if (!authToken) {
-            return {
-                success: false,
-                message: 'Authentication required. Please login again.'
-            };
-        }
-        
-        try {
-            // Choose API endpoint and parameters based on user type
-            let apiEndpoint, requestData;
             
-            if (userType === 'worker') {
-                apiEndpoint = `${API_BASE_URL}/staff-attendance/mark-leave`;
-                requestData = {
-                    staff_id: parseInt(userId),
-                    from_date: fromDate,
-                    to_date: toDate,
-                    status: leaveType,
-                    notes: notes || ''
-                };
-            } else if (userType === 'staff') {
-                apiEndpoint = `${API_BASE_URL}/user-attendance/mark-leave`;
-                requestData = {
-                    user_id: parseInt(userId),
-                    from_date: fromDate,
-                    to_date: toDate,
-                    status: leaveType,
-                    notes: notes || ''
-                };
-            }
-            
-            const headers = {
-                'Authorization': `Bearer ${getAuthToken()}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
-            
-            console.log('Sending leave request to:', apiEndpoint);
-            console.log('Request data:', requestData);
-            
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(requestData)
-            });
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Leave request failed:', errorText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            console.log('Leave request response:', result);
-            
-            if (result.success) {
-                return {
-                    success: true,
-                    message: result.message,
-                    data: result.data
-                };
+            // Smart page buttons with ellipsis (max 7 buttons)
+            let pages = [];
+            if (totalPages <= 7) {
+                // Show all pages if 7 or fewer
+                pages = Array.from({ length: totalPages }, (_, i) => i + 1);
             } else {
-                throw new Error(result.message || 'Failed to mark staff on leave');
+                // Smart ellipsis logic
+                if (currentPage <= 4) {
+                    // Near start: [1] [2] [3] [4] [5] [...] [last]
+                    pages = [1, 2, 3, 4, 5, '...', totalPages];
+                } else if (currentPage >= totalPages - 3) {
+                    // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+                    pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+                    pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+                }
             }
             
-        } catch (error) {
-            console.error('Error marking staff on leave:', error);
+            // Render page buttons
+            pages.forEach((page) => {
+                if (page === '...') {
+                    // Ellipsis (non-clickable)
+                    html += '<button class="btn btn-sm btn-outline-success mx-1 disabled">...</button>';
+                } else {
+                    // Page button
+                    const btnClass = page === currentPage ? 'btn-success' : 'btn-outline-success';
+                    html += `<button class="btn btn-sm ${btnClass} mx-1" onclick="window.goToPage(${page}); return false;">${page}</button>`;
+                }
+            });
             
-            // Provide specific error messages based on error type
-            let errorMessage = 'Failed to submit leave request.';
+            // Next button
+            html += `
+                <button class="btn btn-sm btn-outline-success mx-1" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.goToPage(${currentPage + 1}); return false;">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            `;
             
-            if (error.message && error.message.includes('401')) {
-                errorMessage = 'Authentication failed. Please login again.';
-            } else if (error.message && error.message.includes('403')) {
-                errorMessage = 'You do not have permission to submit leave requests.';
-            } else if (error.message && error.message.includes('404')) {
-                errorMessage = 'Leave service not found. Please contact support.';
-            } else if (error.message && error.message.includes('422')) {
-                errorMessage = 'Invalid leave request data. Please check your inputs.';
-            } else if (error.message && error.message.includes('network')) {
-                errorMessage = 'Network error. Please check your connection.';
-            } else if (error.message) {
-                errorMessage = error.message;
+            html += '</div>';
+            
+            paginationContainer.innerHTML = html;
+        }
+        
+        // Navigate to specific page
+        window.goToPage = function(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadLeaveRecords();
+            document.getElementById('leaveRecordsList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        
+        // Show add leave modal
+        function showAddLeaveModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addLeaveModal'));
+            document.getElementById('addLeaveForm').reset();
+            modal.show();
+        }
+        
+        // Handle add leave form submission
+        async function handleAddLeave(e) {
+            e.preventDefault();
+            
+            const leaveType = document.getElementById('leaveType').value;
+            const fromDate = document.getElementById('leaveFromDate').value;
+            const toDate = document.getElementById('leaveToDate').value;
+            const notes = document.getElementById('leaveNotes').value;
+            
+            const token = getAuthToken();
+            if (!token) return;
+            
+            try {
+                let apiEndpoint = userType === 'worker' ? 'staff-attendance' : 'user-attendance';
+                const idKey = userType === 'worker' ? 'staff_id' : 'user_id';
+                
+                const payload = {
+                    [idKey]: userId,
+                    from_date: fromDate,
+                    to_date: toDate,
+                    status: leaveType,
+                    notes: notes
+                };
+                
+                const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/mark-leave`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addLeaveModal'));
+                    modal.hide();
+                    
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: result.message || 'Leave added successfully',
+                        confirmButtonColor: '#198754',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    currentPage = 1;
+                    loadLeaveRecords();
+                } else {
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.message || 'Failed to add leave',
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+            } catch (error) {
+                console.error('Error adding leave:', error);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while adding the leave',
+                    confirmButtonColor: '#dc3545'
+                });
             }
+        }
+        
+        // Show leave details modal
+        window.showLeaveDetails = function(leave) {
+            const modal = new bootstrap.Modal(document.getElementById('viewLeaveDetailsModal'));
             
-            return {
-                success: false,
-                message: errorMessage
-            };
+            document.getElementById('detailLeaveType').textContent = leave.type_of_leave || leave.status || 'Leave';
+            document.getElementById('detailCreatedBy').textContent = leave.created_by || '-';
+            document.getElementById('detailCreatedAt').textContent = leave.created_at ? leave.created_at.split('T')[0] : leave.date || leave.start_date || '-';
+            document.getElementById('detailStartDate').textContent = leave.start_date || leave.date || leave.from_date || '-';
+            document.getElementById('detailEndDate').textContent = leave.end_date || leave.to_date || '-';
+            document.getElementById('detailRemarks').textContent = leave.remarks || leave.notes || '-';
+            
+            modal.show();
+        };
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            initializePage();
         }
-    }
-    
-    // Apply leave type filter
-    function filterLeaveRecords(leaveType) {
-        console.log('Filtering leave records by type:', leaveType);
-        
-        // Get current user context
-        const userId = window.currentLeaveUserId;
-        const userType = window.currentLeaveUserType;
-        
-        if (!userId || !userType) {
-            console.error('User context not found for filtering');
-            return;
-        }
-        
-        // For now, reload all data and filter client-side
-        // In a real implementation, you might want to pass filter to API
-        loadUserLeaveData(userId, userType);
-        
-        // Update filter button states
-        updateFilterButtons(leaveType);
-    }
-    
-    // Update filter button states
-    function updateFilterButtons(activeFilter) {
-        // Reset all filter buttons
-        document.getElementById('leaveFilterAll')?.classList.remove('active');
-        
-        // Set active button
-        if (activeFilter === 'all') {
-            document.getElementById('leaveFilterAll')?.classList.add('active');
-            document.getElementById('leaveFilterMonth').textContent = 'Month';
-            document.getElementById('leaveFilterType').textContent = 'Type of Leave';
-        }
-    }
-    
-    // Initialize leave management
-    function initializeLeaveManagement() {
-        console.log('Initializing leave management...');
-        
-        // Add filter event listeners
-        const filterAllBtn = document.getElementById('leaveFilterAll');
-        if (filterAllBtn) {
-            filterAllBtn.addEventListener('click', () => {
-                filterLeaveRecords('all');
-            });
-        }
-        
-        // Add leave type filter listeners
-        const leaveTypeItems = document.querySelectorAll('#leaveFilterType + ul .dropdown-item');
-        leaveTypeItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const leaveType = item.getAttribute('data-type');
-                document.getElementById('leaveFilterType').textContent = item.textContent;
-                filterLeaveRecords(leaveType);
-            });
-        });
-        
-        // Add month filter listeners (placeholder for now)
-        const monthItems = document.querySelectorAll('#leaveFilterMonth + ul .dropdown-item');
-        monthItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const month = item.getAttribute('data-month');
-                document.getElementById('leaveFilterMonth').textContent = item.textContent;
-                // Implement month filtering if needed
-                filterLeaveRecords('month');
-            });
-        });
-        
-        console.log('Leave management initialized');
-    }
-    
-    // Expose functions globally
-    window.loadUserLeaveData = loadUserLeaveData;
-    window.submitLeaveApplication = markStaffOnLeave;  // Use different name to avoid conflict
-    window.filterLeaveRecords = filterLeaveRecords;
-    
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeLeaveManagement);
-    } else {
-        initializeLeaveManagement();
     }
     
 })();
