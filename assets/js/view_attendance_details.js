@@ -1,4 +1,3 @@
-// View Attendance Details Page
 (function() {
     'use strict';
 
@@ -14,7 +13,7 @@
 
     // Pagination state
     let currentPage = 1;
-    const itemsPerPage = 15;
+    const itemsPerPage = 10;
     let lastPage = 1;
     let allRecords = [];
 
@@ -280,7 +279,7 @@
                     <div style="flex-shrink: 0;">
                         <button type="button" class="attendance-record-detail-btn" data-record-idx="${actualIdx}" 
                                 style="background: ${statusInfo.bgColor}; color: ${statusInfo.textColor}; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; padding: 0 24px; height: 38px; display: inline-flex; align-items: center; gap: 8px; min-width: 140px; justify-content: center; cursor: pointer;">
-                            ${statusInfo.icon} <span style="font-size: 1rem;">${statusInfo.label}</span>
+                            ${statusInfo.icon} <span style="font-size: 1rem; font-weight: 500;">${statusInfo.label}</span>
                         </button>
                     </div>
                 </div>

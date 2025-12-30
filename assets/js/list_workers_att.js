@@ -226,20 +226,13 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                                  onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="mb-1 fw-semibold">${record.staff_name}</h6>
-                                    <div class="d-flex align-items-center gap-3 text-muted small">
-                                        <span><i class="bi bi-box-arrow-in-right me-1"></i>In: ${formatTime(record.check_in)}</span>
-                                        <span><i class="bi bi-box-arrow-right me-1"></i>Out: ${formatTime(record.check_out)}</span>
+                                    <div class="d-flex align-items-start gap-3 text-muted small">
+                                        <span>In: ${formatTime(record.check_in)} ${record.checkedin_by ? `<br>by: ${record.checkedin_by}` : ''}</span>
+                                        <span>Out: ${formatTime(record.check_out)} ${record.checkedout_by ? `<br>by: ${record.checkedout_by}` : ''}</span>
                                     </div>
-                                    ${record.checkedin_by || record.checkedout_by ? `
-                                        <div class="mt-1 text-muted" style="font-size: 0.8rem;">
-                                            ${record.checkedin_by ? `In by: ${record.checkedin_by}` : ''}
-                                            ${record.checkedin_by && record.checkedout_by ? ' | ' : ''}
-                                            ${record.checkedout_by ? `Out by: ${record.checkedout_by}` : ''}
-                                        </div>
-                                    ` : ''}
                                 </div>
                                 <div class="text-end">
                                     ${getStatusBadge(record.status)}
@@ -270,9 +263,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         }).join('');
         
         // Create pagination
-        console.log('Pagination data:', { current_page, last_page, total, from, to, per_page });
         const paginationHtml = createPaginationHtml(current_page, last_page, total, from, to, per_page);
-        console.log('Pagination HTML length:', paginationHtml ? paginationHtml.length : 0);
         
         // Render the attendance list with pagination
         workersAttendanceView.innerHTML = `
@@ -381,11 +372,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
     
     // Main fetch function
     async function fetchWorkerAttendanceList(search = '', page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE, statusFilter = 'all') {
-        console.log('fetchWorkerAttendanceList called with:', { search, page, dateAttendanceId, perPage, statusFilter });
-        console.log('workersAttendanceView element:', workersAttendanceView);
-        
         if (!workersAttendanceView) {
-            console.error('workersAttendanceView not found!');
             return;
         }
         
@@ -394,7 +381,6 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         currentDateAttendanceId = dateAttendanceId;
         currentStatusFilter = statusFilter;
         
-        console.log('Showing loading state...');
         showLoading();
         
         try {
@@ -426,26 +412,16 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 'Accept': 'application/json'
             };
             
-            console.log('Fetching worker attendance from:', url.toString());
-            console.log('Search parameters:', params);
-            console.log('Auth token:', getAuthToken() ? 'Present' : 'Missing');
-            
             const response = await fetch(url, {
                 method: 'GET',
                 headers
             });
             
-            console.log('Response status:', response.status);
-            console.log('Response ok:', response.ok);
-            
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const result = await response.json();
-            console.log('API Response:', result);
             
             if (result.success && result.data) {
                 // Apply client-side filtering as fallback if API doesn't filter properly
@@ -455,7 +431,6 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 // If we have a search term but got all records, filter client-side
                 if (search && search.trim() && filteredData.data && Array.isArray(filteredData.data)) {
                     const searchTerm = search.trim().toLowerCase();
-                    console.log('Applying client-side search filter for:', searchTerm);
                     
                     filteredData.data = filteredData.data.filter(record => {
                         return record.staff_name && record.staff_name.toLowerCase().includes(searchTerm);
@@ -465,7 +440,6 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 
                 // Apply client-side status filtering as fallback
                 if (statusFilter && statusFilter !== 'all' && filteredData.data && Array.isArray(filteredData.data)) {
-                    console.log('Applying client-side status filter for:', statusFilter);
                     
                     filteredData.data = filteredData.data.filter(record => {
                         if (!record.status) return false;
@@ -522,7 +496,6 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             }
             
         } catch (error) {
-            console.error('Error fetching worker attendance:', error);
             showError(error.message || 'Failed to connect to the server. Please try again.');
         }
     }
@@ -547,15 +520,12 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             // You may need to replace this with actual API logic
             return parseInt(`${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`) % 1000 || 1;
         } catch (error) {
-            console.warn('Error parsing date:', dateString, error);
             return 1;
         }
     }
     
     // View attendance details - Navigate to dedicated page
     window.viewAttendanceDetails = function(staffId) {
-        console.log('View attendance details for staff ID:', staffId);
-        
         // Find the record data for this staff member
         const staffData = getCurrentStaffData(staffId);
         
@@ -592,10 +562,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
     };
     
     window.markOvertime = function(staffId) {
-        console.log('Mark overtime for staff ID:', staffId);
-        
         // Find the record data for this staff member
-        // This is a simple approach - in a real app, you might store the data differently
         const staffData = getCurrentStaffData(staffId);
         
         if (staffData) {
@@ -639,12 +606,8 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
     
     // Helper function to get current worker data (alias for getCurrentStaffData)
     function getCurrentWorkerData(staffId) {
-        console.log('getCurrentWorkerData called with staffId:', staffId);
-        console.log('Available records:', currentRecordsData.length);
-        
         // Find the record in the current data
         const worker = currentRecordsData.find(record => record.staff_id == staffId);
-        console.log('Found worker data:', worker);
         return worker || null;
     }
     

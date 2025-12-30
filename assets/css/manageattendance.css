@@ -182,11 +182,43 @@
   border-radius: 0.5rem;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* =======================================
+   Mobile Responsive Styles
+========================================== */
+
+@media (max-width: 991.98px) {
+  /* Adjust content when sidebar is hidden on mobile */
+  .content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Reduce padding on mobile */
+  .container-fluid {
+    padding: 1rem !important;
+  }
+
+  /* Employee selection responsive */
+  .employee-selection {
+    width: 100%;
+  }
+
+  .type-of-employee-btn {
+    width: 100%;
+  }
+
+}
+
+@media (max-width: 767.98px) {
+  /* Medium mobile adjustments */
   .search-group { 
     margin-left: 0; 
     max-width: 100%;
+  }
+
+  /* Search container */
+  .search-container label {
+    font-size: 0.875rem;
   }
   
   .d-flex.gap-3 {
@@ -197,35 +229,108 @@
   .d-flex.gap-3 > div {
     width: 100%;
   }
+
+  /* Filter inputs stack vertically */
+  .row.mb-3 > div {
+    margin-bottom: 0.75rem;
+  }
+
+  .row.mb-3 > div:last-child {
+    margin-bottom: 0;
+  }
 }
 
-/* Worker Attendance List Styles */
-.worker-attendance-item {
+@media (max-width: 575.98px) {
+  /* Extra small devices */
+  .topbar {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .topbar .page-title {
+    font-size: 1rem !important;
+  }
+
+  /* Employee selection smaller */
+  .type-of-employee-btn {
+    width: 100%;
+    font-size: 0.875rem;
+  }
+
+  .select-employee-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+
+  /* Pagination buttons smaller */
+  .mt-3.text-center .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    margin: 0 0.125rem !important;
+  }
+
+  .mt-3.text-center .btn i {
+    font-size: 0.75rem;
+  }
+
+  /* Search input */
+  #attendanceSearch,
+  #attendanceDate,
+  #attendanceStatus {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  /* Card spacing */
+  .card {
+    margin-bottom: 0.75rem;
+  }
+
+  .card-header {
+    padding: 0.75rem;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .card-header small {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Worker & Staff Attendance List Styles */
+.worker-attendance-item,
+.staff-attendance-item {
   border: 1px solid rgba(0,0,0,.05);
   transition: all 0.3s ease;
   padding: 1rem;
 }
 
-.worker-attendance-item:hover {
+.worker-attendance-item:hover,
+.staff-attendance-item:hover {
   background-color: #f8f9fa;
   border-color: #0d6efd;
 }
 
-.worker-attendance-item img {
+.worker-attendance-item img,
+.staff-attendance-item img {
   border: 2px solid #e9ecef;
   object-fit: cover;
 }
 
-.worker-attendance-item .fw-semibold {
+.worker-attendance-item .fw-semibold,
+.staff-attendance-item .fw-semibold {
   color: #2c3e50;
   font-size: 1rem;
 }
 
-.worker-attendance-item .btn-group .btn {
+.worker-attendance-item .btn-group .btn,
+.staff-attendance-item .btn-group .btn {
   padding: 0.25rem 0.5rem;
 }
 
-.worker-attendance-item .btn-group .btn i {
+.worker-attendance-item .btn-group .btn i,
+.staff-attendance-item .btn-group .btn i {
   font-size: 0.8rem;
 }
 
@@ -262,23 +367,4 @@
 .pagination-sm .page-link {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
-}
-
-/* Responsive Improvements */
-@media (max-width: 768px) {
-  .worker-attendance-item .d-flex {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .worker-attendance-item .text-end {
-    text-align: left !important;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .worker-attendance-item .btn-group {
-    margin-top: 0;
-  }
 }
