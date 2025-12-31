@@ -929,14 +929,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Fetch current base salary for a staff (worker) by ID
-    async function fetchBaseSalaryForStaff(staffId) {
+    // Fetch current base salary for a staff (worker) or user (staff) by ID
+    async function fetchBaseSalaryForStaff(staffId, isUser = false) {
         try {
             if (!AUTH_TOKEN) {
                 throw new Error('Authentication required');
             }
-            // Correct endpoint: /api/v1/staff/{id}/base-salary
-            const url = new URL(`https://mwms.megacess.com/api/v1/staff/${staffId}/base-salary`);
+            // Use correct endpoint based on employee type
+            // Staff members (users) use /api/v1/users/{id}/base-salary
+            // Workers use /api/v1/staff/{id}/base-salary
+            const endpoint = isUser 
+                ? `https://mwms.megacess.com/api/v1/users/${staffId}/base-salary`
+                : `https://mwms.megacess.com/api/v1/staff/${staffId}/base-salary`;
+            const url = new URL(endpoint);
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -1538,9 +1543,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const baseSalaryEl = document.getElementById('baseSalary');
         let baseVal = '0.00';
         // Prefer API base-salary for staff endpoints (workers use staff id)
+        // Use isStaff already declared at function start to determine employee type
         // Try to use staff_id if present, else fallback to currentPayslipWorkerId
-        let staffIdForSalary = workerData.staff_id || currentPayslipWorkerId;
-        const baseData = await fetchBaseSalaryForStaff(staffIdForSalary);
+        let staffIdForSalary = workerData.staff_id || workerData.id || currentPayslipWorkerId;
+        const baseData = await fetchBaseSalaryForStaff(staffIdForSalary, isStaff);
         if (baseData !== null && typeof baseData !== 'undefined') {
             baseVal = (!isNaN(parseFloat(baseData))) ? parseFloat(baseData).toFixed(2) : '0.00';
         } else {

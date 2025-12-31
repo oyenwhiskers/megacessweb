@@ -23,8 +23,8 @@ function showLoading(container) {
 
 function hideLoading(container) {
   if (!container) return;
-  
-  const loadingOverlay = container.querySelector('.loading-overlay');
+
+  const loadingOverlay = container.querySelector(".loading-overlay");
   if (loadingOverlay) {
     loadingOverlay.remove();
   }
@@ -143,10 +143,10 @@ document.addEventListener("DOMContentLoaded", async function () {
   const initPromises = [
     initLocationsAndDependents(), // Handles Locations + Monthly Chart + Resource Usage
     fetchBlockTaskCompletion(year),
-    fetchEstateOfficerTasks(year, 10), // Default to October as per original
-    fetchAttendanceByMandors(year, 10),
-    fetchAbsentWorkers(year, 10),
-    fetchAuditedSummary(year, 10),
+    fetchEstateOfficerTasks(year, currentMonth), // Use current month instead of hardcoded October
+    fetchAttendanceByMandors(year, currentMonth),
+    fetchAbsentWorkers(year, currentMonth),
+    fetchAuditedSummary(year, currentMonth),
   ];
 
   // --- Block Chart Filter Controls ---
@@ -1453,8 +1453,6 @@ async function fetchAuditedSummary(year, month) {
       return;
     }
 
-    console.log("Fetching audited summary for year:", year, "month:", month);
-
     // Show loading state
     const summaryContainer = document.querySelector(".audited-summary-content");
     if (summaryContainer) {
@@ -1487,13 +1485,11 @@ async function fetchAuditedSummary(year, month) {
     }
 
     const result = await response.json();
-    console.log("Audited Summary API Response:", result);
 
     if (result.data && result.data.summary) {
-      console.log("Updating audited summary with data:", result.data.summary);
       updateAuditedSummary(result.data);
     } else {
-      console.warn("No audited summary data found in API response");
+      updateAuditedSummary({ summary: [] });
     }
   } catch (error) {
     console.error("Error fetching audited summary:", error);
@@ -1547,20 +1543,19 @@ function updateAuditedSummary(data) {
     harvesting: [],
     pruning: [],
     sanitation: [],
+    other: [],
   };
 
   data.summary.forEach((item) => {
     const taskType = item.task_type.toLowerCase();
-    if (groupedData[taskType]) {
+
+    if (groupedData[taskType] !== undefined) {
       groupedData[taskType].push(item);
     } else {
-      // Create new category if not exists
-      if (!groupedData.other) groupedData.other = [];
+      // Store unrecognized task types in 'other'
       groupedData.other.push(item);
     }
   });
-
-  // Create sections based on available data
 
   // Fertilizing and Harvesting Section
   const fertHarvestData = [
@@ -1588,6 +1583,9 @@ function updateAuditedSummary(data) {
                 <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                     <div class="bg-success text-white p-2"></div>
                     <div class="card-body p-4">
+                        <p class="text-muted fw-semibold mb-2">${
+                          item.task_name
+                        }:</p>
                         <p class="text-muted mb-2">${item.category_name}:</p>
                         <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
                         <hr>
@@ -1631,6 +1629,9 @@ function updateAuditedSummary(data) {
                 <div class="col-md-${
                   12 / groupedData.pruning.length
                 } ${borderClass}">
+                    <p class="text-muted fw-semibold mb-2">${
+                      item.task_name
+                    }:</p>
                     <p class="text-muted mb-2">${item.category_name}:</p>
                     <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
                     <p class="text-muted mb-1">Recent pruned block:</p>
@@ -1680,6 +1681,7 @@ function updateAuditedSummary(data) {
                 <div class="col-md-${
                   12 / groupedData.sanitation.length
                 } ${borderClass}">
+                    <p class="text-muted fw-semibold mb-2">Total acre:</p>
                     <p class="mb-2"><strong>${item.category_name}:</strong></p>
                     <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
                     <p class="text-muted mb-1">Recent ${item.category_name.toLowerCase()} block:</p>
@@ -1698,10 +1700,9 @@ function updateAuditedSummary(data) {
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                 <div class="bg-success text-white p-2"></div>
                 <div class="card-body p-4">
-                    <p class="text-muted mb-3">Total acre sanitized:</p>
-                    <div class="row">
-                        ${sanitationColumns}
-                    </div>
+                  <div class="row">
+                      ${sanitationColumns}
+                  </div>
                 </div>
             </div>
         `;
@@ -1710,7 +1711,54 @@ function updateAuditedSummary(data) {
     summaryContainer.appendChild(sanitationRow);
   }
 
-  console.log("Audited summary updated successfully");
+  // Other/Unrecognized Task Types Section
+  if (groupedData.other && groupedData.other.length > 0) {
+    const otherRow = document.createElement("div");
+    otherRow.className = "row g-3 mb-3";
+
+    groupedData.other.forEach((item) => {
+      const col = document.createElement("div");
+      col.className = "col-md-6";
+
+      const formattedDate = item.recent_block?.checked_at
+        ? formatDate(item.recent_block.checked_at)
+        : "N/A";
+
+      const totalValue = formatNumber(item.total_value);
+      const recentValue = item.recent_block?.total_value
+        ? formatNumber(item.recent_block.total_value)
+        : "N/A";
+
+      col.innerHTML = `
+                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="bg-success text-white p-2"></div>
+                    <div class="card-body p-4">
+                        <p class="text-muted fw-semibold mb-2">${
+                          item.task_name
+                        }:</p>
+                        <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
+                        <hr>
+                        <p class="text-muted mb-2">Recent block:</p>
+                        <p class="mb-0">
+                            <strong>Area:</strong> ${
+                              item.recent_block?.location_name || "N/A"
+                            }
+                            ${
+                              item.recent_block?.total_value
+                                ? `<strong class="ms-3">Total:</strong> ${recentValue} ${
+                                    item.unit || ""
+                                  }`
+                                : ""
+                            }
+                        </p>
+                    </div>
+                </div>
+            `;
+      otherRow.appendChild(col);
+    });
+
+    summaryContainer.appendChild(otherRow);
+  }
 }
 
 function formatDate(dateString) {
