@@ -758,11 +758,14 @@
 
             // Collect all editable fields
             const staffDocInput = modalBody.querySelector('input[name="staff_doc"]');
-            const fullNameInput = modalBody.querySelector('input[name="fullname"]');
-            const phoneInput = modalBody.querySelector('input[name="phone"]');
-            const dobInput = modalBody.querySelector('input[name="dob"]');
+            const fullNameInput = modalBody.querySelector('input[name="staff_fullname"]');
+            const phoneInput = modalBody.querySelector('input[name="staff_phone"]');
+            const dobInput = modalBody.querySelector('input[name="staff_dob"]');
             const genderInput = modalBody.querySelector('input[name="gender"], select[name="gender"]');
             const startDateInput = modalBody.querySelector('input[name="staff_employment_start_date"]');
+            const bankNameInput = modalBody.querySelector('input[name="staff_bank_name"]');
+            const bankNumberInput = modalBody.querySelector('input[name="staff_bank_number"]');
+            const kwspNumberInput = modalBody.querySelector('input[name="staff_kwsp_number"]');
 
             // Check if there's an image file to upload
             const imageInput = document.getElementById('workerDetailsImageInput');
@@ -805,6 +808,15 @@
             if (startDateInput && startDateInput.value) {
                 formData.append('staff_employment_start_date', startDateInput.value);
             }
+            if (bankNameInput && bankNameInput.value) {
+                formData.append('staff_bank_name', bankNameInput.value);
+            }
+            if (bankNumberInput && bankNumberInput.value) {
+                formData.append('staff_bank_number', bankNumberInput.value);
+            }
+            if (kwspNumberInput && kwspNumberInput.value) {
+                formData.append('staff_kwsp_number', kwspNumberInput.value);
+            }
 
             // Append image file if present
             if (imageFile) {
@@ -831,20 +843,37 @@
             if (!response.ok) {
                 // Handle API error response
                 const errorMessage = result.message || result.error || 'Failed to save changes.';
-                throw new Error(errorMessage);
+                Swals.fire({
+                    icon: 'error',
+                    title: 'Save Failed',
+                    text: errorMessage, 
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
             }
 
             if (!result.success) {
                 // Handle non-success response
                 const errorMessage = result.message || 'Failed to save changes.';
-                throw new Error(errorMessage);
+                Swals.fire({
+                    icon: 'error',
+                    title: 'Save Failed',
+                    text: errorMessage,
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
             }
 
             // Show success message
             if (typeof showNotification === 'function') {
                 showNotification('Worker details updated successfully!', 'success');
             } else {
-                alert('Worker details updated successfully!');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Worker details updated successfully!',
+                    confirmButtonColor: '#0d6832'
+                })
             }
 
             // Close the modal
