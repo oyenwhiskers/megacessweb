@@ -1,5 +1,57 @@
 // Worker List Management
 (function() {
+    // Add toggle switch CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #0d6832;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px #0d6832;
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        input:disabled + .slider {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    `;
+    document.head.appendChild(style);
+    
     // Configuration
     const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
     const DEFAULT_PER_PAGE = 10;
@@ -86,14 +138,26 @@
             }
         }
         
-        // Determine active/inactive status
-        const isActive = worker.is_active !== false; // Default to active if not specified
-        const statusBtnClass = isActive ? 'btn-success' : 'btn-outline-secondary';
-        const statusBtnText = isActive ? 'Active' : 'Inactive';
-        const statusBtnIcon = isActive ? 'bi-toggle-on' : 'bi-toggle-off';
+        // Determine active/inactive status - check multiple possible field names and formats
+        let isActive = true; // Default to active
+        
+        if (worker.hasOwnProperty('is_active')) {
+            // Boolean field
+            isActive = worker.is_active === true || worker.is_active === 1 || worker.is_active === '1';
+        } else if (worker.hasOwnProperty('staff_status')) {
+            // String field
+            isActive = worker.staff_status === 'active';
+        } else if (worker.hasOwnProperty('status')) {
+            // Alternative string field
+            isActive = worker.status === 'active';
+        }
+        
+        const statusBadgeClass = isActive ? 'bg-success' : 'bg-secondary';
+        const statusBadgeText = isActive ? 'Active' : 'Inactive';
+        const inactiveStyle = !isActive ? 'opacity: 0.7; background-color: #f8f9fa;' : '';
 
         return `
-            <div class="list-group-item worker-list-item ${claimedStatus}">
+            <div class="list-group-item worker-list-item ${claimedStatus}" style="${inactiveStyle}">
                 <div class="d-flex align-items-center">
                     <div style="width:48px;height:48px;flex:0 0 48px;">
                         <img src="${imageSrc}" 
@@ -107,6 +171,7 @@
                         <div class="small text-muted mb-1">
                             <i class="bi bi-telephone me-1"></i>${formatPhone(worker.staff_phone)}
                             <span class="ms-3"><span class="badge ${claimedBadge}">${claimedText}</span></span>
+                            <span class="ms-2"><span class="badge ${statusBadgeClass}">${statusBadgeText}</span></span>
                         </div>
                         ${worker.claimed_staff ? `
                             <div class="small text-muted mb-2">
@@ -115,6 +180,13 @@
                         ` : ''}
                     </div>
                     <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex flex-column align-items-center">
+                            <label class="switch mb-1" title="Toggle Active/Inactive">
+                                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleWorkerStatus(${worker.id}, this.checked)" data-worker-id="${worker.id}">
+                                <span class="slider"></span>
+                            </label>
+                            <small class="text-muted" style="font-size:0.7rem;">${isActive ? 'Active' : 'Inactive'}</small>
+                        </div>
                         <div class="btn-group" role="group">
                             <button class="btn btn-sm btn-primary" 
                                     onclick="viewWorkerDetails(${worker.id})"
@@ -125,9 +197,6 @@
                                     onclick="deleteWorker(${worker.id})"
                                     title="Delete Worker">
                                 <i class="bi bi-trash"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm ${statusBtnClass}" title="Toggle Active/Inactive" onclick="toggleWorkerStatus(${worker.id}, ${isActive})">
-                                <i class="bi ${statusBtnIcon} me-1"></i>${statusBtnText}
                             </button>
                         </div>
                     </div>
@@ -234,13 +303,13 @@
             currentSearch = search;
             currentPage = page;
             
-            // Build API URL
+            // Build API URL - fetch ALL workers (we'll handle pagination client-side)
             const url = new URL(`${API_BASE_URL}/staff`);
             
-            // Add query parameters
+            // Add query parameters - fetch large number to get all workers
             const params = {
-                per_page: DEFAULT_PER_PAGE.toString(),
-                page: page.toString(),
+                per_page: '1000', // Fetch all workers at once
+                page: '1',
                 role: 'worker' // Only fetch workers, not staff with other roles
             };
             
@@ -282,27 +351,53 @@
                 throw new Error('Invalid response format');
             }
             
-            const workers = result.data;
-            const meta = result.meta;
+            let allWorkers = result.data;
             
-            if (workers.length === 0) {
+            if (allWorkers.length === 0) {
                 showEmpty(search);
                 return;
             }
             
+            // Separate active and inactive workers
+            const activeWorkers = [];
+            const inactiveWorkers = [];
+            
+            allWorkers.forEach(worker => {
+                let isActive = true;
+                if (worker.hasOwnProperty('is_active')) {
+                    isActive = worker.is_active === true || worker.is_active === 1 || worker.is_active === '1';
+                } else if (worker.hasOwnProperty('staff_status')) {
+                    isActive = worker.staff_status === 'active';
+                } else if (worker.hasOwnProperty('status')) {
+                    isActive = worker.status === 'active';
+                }
+                
+                if (isActive) {
+                    activeWorkers.push(worker);
+                } else {
+                    inactiveWorkers.push(worker);
+                }
+            });
+            
+            // Combine: active workers first, then inactive workers
+            const sortedWorkers = [...activeWorkers, ...inactiveWorkers];
+            
+            // Calculate client-side pagination
+            const totalWorkers = sortedWorkers.length;
+            const totalPages = Math.ceil(totalWorkers / DEFAULT_PER_PAGE);
+            const startIndex = (page - 1) * DEFAULT_PER_PAGE;
+            const endIndex = startIndex + DEFAULT_PER_PAGE;
+            const workersOnPage = sortedWorkers.slice(startIndex, endIndex);
+            
             // Render workers in list format
             let workersHTML = `
                 <div class="list-group text-start">
-                    ${workers.map(worker => createWorkerListItem(worker)).join('')}
+                    ${workersOnPage.map(worker => createWorkerListItem(worker)).join('')}
                 </div>
             `;
             
-            // Add pagination if available
-            if (meta) {
-                const totalPages = meta.last_page || 1;
-                const totalItems = meta.total || workers.length;
-                workersHTML += createPaginationHTML(page, totalPages, totalItems, search);
-            }
+            // Add pagination
+            workersHTML += createPaginationHTML(page, totalPages, totalWorkers, search);
             
             workersView.innerHTML = workersHTML;
             
@@ -917,7 +1012,18 @@
     
     window.deleteWorker = async function(workerId) {
         // Show confirmation dialog
-        if (!confirm('Delete this worker?')) {
+        const confirmed = await Swal.fire({
+            title: 'Delete Worker?',
+            text: 'This action cannot be undone!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (!confirmed.isConfirmed) {
             return; // User cancelled
         }
         
@@ -932,25 +1038,38 @@
                 }
             });
             
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Authentication failed. Please log in again.');
-                } else if (response.status === 403) {
-                    throw new Error('Access denied. You do not have permission to delete this worker.');
-                } else if (response.status === 404) {
-                    throw new Error('Worker not found.');
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+            // Try to parse the response body first to get server error messages
+            let result;
+            try {
+                result = await response.json();
+            } catch (e) {
+                result = null;
             }
             
-            const result = await response.json();
+            if (!response.ok) {
+                // Use server's error message if available
+                let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
+                
+                if (response.status === 401) {
+                    errorMessage = 'Authentication failed. Please log in again.';
+                } else if (response.status === 403) {
+                    errorMessage = result?.message || 'Access denied. You do not have permission to delete this worker.';
+                } else if (response.status === 404) {
+                    errorMessage = 'Worker not found.';
+                } else if (response.status === 400) {
+                    errorMessage = result?.message || 'Invalid request. Please check the worker details.';
+                } else if (response.status === 409) {
+                    errorMessage = result?.message || 'Cannot delete worker. This worker may have related records (attendance, payroll, etc.).';
+                }
+                
+                throw new Error(errorMessage);
+            }
             
             // Show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Deleted!',
-                text: result.message || 'Worker deleted successfully!',
+                text: result?.message || 'Worker deleted successfully!',
                 confirmButtonColor: '#0d6832',
                 timer: 2000,
                 timerProgressBar: true
@@ -970,38 +1089,85 @@
     };
     
     // Toggle worker active/inactive status
-    window.toggleWorkerStatus = async function(workerId, currentStatus) {
+    window.toggleWorkerStatus = async function(workerId, isChecked) {
+        const checkbox = document.querySelector(`input[data-worker-id="${workerId}"]`);
+        
+        if (!checkbox) {
+            console.error('Checkbox not found for worker:', workerId);
+            return;
+        }
+        
+        // Disable checkbox while updating
+        checkbox.disabled = true;
+        const originalState = !isChecked;
+        
         try {
-            // Show loading indicator (optional)
-            const btn = document.querySelector(`button[onclick="toggleWorkerStatus(${workerId}, ${currentStatus})"]`);
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Updating...';
-            }
             // API call to update status
             const headers = {
                 'Authorization': `Bearer ${getAuthToken()}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             };
-            const newStatus = currentStatus ? 'inactive' : 'active';
+            
+            const newStatus = isChecked ? 'active' : 'inactive';
             const requestBody = { staff_status: newStatus };
+            
             const response = await fetch(`${API_BASE_URL}/staff/${workerId}/status`, {
                 method: 'PUT',
                 headers: headers,
                 body: JSON.stringify(requestBody)
             });
-            if (!response.ok) {
-                throw new Error('Failed to update status.');
+            
+            // Try to parse the response body
+            let result;
+            try {
+                result = await response.json();
+            } catch (e) {
+                result = null;
             }
-            const result = await response.json();
-            alert(result.message || 'Status updated!');
-            // Refresh list
-            fetchWorkersList(currentSearch, currentPage);
+            
+            if (!response.ok) {
+                // Use server's error message if available
+                let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
+                
+                if (response.status === 401) {
+                    errorMessage = 'Authentication failed. Please log in again.';
+                } else if (response.status === 403) {
+                    errorMessage = result?.message || 'Access denied. You do not have permission to change worker status.';
+                } else if (response.status === 404) {
+                    errorMessage = 'Worker not found.';
+                } else if (response.status === 400) {
+                    errorMessage = result?.message || 'Invalid status value.';
+                }
+                
+                throw new Error(errorMessage);
+            }
+            
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Status Updated',
+                text: result?.message || `Worker is now ${newStatus}!`,
+                confirmButtonColor: '#0d6832',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+            
+            // Force refresh list to show updated status and re-sort
+            await fetchWorkersList(currentSearch, currentPage);
+            
         } catch (error) {
-            alert('Error updating status: ' + error.message);
-        } finally {
-            // Re-enable button after refresh
+            // Revert checkbox state on error
+            checkbox.checked = originalState;
+            checkbox.disabled = false;
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: error.message || 'Failed to update worker status.',
+                confirmButtonColor: '#dc3545'
+            });
         }
     };
     
