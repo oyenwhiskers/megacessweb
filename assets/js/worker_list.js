@@ -49,6 +49,83 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .worker-list-item .d-flex.align-items-center {
+                flex-wrap: wrap;
+            }
+            
+            .worker-list-item .d-flex.align-items-center > div:last-child {
+                width: 100%;
+                margin-top: 0.5rem;
+                justify-content: flex-end;
+            }
+            
+            .switch {
+                width: 38px;
+                height: 20px;
+            }
+            
+            .slider:before {
+                height: 14px;
+                width: 14px;
+            }
+            
+            input:checked + .slider:before {
+                transform: translateX(18px);
+            }
+            
+            .worker-list-item .btn-group .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            
+            .worker-list-item .btn-group .btn i {
+                font-size: 0.85rem;
+            }
+            
+            .worker-list-item small {
+                font-size: 0.7rem !important;
+                min-width: 50px !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .worker-list-item .d-flex.gap-2 {
+                gap: 0.4rem !important;
+            }
+            
+            .switch {
+                width: 36px;
+                height: 18px;
+            }
+            
+            .slider:before {
+                height: 12px;
+                width: 12px;
+                left: 2px;
+                bottom: 3px;
+            }
+            
+            input:checked + .slider:before {
+                transform: translateX(18px);
+            }
+            
+            .worker-list-item .btn-group .btn {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+            
+            .worker-list-item .btn-group .btn i {
+                font-size: 0.75rem;
+            }
+            
+            .worker-list-item small {
+                font-size: 0.65rem !important;
+                min-width: 45px !important;
+            }
+        }
     `;
     document.head.appendChild(style);
     
@@ -180,13 +257,11 @@
                         ` : ''}
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <div class="d-flex flex-column align-items-center">
-                            <label class="switch mb-1" title="Toggle Active/Inactive">
-                                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleWorkerStatus(${worker.id}, this.checked)" data-worker-id="${worker.id}">
-                                <span class="slider"></span>
-                            </label>
-                            <small class="text-muted" style="font-size:0.7rem;">${isActive ? 'Active' : 'Inactive'}</small>
-                        </div>
+                        <label class="switch" title="Toggle Active/Inactive">
+                            <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleWorkerStatus(${worker.id}, this.checked)" data-worker-id="${worker.id}">
+                            <span class="slider"></span>
+                        </label>
+                        <small class="text-muted text-nowrap" style="font-size:0.75rem;min-width:55px;">${isActive ? 'Active' : 'Inactive'}</small>
                         <div class="btn-group" role="group">
                             <button class="btn btn-sm btn-primary" 
                                     onclick="viewWorkerDetails(${worker.id})"
