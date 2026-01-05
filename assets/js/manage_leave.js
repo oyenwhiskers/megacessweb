@@ -459,7 +459,132 @@
             document.getElementById('detailEndDate').textContent = leave.end_date || leave.to_date || '-';
             document.getElementById('detailRemarks').textContent = leave.remarks || leave.notes || '-';
             
+            // Store leave ID for delete function
+            const modalElement = document.getElementById('viewLeaveDetailsModal');
+            if (modalElement) {
+                modalElement.dataset.leaveId = leave.id || leave.staff_attendance_id || '';
+            }
+            
             modal.show();
+        };
+        
+        // Delete leave record function
+        window.deleteLeaveRecord = async function(leaveId) {
+            // Get leave ID from modal if not provided
+            if (!leaveId) {
+                const modalElement = document.getElementById('viewLeaveDetailsModal');
+                leaveId = modalElement?.dataset?.leaveId;
+            }
+            
+            if (!leaveId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Leave record ID not found.',
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
+            }
+            
+            // Show confirmation dialog
+            const confirmed = await Swal.fire({
+                title: 'Delete Leave Record?',
+                text: 'This action cannot be undone!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            });
+            
+            if (!confirmed.isConfirmed) {
+                return;
+            }
+            
+            try {
+                const token = getAuthToken();
+                if (!token) return;
+                
+                // Determine the correct endpoint based on userType
+                // For workers: staff-attendance, for staff: user-attendance
+                const endpoint = userType === 'worker' 
+                    ? `${API_BASE_URL}/staff-attendance/${leaveId}`
+                    : `${API_BASE_URL}/user-attendance/${leaveId}`;
+                
+                // Make DELETE request
+                const response = await fetch(endpoint, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                // Try to parse response
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    result = null;
+                }
+                
+                if (!response.ok) {
+                    // Use server's error message if available
+                    let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
+                    
+                    if (response.status === 401) {
+                        errorMessage = 'Authentication failed. Please log in again.';
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'Authentication Failed',
+                            text: errorMessage,
+                            confirmButtonColor: '#dc3545'
+                        });
+                        window.location.href = '/megacessweb/pages/log-in.html';
+                        return;
+                    } else if (response.status === 403) {
+                        errorMessage = result?.message || 'Access denied. You do not have permission to delete this leave record.';
+                    } else if (response.status === 404) {
+                        errorMessage = 'Leave record not found.';
+                    } else if (response.status === 400) {
+                        errorMessage = result?.message || 'Invalid request.';
+                    } else if (response.status === 409) {
+                        errorMessage = result?.message || 'Cannot delete leave record due to related records.';
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                // Close the modal
+                const modalElement = document.getElementById('viewLeaveDetailsModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                
+                // Show success message
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted!',
+                    text: result?.message || 'Leave record deleted successfully!',
+                    confirmButtonColor: '#0d6832',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+                
+                // Refresh the leave records list
+                loadLeaveRecords();
+                
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Delete Failed',
+                    text: error.message || 'Failed to delete leave record.',
+                    confirmButtonColor: '#dc3545'
+                });
+            }
         };
         
         // Initialize when DOM is ready
