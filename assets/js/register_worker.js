@@ -41,30 +41,19 @@
     
     // Show success message
     function showSuccess(message, workerData) {
-        // Create success alert
-        const alertHTML = `
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i>
-                <strong>Success!</strong> ${message}
-                ${workerData ? `<br><small class="text-muted">Worker ID: ${workerData.id}</small>` : ''}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        // Insert at the top of modal body
-        const modalBody = registerWorkerModal.querySelector('.modal-body');
-        modalBody.insertAdjacentHTML('afterbegin', alertHTML);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            const alert = modalBody.querySelector('.alert-success');
-            if (alert) {
-                alert.remove();
-            }
-        }, 5000);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            html: message + (workerData ? `<br><small class="text-muted">Worker ID: ${workerData.id}</small>` : ''),
+            showConfirmButton: true,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0d6832',
+            timer: 3000,
+            timerProgressBar: true
+        });
     }
     
-    // Show error message using SweetAlert2
+    // Show error message
     function showError(message) {
         Swal.fire({
             icon: 'error',
@@ -103,8 +92,8 @@
         }
         
         // Validate start date (optional, but must be valid if present)
-        if (formData.startdate) {
-            const startDate = new Date(formData.startdate);
+        if (formData.staff_employment_start_date) {
+            const startDate = new Date(formData.staff_employment_start_date);
             const today = new Date();
             if (isNaN(startDate.getTime())) {
                 errors.push('Start Date is invalid');
@@ -138,38 +127,21 @@
     
     // Format form data for API
     function formatFormDataForAPI(formData, imageFile = null) {
-        // Create FormData object to handle file upload
-        const apiFormData = new FormData();
+        // Create JSON object for worker registration
+        const apiData = {
+            staff_fullname: formData.fullname?.trim() || '',
+            staff_phone: formData.phone?.trim() || '',
+            staff_dob: formData.dob || '',
+            staff_gender: formData.gender || '',
+            staff_doc: formData.staff_doc?.trim() || '',
+            staff_employment_start_date: formData.staff_employment_start_date || '',
+            staff_bank_name: formData.banktype?.trim() || '',
+            staff_bank_number: formData.bankaccount?.trim() || '',
+            staff_kwsp_number: formData.kwsp?.trim() || '',
+            staff_img: '' // Image upload handled separately if needed
+        };
         
-        // Add text fields
-        apiFormData.append('staff_fullname', formData.fullname.trim());
-        apiFormData.append('staff_phone', formData.phone.trim());
-        apiFormData.append('staff_dob', formData.dob);
-        apiFormData.append('staff_gender', formData.gender);
-        apiFormData.append('staff_doc', formData.staff_doc.trim());
-        
-        // Add start date if provided
-        if (formData.staff_employment_start_date) {
-            apiFormData.append('staff_employment_start_date', formData.staff_employment_start_date);
-        }
-        
-        // Add optional fields
-        if (formData.banktype?.trim()) {
-            apiFormData.append('staff_bank_name', formData.banktype.trim());
-        }
-        if (formData.bankaccount?.trim()) {
-            apiFormData.append('staff_bank_number', formData.bankaccount.trim());
-        }
-        if (formData.kwsp?.trim()) {
-            apiFormData.append('staff_kwsp_number', formData.kwsp.trim());
-        }
-        
-        // Add image file if provided
-        if (imageFile) {
-            apiFormData.append('staff_img', imageFile);
-        }
-        
-        return apiFormData;
+        return apiData;
     }
     
     // Reset form
@@ -225,7 +197,7 @@
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: apiData
+                body: JSON.stringify(apiData)
             });
             
             const result = await response.json();
@@ -269,11 +241,18 @@
                 }
             }
             
-            // Success
-            showSuccess(`Worker "${apiData.staff_fullname}" has been registered successfully!`, result.data);
-            
-            // Reset form after a short delay
-            setTimeout(() => {
+            // Show success message when registration is successful
+            Swal.fire({
+                icon: 'success',
+                title: 'Worker Registered!',
+                html: `Worker "<strong>${formData.fullname}</strong>" has been registered successfully!` + 
+                      (result.data?.id ? `<br><small class="text-muted">Worker ID: ${result.data.id}</small>` : ''),
+                showConfirmButton: true,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d6832',
+                timer: 3000,
+                timerProgressBar: true
+            }).then(() => {
                 resetForm();
                 
                 // Close modal after successful registration
@@ -290,7 +269,7 @@
                     const currentGender = document.querySelector('#genderFilterGroup .btn.active')?.getAttribute('data-gender') || 'all';
                     window.fetchWorkersList(searchInput ? searchInput.value : '', 1, currentGender);
                 }
-            }, 2000);
+            });
             
         } catch (error) {
             showError(error.message || 'Failed to register worker. Please try again.');

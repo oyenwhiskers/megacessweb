@@ -873,8 +873,20 @@
     const staffMember = staffListCache.find(s => (s.id || s.user_id) === staffId);
     const staffName = staffMember ? (staffMember.user_fullname || staffMember.name || 'this staff member') : 'this staff member';
     
-    if (!confirm(`Delete this staff permanently?\n\nStaff: ${staffName}\n\nThis action cannot be undone.`)) {
-      return;
+    // Show confirmation dialog with SweetAlert
+    const confirmed = await Swal.fire({
+      title: 'Delete Staff?',
+      html: `Are you sure you want to delete <strong>${staffName}</strong>?<br><br>This action cannot be undone!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    });
+    
+    if (!confirmed.isConfirmed) {
+      return; // User cancelled
     }
     
     try {
@@ -884,7 +896,12 @@
                    sessionStorage.getItem('authToken');
       
       if (!token) {
-        alert('Authentication token not found. Please log in again.');
+        await Swal.fire({
+          icon: 'error',
+          title: 'Authentication Required',
+          text: 'Authentication token not found. Please log in again.',
+          confirmButtonColor: '#dc3545'
+        });
         window.location.href = '/megacessweb/pages/log-in.html';
         return;
       }
@@ -899,42 +916,58 @@
         }
       });
       
+      // Try to parse the response body first to get server error messages
+      let result;
+      try {
+        result = await response.json();
+      } catch (e) {
+        result = null;
+      }
+      
       if (!response.ok) {
+        // Use server's error message if available
+        let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
+        
         if (response.status === 401) {
-          alert('Authentication failed. Please log in again.');
+          errorMessage = 'Authentication failed. Please log in again.';
+          await Swal.fire({
+            icon: 'error',
+            title: 'Authentication Failed',
+            text: errorMessage,
+            confirmButtonColor: '#dc3545'
+          });
           window.location.href = '/megacessweb/pages/log-in.html';
           return;
         } else if (response.status === 403) {
-          alert('Access denied. You do not have permission to delete this staff member.');
-          return;
+          errorMessage = result?.message || 'Access denied. You do not have permission to delete this staff member.';
         } else if (response.status === 404) {
-          alert('Staff member not found.');
-          return;
-        } else {
-          throw new Error(`Failed to delete staff (${response.status})`);
+          errorMessage = 'Staff member not found.';
+        } else if (response.status === 400) {
+          errorMessage = result?.message || 'Invalid request. Please check the staff details.';
+        } else if (response.status === 409) {
+          errorMessage = result?.message || 'Cannot delete staff. This staff member may have related records.';
         }
-      }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        alert(result.message || 'User deleted successfully');
         
-        // Refresh the staff list
-        fetchStaffList(currentSearch, currentRoleFilter);
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Delete Failed',
-          text: 'Failed to delete staff member.',
-          confirmButtonColor: '#dc3545'
-        });
+        throw new Error(errorMessage);
       }
+      
+      // Show success message
+      await Swal.fire({
+        icon: 'success',
+        title: 'Deleted!',
+        text: result?.message || 'Staff member deleted successfully!',
+        confirmButtonColor: '#0d6832',
+        timer: 2000,
+        timerProgressBar: true
+      });
+      
+      // Refresh the staff list
+      fetchStaffList(currentSearch, currentRoleFilter);
       
     } catch (error) {
       Swal.fire({
         icon: 'error',
-        title: 'Error',
+        title: 'Delete Failed',
         text: error.message || 'Failed to delete staff member.',
         confirmButtonColor: '#dc3545'
       });
@@ -994,12 +1027,12 @@
             <div class="modal-body">
               <label for="newPassword" class="form-label">New Password:</label>
               <div class="input-group mb-2">
-                <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="6" placeholder="Enter new password">
+                <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="8" placeholder="Enter new password">
                 <button type="button" class="btn btn-outline-secondary" tabindex="-1" id="toggleNewPassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
               </div>
               <label for="confirmPassword" class="form-label mt-3">Confirm Password:</label>
               <div class="input-group mb-2">
-                <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="6" placeholder="Confirm new password">
+                <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="8" placeholder="Confirm new password">
                 <button type="button" class="btn btn-outline-secondary" tabindex="-1" id="toggleConfirmPassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
               </div>
               <div id="resetPasswordError" class="text-danger mt-2" style="display:none;"></div>
@@ -1100,7 +1133,14 @@
         }
         // Success
         modalInstance.hide();
-        alert('Password reset successfully!');
+        Swal.fire({
+          icon: 'success',
+          title: 'Password Reset',
+          text: 'Password reset successfully!', 
+          confirmButtonColor: '#0d6832',
+          timer: 2000,
+          timerProgressBar: true
+        });
       } catch (err) {
         errorDiv.textContent = 'Network or server error. Please try again.';
         errorDiv.style.display = 'block';
