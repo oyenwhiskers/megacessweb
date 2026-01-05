@@ -141,7 +141,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             <div class="alert alert-danger" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>
                 <strong>Error:</strong> ${message}
-                <button class="btn btn-outline-danger btn-sm ms-3" onclick="window.fetchWorkerAttendanceList('${currentSearch}', 1, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                <button class="btn btn-outline-danger btn-sm ms-3" onclick="window.retryWorkerAttendanceList()">
                     <i class="bi bi-arrow-clockwise me-1"></i>Retry
                 </button>
             </div>
@@ -314,7 +314,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         // Previous button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage <= 1 ? 'disabled' : ''} 
-                    onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${currentPage - 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                    onclick="window.retryWorkerAttendanceList(${currentPage - 1})">
                 <i class="bi bi-chevron-left"></i>
             </button>
         `;
@@ -348,7 +348,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 const btnClass = parseInt(page) === parseInt(currentPage) ? 'btn-success' : 'btn-outline-success';
                 paginationItems += `
                     <button class="btn btn-sm ${btnClass} mx-1" 
-                            onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${page}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                            onclick="window.retryWorkerAttendanceList(${page})">
                         ${page}
                     </button>
                 `;
@@ -358,7 +358,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         // Next button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage >= lastPage ? 'disabled' : ''} 
-                    onclick="window.fetchWorkerAttendanceList('${currentSearch}', ${currentPage + 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                    onclick="window.retryWorkerAttendanceList(${currentPage + 1})">
                 <i class="bi bi-chevron-right"></i>
             </button>
         `;
@@ -500,28 +500,40 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         }
     }
     
-    // Helper function to convert date to date_attendance_id
+    // Show no attendance message
+    function showNoAttendanceMessage(dateFilter) {
+        if (!workersAttendanceView) return;
+        
+        let dateText = 'this date';
+        if (dateFilter) {
+            if (dateFilter.length === 10) {
+                // Full date format YYYY-MM-DD
+                const date = new Date(dateFilter);
+                dateText = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            } else if (dateFilter.length === 7) {
+                // Month format YYYY-MM
+                const [year, month] = dateFilter.split('-');
+                const date = new Date(year, parseInt(month) - 1);
+                dateText = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            }
+        }
+        
+        workersAttendanceView.innerHTML = `
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-calendar-x" style="font-size: 4rem; color: #dee2e6;"></i>
+                </div>
+                <h5 class="text-muted mb-3">No Attendance Records</h5>
+                <p class="text-muted mb-0">There are no attendance records taken for <strong>${dateText}</strong>.</p>
+                <p class="text-muted small mt-2">Try selecting a different date or month to view attendance records.</p>
+            </div>
+        `;
+    }
+    
+    // Helper function to convert date to date_attendance_id (deprecated but kept for compatibility)
     function getDateAttendanceId(dateString) {
         if (!dateString) return 1;
-        
-        // For now, we'll use a simple mapping
-        // In a real application, you might need to call an API to get the proper ID
-        // or implement a more sophisticated mapping based on your system's requirements
-        
-        try {
-            const date = new Date(dateString);
-            // Simple hash-like function to generate consistent IDs
-            // This is a placeholder - adjust based on your actual API requirements
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1; // 0-based month
-            const day = date.getDate();
-            
-            // Create a simple ID based on date components
-            // You may need to replace this with actual API logic
-            return parseInt(`${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`) % 1000 || 1;
-        } catch (error) {
-            return 1;
-        }
+        return 1;
     }
     
     // View attendance details - Navigate to dedicated page
@@ -610,6 +622,12 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         const worker = currentRecordsData.find(record => record.staff_id == staffId);
         return worker || null;
     }
+    
+    // Retry function that preserves current filter state
+    window.retryWorkerAttendanceList = function(page = null) {
+        const pageToUse = page !== null ? page : currentPage;
+        fetchWorkerAttendanceList(currentSearch, pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE, currentStatusFilter);
+    };
     
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchWorkerAttendanceList = fetchWorkerAttendanceList;

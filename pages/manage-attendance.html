@@ -129,27 +129,13 @@
       
       function loadAttendanceData(type) {
         const searchValue = document.getElementById('attendanceSearch').value;
-        const dateValue = document.getElementById('attendanceDate').value;
         const statusValue = document.getElementById('attendanceStatus').value;
         
         if (type === 'workers' && window.fetchWorkerAttendanceList) {
-          // Use the actual API for workers
-          const dateAttendanceId = dateValue ? getDateAttendanceId(dateValue) : 1;
-          window.fetchWorkerAttendanceList(searchValue, 1, dateAttendanceId, 10, statusValue);
+          window.fetchWorkerAttendanceList(searchValue, 1, 1, 10, statusValue);
         } else if (type === 'staff' && window.fetchStaffAttendanceList) {
-          // Use the actual API for staff
-          const dateAttendanceId = dateValue ? getDateAttendanceId(dateValue) : 1;
-          window.fetchStaffAttendanceList(searchValue, 1, dateAttendanceId, 10, statusValue);
+          window.fetchStaffAttendanceList(searchValue, 1, 1, 10, statusValue);
         }
-      }
-      
-      // Helper function to convert date to date_attendance_id
-      // This is a placeholder - you may need to adjust this based on your API's date handling
-      function getDateAttendanceId(dateString) {
-        if (!dateString) return 1;
-        // For now, return 1 as default. You might need to call an API to get the proper ID
-        // based on the selected date, or implement your own logic
-        return 1;
       }
       
       // Search functionality
@@ -163,14 +149,11 @@
           clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
             const currentType = getCurrentType();
+            const statusValue = statusSelect.value;
             if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
-              const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
-              const statusValue = statusSelect.value;
-              window.fetchWorkerAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
+              window.fetchWorkerAttendanceList(searchInput.value, 1, 1, 10, statusValue);
             } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
-              const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
-              const statusValue = statusSelect.value;
-              window.fetchStaffAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
+              window.fetchStaffAttendanceList(searchInput.value, 1, 1, 10, statusValue);
             } else {
               loadAttendanceData(currentType);
             }
@@ -178,32 +161,13 @@
         });
       }
       
-      if (dateInput) {
-        dateInput.addEventListener('change', function() {
-          const currentType = getCurrentType();
-          if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
-            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
-            const statusValue = statusSelect.value;
-            window.fetchWorkerAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
-          } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
-            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
-            const statusValue = statusSelect.value;
-            window.fetchStaffAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusValue);
-          } else {
-            loadAttendanceData(currentType);
-          }
-        });
-      }
-      
       if (statusSelect) {
         statusSelect.addEventListener('change', function() {
           const currentType = getCurrentType();
           if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
-            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
-            window.fetchWorkerAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusSelect.value);
+            window.fetchWorkerAttendanceList(searchInput.value, 1, 1, 10, statusSelect.value);
           } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
-            const dateAttendanceId = dateInput.value ? getDateAttendanceId(dateInput.value) : 1;
-            window.fetchStaffAttendanceList(searchInput.value, 1, dateAttendanceId, 10, statusSelect.value);
+            window.fetchStaffAttendanceList(searchInput.value, 1, 1, 10, statusSelect.value);
           } else {
             loadAttendanceData(currentType);
           }

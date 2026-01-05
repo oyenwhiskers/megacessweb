@@ -66,23 +66,6 @@
         return `<span class="badge ${statusInfo.class}">${statusInfo.text}</span>`;
     }
     
-    // Helper function to convert date to date_attendance_id
-    function getDateAttendanceId(dateString) {
-        if (!dateString) return 1;
-        
-        try {
-            const date = new Date(dateString);
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            
-            // Create a simple ID based on date components
-            return parseInt(`${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`) % 1000 || 1;
-        } catch (error) {
-            return 1;
-        }
-    }
-    
     // Show loading state
     function showLoading() {
         if (!staffAttendanceView) return;
@@ -105,7 +88,7 @@
             <div class="alert alert-danger" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>
                 <strong>Error:</strong> ${message}
-                <button class="btn btn-outline-danger btn-sm ms-3" onclick="window.fetchStaffAttendanceList('${currentSearch}', 1, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                <button class="btn btn-outline-danger btn-sm ms-3" onclick="window.retryStaffAttendanceList()">
                     <i class="bi bi-arrow-clockwise me-1"></i>Retry
                 </button>
             </div>
@@ -258,7 +241,7 @@
         // Previous button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage <= 1 ? 'disabled' : ''} 
-                    onclick="window.fetchStaffAttendanceList('${currentSearch}', ${currentPage - 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                    onclick="window.retryStaffAttendanceList(${currentPage - 1})">
                 <i class="bi bi-chevron-left"></i>
             </button>
         `;
@@ -292,7 +275,7 @@
                 const btnClass = parseInt(page) === parseInt(currentPage) ? 'btn-success' : 'btn-outline-success';
                 paginationItems += `
                     <button class="btn btn-sm ${btnClass} mx-1" 
-                            onclick="window.fetchStaffAttendanceList('${currentSearch}', ${page}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                            onclick="window.retryStaffAttendanceList(${page})">
                         ${page}
                     </button>
                 `;
@@ -302,7 +285,7 @@
         // Next button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage >= lastPage ? 'disabled' : ''} 
-                    onclick="window.fetchStaffAttendanceList('${currentSearch}', ${currentPage + 1}, ${currentDateAttendanceId}, ${DEFAULT_PER_PAGE}, '${currentStatusFilter}')">
+                    onclick="window.retryStaffAttendanceList(${currentPage + 1})">
                 <i class="bi bi-chevron-right"></i>
             </button>
         `;
@@ -564,5 +547,11 @@
             window.location.href = `/megacessweb/pages/view-attendance-details.html?${params.toString()}`;
         }
     }
+    
+    // Retry function that preserves current filter state
+    window.retryStaffAttendanceList = function(page = null) {
+        const pageToUse = page !== null ? page : currentPage;
+        fetchStaffAttendanceList(currentSearch, pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE, currentStatusFilter);
+    };
 
 })();

@@ -47,6 +47,10 @@
         return 'Approved';
     }
 
+    // Track selected year and month for filtering
+    let selectedYear = new Date().getFullYear();
+    let selectedMonth = null;
+
     // Create new overtime record
     async function createOvertimeRecord(overtimeData) {
         try {
@@ -393,13 +397,15 @@
             return;
         }
 
-        // Calculate date range for the selected month
-        const currentYear = new Date().getFullYear();
-        const dateFrom = `${currentYear}-${String(month).padStart(2, '0')}-01`;
+        // Store selected month
+        selectedMonth = month;
+
+        // Calculate date range for the selected month using selected year
+        const dateFrom = `${selectedYear}-${String(month).padStart(2, '0')}-01`;
         
         // Get last day of the month
-        const lastDay = new Date(currentYear, month, 0).getDate();
-        const dateTo = `${currentYear}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        const lastDay = new Date(selectedYear, month, 0).getDate();
+        const dateTo = `${selectedYear}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
         const filters = {
             dateFrom: dateFrom,
@@ -419,6 +425,15 @@
             return;
         }
 
+        // Reset selected month
+        selectedMonth = null;
+        
+        // Reset filter button texts
+        const yearBtn = document.getElementById('overtimeFilterYear');
+        const monthBtn = document.getElementById('overtimeFilterMonth');
+        if (yearBtn) yearBtn.textContent = 'Year';
+        if (monthBtn) monthBtn.textContent = 'Month';
+
         loadUserOvertimeData(currentUserId, currentUserType);
     }
 
@@ -434,6 +449,29 @@
 
         loadUserOvertimeData(currentUserId, currentUserType);
     };
+
+    // Populate year dropdown with years from 2020 to current year + 1
+    function populateYearDropdown() {
+        const yearDropdown = document.getElementById('overtimeYearDropdown');
+        if (!yearDropdown) return;
+
+        const currentYear = new Date().getFullYear();
+        const startYear = 2020;
+        const endYear = currentYear + 1;
+
+        yearDropdown.innerHTML = '';
+        
+        for (let year = endYear; year >= startYear; year--) {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.className = 'dropdown-item';
+            a.href = '#';
+            a.dataset.year = year;
+            a.textContent = year;
+            li.appendChild(a);
+            yearDropdown.appendChild(li);
+        }
+    }
 
     // Edit overtime record (placeholder)
     window.editOvertimeRecord = function(recordId) {
@@ -778,19 +816,41 @@
 
     // Initialize event listeners when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
+        // Populate year dropdown on page load
+        populateYearDropdown();
+
         // Filter functionality for "All" button
         const allFilterBtn = document.getElementById('overtimeFilterAll');
         if (allFilterBtn) {
             allFilterBtn.addEventListener('click', function() {
                 this.classList.add('active');
-                // Remove active class from month filter
-                const monthBtn = document.getElementById('overtimeFilterMonth');
-                if (monthBtn) {
-                    monthBtn.textContent = 'Month';
-                }
                 showAllOvertimeRecords();
             });
         }
+
+        // Year filter functionality
+        const yearFilterItems = document.querySelectorAll('#overtimeYearDropdown a');
+        yearFilterItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const year = parseInt(this.dataset.year);
+                selectedYear = year;
+                
+                // Update button text
+                document.getElementById('overtimeFilterYear').textContent = year;
+                
+                // Remove active class from "All" button
+                const allBtn = document.getElementById('overtimeFilterAll');
+                if (allBtn) {
+                    allBtn.classList.remove('active');
+                }
+                
+                // If a month is already selected, re-apply the filter with new year
+                if (selectedMonth) {
+                    filterOvertimeByMonth(selectedMonth);
+                }
+            });
+        });
 
         // Month filter functionality
         const monthFilterItems = document.querySelectorAll('#overtimeFilterMonth + .dropdown-menu a');
@@ -802,6 +862,12 @@
                 
                 // Update button text
                 document.getElementById('overtimeFilterMonth').textContent = monthName;
+                
+                // Update year button to show selected year if not already shown
+                const yearBtn = document.getElementById('overtimeFilterYear');
+                if (yearBtn && yearBtn.textContent === 'Year') {
+                    yearBtn.textContent = selectedYear;
+                }
                 
                 // Remove active class from "All" button
                 const allBtn = document.getElementById('overtimeFilterAll');

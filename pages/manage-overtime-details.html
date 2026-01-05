@@ -51,8 +51,16 @@
         <div class="card mb-4" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <div class="card-body">
             <h6 class="mb-3 fw-bold">Filter Overtime Records</h6>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
               <button class="btn btn-light active" id="overtimeFilterAll">All</button>
+              <div class="dropdown">
+                <button class="btn btn-light dropdown-toggle" type="button" id="overtimeFilterYear" data-bs-toggle="dropdown" aria-expanded="false">
+                  Year
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="overtimeFilterYear" id="overtimeYearDropdown">
+                  <!-- Year options will be populated by JavaScript -->
+                </ul>
+              </div>
               <div class="dropdown">
                 <button class="btn btn-light dropdown-toggle" type="button" id="overtimeFilterMonth" data-bs-toggle="dropdown" aria-expanded="false">
                   Month
