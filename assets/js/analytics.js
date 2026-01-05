@@ -1562,11 +1562,43 @@ function updateAuditedSummary(data) {
     ...groupedData.fertilizing,
     ...groupedData.harvesting,
   ];
+  
   if (fertHarvestData.length > 0) {
+    // Group by base category name (removing weight ranges like (1-30 ton), (>30 ton))
+    const categoryMap = {};
+    
+    fertHarvestData.forEach((item) => {
+      // Extract base category name by removing patterns like (1-30 ton), (>30 ton), etc.
+      const baseCategoryName = item.category_name.replace(/\s*\([^)]*\)\s*/g, '').trim();
+      
+      if (!categoryMap[baseCategoryName]) {
+        categoryMap[baseCategoryName] = {
+          task_name: item.task_name,
+          category_name: baseCategoryName,
+          total_value: 0,
+          unit: item.unit,
+          recent_block: item.recent_block,
+          items: []
+        };
+      }
+      
+      // Sum the total values
+      categoryMap[baseCategoryName].total_value += parseFloat(item.total_value) || 0;
+      categoryMap[baseCategoryName].items.push(item);
+      
+      // Keep the most recent block
+      if (item.recent_block?.checked_at) {
+        if (!categoryMap[baseCategoryName].recent_block?.checked_at || 
+            new Date(item.recent_block.checked_at) > new Date(categoryMap[baseCategoryName].recent_block.checked_at)) {
+          categoryMap[baseCategoryName].recent_block = item.recent_block;
+        }
+      }
+    });
+    
     const fertHarvestRow = document.createElement("div");
     fertHarvestRow.className = "row g-3 mb-3";
 
-    fertHarvestData.forEach((item) => {
+    Object.values(categoryMap).forEach((item) => {
       const col = document.createElement("div");
       col.className = "col-md-6";
 
