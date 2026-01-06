@@ -104,11 +104,27 @@
         document.getElementById('recordsYear').innerHTML = yearOptions;
     }
 
+    // Show loading spinner on metrics cards
+    function showMetricsLoading() {
+        const spinner = '<div class="spinner-border spinner-border-sm text-success" role="status"><span class="visually-hidden">Loading...</span></div>';
+        document.getElementById('attendanceRateValue').innerHTML = spinner;
+        document.getElementById('punctualityRateValue').innerHTML = spinner;
+        document.getElementById('numberAbsentValue').innerHTML = spinner;
+    }
+
+    // Hide loading spinner and show values
+    function hideMetricsLoading() {
+        // This will be called after data is loaded
+    }
+
     // Load analytics data
     async function loadAnalytics() {
         const year = document.getElementById('analyticsYear').value;
         const month = document.getElementById('analyticsMonth').value;
         const monthStr = `${year}-${month}`;
+
+        // Show loading spinners
+        showMetricsLoading();
 
         const token = getAuthToken();
         if (!token) {

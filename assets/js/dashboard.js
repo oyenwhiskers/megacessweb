@@ -84,10 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function populateYearMonthDropdowns() {
-    console.log('populateYearMonthDropdowns called');
     const yearSelect = document.getElementById('dashboard-year');
     const monthSelect = document.getElementById('dashboard-month');
-    console.log('yearSelect:', yearSelect, 'monthSelect:', monthSelect);
     if (!yearSelect || !monthSelect) return;
 
     // Years: from 2022 to current year
@@ -190,9 +188,6 @@ async function fetchDashboardData(month, year) {
     try {
         // Get token from localStorage (using 'authToken' key)
         const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
-        
-        console.log('Dashboard - Checking for token:', token ? 'Found' : 'Not found');
-        console.log('LocalStorage authToken:', localStorage.getItem('authToken'));
         
         if (!token) {
             console.error('No authentication token found. Please log in again.');
@@ -580,9 +575,6 @@ function updateChart(apiData) {
     const labels = apiData.map(item => item.location_name);
     const values = apiData.map(item => item.count);
     
-    console.log('Dashboard Chart Labels:', labels);
-    console.log('Dashboard Chart Values:', values);
-    
     // Find the maximum value to set appropriate scale
     const maxValue = Math.max(...values);
     const yAxisMax = Math.ceil(maxValue / 10) * 10 + 10; // Round up and add padding
@@ -592,6 +584,4 @@ function updateChart(apiData) {
     taskCompletionChart.data.datasets[0].data = values;
     taskCompletionChart.options.scales.y.max = yAxisMax;
     taskCompletionChart.update();
-    
-    console.log('Dashboard chart updated successfully');
 }

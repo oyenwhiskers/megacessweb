@@ -348,50 +348,23 @@
             const result = await response.json();
             
             if (result.success && result.data) {
-                // Apply client-side filtering as fallback if API doesn't filter properly
                 let filteredData = result.data;
-                let clientSideFilterApplied = false;
                 
-                // If we have a search term but got all records, filter client-side
+                // Apply client-side search filtering if search term provided
                 if (search && search.trim() && filteredData.data && Array.isArray(filteredData.data)) {
                     const searchTerm = search.trim().toLowerCase();
+                    const allRecords = filteredData.data;
                     
-                    filteredData.data = filteredData.data.filter(record => {
+                    filteredData.data = allRecords.filter(record => {
                         return record.user_name && record.user_name.toLowerCase().includes(searchTerm);
                     });
-                    clientSideFilterApplied = true;
-                }
-                
-                // Apply client-side status filtering as fallback
-                if (statusFilter && statusFilter !== 'all' && filteredData.data && Array.isArray(filteredData.data)) {
-                    filteredData.data = filteredData.data.filter(record => {
-                        if (!record.status) return false;
-                        // Case-insensitive substring match
-                        return record.status.toLowerCase().includes(statusFilter.toLowerCase());
-                    });
-                    clientSideFilterApplied = true;
-                }
-                
-                // Only update pagination if we applied client-side filtering
-                // Otherwise, use the API's pagination values directly
-                if (clientSideFilterApplied && filteredData.data && Array.isArray(filteredData.data)) {
+                    
+                    // Update pagination for filtered results
                     const recordCount = filteredData.data.length;
-                    const perPageValue = filteredData.per_page || perPage || DEFAULT_PER_PAGE;
-                    
-                    // Calculate pagination values
                     filteredData.total = recordCount;
-                    filteredData.last_page = Math.ceil(recordCount / perPageValue);
-                    filteredData.current_page = page;
-                    filteredData.per_page = perPageValue;
-                    
-                    // Calculate from and to based on current page
-                    filteredData.from = recordCount > 0 ? ((page - 1) * perPageValue) + 1 : 0;
-                    filteredData.to = Math.min(page * perPageValue, recordCount);
-                    
-                    // Slice the data to show only current page records
-                    const startIndex = (page - 1) * perPageValue;
-                    const endIndex = startIndex + perPageValue;
-                    filteredData.data = filteredData.data.slice(startIndex, endIndex);
+                    filteredData.last_page = Math.ceil(recordCount / perPage);
+                    filteredData.from = recordCount > 0 ? 1 : 0;
+                    filteredData.to = Math.min(recordCount, perPage);
                 }
                 
                 renderStaffAttendanceRecords(filteredData);

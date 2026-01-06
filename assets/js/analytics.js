@@ -381,7 +381,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Wait for all initial fetches
   try {
     await Promise.all(initPromises);
-    console.log("All initial analytics data fetched.");
   } catch (err) {
     console.error("One or more initial fetches failed", err);
   }
@@ -647,14 +646,9 @@ function updateMonthlyChart(apiData) {
     return;
   }
 
-  console.log("Updating chart with API data:", apiData);
-
   // Extract month names and counts from API data
   const labels = apiData.map((item) => item.month_name);
   const values = apiData.map((item) => item.count);
-
-  console.log("Labels:", labels);
-  console.log("Values:", values);
 
   // Find the maximum value to set appropriate scale
   const maxValue = Math.max(...values);
@@ -665,8 +659,6 @@ function updateMonthlyChart(apiData) {
   taskCompletionChartMonth.data.datasets[0].data = values;
   taskCompletionChartMonth.options.scales.y.max = yAxisMax;
   taskCompletionChartMonth.update();
-
-  console.log("Chart updated successfully");
 }
 
 async function fetchBlockTaskCompletion(year, month, week) {
@@ -682,7 +674,6 @@ async function fetchBlockTaskCompletion(year, month, week) {
     let url = `https://mwms.megacess.com/api/v1/analytics/tasks-by-blocks?year=${year}`;
     if (month) url += `&month=${month}`;
     if (week) url += `&week=${week}`;
-    console.log("Fetching block task completion:", { year, month, week });
 
     // Show loading state
     const chartCanvas = document.getElementById("taskCompletionChartBlock");
@@ -705,7 +696,6 @@ async function fetchBlockTaskCompletion(year, month, week) {
     }
 
     const result = await response.json();
-    console.log("Block API Response:", result);
 
     if (result.data && result.data.data) {
       updateBlockChart(result.data.data);
@@ -914,9 +904,7 @@ async function fetchResourceUsage(type = "manuring") {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const result = await response.json();
-    console.log("Resource Usage API Response:", result);
     if (result.data && result.data.records) {
-      console.log("Updating resource list with data:", result.data.records);
       updateResourceList(result.data);
     } else {
       updateResourceList({ records: [] });
@@ -962,8 +950,6 @@ function updateResourceList(data) {
 
   // Setup filter functionality
   setupResourceFilters();
-
-  console.log("Resource list updated successfully");
 }
 
 function renderResourceItems(records, resourceType, unit) {
@@ -1077,13 +1063,6 @@ async function fetchEstateOfficerTasks(year, month) {
       return;
     }
 
-    console.log(
-      "Fetching estate officer tasks for year:",
-      year,
-      "month:",
-      month
-    );
-
     // Show loading state
     const officerList = document.querySelector(".estate-officers-list");
     if (officerList) {
@@ -1109,13 +1088,8 @@ async function fetchEstateOfficerTasks(year, month) {
     }
 
     const result = await response.json();
-    console.log("Estate Officer Tasks API Response:", result);
 
     if (result.data && result.data.records) {
-      console.log(
-        "Updating estate officer list with data:",
-        result.data.records
-      );
       updateEstateOfficerList(result.data);
     } else {
       console.warn("No estate officer task data found in API response");
@@ -1164,8 +1138,6 @@ function updateEstateOfficerList(data) {
 
   // Setup search functionality
   setupEstateOfficerSearch();
-
-  console.log("Estate officer list updated successfully");
 }
 
 function renderEstateOfficers(records) {
@@ -1249,13 +1221,6 @@ async function fetchAttendanceByMandors(year, month) {
       return;
     }
 
-    console.log(
-      "Fetching attendance by mandors for year:",
-      year,
-      "month:",
-      month
-    );
-
     // Show loading state
     const attendanceList = document.querySelector(".attendance-list");
     if (attendanceList) {
@@ -1281,10 +1246,8 @@ async function fetchAttendanceByMandors(year, month) {
     }
 
     const result = await response.json();
-    console.log("Attendance API Response:", result);
 
     if (result.data && result.data.records) {
-      console.log("Updating attendance list with data:", result.data.records);
       updateAttendanceList(result.data);
     } else {
       console.warn("No attendance data found in API response");
@@ -1338,8 +1301,6 @@ function updateAttendanceList(data) {
         `;
     attendanceListContainer.appendChild(attendanceItem);
   });
-
-  console.log("Attendance list updated successfully");
 }
 
 async function fetchAbsentWorkers(year, month) {
@@ -1351,8 +1312,6 @@ async function fetchAbsentWorkers(year, month) {
       console.error("No authentication token found");
       return;
     }
-
-    console.log("Fetching absent workers for year:", year, "month:", month);
 
     // Show loading state
     const absentList = document.querySelector(".absent-list");
@@ -1379,13 +1338,8 @@ async function fetchAbsentWorkers(year, month) {
     }
 
     const result = await response.json();
-    console.log("Absent Workers API Response:", result);
 
     if (result.data && result.data.records) {
-      console.log(
-        "Updating absent workers list with data:",
-        result.data.records
-      );
       updateAbsentWorkersList(result.data);
     } else {
       console.warn("No absent workers data found in API response");
@@ -1439,8 +1393,6 @@ function updateAbsentWorkersList(data) {
         `;
     absentListContainer.appendChild(absentItem);
   });
-
-  console.log("Absent workers list updated successfully");
 }
 
 async function fetchAuditedSummary(year, month) {
