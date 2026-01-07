@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
           return;
         }
         // Navigate to view advance details page
-        window.location.href = `/megacessweb/pages/view-advance-details.html?type=${encodeURIComponent(personType)}&id=${encodeURIComponent(personId)}`;
+        window.location.href = `/pages/view-advance-details.html?type=${encodeURIComponent(personType)}&id=${encodeURIComponent(personId)}`;
       });
     });
   }
@@ -372,5 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initial load
   fetchAdvances();
 });
+
 
 

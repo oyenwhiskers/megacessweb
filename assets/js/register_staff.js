@@ -16,7 +16,7 @@
                      sessionStorage.getItem('authToken');
         
         if (!token) {
-            window.location.href = '/megacessweb/pages/log-in.html';
+            window.location.href = '/pages/log-in.html';
             return null;
         }
         
@@ -402,3 +402,4 @@
     }
     
 })();
+

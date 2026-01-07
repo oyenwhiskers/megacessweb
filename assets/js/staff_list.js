@@ -98,7 +98,7 @@
                  localStorage.getItem('authToken') ||
                  sessionStorage.getItem('authToken');
     if (!token) {
-      window.location.href = '/megacessweb/pages/log-in.html';
+      window.location.href = '/pages/log-in.html';
       return;
     }
 
@@ -309,7 +309,7 @@
                    sessionStorage.getItem('authToken');
       if (!token) {
         alert('Authentication token not found. Please log in again.');
-        window.location.href = '/megacessweb/pages/log-in.html';
+        window.location.href = '/pages/log-in.html';
         return;
       }
       // Show loading modal first
@@ -902,7 +902,7 @@
           text: 'Authentication token not found. Please log in again.',
           confirmButtonColor: '#dc3545'
         });
-        window.location.href = '/megacessweb/pages/log-in.html';
+        window.location.href = '/pages/log-in.html';
         return;
       }
       
@@ -936,7 +936,7 @@
             text: errorMessage,
             confirmButtonColor: '#dc3545'
           });
-          window.location.href = '/megacessweb/pages/log-in.html';
+          window.location.href = '/pages/log-in.html';
           return;
         } else if (response.status === 403) {
           errorMessage = result?.message || 'Access denied. You do not have permission to delete this staff member.';

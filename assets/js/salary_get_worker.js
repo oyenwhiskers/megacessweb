@@ -9,7 +9,7 @@ $(document).ready(function() {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then(() => {
-      window.location.href = "/megacessweb/pages/log-in.html";
+      window.location.href = "/pages/log-in.html";
     });
     return;
   }
@@ -153,7 +153,7 @@ function showEmployeeType(type, push) {
               <small class="text-muted d-block">Base Salary: <strong>${workerBaseSalary}</strong></small>
             </div>
             <div class="d-flex flex-column ms-auto">
-              <a href="/megacessweb/pages/manage-payment-rate-edit-salary-worker.html?id=${encodeURIComponent(workerId)}" 
+              <a href="/pages/manage-payment-rate-edit-salary-worker.html?id=${encodeURIComponent(workerId)}" 
                  class="btn btn-sm btn-outline-success" title="Edit base salary">
                  <i class="bi bi-pencil-fill"></i>
               </a>
@@ -247,3 +247,4 @@ function showEmployeeType(type, push) {
   // Re-fetch when Worker section becomes visible
   $('input[name="employeeType"]').on("change", () => fetchWorkers(1));
 });
+

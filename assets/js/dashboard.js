@@ -192,7 +192,7 @@ async function fetchDashboardData(month, year) {
         if (!token) {
             console.error('No authentication token found. Please log in again.');
             // Redirect to login page
-            // window.location.href = '/megacessweb/pages/log-in.html';
+            // window.location.href = '/pages/log-in.html';
             return;
         }
         
@@ -585,3 +585,4 @@ function updateChart(apiData) {
     taskCompletionChart.options.scales.y.max = yAxisMax;
     taskCompletionChart.update();
 }
+

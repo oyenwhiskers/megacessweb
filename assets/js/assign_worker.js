@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => {
             if (response.status === 401) {
                 localStorage.removeItem('token');
-                window.location.href = '/megacessweb/pages/log-in.html';
+                window.location.href = '/pages/log-in.html';
                 return;
             }
             return response.json();
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.status === 401) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('authToken');
-                window.location.href = '/megacessweb/pages/log-in.html';
+                window.location.href = '/pages/log-in.html';
                 return null;
             }
             if (!response.ok) {
@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 if (response.status === 401) {
                                     localStorage.removeItem('token');
                                     localStorage.removeItem('authToken');
-                                    window.location.href = '/megacessweb/pages/log-in.html';
+                                    window.location.href = '/pages/log-in.html';
                                     return null;
                                 }
                                 return response.json();
@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.status === 401) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('authToken');
-                window.location.href = '/megacessweb/pages/log-in.html';
+                window.location.href = '/pages/log-in.html';
                 return null;
             }
             if (!response.ok) {
@@ -722,7 +722,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.status === 401) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('authToken');
-                    window.location.href = '/megacessweb/pages/log-in.html';
+                    window.location.href = '/pages/log-in.html';
                     return null;
                 }
                 if (!response.ok) {
@@ -820,3 +820,4 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchWorkersByMandor(mandorId);
     }
 });
+

@@ -2,7 +2,7 @@
 
 (function () {
   const LOGOUT_URL = "https://mwms.megacess.com/api/v1/auth/logout";
-  const LOGIN_PAGE = "/megacessweb/pages/log-in.html";
+  const LOGIN_PAGE = "/pages/log-in.html";
 
   function findTokenFromStorage() {
     // try common keys first

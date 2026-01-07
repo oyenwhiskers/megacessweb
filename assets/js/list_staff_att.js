@@ -19,7 +19,7 @@
         
         if (!token) {
             console.error('No authentication token found. Please log in.');
-            window.location.href = '/megacessweb/pages/log-in.html';
+            window.location.href = '/pages/log-in.html';
             return null;
         }
         
@@ -443,7 +443,7 @@
                 userImage: cleanImageUrl,
                 userType: 'staff'
             });
-            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
+            window.location.href = `/pages/manage-overtime-details.html?${params.toString()}`;
         } else {
             // Fallback if data not found
             const params = new URLSearchParams({
@@ -453,7 +453,7 @@
                 userImage: '',
                 userType: 'staff'
             });
-            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
+            window.location.href = `/pages/manage-overtime-details.html?${params.toString()}`;
         }
     };
 
@@ -505,7 +505,7 @@
             userType: 'staff',
             userImage: staffImage
         });
-        window.location.href = `/megacessweb/pages/manage-leave-details.html?${params.toString()}`;
+        window.location.href = `/pages/manage-leave-details.html?${params.toString()}`;
     };
 
     // Add delegated event listener for View button
@@ -571,7 +571,7 @@
                 userImage: cleanImageUrl,
                 userType: 'staff'
             });
-            window.location.href = `/megacessweb/pages/view-attendance-details.html?${params.toString()}`;
+            window.location.href = `/pages/view-attendance-details.html?${params.toString()}`;
         } else {
             // Fallback if data not found
             const params = new URLSearchParams({
@@ -581,7 +581,7 @@
                 userImage: '',
                 userType: 'staff'
             });
-            window.location.href = `/megacessweb/pages/view-attendance-details.html?${params.toString()}`;
+            window.location.href = `/pages/view-attendance-details.html?${params.toString()}`;
         }
     }
     
@@ -592,3 +592,4 @@
     };
 
 })();
+

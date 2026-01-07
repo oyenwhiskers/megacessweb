@@ -148,7 +148,7 @@
         
         if (!token) {
             // Redirect to login page
-            window.location.href = '/megacessweb/pages/log-in.html';
+            window.location.href = '/pages/log-in.html';
             return null;
         }
         
@@ -1258,3 +1258,4 @@
     });
     
 })();
+
