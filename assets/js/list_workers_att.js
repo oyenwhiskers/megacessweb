@@ -4,9 +4,7 @@
     const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
     const DEFAULT_PER_PAGE = 10;
     let currentPage = 1;
-    let currentSearch = '';
     let currentDateAttendanceId = 1;
-    let currentStatusFilter = 'all';
     let currentRecordsData = []; // Store current records for easy access
     
     // Get the workers attendance view container
@@ -410,15 +408,13 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
     }
     
     // Main fetch function
-    async function fetchWorkerAttendanceList(search = '', page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE, statusFilter = 'all') {
+    async function fetchWorkerAttendanceList(page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE) {
         if (!workersAttendanceView) {
             return;
         }
         
-        currentSearch = search;
         currentPage = page;
         currentDateAttendanceId = dateAttendanceId;
-        currentStatusFilter = statusFilter;
         
         showLoading();
         
@@ -440,7 +436,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         }
         
         try {
-            // Try using staff-attendance endpoint for workers
+            // Using staff-attendance endpoint for workers
             const url = new URL(`${API_BASE_URL}/staff-attendance`);
             
             // Add query parameters
@@ -449,16 +445,6 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 page: page.toString(),
                 per_page: perPage.toString()
             };
-            
-            // Add search parameter if provided
-            if (search && search.trim()) {
-                params.search = search.trim();
-            }
-            
-            // Add status filter if not 'all'
-            if (statusFilter && statusFilter !== 'all') {
-                params.status = statusFilter;
-            }
             
             Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
             
@@ -480,26 +466,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             const result = await response.json();
             
             if (result.success && result.data) {
-                let filteredData = result.data;
-                
-                // Apply client-side search filtering if search term provided
-                if (search && search.trim() && filteredData.data && Array.isArray(filteredData.data)) {
-                    const searchTerm = search.trim().toLowerCase();
-                    const allRecords = filteredData.data;
-                    
-                    filteredData.data = allRecords.filter(record => {
-                        return record.staff_name && record.staff_name.toLowerCase().includes(searchTerm);
-                    });
-                    
-                    // Update pagination for filtered results
-                    const recordCount = filteredData.data.length;
-                    filteredData.total = recordCount;
-                    filteredData.last_page = Math.ceil(recordCount / perPage);
-                    filteredData.from = recordCount > 0 ? 1 : 0;
-                    filteredData.to = Math.min(recordCount, perPage);
-                }
-                
-                renderAttendanceRecords(filteredData);
+                renderAttendanceRecords(result.data);
             } else {
                 showError(result.message || 'Failed to load attendance records');
             }
@@ -635,14 +602,14 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
     // Retry function that preserves current filter state
     window.retryWorkerAttendanceList = function(page = null) {
         const pageToUse = page !== null ? page : currentPage;
-        fetchWorkerAttendanceList(currentSearch, pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE, currentStatusFilter);
+        fetchWorkerAttendanceList(pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE);
     };
     
     // Expose functions globally FIRST before initialization
     window.fetchWorkerAttendanceList = fetchWorkerAttendanceList;
     
     // Fetch attendance by date (checks date attendance ID first)
-    window.fetchWorkerAttendanceByDate = async function(dateString, search = '', statusFilter = 'all') {
+    window.fetchWorkerAttendanceByDate = async function(dateString) {
         if (!dateString) {
             showError('Please select a date');
             return;
@@ -660,7 +627,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         }
         
         // Fetch attendance using the found ID
-        await fetchWorkerAttendanceList(search, 1, attendanceId, DEFAULT_PER_PAGE, statusFilter);
+        await fetchWorkerAttendanceList(1, attendanceId, DEFAULT_PER_PAGE);
     };
     
     // Initialize on page load if we're on the right page - BUT DON'T auto-fetch

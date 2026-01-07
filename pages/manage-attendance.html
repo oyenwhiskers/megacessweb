@@ -37,33 +37,12 @@
           </div>
         </div>
 
-        <!-- Search bar and filters -->
+        <!-- Date Filter -->
         <div class="row mb-3">
-          <div class="col-lg-4 col-md-12 mb-3 mb-lg-0">
-            <div class="search-container">
-              <label for="attendanceSearch" class="fw-semibold mb-2">Search by name:</label>
-              <input id="attendanceSearch" type="search" class="form-control" placeholder="Enter name..." aria-label="Search attendance">
-            </div>
-          </div>
           <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
             <div>
               <label class="form-label fw-semibold mb-2">Date:</label>
               <input type="date" id="attendanceDate" class="form-control" value="">
-            </div>
-          </div>
-          <div class="col-lg-4 col-md-6">
-            <div>
-              <label class="form-label fw-semibold mb-2">Status:</label>
-              <select id="attendanceStatus" class="form-select">
-                <option value="all">All Status</option>
-                <option value="present">Present</option>
-                <option value="absent">Absent</option>
-                <option value="check_in">Check In</option>
-                <option value="late">Late</option>
-                <option value="annual_leave">Annual Leave</option>
-                <option value="sick_leave">Sick Leave</option>
-                <option value="unpaid_leave">Unpaid Leave</option>
-              </select>
             </div>
           </div>
         </div>
@@ -93,8 +72,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/megacessweb/assets/js/main.js"></script>
-  <script src="/megacessweb/assets/js/list_workers_att.js?v=2.3"></script>
-  <script src="/megacessweb/assets/js/list_staff_att.js?v=2.0"></script>
+  <script src="/megacessweb/assets/js/list_workers_att.js?v=4.0"></script>
+  <script src="/megacessweb/assets/js/list_staff_att.js?v=4.0"></script>
   <script src="/megacessweb/assets/js/logout.js"></script>
   <script>
     (function(){
@@ -128,68 +107,26 @@
       }
       
       function loadAttendanceData(type) {
-        const searchValue = document.getElementById('attendanceSearch').value;
-        const statusValue = document.getElementById('attendanceStatus').value;
         const dateValue = document.getElementById('attendanceDate').value;
         
         if (type === 'workers' && window.fetchWorkerAttendanceByDate) {
-          window.fetchWorkerAttendanceByDate(dateValue, searchValue, statusValue);
+          window.fetchWorkerAttendanceByDate(dateValue);
         } else if (type === 'staff' && window.fetchStaffAttendanceByDate) {
-          window.fetchStaffAttendanceByDate(dateValue, searchValue, statusValue);
+          window.fetchStaffAttendanceByDate(dateValue);
         }
       }
       
-      // Search functionality
-      const searchInput = document.getElementById('attendanceSearch');
-      const dateInput = document.getElementById('attendanceDate');
-      const statusSelect = document.getElementById('attendanceStatus');
-      
-      if (searchInput) {
-        let debounceTimer = null;
-        searchInput.addEventListener('input', function() {
-          clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => {
-            const currentType = getCurrentType();
-            const statusValue = statusSelect.value;
-            const dateValue = dateInput ? dateInput.value : '';
-            
-            if (currentType === 'workers' && window.fetchWorkerAttendanceByDate) {
-              window.fetchWorkerAttendanceByDate(dateValue, searchInput.value, statusValue);
-            } else if (currentType === 'staff' && window.fetchStaffAttendanceByDate) {
-              window.fetchStaffAttendanceByDate(dateValue, searchInput.value, statusValue);
-            } else {
-              loadAttendanceData(currentType);
-            }
-          }, 300);
-        });
-      }
-      
-      if (statusSelect) {
-        statusSelect.addEventListener('change', function() {
-          const currentType = getCurrentType();
-          const dateValue = dateInput ? dateInput.value : '';
-          
-          if (currentType === 'workers' && window.fetchWorkerAttendanceByDate) {
-            window.fetchWorkerAttendanceByDate(dateValue, searchInput.value, statusSelect.value);
-          } else if (currentType === 'staff' && window.fetchStaffAttendanceByDate) {
-            window.fetchStaffAttendanceByDate(dateValue, searchInput.value, statusSelect.value);
-          } else {
-            loadAttendanceData(currentType);
-          }
-        });
-      }
-      
       // Date change event listener
+      const dateInput = document.getElementById('attendanceDate');
+      
       if (dateInput) {
         dateInput.addEventListener('change', function() {
           const currentType = getCurrentType();
-          const searchValue = searchInput ? searchInput.value : '';
-          const statusValue = statusSelect ? statusSelect.value : 'all';
           
           if (currentType === 'workers' && window.fetchWorkerAttendanceByDate) {
-            window.fetchWorkerAttendanceByDate(dateInput.value, searchValue, statusValue);
+            window.fetchWorkerAttendanceByDate(dateInput.value);
           } else if (currentType === 'staff' && window.fetchStaffAttendanceByDate) {
-            window.fetchStaffAttendanceByDate(dateInput.value, searchValue, statusValue);
+            window.fetchStaffAttendanceByDate(dateInput.value);
           }
         });
       }

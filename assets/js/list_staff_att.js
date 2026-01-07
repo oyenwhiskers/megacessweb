@@ -4,9 +4,7 @@
     const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
     const DEFAULT_PER_PAGE = 10;
     let currentPage = 1;
-    let currentSearch = '';
     let currentDateAttendanceId = 1;
-    let currentStatusFilter = 'all';
     let currentRecordsData = []; // Store current records for easy access
     
     // Get the staff attendance view container
@@ -356,13 +354,11 @@
     }
     
     // Main fetch function
-    async function fetchStaffAttendanceList(search = '', page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE, statusFilter = 'all') {
+    async function fetchStaffAttendanceList(page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE) {
         if (!staffAttendanceView) return;
         
-        currentSearch = search;
         currentPage = page;
         currentDateAttendanceId = dateAttendanceId;
-        currentStatusFilter = statusFilter;
         
         showLoading();
         
@@ -393,16 +389,6 @@
                 per_page: perPage.toString()
             };
             
-            // Add search parameter if provided
-            if (search && search.trim()) {
-                params.search = search.trim();
-            }
-            
-            // Add status filter if not 'all'
-            if (statusFilter && statusFilter !== 'all') {
-                params.status = statusFilter;
-            }
-            
             Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
             
             const headers = {
@@ -423,26 +409,7 @@
             const result = await response.json();
             
             if (result.success && result.data) {
-                let filteredData = result.data;
-                
-                // Apply client-side search filtering if search term provided
-                if (search && search.trim() && filteredData.data && Array.isArray(filteredData.data)) {
-                    const searchTerm = search.trim().toLowerCase();
-                    const allRecords = filteredData.data;
-                    
-                    filteredData.data = allRecords.filter(record => {
-                        return record.user_name && record.user_name.toLowerCase().includes(searchTerm);
-                    });
-                    
-                    // Update pagination for filtered results
-                    const recordCount = filteredData.data.length;
-                    filteredData.total = recordCount;
-                    filteredData.last_page = Math.ceil(recordCount / perPage);
-                    filteredData.from = recordCount > 0 ? 1 : 0;
-                    filteredData.to = Math.min(recordCount, perPage);
-                }
-                
-                renderStaffAttendanceRecords(filteredData);
+                renderStaffAttendanceRecords(result.data);
             } else {
                 showError(result.message || 'Failed to load staff attendance records');
             }
@@ -498,7 +465,7 @@
     }
     
     // Fetch attendance by date (checks date attendance ID first)
-    window.fetchStaffAttendanceByDate = async function(dateString, search = '', statusFilter = 'all') {
+    window.fetchStaffAttendanceByDate = async function(dateString) {
         if (!dateString) {
             showError('Please select a date');
             return;
@@ -516,7 +483,7 @@
         }
         
         // Fetch attendance using the found ID
-        await fetchStaffAttendanceList(search, 1, attendanceId, DEFAULT_PER_PAGE, statusFilter);
+        await fetchStaffAttendanceList(1, attendanceId, DEFAULT_PER_PAGE);
     };
     
     // Expose main function globally so it can be called from manage-attendance.html
@@ -621,7 +588,7 @@
     // Retry function that preserves current filter state
     window.retryStaffAttendanceList = function(page = null) {
         const pageToUse = page !== null ? page : currentPage;
-        fetchStaffAttendanceList(currentSearch, pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE, currentStatusFilter);
+        fetchStaffAttendanceList(pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE);
     };
 
 })();
