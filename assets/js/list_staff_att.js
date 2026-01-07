@@ -297,6 +297,64 @@
         `;
     }
     
+    // Check if date has an attendance ID
+    async function checkDateAttendanceId(dateString) {
+        try {
+            const token = getAuthToken();
+            if (!token) return null;
+            
+            // Use GET method as per API documentation
+            const url = new URL(`${API_BASE_URL}/attendance/check`);
+            url.searchParams.append('date', dateString);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                console.error(`Attendance check failed: ${response.status} ${response.statusText}`);
+                return null;
+            }
+            
+            const result = await response.json();
+            
+            // Backend returns success: true with data: null when attendance ID doesn't exist
+            if (result.success && result.data && result.data.id) {
+                return result.data.id;
+            }
+            
+            // If data is null, it means no attendance ID exists for this date
+            return null;
+        } catch (error) {
+            console.error('Error checking date attendance ID:', error);
+            return null;
+        }
+    }
+    
+    // Show no attendance message
+    function showNoAttendanceMessage(dateString) {
+        if (!staffAttendanceView) return;
+        
+        const date = new Date(dateString);
+        const dateText = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        staffAttendanceView.innerHTML = `
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-calendar-x" style="font-size: 4rem; color: #dee2e6;"></i>
+                </div>
+                <h5 class="text-muted mb-3">No Attendance Records</h5>
+                <p class="text-muted mb-0">There are no attendance records taken for <strong>${dateText}</strong>.</p>
+                <p class="text-muted small mt-2">Try selecting a different date to view attendance records.</p>
+            </div>
+        `;
+    }
+    
     // Main fetch function
     async function fetchStaffAttendanceList(search = '', page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE, statusFilter = 'all') {
         if (!staffAttendanceView) return;
@@ -307,6 +365,23 @@
         currentStatusFilter = statusFilter;
         
         showLoading();
+        
+        // Check if we should verify the date first
+        const dateInput = document.getElementById('attendanceDate');
+        if (dateInput && dateInput.value && dateAttendanceId === 1) {
+            // Check if the selected date has an attendance ID
+            const checkedId = await checkDateAttendanceId(dateInput.value);
+            
+            if (checkedId === null) {
+                // No attendance ID exists for this date
+                showNoAttendanceMessage(dateInput.value);
+                return;
+            }
+            
+            // Use the checked ID
+            currentDateAttendanceId = checkedId;
+            dateAttendanceId = checkedId;
+        }
         
         try {
             const url = new URL(`${API_BASE_URL}/user-attendance`);
@@ -421,6 +496,28 @@
         const staff = currentRecordsData.find(record => record.user_id == userId);
         return staff || null;
     }
+    
+    // Fetch attendance by date (checks date attendance ID first)
+    window.fetchStaffAttendanceByDate = async function(dateString, search = '', statusFilter = 'all') {
+        if (!dateString) {
+            showError('Please select a date');
+            return;
+        }
+        
+        showLoading();
+        
+        // Check if the date has an attendance ID
+        const attendanceId = await checkDateAttendanceId(dateString);
+        
+        if (attendanceId === null) {
+            // No attendance ID exists for this date - show appropriate message
+            showNoAttendanceMessage(dateString);
+            return;
+        }
+        
+        // Fetch attendance using the found ID
+        await fetchStaffAttendanceList(search, 1, attendanceId, DEFAULT_PER_PAGE, statusFilter);
+    };
     
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchStaffAttendanceList = fetchStaffAttendanceList;

@@ -130,11 +130,12 @@
       function loadAttendanceData(type) {
         const searchValue = document.getElementById('attendanceSearch').value;
         const statusValue = document.getElementById('attendanceStatus').value;
+        const dateValue = document.getElementById('attendanceDate').value;
         
-        if (type === 'workers' && window.fetchWorkerAttendanceList) {
-          window.fetchWorkerAttendanceList(searchValue, 1, 1, 10, statusValue);
-        } else if (type === 'staff' && window.fetchStaffAttendanceList) {
-          window.fetchStaffAttendanceList(searchValue, 1, 1, 10, statusValue);
+        if (type === 'workers' && window.fetchWorkerAttendanceByDate) {
+          window.fetchWorkerAttendanceByDate(dateValue, searchValue, statusValue);
+        } else if (type === 'staff' && window.fetchStaffAttendanceByDate) {
+          window.fetchStaffAttendanceByDate(dateValue, searchValue, statusValue);
         }
       }
       
@@ -150,10 +151,12 @@
           debounceTimer = setTimeout(() => {
             const currentType = getCurrentType();
             const statusValue = statusSelect.value;
-            if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
-              window.fetchWorkerAttendanceList(searchInput.value, 1, 1, 10, statusValue);
-            } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
-              window.fetchStaffAttendanceList(searchInput.value, 1, 1, 10, statusValue);
+            const dateValue = dateInput ? dateInput.value : '';
+            
+            if (currentType === 'workers' && window.fetchWorkerAttendanceByDate) {
+              window.fetchWorkerAttendanceByDate(dateValue, searchInput.value, statusValue);
+            } else if (currentType === 'staff' && window.fetchStaffAttendanceByDate) {
+              window.fetchStaffAttendanceByDate(dateValue, searchInput.value, statusValue);
             } else {
               loadAttendanceData(currentType);
             }
@@ -164,12 +167,29 @@
       if (statusSelect) {
         statusSelect.addEventListener('change', function() {
           const currentType = getCurrentType();
-          if (currentType === 'workers' && window.fetchWorkerAttendanceList) {
-            window.fetchWorkerAttendanceList(searchInput.value, 1, 1, 10, statusSelect.value);
-          } else if (currentType === 'staff' && window.fetchStaffAttendanceList) {
-            window.fetchStaffAttendanceList(searchInput.value, 1, 1, 10, statusSelect.value);
+          const dateValue = dateInput ? dateInput.value : '';
+          
+          if (currentType === 'workers' && window.fetchWorkerAttendanceByDate) {
+            window.fetchWorkerAttendanceByDate(dateValue, searchInput.value, statusSelect.value);
+          } else if (currentType === 'staff' && window.fetchStaffAttendanceByDate) {
+            window.fetchStaffAttendanceByDate(dateValue, searchInput.value, statusSelect.value);
           } else {
             loadAttendanceData(currentType);
+          }
+        });
+      }
+      
+      // Date change event listener
+      if (dateInput) {
+        dateInput.addEventListener('change', function() {
+          const currentType = getCurrentType();
+          const searchValue = searchInput ? searchInput.value : '';
+          const statusValue = statusSelect ? statusSelect.value : 'all';
+          
+          if (currentType === 'workers' && window.fetchWorkerAttendanceByDate) {
+            window.fetchWorkerAttendanceByDate(dateInput.value, searchValue, statusValue);
+          } else if (currentType === 'staff' && window.fetchStaffAttendanceByDate) {
+            window.fetchStaffAttendanceByDate(dateInput.value, searchValue, statusValue);
           }
         });
       }
