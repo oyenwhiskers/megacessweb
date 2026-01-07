@@ -16,7 +16,7 @@
                      sessionStorage.getItem('authToken');
         
         if (!token) {
-            window.location.href = '/megacessweb/pages/log-in.html';
+            window.location.href = '/pages/log-in.html';
             return null;
         }
         
@@ -212,7 +212,7 @@
                         "confirmButtonText": "Log in now."
                     }).then((result) => {
                         if (result.isConfirmed){
-                            window.location.href = "/megacessweb/assets/pages/log-in.html"
+                            window.location.href = "/assets/pages/log-in.html"
                         }
                     });
                 } else if (response.status === 403) {
@@ -399,3 +399,4 @@
     window.registerWorker = registerWorker;
     
 })();
+

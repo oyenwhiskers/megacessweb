@@ -34,7 +34,7 @@
                 <div class="text-center py-5">
                     <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
                     <p class="mt-3 text-muted">No user selected. Please go back to the attendance page and select a user.</p>
-                    <a href="/megacessweb/pages/manage-attendance.html" class="btn btn-secondary">
+                    <a href="/pages/manage-attendance.html" class="btn btn-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to Attendance
                     </a>
                 </div>
@@ -134,7 +134,7 @@
                 text: 'Please log in to view attendance details',
                 confirmButtonColor: '#dc3545'
             }).then(() => {
-                window.location.href = '/megacessweb/pages/log-in.html';
+                window.location.href = '/pages/log-in.html';
             });
             return;
         }
@@ -471,4 +471,5 @@
     }
 
 })();
+
 

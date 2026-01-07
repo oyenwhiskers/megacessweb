@@ -23,7 +23,7 @@ async function getPaymentRates() {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/pages/log-in.html"
+        window.location.href = "/pages/log-in.html"
       }
     });
     return;
@@ -509,7 +509,7 @@ async function updatePaymentRate(id, bodyData) {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/pages/log-in.html"
+        window.location.href = "/pages/log-in.html"
       }
     });
     return;
@@ -792,3 +792,4 @@ function appendNewCategoryBlock(c) {
   // append to the categories container used in renderTaskEditor
   $('#workSection .task-editor .card-body').find('.mb-3').last().after(block);
 }
+

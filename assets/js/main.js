@@ -75,7 +75,7 @@
       initTabs();
       return;
     }
-    fetch('/megacessweb/partials/sidebar.html', {cache:'no-store'})
+    fetch('/partials/sidebar.html', {cache:'no-store'})
       .then(function(r){ return r.text(); })
       .then(function(html){
         root.innerHTML = html;
@@ -132,5 +132,6 @@
 
   document.addEventListener('DOMContentLoaded', loadSidebar);
 })();
+
 
 

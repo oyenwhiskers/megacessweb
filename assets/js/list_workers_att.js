@@ -19,7 +19,7 @@
         
         if (!token) {
             console.error('No authentication token found. Please log in.');
-            window.location.href = '/megacessweb/pages/log-in.html';
+            window.location.href = '/pages/log-in.html';
             return null;
         }
         
@@ -295,7 +295,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             userType: 'worker',
             userImage: workerImage
         });
-        window.location.href = `/megacessweb/pages/manage-leave-details.html?${params.toString()}`;
+        window.location.href = `/pages/manage-leave-details.html?${params.toString()}`;
     };
     
     // Create pagination HTML (matching salary management style)
@@ -535,7 +535,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 userImage: cleanImageUrl,
                 userType: 'worker'
             });
-            window.location.href = `/megacessweb/pages/view-attendance-details.html?${params.toString()}`;
+            window.location.href = `/pages/view-attendance-details.html?${params.toString()}`;
         } else {
             // Fallback if data not found
             const params = new URLSearchParams({
@@ -545,7 +545,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 userImage: '',
                 userType: 'worker'
             });
-            window.location.href = `/megacessweb/pages/view-attendance-details.html?${params.toString()}`;
+            window.location.href = `/pages/view-attendance-details.html?${params.toString()}`;
         }
     };
     
@@ -572,7 +572,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 userImage: cleanImageUrl,
                 userType: 'worker'
             });
-            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
+            window.location.href = `/pages/manage-overtime-details.html?${params.toString()}`;
         } else {
             // Fallback if data not found
             const params = new URLSearchParams({
@@ -582,7 +582,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 userImage: '',
                 userType: 'worker'
             });
-            window.location.href = `/megacessweb/pages/manage-overtime-details.html?${params.toString()}`;
+            window.location.href = `/pages/manage-overtime-details.html?${params.toString()}`;
         }
     };
 

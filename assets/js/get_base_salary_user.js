@@ -13,7 +13,7 @@ $(document).ready(function () {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/pages/log-in.html"
+        window.location.href = "/pages/log-in.html"
       }
     });
     return;
@@ -112,7 +112,7 @@ $(document).ready(function () {
             timerProgressBar: true,
             showConfirmButton: false
           }).then(() => {
-            window.location.href = "/megacessweb/pages/manage-payment-rate.html?employee=staff&type=salary";
+            window.location.href = "/pages/manage-payment-rate.html?employee=staff&type=salary";
           });
         },
         error: function (xhr) {
@@ -140,3 +140,4 @@ $(document).ready(function () {
     }
   });
 });
+

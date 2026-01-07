@@ -607,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Redirect to login function
     window.redirectToLogin = function() {
-        window.location.href = '/megacessweb/pages/log-in.html';
+        window.location.href = '/pages/log-in.html';
     };
 
     // Helper function to set auth token (for testing)

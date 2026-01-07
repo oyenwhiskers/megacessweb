@@ -16,7 +16,7 @@ function getToken() {
     confirmButtonText: "Log in now."
   }).then((result) => {
     if (result.isConfirmed){
-      window.location.href = "/megacessweb/pages/log-in.html";
+      window.location.href = "/pages/log-in.html";
     }
   });
   return null;
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
           timer: 2500,
           timerProgressBar: true,
         });
-        window.location.href = "/megacessweb/pages/manage-payment-rate.html?type=work";
+        window.location.href = "/pages/manage-payment-rate.html?type=work";
       } else {
         let msg = result.message || "Failed to create payment rate.";
         if (result.errors) {
@@ -208,3 +208,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+

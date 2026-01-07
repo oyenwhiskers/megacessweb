@@ -11,7 +11,7 @@ $(document).ready(function() {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed){
-        window.location.href = "/megacessweb/pages/log-in.html"
+        window.location.href = "/pages/log-in.html"
       }
     });
     return;
@@ -119,7 +119,7 @@ $(document).ready(function() {
               <small class="text-muted d-block mt-1">Base Salary: <strong>${userBaseSalary}</strong></small>
             </div>
             <div class="d-flex flex-column ms-auto">
-              <a href="/megacessweb/pages/manage-payment-rate-edit-salary-user.html?user_id=${encodeURIComponent(id)}"
+              <a href="/pages/manage-payment-rate-edit-salary-user.html?user_id=${encodeURIComponent(id)}"
                 class="btn btn-sm btn-outline-success" title="Edit base salary">
                 <i class="bi bi-pencil-fill"></i>
               </a>
@@ -217,3 +217,4 @@ $(document).ready(function() {
   // Re-fetch when Staff section becomes visible
   $('input[name="employeeType"]').on("change", () => fetchUsers(1));
 });
+
