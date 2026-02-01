@@ -88,7 +88,8 @@ function renderTaskList(tasks) {
         <div>
           <span>${task.task_name}</span>
         </div>
-        <span class="badge bg-secondary ms-2" style="font-size: 0.75rem;">${categoryCount} ${categoryCount === 1 ? 'category' : 'categories'}</span>
+        <span class="badge bg-secondary ms-2" style="font-size: 0.75rem;">${categoryCount} 
+        ${categoryCount === 1 ? 'category' : 'categories'}</span>
       </li>
     `;
 
@@ -128,7 +129,6 @@ function renderTaskEditor(task) {
       const maxVal = condType ? (cond[`max_${condType}`] ?? '') : '';
       const condUnit = (cond && cond.unit) ? cond.unit : (c.unit || '');
 
-      // keep the same HTML structure and classes as your original UI
       return `
       <div class="border rounded p-3 mb-3 category-block" 
            data-index="${i}" 
@@ -390,7 +390,6 @@ function collectFormData(taskId) {
   };
 
   $('.category-block').each(function () {
-    // original category object (if present)
     let original = {};
     try {
       original = JSON.parse($(this).attr('data-category') || '{}');
@@ -398,14 +397,14 @@ function collectFormData(taskId) {
       original = {};
     }
 
-    // read UI fields (keep names/classes exactly as your UI)
+    // read UI fields 
     const catName = $(this).find('.category-name').val()?.trim() || original.category_name || '';
     const rateVal = $(this).find('.category-rate').val();
     const unitVal = $(this).find('.category-unit').val();
     const orderVal = parseInt($(this).find('.category-order').val()) || 0;
     const catKey = original.category_key || catName.toLowerCase().replace(/\s+/g, '_') || '';
 
-    // IMPORTANT: read the free-text type exactly as the UI provides it
+    // read the free-text type exactly as the UI provides it
     const type = $(this).find('.category-type').val()?.trim() || '';
     const minRaw = $(this).find('.category-min').val();
     const maxRaw = $(this).find('.category-max').val();
