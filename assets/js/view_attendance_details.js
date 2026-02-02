@@ -1,7 +1,7 @@
-(function() {
+(function () {
     'use strict';
 
-    const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
+    const API_BASE_URL = API_URL; // Using global API_URL from config.js
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -19,11 +19,11 @@
 
     // Token management
     function getAuthToken() {
-        return localStorage.getItem('authToken') || 
-               localStorage.getItem('auth_token') ||
-               sessionStorage.getItem('authToken') ||
-               sessionStorage.getItem('auth_token') ||
-               '';
+        return localStorage.getItem('authToken') ||
+            localStorage.getItem('auth_token') ||
+            sessionStorage.getItem('authToken') ||
+            sessionStorage.getItem('auth_token') ||
+            '';
     }
 
     // Initialize the page
@@ -50,15 +50,15 @@
         const avatar = document.getElementById('userAvatar');
         if (userImage && userImage !== 'null' && userImage !== 'undefined') {
             let cleanImageUrl = decodeURIComponent(userImage).replace(/:\d+$/, '').trim();
-            
+
             if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
-                cleanImageUrl = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
+                cleanImageUrl = `${STORAGE_DOMAIN}/storage/user-images/${cleanImageUrl}`;
             } else if (cleanImageUrl.startsWith('/')) {
-                cleanImageUrl = `https://mwms.megacess.com${cleanImageUrl}`;
+                cleanImageUrl = `${STORAGE_DOMAIN}${cleanImageUrl}`;
             }
-            
+
             avatar.src = cleanImageUrl;
-            avatar.onerror = function() {
+            avatar.onerror = function () {
                 this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=cccccc&color=fff&size=96`;
                 this.onerror = null;
             };
@@ -73,7 +73,7 @@
         const now = new Date();
         document.getElementById('analyticsMonth').value = String(now.getMonth() + 1).padStart(2, '0');
         document.getElementById('recordsMonth').value = String(now.getMonth() + 1).padStart(2, '0');
-        
+
         const currentYear = now.getFullYear();
         document.getElementById('analyticsYear').value = currentYear;
         document.getElementById('recordsYear').value = currentYear;
@@ -95,11 +95,11 @@
         const now = new Date();
         const currentYear = now.getFullYear();
         let yearOptions = '';
-        
+
         for (let y = currentYear - 5; y <= currentYear + 1; y++) {
             yearOptions += `<option value="${y}">${y}</option>`;
         }
-        
+
         document.getElementById('analyticsYear').innerHTML = yearOptions;
         document.getElementById('recordsYear').innerHTML = yearOptions;
     }
@@ -141,7 +141,7 @@
 
         try {
             // Determine API endpoint based on user type
-            const endpoint = userType === 'staff' 
+            const endpoint = userType === 'staff'
                 ? `${API_BASE_URL}/user-attendance/${userId}/analytics`
                 : `${API_BASE_URL}/staff-attendance/${userId}/analytics`;
 
@@ -201,7 +201,7 @@
 
         try {
             // Determine API endpoint based on user type
-            const endpoint = userType === 'staff' 
+            const endpoint = userType === 'staff'
                 ? `${API_BASE_URL}/user-attendance/${userId}/records`
                 : `${API_BASE_URL}/staff-attendance/${userId}/records`;
 
@@ -286,7 +286,7 @@
         recordsToShow.forEach((rec, idx) => {
             const actualIdx = startIdx + idx;
             const statusInfo = getStatusInfo(rec.status);
-            
+
             listHtml += `
                 <div style="display: flex; align-items: center; background: #fff; border-radius: 12px; margin-bottom: 12px; border-left: 10px solid ${statusInfo.color}; padding: 0 16px 0 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     <div style="flex: 1; min-width: 0; padding: 18px 0 18px 18px;">
@@ -302,13 +302,13 @@
             `;
         });
         listHtml += '</div>';
-        
+
         document.getElementById('attendanceRecordsTable').innerHTML = listHtml;
 
         // Add event listeners for detail buttons
         const detailBtns = document.querySelectorAll('.attendance-record-detail-btn');
         detailBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const idx = parseInt(this.getAttribute('data-record-idx'));
                 if (allRecords[idx]) showRecordDetailModal(allRecords[idx]);
             });
@@ -437,7 +437,7 @@
     // Show record detail modal
     function showRecordDetailModal(record) {
         const statusInfo = getStatusInfo(record.status);
-        
+
         const badgeHtml = `<span style="display: inline-flex; align-items: center; gap: 6px; background: ${statusInfo.bgColor}; color: ${statusInfo.textColor}; font-weight: 600; padding: 6px 18px; border-radius: 8px; font-size: 1rem;">
             <span style="font-size: 1.2em;">${statusInfo.icon}</span> ${statusInfo.label}
         </span>`;
@@ -445,7 +445,7 @@
         document.getElementById('detailStatusBadge').innerHTML = badgeHtml;
         document.getElementById('detailCheckedBy').textContent = record.checkedin_by || record.checkedout_by || 'N/A';
         document.getElementById('detailDate').textContent = record.date || 'N/A';
-        
+
         // Format check-in time
         let checkInTime = 'N/A';
         if (record.check_in) {

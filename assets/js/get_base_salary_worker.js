@@ -1,8 +1,8 @@
 // get_base_salary_worker.js - Fetch and edit base salary with worker info
 
 $(document).ready(function () {
-  const API_BASE = "https://mwms.megacess.com/api/v1/staff";
-  const token = getToken(); 
+  const API_BASE = `${API_URL}/staff`;
+  const token = getToken();
 
   if (!token) {
     console.error("Token not found. Staff must be authenticated.");
@@ -12,7 +12,7 @@ $(document).ready(function () {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then((result) => {
-      if (result.isConfirmed){
+      if (result.isConfirmed) {
         window.location.href = "/pages/log-in.html"
       }
     });

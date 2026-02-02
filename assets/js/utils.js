@@ -1,5 +1,4 @@
-// ==================== GLOBAL CONSTANTS ====================
-const BASE_URL = "https://mwms.megacess.com/api/v1";
+// API_URL is defined globally in config.js
 
 // ==================== AUTH & TOKEN ====================
 function getToken() {

@@ -1,5 +1,5 @@
-$(document).ready(function() {
-  const API_URL = "https://mwms.megacess.com/api/v1/staff";
+$(document).ready(function () {
+  const WORKER_SALARY_API_URL = `${API_URL}/staff`;
   const token = getToken();
 
   if (!token) {
@@ -21,30 +21,30 @@ $(document).ready(function() {
   };
 
   // --- URL sync for Worker/Staff toggle ---
-function showEmployeeType(type, push) {
-  if(type === 'staff') {
-    // Show staff section
-    $('#staffSection').removeClass('d-none');
-    $('#workerSection').addClass('d-none');
-    $('#staff').prop('checked', true);
+  function showEmployeeType(type, push) {
+    if (type === 'staff') {
+      // Show staff section
+      $('#staffSection').removeClass('d-none');
+      $('#workerSection').addClass('d-none');
+      $('#staff').prop('checked', true);
 
-    if(typeof fetchUsers === 'function') fetchUsers(1);
-  } else {
-    // Show worker section
-    $('#workerSection').removeClass('d-none');
-    $('#staffSection').addClass('d-none');
-    $('#worker').prop('checked', true);
+      if (typeof fetchUsers === 'function') fetchUsers(1);
+    } else {
+      // Show worker section
+      $('#workerSection').removeClass('d-none');
+      $('#staffSection').addClass('d-none');
+      $('#worker').prop('checked', true);
 
-    if(typeof fetchWorkers === 'function') fetchWorkers(1);
+      if (typeof fetchWorkers === 'function') fetchWorkers(1);
+    }
+
+    const url = '?employee=' + type;
+    if (push) {
+      history.pushState({ employee: type }, '', url);
+    } else {
+      history.replaceState({ employee: type }, '', url);
+    }
   }
-
-  const url = '?employee=' + type;
-  if(push) {
-    history.pushState({employee: type}, '', url);
-  } else {
-    history.replaceState({employee: type}, '', url);
-  }
-}
 
 
   // Initial state from URL
@@ -53,15 +53,15 @@ function showEmployeeType(type, push) {
   showEmployeeType(initialEmployee, false);
 
   // Toggle by radio button
-  $('#worker').on('change', function() {
-    if($(this).is(':checked')) showEmployeeType('worker', true);
+  $('#worker').on('change', function () {
+    if ($(this).is(':checked')) showEmployeeType('worker', true);
   });
-  $('#staff').on('change', function() {
-    if($(this).is(':checked')) showEmployeeType('staff', true);
+  $('#staff').on('change', function () {
+    if ($(this).is(':checked')) showEmployeeType('staff', true);
   });
 
   // Handle back/forward
-  window.addEventListener('popstate', function(ev) {
+  window.addEventListener('popstate', function (ev) {
     const p = new URLSearchParams(window.location.search).get('employee');
     showEmployeeType(p === 'staff' ? 'staff' : 'worker', false);
   });
@@ -98,11 +98,11 @@ function showEmployeeType(type, push) {
     $("#workerList .row").html(skeletonHtml);
 
     $.ajax({
-      url: API_URL,
+      url: WORKER_SALARY_API_URL,
       method: "GET",
       headers: headers,
       data: params,
-      success: function(response) {
+      success: function (response) {
         if (response && response.success && Array.isArray(response.data)) {
           renderWorker(response.data);
           currentPage = response.meta?.current_page || 1;
@@ -113,7 +113,7 @@ function showEmployeeType(type, push) {
           $("#workerPagination").remove();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         console.error("Failed to load workers:", xhr.responseText);
         $("#workerList .row").html('<div class="col-12 text-center text-danger">Error loading workers</div>');
         $("#workerPagination").remove();
@@ -133,10 +133,10 @@ function showEmployeeType(type, push) {
     workers.forEach(worker => {
       const workerId = worker.id || "";
       const workerName = worker.staff_fullname || "Unknown";
-      const workerAvatar = worker.staff_img 
-        ? (worker.staff_img.startsWith("http") ? worker.staff_img : `https://mwms.megacess.com${worker.staff_img}`)
+      const workerAvatar = worker.staff_img
+        ? (worker.staff_img.startsWith("http") ? worker.staff_img : `${STORAGE_DOMAIN}${worker.staff_img}`)
         : "https://via.placeholder.com/64";
-      
+
       // Safely access nested base_salary property
       let workerBaseSalary = "Not set";
       if (worker.base_salary && worker.base_salary.base_salary != null) {
@@ -223,7 +223,7 @@ function showEmployeeType(type, push) {
   }
 
   // Search input
-  $("#searchWorker").on("input", function() {
+  $("#searchWorker").on("input", function () {
     const value = $(this).val().trim();
     // Show/hide clear button
     if (value.length > 0) {
@@ -235,7 +235,7 @@ function showEmployeeType(type, push) {
   });
 
   // Clear search button
-  $("#clearSearchWorker").on("click", function() {
+  $("#clearSearchWorker").on("click", function () {
     $("#searchWorker").val("");
     $(this).hide();
     fetchWorkers(1);

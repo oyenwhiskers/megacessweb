@@ -1,8 +1,8 @@
 // get_base_salary_user.js - Fetch and edit base salary with staff info
 
 $(document).ready(function () {
-  const API_BASE = "https://mwms.megacess.com/api/v1/users";
-  const token = getToken(); 
+  const API_BASE = `${API_URL}/users`;
+  const token = getToken();
 
   if (!token) {
     console.error("Token not found. User must be authenticated.");
@@ -12,7 +12,7 @@ $(document).ready(function () {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then((result) => {
-      if (result.isConfirmed){
+      if (result.isConfirmed) {
         window.location.href = "/pages/log-in.html"
       }
     });
@@ -27,7 +27,7 @@ $(document).ready(function () {
 
   // Get user ID from URL
   const params = new URLSearchParams(window.location.search);
-  const userId = params.get("user_id"); 
+  const userId = params.get("user_id");
   const container = $("#userBaseSalaryContainer");
 
   if (!userId) {
@@ -100,7 +100,7 @@ $(document).ready(function () {
 
       $.ajax({
         url: `${API_BASE}/${userId}/base-salary`,
-        method: "POST", 
+        method: "POST",
         headers: headers,
         contentType: "application/json",
         data: JSON.stringify({ base_salary: newSalary }),

@@ -4,10 +4,10 @@ let taskCompletionChart = null;
 // Loading helper functions
 function showLoading(container) {
     if (!container) return;
-    
+
     // Add loading class
     container.classList.add('position-relative');
-    
+
     // Create loading overlay
     const loadingOverlay = document.createElement('div');
     loadingOverlay.className = 'loading-overlay';
@@ -16,20 +16,20 @@ function showLoading(container) {
             <span class="visually-hidden">Loading...</span>
         </div>
     `;
-    
+
     container.appendChild(loadingOverlay);
 }
 
 function hideLoading(container) {
     if (!container) return;
-    
+
     const loadingOverlay = container.querySelector('.loading-overlay');
     if (loadingOverlay) {
         loadingOverlay.remove();
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Populate year and month dropdowns
     populateYearMonthDropdowns();
     populateChartDropdowns();
@@ -61,13 +61,13 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchTasksByBlocks(year, month);
 
     // Listen for top dashboard filter changes (independent)
-    document.getElementById('dashboard-year').addEventListener('change', function() {
+    document.getElementById('dashboard-year').addEventListener('change', function () {
         const year = parseInt(document.getElementById('dashboard-year').value, 10);
         const month = parseInt(document.getElementById('dashboard-month').value, 10);
         fetchDashboardData(month, year);
         fetchYieldData(month, year);
     });
-    document.getElementById('dashboard-month').addEventListener('change', function() {
+    document.getElementById('dashboard-month').addEventListener('change', function () {
         const year = parseInt(document.getElementById('dashboard-year').value, 10);
         const month = parseInt(document.getElementById('dashboard-month').value, 10);
         fetchDashboardData(month, year);
@@ -188,27 +188,27 @@ async function fetchDashboardData(month, year) {
     try {
         // Get token from localStorage (using 'authToken' key)
         const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
-        
+
         if (!token) {
             console.error('No authentication token found. Please log in again.');
             // Redirect to login page
             // window.location.href = '/pages/log-in.html';
             return;
         }
-        
+
         // Show loading for all stat cards
         const pendingLeaveCard = document.getElementById('pending-leave')?.closest('.card-body');
         const absenceCard = document.getElementById('number-absence')?.closest('.card-body');
         const payrollCard = document.getElementById('pending-payroll')?.closest('.card-body');
         const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
         const equipmentCard = document.getElementById('equipment-bags')?.closest('.card-body');
-        
+
         [pendingLeaveCard, absenceCard, payrollCard, yieldCard, equipmentCard].forEach(card => {
             if (card) showLoading(card);
         });
 
         const response = await fetch(
-            `https://mwms.megacess.com/api/v1/analytics/dashboard?month=${month}&year=${year}`,
+            `${API_URL}/analytics/dashboard?month=${month}&year=${year}`,
             {
                 method: 'GET',
                 headers: {
@@ -224,7 +224,7 @@ async function fetchDashboardData(month, year) {
         }
 
         const result = await response.json();
-        
+
         if (result.data) {
             updateDashboard(result.data);
         }
@@ -238,7 +238,7 @@ async function fetchDashboardData(month, year) {
         const payrollCard = document.getElementById('pending-payroll')?.closest('.card-body');
         const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
         const equipmentCard = document.getElementById('equipment-bags')?.closest('.card-body');
-        
+
         [pendingLeaveCard, absenceCard, payrollCard, yieldCard, equipmentCard].forEach(card => {
             if (card) hideLoading(card);
         });
@@ -249,17 +249,17 @@ async function fetchDashboardData(month, year) {
 async function fetchYieldData(month, year) {
     try {
         const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
-        
+
         if (!token) {
             console.error('No authentication token found for yield data');
             return;
         }
-        
+
         // Show loading for yield card
         const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
         if (yieldCard) showLoading(yieldCard);
 
-        let url = `https://mwms.megacess.com/api/v1/analytics/audited-summary?`;
+        let url = `${API_URL}/analytics/audited-summary?`;
         if (year && year !== "") url += `year=${year}&`;
         if (month && month !== "") url += `month=${month}&`;
         url = url.replace(/&$/, "");
@@ -278,7 +278,7 @@ async function fetchYieldData(month, year) {
         }
 
         const result = await response.json();
-        
+
         if (result.data && result.data.summary) {
             updateYieldData(result.data.summary);
         } else {
@@ -298,15 +298,15 @@ async function fetchYieldData(month, year) {
 // Update yield display from audited summary data
 function updateYieldData(summaryData) {
     // Find harvesting data
-    const harvestingData = summaryData.filter(item => 
+    const harvestingData = summaryData.filter(item =>
         item.task_type && item.task_type.toLowerCase() === 'harvesting'
     );
-    
+
     if (harvestingData.length > 0) {
         // Calculate total yield from all harvesting tasks
         let totalYield = 0;
         let recentBlock = null;
-        
+
         harvestingData.forEach(item => {
             if (item.total_value !== undefined) {
                 totalYield += parseFloat(item.total_value) || 0;
@@ -316,22 +316,22 @@ function updateYieldData(summaryData) {
                 recentBlock = item.recent_block;
             }
         });
-        
+
         // Update total yield harvested
         const yieldTotalElement = document.getElementById('yield-total');
         if (yieldTotalElement) {
             yieldTotalElement.textContent = totalYield.toFixed(2);
         }
-        
+
         // Update recent harvested area
         if (recentBlock) {
             const areaNameElement = document.getElementById('area-name');
             const areaTotalElement = document.getElementById('area-total');
-            
+
             if (areaNameElement && recentBlock.location_name) {
                 areaNameElement.textContent = recentBlock.location_name;
             }
-            
+
             if (areaTotalElement && recentBlock.total_value !== undefined) {
                 const unit = harvestingData.find(item => item.recent_block === recentBlock)?.unit || 'ton';
                 areaTotalElement.textContent = parseFloat(recentBlock.total_value).toFixed(2) + ' ' + unit;
@@ -404,11 +404,11 @@ function updateDashboard(data) {
         if (data.total_yield_harvested.recent_harvested_area) {
             const areaNameElement = document.getElementById('area-name');
             const areaTotalElement = document.getElementById('area-total');
-            
+
             if (areaNameElement) {
                 areaNameElement.textContent = data.total_yield_harvested.recent_harvested_area.location_name;
             }
-            
+
             if (areaTotalElement) {
                 areaTotalElement.textContent = data.total_yield_harvested.recent_harvested_area.total.toFixed(2) + ' ton';
             }
@@ -419,11 +419,11 @@ function updateDashboard(data) {
     if (data.total_equipment_used) {
         const bagsElement = document.getElementById('equipment-bags');
         const litersElement = document.getElementById('equipment-liters');
-        
+
         if (bagsElement && data.total_equipment_used.bags !== undefined) {
             bagsElement.textContent = data.total_equipment_used.bags + ' bags';
         }
-        
+
         if (litersElement && data.total_equipment_used.liters !== undefined) {
             litersElement.textContent = data.total_equipment_used.liters + ' litre';
         }
@@ -434,7 +434,7 @@ async function fetchTasksByBlocks(year, month, week = null) {
     try {
         // Get token from localStorage (using 'authToken' key)
         const token = localStorage.getItem('authToken');
-        
+
         if (!token) {
             console.error('No authentication token found');
             return;
@@ -448,7 +448,7 @@ async function fetchTasksByBlocks(year, month, week = null) {
         }
 
         // Build URL with parameters
-        let url = `https://mwms.megacess.com/api/v1/analytics/tasks-by-blocks?year=${year}&month=${month}`;
+        let url = `${API_URL}/analytics/tasks-by-blocks?year=${year}&month=${month}`;
         if (week) {
             url += `&week=${week}`;
         }
@@ -467,7 +467,7 @@ async function fetchTasksByBlocks(year, month, week = null) {
         }
 
         const result = await response.json();
-        
+
         if (result.data && result.data.data) {
             updateChart(result.data.data);
         }
@@ -487,7 +487,7 @@ async function fetchTasksByBlocks(year, month, week = null) {
 function initializeChart() {
     const ctx = document.getElementById('taskCompletionChart');
     if (!ctx) return;
-    
+
     // Empty chart - will be populated by API
     taskCompletionChart = new Chart(ctx, {
         type: 'bar',
@@ -570,15 +570,15 @@ function initializeChart() {
 
 function updateChart(apiData) {
     if (!taskCompletionChart) return;
-    
+
     // Extract labels and values from API data
     const labels = apiData.map(item => item.location_name);
     const values = apiData.map(item => item.count);
-    
+
     // Find the maximum value to set appropriate scale
     const maxValue = Math.max(...values);
     const yAxisMax = Math.ceil(maxValue / 10) * 10 + 10; // Round up and add padding
-    
+
     // Update chart with API data
     taskCompletionChart.data.labels = labels;
     taskCompletionChart.data.datasets[0].data = values;

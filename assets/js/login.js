@@ -1,10 +1,10 @@
 // Login page API integration (updated payload + no credentials to avoid CORS wildcard issue)
-(function(){
-  var API_URL = 'https://mwms.megacess.com/api/v1/auth/login';
+(function () {
+  var LOGIN_API_URL = `${API_URL}/auth/login`;
 
-  function qs(sel){ return document.querySelector(sel); }
-  function show(el, txt){ if(!el) return; el.style.display='block'; if(txt!==undefined) el.textContent = txt; }
-  function hide(el){ if(!el) return; el.style.display='none'; }
+  function qs(sel) { return document.querySelector(sel); }
+  function show(el, txt) { if (!el) return; el.style.display = 'block'; if (txt !== undefined) el.textContent = txt; }
+  function hide(el) { if (!el) return; el.style.display = 'none'; }
   // Remember password helpers
   function savePasswordIfRemembered(user, password, remember) {
     try {
@@ -15,7 +15,7 @@
         localStorage.removeItem('rememberedUser');
         localStorage.removeItem('rememberedPassword');
       }
-    } catch(e) {}
+    } catch (e) { }
   }
 
   function prefillRememberedCredentials() {
@@ -32,21 +32,21 @@
         var rememberBox = qs('#remember');
         if (rememberBox) rememberBox.checked = true;
       }
-    } catch(e) {}
+    } catch (e) { }
   }
 
-  function togglePassword(e){
+  function togglePassword(e) {
     var btn = e.currentTarget;
     var pwd = qs('#password');
-    if(!pwd || !btn) return;
-    if(pwd.type === 'password'){ pwd.type = 'text'; btn.title = 'Hide password'; }
+    if (!pwd || !btn) return;
+    if (pwd.type === 'password') { pwd.type = 'text'; btn.title = 'Hide password'; }
     else { pwd.type = 'password'; btn.title = 'Show password'; }
   }
 
-  async function submitLogin(ev){
+  async function submitLogin(ev) {
     ev && ev.preventDefault();
     var form = qs('#loginForm');
-    if(!form) return;
+    if (!form) return;
 
     var user = qs('#email'), password = qs('#password'), remember = qs('#remember');
     var emailError = qs('#emailError'), passwordError = qs('#passwordError'), submitError = qs('#submitError');
@@ -55,14 +55,14 @@
     hide(emailError); hide(passwordError); hide(submitError);
 
     var ok = true;
-    if(!user || !user.value || user.value.trim().length < 2){ show(emailError); ok = false; }
-    if(!password || !password.value || password.value.trim().length < 1){ show(passwordError); ok = false; }
-    if(!ok) return;
+    if (!user || !user.value || user.value.trim().length < 2) { show(emailError); ok = false; }
+    if (!password || !password.value || password.value.trim().length < 1) { show(passwordError); ok = false; }
+    if (!ok) return;
 
-      // Save password if 'Remember' is checked
-      savePasswordIfRemembered(user.value.trim(), password.value, remember && remember.checked);
+    // Save password if 'Remember' is checked
+    savePasswordIfRemembered(user.value.trim(), password.value, remember && remember.checked);
 
-    if(btn){ btn.disabled = true; var origText = btn.textContent; btn.textContent = 'Logging in...'; }
+    if (btn) { btn.disabled = true; var origText = btn.textContent; btn.textContent = 'Logging in...'; }
 
     try {
       // API expects "user_nickname" and "password" (example payload)
@@ -72,7 +72,7 @@
         remember: !!(remember && remember.checked)
       };
 
-      var res = await fetch(API_URL, {
+      var res = await fetch(LOGIN_API_URL, {
         method: 'POST',
         mode: 'cors',
         // do NOT send credentials when the API responds with Access-Control-Allow-Origin: *
@@ -82,13 +82,13 @@
       });
 
       var data = null;
-      try { data = await res.json(); } catch(e){}
+      try { data = await res.json(); } catch (e) { }
 
-      if(res.ok){
+      if (res.ok) {
         // store token from common response shapes
         const token = (data && (data.token || data.access_token)) || (data && data.data && (data.data.token || data.data.access_token));
-        if(token){
-          try{ localStorage.setItem('authToken', token); console.log('authToken set', token); }catch(e){}
+        if (token) {
+          try { localStorage.setItem('authToken', token); console.log('authToken set', token); } catch (e) { }
         } else {
           console.warn('Login succeeded but no token found in response', data);
         }
@@ -98,7 +98,7 @@
           try {
             localStorage.setItem('user_nickname', user.value.trim());
             sessionStorage.setItem('user_nickname', user.value.trim());
-          } catch(e) {}
+          } catch (e) { }
         }
 
         // Reload sidebar if present
@@ -113,31 +113,31 @@
       var msg = (data && (data.message || data.error)) ? (data.message || data.error) : ('Login failed (' + res.status + ')');
       show(submitError, msg);
 
-    } catch(err){
+    } catch (err) {
       show(submitError, 'Network error. Please try again.');
       console.warn('Login failed', err);
     } finally {
-      if(btn){ btn.disabled = false; btn.textContent = origText || 'Login'; }
+      if (btn) { btn.disabled = false; btn.textContent = origText || 'Login'; }
     }
   }
 
   // init on DOM ready
-  document.addEventListener('DOMContentLoaded', function(){
+  document.addEventListener('DOMContentLoaded', function () {
     var form = qs('#loginForm');
-    if(!form) return;
-      // Pre-fill remembered credentials
-      prefillRememberedCredentials();
+    if (!form) return;
+    // Pre-fill remembered credentials
+    prefillRememberedCredentials();
     // wire up submit
-    form.addEventListener('submit', submitLogin, {passive:false});
+    form.addEventListener('submit', submitLogin, { passive: false });
 
     // wire up password toggle button if present
     var eyeBtn = qs('.show-pass');
-    if(eyeBtn) eyeBtn.addEventListener('click', togglePassword);
+    if (eyeBtn) eyeBtn.addEventListener('click', togglePassword);
 
     // wire up forgot password link
     var forgot = qs('#forgotPasswordLink');
     if (forgot) {
-      forgot.addEventListener('click', function(e) {
+      forgot.addEventListener('click', function (e) {
         e.preventDefault();
         alert('Please contact your Admin to Change Password');
       });

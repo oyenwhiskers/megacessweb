@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Tab functionality (Main Page Manage Payroll)
     const workerTab = document.getElementById('workerTab');
     const staffTab = document.getElementById('staffTab');
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const workerContainer = document.getElementById('workerContainer');
     const roleFilterContainer = document.getElementById('roleFilterContainer');
-    
+
     // Role filter buttons
     const roleFilterButtons = {
         all: document.getElementById('roleFilterAll'),
@@ -16,14 +16,14 @@ document.addEventListener('DOMContentLoaded', function() {
         checker: document.getElementById('roleFilterChecker'),
         admin: document.getElementById('roleFilterAdmin')
     };
-    
+
     // Current selected role
     let currentRole = 'all';
 
     // Helper function to set active role filter button
     function setActiveRoleFilter(role) {
         currentRole = role;
-        
+
         // Reset all buttons to inactive state
         Object.values(roleFilterButtons).forEach(button => {
             if (button) {
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.classList.add('btn-outline-secondary');
             }
         });
-        
+
         // Set the selected button to active state
         if (roleFilterButtons[role]) {
             roleFilterButtons[role].classList.remove('btn-outline-secondary');
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const taskBreakdownSubtitleEl = document.getElementById('taskBreakdownSubtitle');
     let currentTaskBreakdownStaffId = null;
     let currentTaskBreakdownName = '';
-    
+
     // Pagination variables
     let currentPage = 1;
     let itemsPerPage = 10;
@@ -69,9 +69,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPayslipRecords = [];
     let payslipShowTaskButton = true;
 
-    // API Configuration
-    const API_BASE_URL = 'https://mwms.megacess.com/api/v1/payroll';
-    const API_BASE_URL_ADVANCES = 'https://mwms.megacess.com/api/v1/advances';
+    // API Configuration (using global API_URL from config.js)
+    const API_BASE_URL = `${API_URL}/payroll`;
+    const API_BASE_URL_ADVANCES = `${API_URL}/advances`;
     // Get token from localStorage (matches login.js token storage)
     const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
 
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             showLoading(true);
             const url = new URL(`${API_BASE_URL}/staff`);
-            
+
             // For initial load, don't send pagination params to get all data
             if (searchTerm) {
                 url.searchParams.append('search', searchTerm);
@@ -118,22 +118,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            
+
             // Handle different API response structures
             let allData = [];
             if (result.data && Array.isArray(result.data)) {
                 allData = result.data;
-                
+
                 // Store all data for client-side pagination
                 if (!searchTerm) {
                     allWorkersData = allData;
                 }
-                
+
                 // Calculate totalPages IMMEDIATELY to prevent race condition
                 totalItems = allData.length;
                 totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
                 currentPage = Math.min(page, totalPages) || 1;
-                
+
                 // Always use client-side pagination for consistent behavior
                 handleClientSidePagination(searchTerm, page, allData);
             } else {
@@ -144,17 +144,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderWorkers(workersData);
                 updatePagination();
             }
-            
+
             showLoading(false);
         } catch (error) {
             console.error('Error fetching workers:', error);
-            
+
             if (error.message.includes('fetch')) {
                 showError('Network error. Please check your connection and try again.');
             } else {
                 showError('Failed to load workers data. Please try again.');
             }
-            
+
             showLoading(false);
         }
     }
@@ -163,39 +163,39 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleClientSidePagination(searchTerm = '', page = 1, dataSource = null) {
         let sourceData = dataSource || allWorkersData;
         let filteredData = sourceData;
-        
+
         // Filter data for search if search term exists
         if (searchTerm) {
-            filteredData = sourceData.filter(worker => 
+            filteredData = sourceData.filter(worker =>
                 worker.staff_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (worker.staff_phone && worker.staff_phone.includes(searchTerm))
             );
         }
-        
+
         // Calculate pagination
         totalItems = filteredData.length;
         totalPages = Math.ceil(totalItems / itemsPerPage);
         currentPage = Math.min(page, totalPages) || 1;
-        
+
         // Get only the items for current page (exactly 10 items)
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         workersData = filteredData.slice(startIndex, endIndex);
-        
+
         renderWorkers(workersData);
         updatePagination();
     }
 
     // Go to specific page
-    window.goToPage = function(page) {
+    window.goToPage = function (page) {
         if (page < 1 || page > totalPages || page === currentPage) return;
-        
+
         currentPage = page;
         const searchTerm = searchInput.value.trim();
-        
+
         // Check which tab is active
         const isWorkerTab = workerTab.classList.contains('btn-success');
-        
+
         if (isWorkerTab) {
             // If we have cached data, use client-side pagination
             if (allWorkersData && allWorkersData.length > 0) {
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             showLoading(true);
             const url = new URL(`${API_BASE_URL}/users`);
-            
+
             // Add parameters
             if (searchTerm) {
                 url.searchParams.append('search', searchTerm);
@@ -260,23 +260,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            
+
             // Handle API response
             let allData = [];
             if (result.data && Array.isArray(result.data)) {
                 allData = result.data;
-                
+
                 // Store all data for client-side pagination
                 if (!searchTerm && role === 'all') {
                     allStaffData = allData;
                 }
-                
+
                 // Calculate totalPages IMMEDIATELY to prevent race condition
                 // Note: This is a rough estimate, will be refined in handleStaffClientSidePagination
                 totalItems = allData.length;
                 totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
                 currentPage = Math.min(page, totalPages) || 1;
-                
+
                 // Always use client-side pagination for consistent behavior
                 handleStaffClientSidePagination(searchTerm, page, allData, role);
             } else {
@@ -287,17 +287,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderStaff(staffData);
                 updatePagination();
             }
-            
+
             showLoading(false);
         } catch (error) {
             console.error('Error fetching staff:', error);
-            
+
             if (error.message.includes('fetch')) {
                 showError('Network error. Please check your connection and try again.');
             } else {
                 showError('Failed to load staff data. Please try again.');
             }
-            
+
             showLoading(false);
         }
     }
@@ -306,30 +306,30 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleStaffClientSidePagination(searchTerm = '', page = 1, dataSource = null, role = 'all') {
         let sourceData = dataSource || allStaffData;
         let filteredData = sourceData;
-        
+
         // Filter by role first if not 'all'
         if (role && role !== 'all') {
             filteredData = sourceData.filter(staff => staff.user_role === role);
         }
-        
+
         // Filter data for search if search term exists
         if (searchTerm) {
-            filteredData = filteredData.filter(staff => 
+            filteredData = filteredData.filter(staff =>
                 staff.user_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (staff.user_nickname && staff.user_nickname.toLowerCase().includes(searchTerm.toLowerCase()))
             );
         }
-        
+
         // Calculate pagination
         totalItems = filteredData.length;
         totalPages = Math.ceil(totalItems / itemsPerPage);
         currentPage = Math.min(page, totalPages) || 1;
-        
+
         // Get only the items for current page (exactly 10 items)
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         staffData = filteredData.slice(startIndex, endIndex);
-        
+
         renderStaff(staffData);
         updatePagination();
     }
@@ -339,24 +339,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const paginationContainer = document.getElementById('paginationContainer');
         const paginationInfo = document.getElementById('paginationInfo');
         const paginationControls = document.getElementById('paginationControls');
-        
+
         // Show/hide pagination based on total pages
         if (totalPages <= 1) {
             paginationContainer.style.display = 'none';
             return;
         }
-        
+
         paginationContainer.style.display = 'block';
-        
+
         // Update pagination info
         const startItem = (currentPage - 1) * itemsPerPage + 1;
         const endItem = Math.min(currentPage * itemsPerPage, totalItems);
         const itemType = workerTab.classList.contains('btn-success') ? 'workers' : 'staff';
         paginationInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} ${itemType}`;
-        
+
         // Generate pagination controls
         let paginationHTML = '';
-        
+
         // Previous button
         const prevDisabled = currentPage <= 1 ? 'disabled' : '';
         paginationHTML += `
@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </li>
         `;
-        
+
         // Page numbers with smart ellipsis (like fuel.js)
         let pages = [];
         if (totalPages <= 7) {
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
             }
         }
-        
+
         // Generate page buttons
         pages.forEach((page) => {
             if (page === '...') {
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
         });
-        
+
         // Next button
         const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
         paginationHTML += `
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </li>
         `;
-        
+
         paginationControls.innerHTML = paginationHTML;
     }
 
@@ -435,19 +435,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function createWorkerCard(worker) {
         // Handle image path properly using the provided logic
         let workerImage = worker.staff_img || '';
-        
+
         // Check if the cleaned URL is still valid
         if (workerImage.length < 5 || workerImage.includes('null') || workerImage.includes('undefined') || workerImage.includes('…')) {
             workerImage = '';
         } else if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
             // Construct full URL if it's just a filename
-            workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+            workerImage = `${STORAGE_DOMAIN}/storage/user-images/${workerImage}`;
         } else if (workerImage.startsWith('/')) {
             // Add domain if it starts with /
-            workerImage = `https://mwms.megacess.com${workerImage}`;
+            workerImage = `${STORAGE_DOMAIN}${workerImage}`;
         }
 
-        const avatarImage = workerImage 
+        const avatarImage = workerImage
             ? `<img src="${workerImage}" alt="${worker.staff_fullname}" class="rounded-circle" 
                     style="width: 50px; height: 50px; object-fit: cover;" 
                     onerror="this.outerHTML='<div class=&quot;bg-dark rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>';">`
@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render staff list
     function renderStaff(staff) {
         const staffContainer = document.querySelector('#staffList .col-12');
-        
+
         if (staff.length === 0) {
             staffContainer.innerHTML = `
                 <div class="text-center py-5">
@@ -502,19 +502,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function createStaffCard(staff) {
         // Handle image path properly
         let staffImage = staff.user_img || '';
-        
+
         // Check if the cleaned URL is still valid
         if (staffImage.length < 5 || staffImage.includes('null') || staffImage.includes('undefined') || staffImage.includes('…')) {
             staffImage = '';
         } else if (!staffImage.startsWith('http') && !staffImage.startsWith('/')) {
             // Construct full URL if it's just a filename
-            staffImage = `https://mwms.megacess.com/storage/user-images/${staffImage}`;
+            staffImage = `${STORAGE_DOMAIN}/storage/user-images/${staffImage}`;
         } else if (staffImage.startsWith('/')) {
             // Add domain if it starts with /
-            staffImage = `https://mwms.megacess.com${staffImage}`;
+            staffImage = `${STORAGE_DOMAIN}${staffImage}`;
         }
 
-        const avatarImage = staffImage 
+        const avatarImage = staffImage
             ? `<img src="${staffImage}" alt="${staff.user_fullname}" class="rounded-circle" 
                     style="width: 50px; height: 50px; object-fit: cover;" 
                     onerror="this.outerHTML='<div class=&quot;bg-primary rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>'">`
@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show error message
     function showError(message) {
         const activeContainer = workerTab.classList.contains('btn-success') ? workerContainer : document.querySelector('#staffList .col-12');
-        
+
         activeContainer.innerHTML = `
             <div class="text-center py-5">
                 <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
@@ -606,25 +606,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Redirect to login function
-    window.redirectToLogin = function() {
+    window.redirectToLogin = function () {
         window.location.href = '/pages/log-in.html';
     };
 
     // Helper function to set auth token (for testing)
-    window.setAuthToken = function(token) {
+    window.setAuthToken = function (token) {
         localStorage.setItem('authToken', token);
         location.reload();
     };
 
     // Helper function to clear auth token
-    window.clearAuthToken = function() {
+    window.clearAuthToken = function () {
         localStorage.removeItem('authToken');
         sessionStorage.removeItem('authToken');
         location.reload();
     };
 
     // Helper function to test staff API (for debugging)
-    window.testStaffAPI = async function(staffId) {
+    window.testStaffAPI = async function (staffId) {
         try {
             const result = await fetchStaffPayrollOverview(staffId);
             return result;
@@ -636,17 +636,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Search functionality with debouncing
     let searchTimeout;
-    searchInput.addEventListener('input', function() {
+    searchInput.addEventListener('input', function () {
         const searchTerm = this.value.trim();
-        
+
         // Clear previous timeout
         clearTimeout(searchTimeout);
-        
+
         // Set new timeout for debounced search
         searchTimeout = setTimeout(() => {
             // Reset to page 1 when searching
             currentPage = 1;
-            
+
             if (workerTab.classList.contains('btn-success')) {
                 // Currently on workers tab - use client-side pagination if we have data
                 if (allWorkersData.length > 0) {
@@ -670,16 +670,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Role filter functionality
     Object.entries(roleFilterButtons).forEach(([role, button]) => {
         if (button) {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const selectedRole = this.getAttribute('data-role');
                 const searchTerm = searchInput.value.trim();
-                
+
                 // Update active button state
                 setActiveRoleFilter(selectedRole);
-                
+
                 // Reset to page 1 when filtering
                 currentPage = 1;
-                
+
                 // Only handle this for staff tab
                 if (staffTab.classList.contains('btn-success')) {
                     if (allStaffData.length > 0) {
@@ -693,31 +693,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Switch to Worker tab
-    workerTab.addEventListener('click', function() {
+    workerTab.addEventListener('click', function () {
         workerTab.classList.remove('btn-outline-secondary');
         workerTab.classList.add('btn-success');
         staffTab.classList.remove('btn-success');
         staffTab.classList.add('btn-outline-secondary');
-        
+
         workerList.classList.remove('d-none');
         staffList.classList.add('d-none');
-        
+
         // Hide role filter for worker tab
         if (roleFilterContainer) {
             roleFilterContainer.style.display = 'none';
         }
-        
+
         const searchLabel = document.querySelector('label[for="searchInput"]');
         if (searchLabel) searchLabel.textContent = 'Search worker name:';
         searchInput.placeholder = 'Enter worker name...';
         document.querySelector('.row.mb-2 p.list-title').textContent = 'List of existing worker:';
-        
+
         // Reset pagination state
         currentPage = 1;
         totalPages = 0;
         totalItems = 0;
         const searchTerm = searchInput.value.trim();
-        
+
         // Use client-side pagination if we have data, otherwise fetch from API
         if (allWorkersData.length > 0) {
             handleClientSidePagination(searchTerm, 1);
@@ -727,33 +727,33 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Switch to Staff tab
-    staffTab.addEventListener('click', function() {
+    staffTab.addEventListener('click', function () {
         staffTab.classList.remove('btn-outline-secondary');
         staffTab.classList.add('btn-success');
         workerTab.classList.remove('btn-success');
         workerTab.classList.add('btn-outline-secondary');
-        
+
         staffList.classList.remove('d-none');
         workerList.classList.add('d-none');
-        
+
         // Show role filter for staff tab
         if (roleFilterContainer) {
             roleFilterContainer.style.display = 'block';
             // Reset to "All" when switching to staff tab
             setActiveRoleFilter('all');
         }
-        
+
         const searchLabel = document.querySelector('label[for="searchInput"]');
         if (searchLabel) searchLabel.textContent = 'Search staff name:';
         searchInput.placeholder = 'Enter staff name...';
         document.querySelector('.row.mb-2 p.list-title').textContent = 'List of existing staff:';
-        
+
         // Reset pagination state
         currentPage = 1;
         totalPages = 0;
         totalItems = 0;
         const searchTerm = searchInput.value.trim();
-        
+
         // Use client-side pagination if we have data, otherwise fetch from API
         if (allStaffData.length > 0) {
             handleStaffClientSidePagination(searchTerm, 1, allStaffData, currentRole);
@@ -765,7 +765,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show Employment Overview
     async function showEmploymentOverview(employeeData, isWorker = true) {
         const container = document.querySelector('.container-fluid');
-        
+
         // Show loading first
         container.innerHTML = `
             <div class="text-center py-5">
@@ -775,13 +775,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="mt-2 text-muted">Loading employment overview...</p>
             </div>
         `;
-        
+
         try {
             // Fetch real payroll data for both workers and staff
             let realEmployeeData = employeeData;
             let payslipsData = [];
             let baseSalary = null;
-            
+
             if (isWorker) {
                 const overviewData = await fetchWorkerPayrollOverview(employeeData.id);
                 if (overviewData) {
@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Fetch staff payroll data
                 const overviewData = await fetchStaffPayrollOverview(employeeData.id);
-                
+
                 if (overviewData) {
                     // Update employee data with real API data
                     realEmployeeData = {
@@ -813,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     baseSalary = overviewData.base_salary;
                 }
             }
-            
+
             // Create the employment overview HTML
             const overviewHTML = `
                 <div id="employmentOverview" class="employment-overview">
@@ -862,19 +862,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             `;
-            
+
             // Show the employment overview
             container.innerHTML = overviewHTML;
 
             // Render payslips with pagination (defaults to first page)
             renderPayslipRecords(payslipsData, 1, isWorker);
-            
+
             // Add event listener for back button
-            document.getElementById('backToList').addEventListener('click', function() {
+            document.getElementById('backToList').addEventListener('click', function () {
                 location.reload(); // Simple way to go back to the list
             });
             // The Generate Payslip button remains in the HTML, but no event listener is attached
-            
+
         } catch (error) {
             console.error('Error loading employment overview:', error);
             container.innerHTML = `
@@ -889,7 +889,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
     }
-    
+
     // Fetch worker payroll overview data
     async function fetchWorkerPayrollOverview(workerId) {
         try {
@@ -898,7 +898,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const url = new URL(`${API_BASE_URL}/staff/${workerId}/overview`);
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -917,18 +917,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            
+
             if (result.data) {
                 return result.data;
             }
-            
+
             return null;
         } catch (error) {
             console.error('Error fetching worker payroll overview:', error);
             throw error;
         }
     }
-    
+
     // Fetch current base salary for a staff (worker) or user (staff) by ID
     async function fetchBaseSalaryForStaff(staffId, isUser = false) {
         try {
@@ -938,9 +938,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Use correct endpoint based on employee type
             // Staff members (users) use /api/v1/users/{id}/base-salary
             // Workers use /api/v1/staff/{id}/base-salary
-            const endpoint = isUser 
-                ? `https://mwms.megacess.com/api/v1/users/${staffId}/base-salary`
-                : `https://mwms.megacess.com/api/v1/staff/${staffId}/base-salary`;
+            const endpoint = isUser
+                ? `${API_URL}/users/${staffId}/base-salary`
+                : `${API_URL}/staff/${staffId}/base-salary`;
             const url = new URL(endpoint);
             const response = await fetch(url, {
                 method: 'GET',
@@ -976,7 +976,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const url = new URL(`${API_BASE_URL}/users/${staffId}/overview`);
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -995,11 +995,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            
+
             if (result.data) {
                 return result.data;
             }
-            
+
             return null;
         } catch (error) {
             console.error('Error fetching staff payroll overview:', error);
@@ -1059,14 +1059,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         }
-        
+
         let recordsHTML = '';
         payslips.forEach(payslip => {
             // Check if it's worker data (has total_income/total_deduction) or staff data (only net_salary)
             const hasDetailedBreakdown = payslip.hasOwnProperty('total_income') && payslip.hasOwnProperty('total_deduction');
             const { month, year } = extractMonthYearFromPayslip(payslip);
             const staffIdAttr = payslip.staff_id || payslip.user_id || payslip.staff?.id || payslip.user?.id || '';
-            
+
             recordsHTML += `
                 <div class="payslip-record-item d-flex justify-content-between align-items-center p-3 mb-2 border rounded">
                     <div class="payslip-details">
@@ -1107,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         });
-        
+
         return recordsHTML;
     }
 
@@ -1255,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!staffId) throw new Error('Missing staff ID');
         if (!month || !year) throw new Error('Month and year are required');
 
-        const url = new URL(`https://mwms.megacess.com/api/v1/tasks/staff/${staffId}/breakdown-by-worker`);
+        const url = new URL(`${API_URL}/tasks/staff/${staffId}/breakdown-by-worker`);
         url.searchParams.append('month', month);
         url.searchParams.append('year', year);
 
@@ -1353,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Manual refresh inside the modal
     if (taskBreakdownFetchBtn) {
-        taskBreakdownFetchBtn.addEventListener('click', function() {
+        taskBreakdownFetchBtn.addEventListener('click', function () {
             if (!currentTaskBreakdownStaffId) {
                 alert('No staff/worker selected.');
                 return;
@@ -1376,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const url = new URL(`${API_BASE_URL_ADVANCES}/${type}/${id}/outstanding-balance`);
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -1395,11 +1395,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            
+
             if (result.success && result.data) {
                 return result.data;
             }
-            
+
             return null;
         } catch (error) {
             console.error('Error fetching outstanding balance:', error);
@@ -1434,7 +1434,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json().catch(() => ({}));
-            
+
             if (!response.ok || result.success === false) {
                 throw new Error(result.message || `Failed to generate payslip (${response.status})`);
             }
@@ -1445,7 +1445,7 @@ document.addEventListener('DOMContentLoaded', function() {
             throw error;
         }
     }
-    
+
     // Helper to fill modal with real worker data (always use selected worker, never static)
     async function fillPayslipModal(workerData) {
         // Detect if staff or worker
@@ -1458,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
         for (let i = 0; i < 6; i++) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const val = `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().slice(-2)}`;
+            const val = `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear().toString().slice(-2)}`;
             const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
             payslipMonth.innerHTML += `<option value="${val}">${label}</option>`;
         }
@@ -1475,11 +1475,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof advRemEl.value !== 'undefined') advRemEl.value = '';
             else advRemEl.textContent = '';
         }
-        
+
         // Fetch and display outstanding advance balance
         const employeeId = workerData.id || workerData.staff_id || workerData.user_id || currentPayslipWorkerId;
         const employeeType = isStaff ? 'user' : 'staff';
-        
+
         if (employeeId) {
             try {
                 const outstandingData = await fetchOutstandingBalance(employeeType, employeeId);
@@ -1489,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const totalLoanEl = document.getElementById('totalLoanAmount');
                     const totalPaidEl = document.getElementById('totalPaidAmount');
                     const loanCountEl = document.getElementById('loanCount');
-                    
+
                     if (outstandingBalanceEl) {
                         outstandingBalanceEl.textContent = `RM ${parseFloat(outstandingData.total_outstanding_balance || 0).toFixed(2)}`;
                     }
@@ -1502,7 +1502,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (loanCountEl) {
                         loanCountEl.textContent = outstandingData.loan_count || 0;
                     }
-                    
+
                     // Show the outstanding balance section
                     const outstandingSection = document.getElementById('outstandingBalanceSection');
                     if (outstandingSection) {
@@ -1524,7 +1524,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-        
+
         // Reset employer contribution fields
         const employerEpfEl = document.getElementById('employerEpf');
         const employerSocsoEl = document.getElementById('employerSocso');
@@ -1572,12 +1572,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Payroll button functionality
     // Store current worker id for payslip generation
-let currentPayslipWorkerId = null;
-let currentPayslipWorkerData = null;
+    let currentPayslipWorkerId = null;
+    let currentPayslipWorkerData = null;
 
-// Payroll button functionality
-// Only show employment overview on Payroll button
-    document.addEventListener('click', function(e) {
+    // Payroll button functionality
+    // Only show employment overview on Payroll button
+    document.addEventListener('click', function (e) {
         const payslipPageBtn = e.target.closest('[data-payslip-page]');
         if (payslipPageBtn) {
             if (payslipPageBtn.disabled || payslipPageBtn.classList.contains('disabled')) {
@@ -1643,7 +1643,7 @@ let currentPayslipWorkerData = null;
                     // Only allow delete for Worker or Staff option
                     if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
                         if (!payslipId) return;
-                        
+
                         Swal.fire({
                             title: 'Delete Payslip?',
                             text: 'This action cannot be undone.',
@@ -1655,15 +1655,15 @@ let currentPayslipWorkerData = null;
                             cancelButtonText: 'Cancel'
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                (async function() {
+                                (async function () {
                                     try {
                                         const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
                                         if (!AUTH_TOKEN) throw new Error('No auth token');
                                         let url;
                                         if (workerTab.classList.contains('btn-success')) {
-                                            url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
+                                            url = `${API_URL}/payroll/staff/payslips/${payslipId}`;
                                         } else {
-                                            url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
+                                            url = `${API_URL}/payroll/payslips/${payslipId}`;
                                         }
                                         const res = await fetch(url, {
                                             method: 'DELETE',
@@ -1758,7 +1758,7 @@ let currentPayslipWorkerData = null;
                 // Only allow delete for Worker or Staff option
                 if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
                     if (!payslipId) return;
-                    
+
                     Swal.fire({
                         title: 'Delete Payslip?',
                         text: 'This action cannot be undone.',
@@ -1770,15 +1770,15 @@ let currentPayslipWorkerData = null;
                         cancelButtonText: 'Cancel'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            (async function() {
+                            (async function () {
                                 try {
                                     const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
                                     if (!AUTH_TOKEN) throw new Error('No auth token');
                                     let url;
                                     if (workerTab.classList.contains('btn-success')) {
-                                        url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}`;
+                                        url = `${API_URL}/payroll/staff/payslips/${payslipId}`;
                                     } else {
-                                        url = `https://mwms.megacess.com/api/v1/payroll/payslips/${payslipId}`;
+                                        url = `${API_URL}/payroll/payslips/${payslipId}`;
                                     }
                                     const res = await fetch(url, {
                                         method: 'DELETE',
@@ -1864,7 +1864,7 @@ let currentPayslipWorkerData = null;
     const payslipModalEl = document.getElementById('payslipModal');
     if (payslipModalEl) {
         // Wire deduction add/remove when modal is shown
-        payslipModalEl.addEventListener('shown.bs.modal', function() {
+        payslipModalEl.addEventListener('shown.bs.modal', function () {
             const typeEl = document.getElementById('deductionTypeInput');
             const amtEl = document.getElementById('deductionAmountInput');
             const addBtn = document.getElementById('addDeductionBtn');
@@ -1901,7 +1901,7 @@ let currentPayslipWorkerData = null;
             if (addBtn) {
                 addBtn.onclick = addRow;
             }
-            tbody.addEventListener('click', function(ev){
+            tbody.addEventListener('click', function (ev) {
                 const btn = ev.target.closest('.remove-deduction');
                 if (!btn) return;
                 const row = btn.closest('tr');
@@ -1911,7 +1911,7 @@ let currentPayslipWorkerData = null;
         });
 
         // Generate button: call API
-        document.getElementById('generatePayslipBtn').onclick = async function() {
+        document.getElementById('generatePayslipBtn').onclick = async function () {
             try {
                 if (!currentPayslipWorkerId) {
                     alert('No staff/worker selected. Please try again.');
@@ -1934,7 +1934,7 @@ let currentPayslipWorkerData = null;
                     const amountAttr = row.getAttribute('data-amount');
                     const amountText = amountAttr || row.children[1]?.textContent?.trim() || '0';
                     const amount = parseFloat(amountText.replace(/[^\d.-]/g, '')) || 0;
-                    
+
                     if (type) {
                         deductions.push({
                             deduction_type: type,
@@ -1955,7 +1955,7 @@ let currentPayslipWorkerData = null;
                 const employerSocsoEl = document.getElementById('employerSocso');
                 const employerEisEl = document.getElementById('employerEis');
                 const employerPcbEl = document.getElementById('employerPcb');
-                
+
                 const employerEpf = employerEpfEl ? parseFloat(employerEpfEl.value || '0') : 0;
                 const employerSocso = employerSocsoEl ? parseFloat(employerSocsoEl.value || '0') : 0;
                 const employerEis = employerEisEl ? parseFloat(employerEisEl.value || '0') : 0;
@@ -2021,7 +2021,7 @@ let currentPayslipWorkerData = null;
     async function fetchWorkerPayslipDetails(payslipId) {
         try {
             if (!AUTH_TOKEN) throw new Error('Authentication required');
-            const url = `https://mwms.megacess.com/api/v1/payroll/staff/payslips/${payslipId}?view=html`;
+            const url = `${API_URL}/payroll/staff/payslips/${payslipId}?view=html`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -2163,20 +2163,20 @@ let currentPayslipWorkerData = null;
     workerTab.classList.add('btn-success');
     staffTab.classList.remove('btn-success');
     staffTab.classList.add('btn-outline-secondary');
-    
+
     // Show worker list, hide staff list
     workerList.classList.remove('d-none');
     staffList.classList.add('d-none');
-    
+
     // Hide role filter on initial load (worker tab)
     if (roleFilterContainer) {
         roleFilterContainer.style.display = 'none';
     }
-    
+
     // Fetch both worker and staff data on initial load
     fetchWorkers('', 1);
     fetchStaff('', 1, 'all');
-    
+
     // Initialize role filter state
     setActiveRoleFilter('all');
 });

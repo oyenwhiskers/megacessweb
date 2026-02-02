@@ -1,11 +1,11 @@
-const API_URL = "https://mwms.megacess.com/api/v1/payment-rates";
+const PAYMENT_RATES_API_URL = `${API_URL}/payment-rates`;
 
 /* -------------------- Token Helper -------------------- */
 function getToken() {
   const keys = ['authToken', 'auth_token', 'token', 'access_token'];
   for (const k of keys) {
     const v = localStorage.getItem(k) || sessionStorage.getItem(k);
-    if (v) return v;  
+    if (v) return v;
   }
   console.warn(" No token found in storage");
   return null;
@@ -22,7 +22,7 @@ async function getPaymentRates() {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then((result) => {
-      if (result.isConfirmed){
+      if (result.isConfirmed) {
         window.location.href = "/pages/log-in.html"
       }
     });
@@ -296,7 +296,7 @@ function renderTaskEditor(task) {
     if (!validateCategories()) {
       return; // Stop if validation fails
     }
-    
+
     const updatedData = collectFormData(task.id);
     await updatePaymentRate(task.id, updatedData);
   });
@@ -304,15 +304,15 @@ function renderTaskEditor(task) {
   // Initialize Bootstrap tooltips after DOM is updated
   setTimeout(() => {
     // Dispose of any existing tooltips first
-    $editor.find('[data-bs-toggle="tooltip"]').each(function() {
+    $editor.find('[data-bs-toggle="tooltip"]').each(function () {
       const existingTooltip = bootstrap.Tooltip.getInstance(this);
       if (existingTooltip) {
         existingTooltip.dispose();
       }
     });
-    
+
     // Initialize new tooltips
-    $editor.find('[data-bs-toggle="tooltip"]').each(function() {
+    $editor.find('[data-bs-toggle="tooltip"]').each(function () {
       new bootstrap.Tooltip(this, {
         trigger: 'hover'
       });
@@ -326,7 +326,7 @@ function renderTaskEditor(task) {
     if (!isEditing) {
       $('#editToggleBtn').click(); // Trigger edit mode
     }
-    
+
     openAddCategoryModal((newCat) => {
       appendNewCategoryBlock(newCat);
       // Auto-save after adding category
@@ -411,9 +411,9 @@ function collectFormData(taskId) {
     const condUnit = $(this).find('.category-condition-unit').val()?.trim() || '';
 
     // Validate: if min or max is provided, type must not be empty
-    const hasMinOrMax = (minRaw !== "" && minRaw !== null && typeof minRaw !== 'undefined') || 
-                        (maxRaw !== "" && maxRaw !== null && typeof maxRaw !== 'undefined');
-    
+    const hasMinOrMax = (minRaw !== "" && minRaw !== null && typeof minRaw !== 'undefined') ||
+      (maxRaw !== "" && maxRaw !== null && typeof maxRaw !== 'undefined');
+
     if (hasMinOrMax && !type) {
       Swal.fire({
         icon: 'error',
@@ -475,9 +475,9 @@ function validateCategories() {
     const minRaw = $(this).find('.category-min').val();
     const maxRaw = $(this).find('.category-max').val();
 
-    const hasMinOrMax = (minRaw !== "" && minRaw !== null && typeof minRaw !== 'undefined') || 
-                        (maxRaw !== "" && maxRaw !== null && typeof maxRaw !== 'undefined');
-    
+    const hasMinOrMax = (minRaw !== "" && minRaw !== null && typeof minRaw !== 'undefined') ||
+      (maxRaw !== "" && maxRaw !== null && typeof maxRaw !== 'undefined');
+
     if (hasMinOrMax && !type) {
       isValid = false;
       errors.push(`"${catName}" has min/max values but no Condition Type`);
@@ -507,7 +507,7 @@ async function updatePaymentRate(id, bodyData) {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then((result) => {
-      if (result.isConfirmed){
+      if (result.isConfirmed) {
         window.location.href = "/pages/log-in.html"
       }
     });
@@ -649,9 +649,9 @@ function ensureAddCategoryModalExists() {
     const condUnit = $('#new_category_cond_unit').val().trim();
 
     // Validate: if min or max is provided, type must not be empty
-    const hasMinOrMax = (min !== "" && min !== null && typeof min !== 'undefined') || 
-                        (max !== "" && max !== null && typeof max !== 'undefined');
-    
+    const hasMinOrMax = (min !== "" && min !== null && typeof min !== 'undefined') ||
+      (max !== "" && max !== null && typeof max !== 'undefined');
+
     if (hasMinOrMax && !type) {
       Swal.fire({
         icon: 'error',
@@ -705,10 +705,10 @@ function openAddCategoryModal(callback) {
   $('#addCategoryModal').data('callback', callback);
   const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
   modal.show();
-  
+
   // Initialize tooltips in the modal after it's shown
-  $('#addCategoryModal').on('shown.bs.modal', function() {
-    $(this).find('[data-bs-toggle="tooltip"]').each(function() {
+  $('#addCategoryModal').on('shown.bs.modal', function () {
+    $(this).find('[data-bs-toggle="tooltip"]').each(function () {
       new bootstrap.Tooltip(this, {
         trigger: 'hover'
       });

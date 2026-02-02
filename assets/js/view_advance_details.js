@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const loadingSpinner = document.getElementById('loadingSpinner');
   const errorMessage = document.getElementById('errorMessage');
   const contentArea = document.getElementById('contentArea');
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
       contentArea.classList.add('d-none');
       errorMessage.classList.add('d-none');
 
-      const url = `https://mwms.megacess.com/api/v1/advances/${type}/${id}`;
+      const url = `${API_URL}/advances/${type}/${id}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalLoan = document.getElementById('totalLoan');
     const totalPaid = document.getElementById('totalPaid');
     const loanCount = document.getElementById('loanCount');
-    
+
     personName.textContent = data.name || '-';
     personInfo.textContent = data.type === 'staff' ? 'Worker' : 'Staff';
 
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Render pagination controls
   function renderPagination() {
     const totalPages = Math.ceil(allAdvances.length / recordsPerPage);
-    
+
     if (totalPages <= 1) {
       paginationNav.classList.add('d-none');
       return;
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
+
     if (endPage - startPage < maxVisiblePages - 1) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Attach event listeners
     paginationList.querySelectorAll('.page-link').forEach(link => {
-      link.addEventListener('click', function(e) {
+      link.addEventListener('click', function (e) {
         e.preventDefault();
         const page = parseInt(this.getAttribute('data-page'));
         if (page && page !== currentPage && page >= 1 && page <= totalPages) {

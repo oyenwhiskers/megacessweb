@@ -1,86 +1,86 @@
 // Worker Attendance List Management
-(function() {
+(function () {
     // Configuration
-    const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
+    const API_BASE_URL = API_URL; // Using global API_URL from config.js
     const DEFAULT_PER_PAGE = 10;
     let currentPage = 1;
     let currentDateAttendanceId = 1;
     let currentRecordsData = []; // Store current records for easy access
-    
+
     // Get the workers attendance view container
     const workersAttendanceView = document.getElementById('workersAttendanceView');
-    
+
     // Token management
     function getAuthToken() {
-        const token = localStorage.getItem('auth_token') || 
-                     sessionStorage.getItem('auth_token') || 
-                     localStorage.getItem('authToken') ||
-                     sessionStorage.getItem('authToken');
-        
+        const token = localStorage.getItem('auth_token') ||
+            sessionStorage.getItem('auth_token') ||
+            localStorage.getItem('authToken') ||
+            sessionStorage.getItem('authToken');
+
         if (!token) {
             console.error('No authentication token found. Please log in.');
             window.location.href = '/pages/log-in.html';
             return null;
         }
-        
+
         return token;
     }
-    
+
     // Format date for display
     function formatDateTime(dateTimeString) {
-    if (!dateTimeString) return 'N/A';
-    const date = new Date(dateTimeString);
-    return date.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-// Helper to build month string for API
-function getMonthString(year, month) {
-    if (!year || !month) return '';
-    return `${year}-${month}`;
-}
-
-// Fetch leave records from API
-async function fetchLeavesFromAPI(staffId, year, month, type) {
-    const token = localStorage.getItem('auth_token') || 
-                sessionStorage.getItem('auth_token') || 
-                localStorage.getItem('authToken') || 
-                sessionStorage.getItem('authToken');
-    if (!token) return {leaves: [], leaveTypes: []};
-    let url = `https://mwms.megacess.com/api/v1/staff-attendance/${staffId}/leaves?`;
-    const params = [];
-    if (year && month) {
-        params.push(`month=${year}-${month}`);
-    }
-    if (type && type !== '') {
-        params.push(`status=\"${type}\"`);
-    }
-    params.push('page=1');
-    params.push('per_page=10');
-    url += params.join('&');
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
+        if (!dateTimeString) return 'N/A';
+        const date = new Date(dateTimeString);
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
-        if (!response.ok) return {leaves: [], leaveTypes: []};
-        const data = await response.json();
-        const leaves = (data && data.data && data.data.data) ? data.data.data : [];
-        const leaveTypes = Array.from(new Set(leaves.map(l => l.status)));
-        return {leaves, leaveTypes};
-    } catch (err) {
-        return {leaves: [], leaveTypes: []};
     }
-}
-    
+
+    // Helper to build month string for API
+    function getMonthString(year, month) {
+        if (!year || !month) return '';
+        return `${year}-${month}`;
+    }
+
+    // Fetch leave records from API
+    async function fetchLeavesFromAPI(staffId, year, month, type) {
+        const token = localStorage.getItem('auth_token') ||
+            sessionStorage.getItem('auth_token') ||
+            localStorage.getItem('authToken') ||
+            sessionStorage.getItem('authToken');
+        if (!token) return { leaves: [], leaveTypes: [] };
+        let url = `${API_URL}/staff-attendance/${staffId}/leaves?`;
+        const params = [];
+        if (year && month) {
+            params.push(`month=${year}-${month}`);
+        }
+        if (type && type !== '') {
+            params.push(`status=\"${type}\"`);
+        }
+        params.push('page=1');
+        params.push('per_page=10');
+        url += params.join('&');
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            if (!response.ok) return { leaves: [], leaveTypes: [] };
+            const data = await response.json();
+            const leaves = (data && data.data && data.data.data) ? data.data.data : [];
+            const leaveTypes = Array.from(new Set(leaves.map(l => l.status)));
+            return { leaves, leaveTypes };
+        } catch (err) {
+            return { leaves: [], leaveTypes: [] };
+        }
+    }
+
     // Format time only
     function formatTime(dateTimeString) {
         if (!dateTimeString) return 'N/A';
@@ -90,7 +90,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             minute: '2-digit'
         });
     }
-    
+
     // Get status badge HTML
     function getStatusBadge(status) {
         const statusMap = {
@@ -101,26 +101,26 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             'Sick_Leave': { class: 'bg-secondary', text: 'Sick Leave' },
             'Unpaid_Leave': { class: 'bg-dark', text: 'Unpaid Leave' }
         };
-        
+
         const statusInfo = statusMap[status] || { class: 'bg-secondary', text: status };
         return `<span class="badge ${statusInfo.class}">${statusInfo.text}</span>`;
     }
-    
+
     // Highlight search terms in text
     function highlightSearchTerm(text, searchTerm) {
         if (!searchTerm || !searchTerm.trim() || !text) {
             return text;
         }
-        
+
         const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(${escapedTerm})`, 'gi');
         return text.replace(regex, '<mark class="bg-warning text-dark">$1</mark>');
     }
-    
+
     // Show loading state
     function showLoading() {
         if (!workersAttendanceView) return;
-        
+
         workersAttendanceView.innerHTML = `
             <div class="text-center py-4">
                 <div class="spinner-border text-success" role="status">
@@ -130,11 +130,11 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             </div>
         `;
     }
-    
+
     // Show error message
     function showError(message) {
         if (!workersAttendanceView) return;
-        
+
         workersAttendanceView.innerHTML = `
             <div class="alert alert-danger" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -145,17 +145,17 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             </div>
         `;
     }
-    
+
     // Show empty state
     function showEmpty(message) {
         if (!workersAttendanceView) return;
-        
-        const searchMessage = currentSearch ? 
-            `No attendance records found matching "${currentSearch}".` : 
+
+        const searchMessage = currentSearch ?
+            `No attendance records found matching "${currentSearch}".` :
             'No attendance records found for the selected criteria.';
-        
+
         const finalMessage = message || searchMessage;
-        
+
         workersAttendanceView.innerHTML = `
             <div class="card">
                 <div class="card-header">
@@ -170,13 +170,13 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             </div>
         `;
     }
-    
+
     // Render attendance records
     function renderAttendanceRecords(data) {
         if (!workersAttendanceView) return;
-        
+
         const { data: records, current_page, per_page, total, last_page, from, to } = data;
-        
+
         if (!records || records.length === 0) {
             showEmpty();
             return;
@@ -184,7 +184,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
 
         // Store current records data for overtime modal
         currentRecordsData = records;
-        
+
         const recordsHtml = records.map(record => {
             // Generate avatar placeholder from worker name
             const workerName = record.staff_name || 'Worker';
@@ -204,10 +204,10 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                     workerImage = '';
                 } else if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
                     // Construct full URL if it's just a filename
-                    workerImage = `https://mwms.megacess.com/storage/user-images/${workerImage}`;
+                    workerImage = `${STORAGE_DOMAIN}/storage/user-images/${workerImage}`;
                 } else if (workerImage.startsWith('/')) {
                     // Add domain if it starts with /
-                    workerImage = `https://mwms.megacess.com${workerImage}`;
+                    workerImage = `${STORAGE_DOMAIN}${workerImage}`;
                 }
             }
 
@@ -259,10 +259,10 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 </div>
             `;
         }).join('');
-        
+
         // Create pagination
         const paginationHtml = createPaginationHtml(current_page, last_page, total, from, to, per_page);
-        
+
         // Render the attendance list with pagination
         workersAttendanceView.innerHTML = `
             <div class="card">
@@ -279,14 +279,14 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             ${paginationHtml}
         `;
     }
-    
+
     // Display worker leave details - Navigate to dedicated leave page
-    window.showWorkerNameAsImage = function(staffId) {
+    window.showWorkerNameAsImage = function (staffId) {
         const staffData = getCurrentStaffData(staffId);
         const workerName = staffData && staffData.staff_name ? staffData.staff_name : 'Worker';
         const workerRole = staffData && staffData.staff_role ? staffData.staff_role : 'Worker';
         const workerImage = staffData && staffData.staff_img ? staffData.staff_img : '';
-        
+
         // Navigate to leave details page with user data
         const params = new URLSearchParams({
             userId: staffId,
@@ -297,18 +297,18 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         });
         window.location.href = `/pages/manage-leave-details.html?${params.toString()}`;
     };
-    
+
     // Create pagination HTML (matching salary management style)
     function createPaginationHtml(currentPage, lastPage, total, from, to, perPage) {
         // Ensure currentPage and lastPage are numbers
         currentPage = parseInt(currentPage) || 1;
         lastPage = parseInt(lastPage) || Math.ceil(total / perPage) || 1;
-        
+
         // Don't show pagination if only 1 page
         if (lastPage <= 1) return '';
-        
+
         let paginationItems = '';
-        
+
         // Previous button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage <= 1 ? 'disabled' : ''} 
@@ -316,7 +316,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 <i class="bi bi-chevron-left"></i>
             </button>
         `;
-        
+
         // Smart page buttons with ellipsis (max 7 buttons)
         let pages = [];
         if (lastPage <= 7) {
@@ -335,7 +335,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
             }
         }
-        
+
         // Render page buttons
         pages.forEach((page) => {
             if (page === '...') {
@@ -352,7 +352,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 `;
             }
         });
-        
+
         // Next button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage >= lastPage ? 'disabled' : ''} 
@@ -360,24 +360,24 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 <i class="bi bi-chevron-right"></i>
             </button>
         `;
-        
+
         return `
             <div class="mt-3 text-center">
                 ${paginationItems}
             </div>
         `;
     }
-    
+
     // Check if date has an attendance ID
     async function checkDateAttendanceId(dateString) {
         try {
             const token = getAuthToken();
             if (!token) return null;
-            
+
             // Use GET method as per API documentation
             const url = new URL(`${API_BASE_URL}/attendance/check`);
             url.searchParams.append('date', dateString);
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -386,19 +386,19 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 console.error(`Attendance check failed: ${response.status} ${response.statusText}`);
                 return null;
             }
-            
+
             const result = await response.json();
-            
+
             // Backend returns success: true with data: null when attendance ID doesn't exist
             if (result.success && result.data && result.data.id) {
                 return result.data.id;
             }
-            
+
             // If data is null, it means no attendance ID exists for this date
             return null;
         } catch (error) {
@@ -406,80 +406,80 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             return null;
         }
     }
-    
+
     // Main fetch function
     async function fetchWorkerAttendanceList(page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE) {
         if (!workersAttendanceView) {
             return;
         }
-        
+
         currentPage = page;
         currentDateAttendanceId = dateAttendanceId;
-        
+
         showLoading();
-        
+
         // Check if we should verify the date first
         const dateInput = document.getElementById('attendanceDate');
         if (dateInput && dateInput.value && dateAttendanceId === 1) {
             // Check if the selected date has an attendance ID
             const checkedId = await checkDateAttendanceId(dateInput.value);
-            
+
             if (checkedId === null) {
                 // No attendance ID exists for this date
                 showNoAttendanceMessage(dateInput.value);
                 return;
             }
-            
+
             // Use the checked ID
             currentDateAttendanceId = checkedId;
             dateAttendanceId = checkedId;
         }
-        
+
         try {
             // Using staff-attendance endpoint for workers
             const url = new URL(`${API_BASE_URL}/staff-attendance`);
-            
+
             // Add query parameters
             const params = {
                 date_attendance_id: dateAttendanceId.toString(),
                 page: page.toString(),
                 per_page: perPage.toString()
             };
-            
+
             Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-            
+
             const headers = {
                 'Authorization': `Bearer ${getAuthToken()}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             };
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const result = await response.json();
-            
+
             if (result.success && result.data) {
                 renderAttendanceRecords(result.data);
             } else {
                 showError(result.message || 'Failed to load attendance records');
             }
-            
+
         } catch (error) {
             showError(error.message || 'Failed to connect to the server. Please try again.');
         }
     }
-    
+
     // Show no attendance message
     function showNoAttendanceMessage(dateFilter) {
         if (!workersAttendanceView) return;
-        
+
         let dateText = 'this date';
         if (dateFilter) {
             if (dateFilter.length === 10) {
@@ -493,7 +493,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                 dateText = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
             }
         }
-        
+
         workersAttendanceView.innerHTML = `
             <div class="text-center py-5">
                 <div class="mb-4">
@@ -505,18 +505,18 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             </div>
         `;
     }
-    
+
     // Helper function to convert date to date_attendance_id (deprecated but kept for compatibility)
     function getDateAttendanceId(dateString) {
         if (!dateString) return 1;
         return 1;
     }
-    
+
     // View attendance details - Navigate to dedicated page
-    window.viewAttendanceDetails = function(staffId) {
+    window.viewAttendanceDetails = function (staffId) {
         // Find the record data for this staff member
         const staffData = getCurrentStaffData(staffId);
-        
+
         if (staffData) {
             // Clean up the image URL
             let cleanImageUrl = '';
@@ -526,7 +526,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                     cleanImageUrl = '';
                 }
             }
-            
+
             // Navigate to attendance details page with user data
             const params = new URLSearchParams({
                 userId: staffId,
@@ -548,11 +548,11 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
             window.location.href = `/pages/view-attendance-details.html?${params.toString()}`;
         }
     };
-    
-    window.markOvertime = function(staffId) {
+
+    window.markOvertime = function (staffId) {
         // Find the record data for this staff member
         const staffData = getCurrentStaffData(staffId);
-        
+
         if (staffData) {
             // Clean up the image URL to remove any problematic suffixes
             let cleanImageUrl = '';
@@ -563,7 +563,7 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
                     cleanImageUrl = '';
                 }
             }
-            
+
             // Navigate to overtime details page with user data
             const params = new URLSearchParams({
                 userId: staffId,
@@ -591,52 +591,52 @@ async function fetchLeavesFromAPI(staffId, year, month, type) {
         // Find the record in the current data
         return currentRecordsData.find(record => record.staff_id == staffId) || null;
     }
-    
+
     // Helper function to get current worker data (alias for getCurrentStaffData)
     function getCurrentWorkerData(staffId) {
         // Find the record in the current data
         const worker = currentRecordsData.find(record => record.staff_id == staffId);
         return worker || null;
     }
-    
+
     // Retry function that preserves current filter state
-    window.retryWorkerAttendanceList = function(page = null) {
+    window.retryWorkerAttendanceList = function (page = null) {
         const pageToUse = page !== null ? page : currentPage;
         fetchWorkerAttendanceList(pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE);
     };
-    
+
     // Expose functions globally FIRST before initialization
     window.fetchWorkerAttendanceList = fetchWorkerAttendanceList;
-    
+
     // Fetch attendance by date (checks date attendance ID first)
-    window.fetchWorkerAttendanceByDate = async function(dateString) {
+    window.fetchWorkerAttendanceByDate = async function (dateString) {
         if (!dateString) {
             showError('Please select a date');
             return;
         }
-        
+
         showLoading();
-        
+
         // Check if the date has an attendance ID
         const attendanceId = await checkDateAttendanceId(dateString);
-        
+
         if (attendanceId === null) {
             // No attendance ID exists for this date - show appropriate message
             showNoAttendanceMessage(dateString);
             return;
         }
-        
+
         // Fetch attendance using the found ID
         await fetchWorkerAttendanceList(1, attendanceId, DEFAULT_PER_PAGE);
     };
-    
+
     // Initialize on page load if we're on the right page - BUT DON'T auto-fetch
     // Let the HTML manage-attendance.html script control the initial load
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Just make sure the view exists, but don't fetch automatically
             // The manage-attendance.html script will call fetchWorkerAttendanceByDate
         });
     }
-    
+
 })();

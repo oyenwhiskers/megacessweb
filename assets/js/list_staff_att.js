@@ -1,31 +1,31 @@
 // Staff Attendance List Management
-(function() {
+(function () {
     // Configuration
-    const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
+    const API_BASE_URL = API_URL; // Using global API_URL from config.js
     const DEFAULT_PER_PAGE = 10;
     let currentPage = 1;
     let currentDateAttendanceId = 1;
     let currentRecordsData = []; // Store current records for easy access
-    
+
     // Get the staff attendance view container
     const staffAttendanceView = document.getElementById('staffAttendanceView');
-    
+
     // Token management
     function getAuthToken() {
-        const token = localStorage.getItem('auth_token') || 
-                     sessionStorage.getItem('auth_token') || 
-                     localStorage.getItem('authToken') ||
-                     sessionStorage.getItem('authToken');
-        
+        const token = localStorage.getItem('auth_token') ||
+            sessionStorage.getItem('auth_token') ||
+            localStorage.getItem('authToken') ||
+            sessionStorage.getItem('authToken');
+
         if (!token) {
             console.error('No authentication token found. Please log in.');
             window.location.href = '/pages/log-in.html';
             return null;
         }
-        
+
         return token;
     }
-    
+
     // Format date for display
     function formatDateTime(dateTimeString) {
         if (!dateTimeString) return 'N/A';
@@ -37,7 +37,7 @@
             minute: '2-digit'
         });
     }
-    
+
     // Format time only
     function formatTime(dateTimeString) {
         if (!dateTimeString) return 'N/A';
@@ -47,7 +47,7 @@
             minute: '2-digit'
         });
     }
-    
+
     // Get status badge HTML
     function getStatusBadge(status) {
         const statusMap = {
@@ -59,15 +59,15 @@
             'Sick_Leave': { class: 'bg-secondary', text: 'Sick Leave' },
             'Unpaid_Leave': { class: 'bg-dark', text: 'Unpaid Leave' }
         };
-        
+
         const statusInfo = statusMap[status] || { class: 'bg-secondary', text: status };
         return `<span class="badge ${statusInfo.class}">${statusInfo.text}</span>`;
     }
-    
+
     // Show loading state
     function showLoading() {
         if (!staffAttendanceView) return;
-        
+
         staffAttendanceView.innerHTML = `
             <div class="text-center py-4">
                 <div class="spinner-border text-success" role="status">
@@ -77,11 +77,11 @@
             </div>
         `;
     }
-    
+
     // Show error message
     function showError(message) {
         if (!staffAttendanceView) return;
-        
+
         staffAttendanceView.innerHTML = `
             <div class="alert alert-danger" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -92,17 +92,17 @@
             </div>
         `;
     }
-    
+
     // Show empty state
     function showEmpty(message) {
         if (!staffAttendanceView) return;
-        
-        const searchMessage = currentSearch ? 
-            `No staff attendance records found matching "${currentSearch}".` : 
+
+        const searchMessage = currentSearch ?
+            `No staff attendance records found matching "${currentSearch}".` :
             'No staff attendance records found for the selected criteria.';
-        
+
         const finalMessage = message || searchMessage;
-        
+
         staffAttendanceView.innerHTML = `
             <div class="card">
                 <div class="card-header">
@@ -117,13 +117,13 @@
             </div>
         `;
     }
-    
+
     // Render attendance records
     function renderStaffAttendanceRecords(data) {
         if (!staffAttendanceView) return;
-        
+
         const { data: records, current_page, per_page, total, last_page, from, to } = data;
-        
+
         if (!records || records.length === 0) {
             showEmpty();
             return;
@@ -131,12 +131,12 @@
 
         // Store current records data for overtime modal
         currentRecordsData = records;
-        
+
         const recordsHtml = records.map(record => {
             // Generate avatar placeholder from user name
             const userName = record.user_name || 'Staff';
             const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
-            
+
             // Clean up the image URL to remove problematic suffixes
             let userImage = '';
             if (record.user_img && typeof record.user_img === 'string') {
@@ -145,21 +145,21 @@
                 userImage = userImage.replace(/\.png:.*$/, '.png');
                 userImage = userImage.replace(/\.jpeg:.*$/, '.jpeg');
                 userImage = userImage.replace(/\.gif:.*$/, '.gif');
-                
+
                 // Check if the cleaned URL is still valid
                 if (userImage.length < 5 || userImage.includes('null') || userImage.includes('undefined') || userImage.includes('…')) {
                     userImage = '';
                 } else if (!userImage.startsWith('http') && !userImage.startsWith('/')) {
                     // Construct full URL if it's just a filename
-                    userImage = `https://mwms.megacess.com/storage/user-images/${userImage}`;
+                    userImage = `${STORAGE_DOMAIN}/storage/user-images/${userImage}`;
                 } else if (userImage.startsWith('/')) {
                     // Add domain if it starts with /
-                    userImage = `https://mwms.megacess.com${userImage}`;
+                    userImage = `${STORAGE_DOMAIN}${userImage}`;
                 }
             }
-            
+
             const imgSrc = (userImage && userImage.trim() !== '') ? userImage : placeholderImage;
-            
+
             return `
                 <div class="list-group-item staff-attendance-item">
                     <div class="d-flex align-items-center">
@@ -205,10 +205,10 @@
                 </div>
             `;
         }).join('');
-        
+
         // Create pagination
         const paginationHtml = createStaffPaginationHtml(current_page, last_page, total, from, to, per_page);
-        
+
         staffAttendanceView.innerHTML = `
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -224,18 +224,18 @@
             ${paginationHtml}
         `;
     }
-    
+
     // Create pagination HTML (matching salary management style)
     function createStaffPaginationHtml(currentPage, lastPage, total, from, to, perPage) {
         // Ensure currentPage and lastPage are numbers
         currentPage = parseInt(currentPage) || 1;
         lastPage = parseInt(lastPage) || Math.ceil(total / perPage) || 1;
-        
+
         // Don't show pagination if only 1 page
         if (lastPage <= 1) return '';
-        
+
         let paginationItems = '';
-        
+
         // Previous button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage <= 1 ? 'disabled' : ''} 
@@ -243,7 +243,7 @@
                 <i class="bi bi-chevron-left"></i>
             </button>
         `;
-        
+
         // Smart page buttons with ellipsis (max 7 buttons)
         let pages = [];
         if (lastPage <= 7) {
@@ -262,7 +262,7 @@
                 pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
             }
         }
-        
+
         // Render page buttons
         pages.forEach((page) => {
             if (page === '...') {
@@ -279,7 +279,7 @@
                 `;
             }
         });
-        
+
         // Next button with chevron icon
         paginationItems += `
             <button class="btn btn-sm btn-outline-success mx-1" ${currentPage >= lastPage ? 'disabled' : ''} 
@@ -287,24 +287,24 @@
                 <i class="bi bi-chevron-right"></i>
             </button>
         `;
-        
+
         return `
             <div class="mt-3 text-center">
                 ${paginationItems}
             </div>
         `;
     }
-    
+
     // Check if date has an attendance ID
     async function checkDateAttendanceId(dateString) {
         try {
             const token = getAuthToken();
             if (!token) return null;
-            
+
             // Use GET method as per API documentation
             const url = new URL(`${API_BASE_URL}/attendance/check`);
             url.searchParams.append('date', dateString);
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -313,19 +313,19 @@
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 console.error(`Attendance check failed: ${response.status} ${response.statusText}`);
                 return null;
             }
-            
+
             const result = await response.json();
-            
+
             // Backend returns success: true with data: null when attendance ID doesn't exist
             if (result.success && result.data && result.data.id) {
                 return result.data.id;
             }
-            
+
             // If data is null, it means no attendance ID exists for this date
             return null;
         } catch (error) {
@@ -333,14 +333,14 @@
             return null;
         }
     }
-    
+
     // Show no attendance message
     function showNoAttendanceMessage(dateString) {
         if (!staffAttendanceView) return;
-        
+
         const date = new Date(dateString);
         const dateText = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        
+
         staffAttendanceView.innerHTML = `
             <div class="text-center py-5">
                 <div class="mb-4">
@@ -352,77 +352,77 @@
             </div>
         `;
     }
-    
+
     // Main fetch function
     async function fetchStaffAttendanceList(page = 1, dateAttendanceId = 1, perPage = DEFAULT_PER_PAGE) {
         if (!staffAttendanceView) return;
-        
+
         currentPage = page;
         currentDateAttendanceId = dateAttendanceId;
-        
+
         showLoading();
-        
+
         // Check if we should verify the date first
         const dateInput = document.getElementById('attendanceDate');
         if (dateInput && dateInput.value && dateAttendanceId === 1) {
             // Check if the selected date has an attendance ID
             const checkedId = await checkDateAttendanceId(dateInput.value);
-            
+
             if (checkedId === null) {
                 // No attendance ID exists for this date
                 showNoAttendanceMessage(dateInput.value);
                 return;
             }
-            
+
             // Use the checked ID
             currentDateAttendanceId = checkedId;
             dateAttendanceId = checkedId;
         }
-        
+
         try {
             const url = new URL(`${API_BASE_URL}/user-attendance`);
-            
+
             // Add query parameters
             const params = {
                 date_attendance_id: dateAttendanceId.toString(),
                 page: page.toString(),
                 per_page: perPage.toString()
             };
-            
+
             Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-            
+
             const headers = {
                 'Authorization': `Bearer ${getAuthToken()}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             };
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const result = await response.json();
-            
+
             if (result.success && result.data) {
                 renderStaffAttendanceRecords(result.data);
             } else {
                 showError(result.message || 'Failed to load staff attendance records');
             }
-            
+
         } catch (error) {
             showError(error.message || 'Failed to connect to the server. Please try again.');
         }
     }
-    
-    window.markStaffOvertime = function(userId) {
+
+    window.markStaffOvertime = function (userId) {
         // Find the record data for this staff member
         const staffData = getCurrentStaffData(userId);
-        
+
         if (staffData) {
             // Clean up the image URL to remove any problematic suffixes
             let cleanImageUrl = '';
@@ -434,7 +434,7 @@
                     cleanImageUrl = '';
                 }
             }
-            
+
             // Navigate to overtime details page with user data
             const params = new URLSearchParams({
                 userId: userId,
@@ -463,41 +463,41 @@
         const staff = currentRecordsData.find(record => record.user_id == userId);
         return staff || null;
     }
-    
+
     // Fetch attendance by date (checks date attendance ID first)
-    window.fetchStaffAttendanceByDate = async function(dateString) {
+    window.fetchStaffAttendanceByDate = async function (dateString) {
         if (!dateString) {
             showError('Please select a date');
             return;
         }
-        
+
         showLoading();
-        
+
         // Check if the date has an attendance ID
         const attendanceId = await checkDateAttendanceId(dateString);
-        
+
         if (attendanceId === null) {
             // No attendance ID exists for this date - show appropriate message
             showNoAttendanceMessage(dateString);
             return;
         }
-        
+
         // Fetch attendance using the found ID
         await fetchStaffAttendanceList(1, attendanceId, DEFAULT_PER_PAGE);
     };
-    
+
     // Expose main function globally so it can be called from manage-attendance.html
     window.fetchStaffAttendanceList = fetchStaffAttendanceList;
-    
+
     // Ensure showStaffAttendanceAnalytics is globally available
     window.showStaffAttendanceAnalytics = showStaffAttendanceAnalytics;
 
     // Show Staff Leave Details - Navigate to dedicated leave page
-    window.showStaffLeaveModal = function(userId) {
+    window.showStaffLeaveModal = function (userId) {
         const staffData = getCurrentStaffData(userId);
         const staffName = staffData && staffData.user_name ? staffData.user_name : 'Staff Member';
         const staffImage = staffData && staffData.user_img ? staffData.user_img : '';
-        
+
         // Navigate to leave details page with user data
         const params = new URLSearchParams({
             userId: userId,
@@ -510,7 +510,7 @@
 
     // Add delegated event listener for View button
     if (staffAttendanceView) {
-        staffAttendanceView.addEventListener('click', async function(e) {
+        staffAttendanceView.addEventListener('click', async function (e) {
             const viewBtn = e.target.closest('button[data-view-user-id]');
             if (viewBtn) {
                 const userId = viewBtn.getAttribute('data-view-user-id');
@@ -526,7 +526,7 @@
                 const token = getAuthToken();
                 if (!token) return;
                 // Use userId in API URL
-                const url = new URL(`https://mwms.megacess.com/api/v1/user-attendance/${userId}/analytics`);
+                const url = new URL(`${API_URL}/user-attendance/${userId}/analytics`);
                 url.searchParams.append('month', month);
                 const headers = {
                     'Authorization': `Bearer ${token}`,
@@ -552,7 +552,7 @@
     function showStaffAttendanceAnalytics(userId, year, month, status) {
         // Find the record data for this staff member
         const staffData = getCurrentStaffData(userId);
-        
+
         if (staffData) {
             // Clean up the image URL
             let cleanImageUrl = '';
@@ -562,7 +562,7 @@
                     cleanImageUrl = '';
                 }
             }
-            
+
             // Navigate to attendance details page with user data
             const params = new URLSearchParams({
                 userId: userId,
@@ -584,9 +584,9 @@
             window.location.href = `/pages/view-attendance-details.html?${params.toString()}`;
         }
     }
-    
+
     // Retry function that preserves current filter state
-    window.retryStaffAttendanceList = function(page = null) {
+    window.retryStaffAttendanceList = function (page = null) {
         const pageToUse = page !== null ? page : currentPage;
         fetchStaffAttendanceList(pageToUse, currentDateAttendanceId, DEFAULT_PER_PAGE);
     };

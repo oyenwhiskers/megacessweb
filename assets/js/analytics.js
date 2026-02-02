@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
       const token = getAuthToken();
       const response = await fetch(
-        "https://mwms.megacess.com/api/v1/locations",
+        `${API_URL}/locations`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -301,8 +301,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         const selectedType = fertilizerTypeFilter.value.toLowerCase();
         const filtered = selectedType
           ? window.resourceUsageData.records.filter(
-              (r) => (r.fertilizer_type || "").toLowerCase() === selectedType
-            )
+            (r) => (r.fertilizer_type || "").toLowerCase() === selectedType
+          )
           : window.resourceUsageData.records;
         renderResourceItems(
           filtered,
@@ -519,7 +519,7 @@ async function fetchMonthlyTaskCompletion(year, locationId = 1, taskType = "") {
       return;
     }
     // Build API URL
-    let url = `https://mwms.megacess.com/api/v1/analytics/task-completion?location_id=${locationId}`;
+    let url = `${API_URL}/analytics/task-completion?location_id=${locationId}`;
     if (year && year !== "") {
       url += `&year=${year}`;
     }
@@ -671,7 +671,7 @@ async function fetchBlockTaskCompletion(year, month, week) {
       return;
     }
 
-    let url = `https://mwms.megacess.com/api/v1/analytics/tasks-by-blocks?year=${year}`;
+    let url = `${API_URL}/analytics/tasks-by-blocks?year=${year}`;
     if (month) url += `&month=${month}`;
     if (week) url += `&week=${week}`;
 
@@ -875,7 +875,7 @@ async function fetchResourceUsage(type = "manuring") {
       showLoading(resourceList.closest(".card-body"));
     }
     // Build API URL based on type and filters
-    let url = `https://mwms.megacess.com/api/v1/analytics/resource-usage?start_date=${startDate}&end_date=${endDate}&location_id=${locationId}`;
+    let url = `${API_URL}/analytics/resource-usage?start_date=${startDate}&end_date=${endDate}&location_id=${locationId}`;
     if (type === "manuring") {
       url += `&task_type=manuring`;
     } else if (type === "spraying") {
@@ -984,20 +984,17 @@ function renderResourceItems(records, resourceType, unit) {
                     <div class="fw-semibold">${record.block}</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">${
-                      resourceType
-                        ? resourceType.charAt(0).toUpperCase() +
-                          resourceType.slice(1)
-                        : "Resource"
-                    } type:</div>
-                    <div class="fw-semibold">${
-                      record.fertilizer_type || record.resource_name || "N/A"
-                    }</div>
+                    <div class="text-muted small">${resourceType
+        ? resourceType.charAt(0).toUpperCase() +
+        resourceType.slice(1)
+        : "Resource"
+      } type:</div>
+                    <div class="fw-semibold">${record.fertilizer_type || record.resource_name || "N/A"
+      }</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">Amount (${
-                      unit || "unit"
-                    }):</div>
+                    <div class="text-muted small">Amount (${unit || "unit"
+      }):</div>
                     <div class="fw-semibold">${record.amount}</div>
                 </div>
             </div>
@@ -1069,7 +1066,7 @@ async function fetchEstateOfficerTasks(year, month) {
       showLoading(officerList.closest(".card-body"));
     }
 
-    let url = `https://mwms.megacess.com/api/v1/analytics/tasks-by-mandors?`;
+    let url = `${API_URL}/analytics/tasks-by-mandors?`;
     if (year && year !== "") url += `year=${year}&`;
     if (month && month !== "") url += `month=${month}&`;
     url = url.replace(/&$/, "");
@@ -1227,7 +1224,7 @@ async function fetchAttendanceByMandors(year, month) {
       showLoading(attendanceList.closest(".card-body"));
     }
 
-    let url = `https://mwms.megacess.com/api/v1/analytics/attendance-by-mandors?`;
+    let url = `${API_URL}/analytics/attendance-by-mandors?`;
     if (year && year !== "") url += `year=${year}&`;
     if (month && month !== "") url += `month=${month}&`;
     url = url.replace(/&$/, "");
@@ -1319,7 +1316,7 @@ async function fetchAbsentWorkers(year, month) {
       showLoading(absentList.closest(".card-body"));
     }
 
-    let url = `https://mwms.megacess.com/api/v1/analytics/absent-workers?`;
+    let url = `${API_URL}/analytics/absent-workers?`;
     if (year && year !== "") url += `year=${year}&`;
     if (month && month !== "") url += `month=${month}&`;
     url = url.replace(/&$/, "");
@@ -1418,7 +1415,7 @@ async function fetchAuditedSummary(year, month) {
             `;
     }
 
-    let url = `https://mwms.megacess.com/api/v1/analytics/audited-summary?`;
+    let url = `${API_URL}/analytics/audited-summary?`;
     if (year && year !== "") url += `year=${year}&`;
     if (month && month !== "") url += `month=${month}&`;
     url = url.replace(/&$/, "");
@@ -1514,15 +1511,15 @@ function updateAuditedSummary(data) {
     ...groupedData.fertilizing,
     ...groupedData.harvesting,
   ];
-  
+
   if (fertHarvestData.length > 0) {
     // Group by base category name (removing weight ranges like (1-30 ton), (>30 ton))
     const categoryMap = {};
-    
+
     fertHarvestData.forEach((item) => {
       // Extract base category name by removing patterns like (1-30 ton), (>30 ton), etc.
       const baseCategoryName = item.category_name.replace(/\s*\([^)]*\)\s*/g, '').trim();
-      
+
       if (!categoryMap[baseCategoryName]) {
         categoryMap[baseCategoryName] = {
           task_name: item.task_name,
@@ -1533,20 +1530,20 @@ function updateAuditedSummary(data) {
           items: []
         };
       }
-      
+
       // Sum the total values
       categoryMap[baseCategoryName].total_value += parseFloat(item.total_value) || 0;
       categoryMap[baseCategoryName].items.push(item);
-      
+
       // Keep the most recent block
       if (item.recent_block?.checked_at) {
-        if (!categoryMap[baseCategoryName].recent_block?.checked_at || 
-            new Date(item.recent_block.checked_at) > new Date(categoryMap[baseCategoryName].recent_block.checked_at)) {
+        if (!categoryMap[baseCategoryName].recent_block?.checked_at ||
+          new Date(item.recent_block.checked_at) > new Date(categoryMap[baseCategoryName].recent_block.checked_at)) {
           categoryMap[baseCategoryName].recent_block = item.recent_block;
         }
       }
     });
-    
+
     const fertHarvestRow = document.createElement("div");
     fertHarvestRow.className = "row g-3 mb-3";
 
@@ -1567,22 +1564,19 @@ function updateAuditedSummary(data) {
                 <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                     <div class="bg-success text-white p-2"></div>
                     <div class="card-body p-4">
-                        <p class="text-muted fw-semibold mb-2">${
-                          item.task_name
-                        }:</p>
+                        <p class="text-muted fw-semibold mb-2">${item.task_name
+        }:</p>
                         <p class="text-muted mb-2">${item.category_name}:</p>
                         <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
                         <hr>
                         <p class="text-muted mb-2">Recent ${item.task_name.toLowerCase()} block:</p>
                         <p class="mb-0">
-                            <strong>Area:</strong> ${
-                              item.recent_block?.location_name || "N/A"
-                            }
-                            ${
-                              item.recent_block?.total_value
-                                ? `<strong class="ms-3">Total:</strong> ${recentValue} ${item.unit}`
-                                : ""
-                            }
+                            <strong>Area:</strong> ${item.recent_block?.location_name || "N/A"
+        }
+                            ${item.recent_block?.total_value
+          ? `<strong class="ms-3">Total:</strong> ${recentValue} ${item.unit}`
+          : ""
+        }
                         </p>
                     </div>
                 </div>
@@ -1610,21 +1604,17 @@ function updateAuditedSummary(data) {
       const borderClass = index > 0 ? "border-start" : "";
 
       pruningColumns += `
-                <div class="col-md-${
-                  12 / groupedData.pruning.length
-                } ${borderClass}">
-                    <p class="text-muted fw-semibold mb-2">${
-                      item.task_name
-                    }:</p>
+                <div class="col-md-${12 / groupedData.pruning.length
+        } ${borderClass}">
+                    <p class="text-muted fw-semibold mb-2">${item.task_name
+        }:</p>
                     <p class="text-muted mb-2">${item.category_name}:</p>
                     <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
                     <p class="text-muted mb-1">Recent pruned block:</p>
-                    <p class="mb-1"><strong>Area:</strong> ${
-                      item.recent_block?.location_name || "N/A"
-                    }</p>
-                    <p class="mb-1"><strong>Checked by:</strong> ${
-                      item.recent_block?.checked_by || "N/A"
-                    }</p>
+                    <p class="mb-1"><strong>Area:</strong> ${item.recent_block?.location_name || "N/A"
+        }</p>
+                    <p class="mb-1"><strong>Checked by:</strong> ${item.recent_block?.checked_by || "N/A"
+        }</p>
                     <p class="mb-0"><strong>Checked at:</strong> ${formattedDate}</p>
                 </div>
             `;
@@ -1662,19 +1652,16 @@ function updateAuditedSummary(data) {
       const borderClass = index > 0 ? "border-start" : "";
 
       sanitationColumns += `
-                <div class="col-md-${
-                  12 / groupedData.sanitation.length
-                } ${borderClass}">
+                <div class="col-md-${12 / groupedData.sanitation.length
+        } ${borderClass}">
                     <p class="text-muted fw-semibold mb-2">Total acre:</p>
                     <p class="mb-2"><strong>${item.category_name}:</strong></p>
                     <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
                     <p class="text-muted mb-1">Recent ${item.category_name.toLowerCase()} block:</p>
-                    <p class="mb-1"><strong>Area:</strong> ${
-                      item.recent_block?.location_name || "N/A"
-                    }</p>
-                    <p class="mb-1"><strong>Checked by:</strong> ${
-                      item.recent_block?.checked_by || "N/A"
-                    }</p>
+                    <p class="mb-1"><strong>Area:</strong> ${item.recent_block?.location_name || "N/A"
+        }</p>
+                    <p class="mb-1"><strong>Checked by:</strong> ${item.recent_block?.checked_by || "N/A"
+        }</p>
                     <p class="mb-0"><strong>Checked at:</strong> ${formattedDate}</p>
                 </div>
             `;
@@ -1717,23 +1704,19 @@ function updateAuditedSummary(data) {
                 <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                     <div class="bg-success text-white p-2"></div>
                     <div class="card-body p-4">
-                        <p class="text-muted fw-semibold mb-2">${
-                          item.task_name
-                        }:</p>
+                        <p class="text-muted fw-semibold mb-2">${item.task_name
+        }:</p>
                         <h1 class="display-3 fw-bold mb-4">${totalValue}</h1>
                         <hr>
                         <p class="text-muted mb-2">Recent block:</p>
                         <p class="mb-0">
-                            <strong>Area:</strong> ${
-                              item.recent_block?.location_name || "N/A"
-                            }
-                            ${
-                              item.recent_block?.total_value
-                                ? `<strong class="ms-3">Total:</strong> ${recentValue} ${
-                                    item.unit || ""
-                                  }`
-                                : ""
-                            }
+                            <strong>Area:</strong> ${item.recent_block?.location_name || "N/A"
+        }
+                            ${item.recent_block?.total_value
+          ? `<strong class="ms-3">Total:</strong> ${recentValue} ${item.unit || ""
+          }`
+          : ""
+        }
                         </p>
                     </div>
                 </div>

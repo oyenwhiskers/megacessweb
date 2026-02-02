@@ -1,5 +1,5 @@
 // Worker List Management
-(function() {
+(function () {
     // Add toggle switch CSS
     const style = document.createElement('style');
     style.textContent = `
@@ -128,33 +128,33 @@
         }
     `;
     document.head.appendChild(style);
-    
+
     // Configuration
-    const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
+    const API_BASE_URL = API_URL; // Using global API_URL from config.js
     const DEFAULT_PER_PAGE = 10;
     let currentPage = 1;
     let currentSearch = '';
-    
+
     // Get the workers view container
     const workersView = document.getElementById('workersView');
-    
+
     // Token management
     function getAuthToken() {
         // First check localStorage, then sessionStorage
-        const token = localStorage.getItem('auth_token') || 
-                     sessionStorage.getItem('auth_token') || 
-                     localStorage.getItem('authToken') ||
-                     sessionStorage.getItem('authToken');
-        
+        const token = localStorage.getItem('auth_token') ||
+            sessionStorage.getItem('auth_token') ||
+            localStorage.getItem('authToken') ||
+            sessionStorage.getItem('authToken');
+
         if (!token) {
             // Redirect to login page
             window.location.href = '/pages/log-in.html';
             return null;
         }
-        
+
         return token;
     }
-    
+
     // Format date for display
     function formatDate(dateString) {
         if (!dateString) return 'N/A';
@@ -165,43 +165,43 @@
             day: 'numeric'
         });
     }
-    
+
     // Format phone number
     function formatPhone(phone) {
         return phone || 'N/A';
     }
-    
+
     // Get gender display text
     function getGenderDisplay(gender) {
         if (!gender) return 'N/A';
         return gender.charAt(0).toUpperCase() + gender.slice(1);
     }
-    
+
     // Highlight search terms in text
     function highlightSearchTerm(text, searchTerm) {
         if (!searchTerm || !searchTerm.trim() || !text) {
             return text;
         }
-        
+
         const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(${escapedTerm})`, 'gi');
         return text.replace(regex, '<mark class="bg-warning text-dark">$1</mark>');
     }
-    
+
     // Create worker list item HTML (similar to staff list)
     function createWorkerListItem(worker) {
         const claimedBy = worker.claimed_staff?.user?.user_fullname || 'Unclaimed';
         const claimedStatus = worker.claimed_staff ? 'claimed' : 'unclaimed';
         const claimedBadge = claimedStatus === 'claimed' ? 'bg-success' : 'bg-warning text-dark';
         const claimedText = claimedStatus === 'claimed' ? 'Claimed' : 'Available';
-        
+
         // Apply search highlighting to worker name
         const highlightedName = highlightSearchTerm(worker.staff_fullname, currentSearch);
-        
+
         // Set image source with fallback - generate avatar from name
         const userName = worker.staff_fullname || 'Worker';
         const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
-        
+
         // Use worker image if exists and valid, otherwise use placeholder
         let imageSrc = placeholderImage;
         if (worker.staff_img && worker.staff_img.trim() !== '') {
@@ -214,10 +214,10 @@
                 imageSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
             }
         }
-        
+
         // Determine active/inactive status - check multiple possible field names and formats
         let isActive = true; // Default to active
-        
+
         if (worker.hasOwnProperty('is_active')) {
             // Boolean field
             isActive = worker.is_active === true || worker.is_active === 1 || worker.is_active === '1';
@@ -228,7 +228,7 @@
             // Alternative string field
             isActive = worker.status === 'active';
         }
-        
+
         const statusBadgeClass = isActive ? 'bg-success' : 'bg-secondary';
         const statusBadgeText = isActive ? 'Active' : 'Inactive';
         const inactiveStyle = !isActive ? 'opacity: 0.7; background-color: #f8f9fa;' : '';
@@ -279,7 +279,7 @@
             </div>
         `;
     }
-    
+
     // Create pagination HTML
     function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch) {
         // Always show pagination bar, even if only 1 page
@@ -321,7 +321,7 @@
         `;
         return paginationHTML;
     }
-    
+
     // Show loading state
     function showLoading() {
         workersView.innerHTML = `
@@ -335,7 +335,7 @@
             </div>
         `;
     }
-    
+
     // Show error state
     function showError(message, currentSearch) {
         workersView.innerHTML = `
@@ -352,13 +352,13 @@
             </div>
         `;
     }
-    
+
     // Show empty state
     function showEmpty(currentSearch) {
-        const searchMessage = currentSearch ? 
-            `No workers found matching "${currentSearch}".` : 
+        const searchMessage = currentSearch ?
+            `No workers found matching "${currentSearch}".` :
             'No workers have been registered yet.';
-            
+
         workersView.innerHTML = `
             <div class="list-group text-start">
                 <div class="list-group-item text-center py-5">
@@ -369,34 +369,34 @@
             </div>
         `;
     }
-    
+
     // Main function to fetch workers
     async function fetchWorkersList(search = '', page = 1) {
         try {
             showLoading();
-            
+
             currentSearch = search;
             currentPage = page;
-            
+
             // Build API URL - fetch ALL workers (we'll handle pagination client-side)
             const url = new URL(`${API_BASE_URL}/staff`);
-            
+
             // Add query parameters - fetch large number to get all workers
             const params = {
                 per_page: '1000', // Fetch all workers at once
                 page: '1',
                 role: 'worker' // Only fetch workers, not staff with other roles
             };
-            
+
             // Add search parameter if provided
             if (search && search.trim()) {
                 params.search = search.trim();
             }
-            
+
             Object.keys(params).forEach(key => {
                 url.searchParams.append(key, params[key]);
             });
-            
+
             // Make API request
             const response = await fetch(url, {
                 method: 'GET',
@@ -406,7 +406,7 @@
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 if (response.status === 401) {
                     throw new Error('Authentication failed. Please log in again.');
@@ -418,25 +418,25 @@
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             }
-            
+
             const result = await response.json();
-            
+
             // Check if we have data
             if (!result.data || !Array.isArray(result.data)) {
                 throw new Error('Invalid response format');
             }
-            
+
             let allWorkers = result.data;
-            
+
             if (allWorkers.length === 0) {
                 showEmpty(search);
                 return;
             }
-            
+
             // Separate active and inactive workers
             const activeWorkers = [];
             const inactiveWorkers = [];
-            
+
             allWorkers.forEach(worker => {
                 let isActive = true;
                 if (worker.hasOwnProperty('is_active')) {
@@ -446,50 +446,50 @@
                 } else if (worker.hasOwnProperty('status')) {
                     isActive = worker.status === 'active';
                 }
-                
+
                 if (isActive) {
                     activeWorkers.push(worker);
                 } else {
                     inactiveWorkers.push(worker);
                 }
             });
-            
+
             // Combine: active workers first, then inactive workers
             const sortedWorkers = [...activeWorkers, ...inactiveWorkers];
-            
+
             // Calculate client-side pagination
             const totalWorkers = sortedWorkers.length;
             const totalPages = Math.ceil(totalWorkers / DEFAULT_PER_PAGE);
             const startIndex = (page - 1) * DEFAULT_PER_PAGE;
             const endIndex = startIndex + DEFAULT_PER_PAGE;
             const workersOnPage = sortedWorkers.slice(startIndex, endIndex);
-            
+
             // Render workers in list format
             let workersHTML = `
                 <div class="list-group text-start">
                     ${workersOnPage.map(worker => createWorkerListItem(worker)).join('')}
                 </div>
             `;
-            
+
             // Add pagination
             workersHTML += createPaginationHTML(page, totalPages, totalWorkers, search);
-            
+
             workersView.innerHTML = workersHTML;
-            
+
         } catch (error) {
             showError(error.message || 'Failed to load workers. Please try again.', search);
         }
     }
-    
+
     // Worker action functions
-    window.viewWorkerDetails = async function(workerId) {
+    window.viewWorkerDetails = async function (workerId) {
         try {
             // Show loading state in a modal
             showWorkerDetailsModal({
                 loading: true,
                 workerId: workerId
             });
-            
+
             // Fetch worker details from API
             const response = await fetch(`${API_BASE_URL}/staff/${workerId}`, {
                 method: 'GET',
@@ -499,7 +499,7 @@
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 if (response.status === 401) {
                     throw new Error('Authentication failed. Please log in again.');
@@ -511,16 +511,16 @@
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             }
-            
+
             const result = await response.json();
-            
+
             if (!result.data) {
                 throw new Error('Invalid response format');
             }
-            
+
             // Display worker details in modal
             showWorkerDetailsModal(result.data);
-            
+
         } catch (error) {
             Swal.fire({
                 icon: 'error',
@@ -533,7 +533,7 @@
             });
         }
     };
-    
+
     // Function to display worker details in a modal
     function showWorkerDetailsModal(workerData) {
         // Remove existing modal if any
@@ -546,20 +546,20 @@
             }
             existingModal.remove();
         }
-        
+
         // Remove any lingering backdrops
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(backdrop => backdrop.remove());
-        
+
         // Remove modal-open class from body if no other modals are open
         if (!document.querySelector('.modal.show')) {
             document.body.classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.style.paddingRight = '';
         }
-        
+
         let modalContent = '';
-        
+
         if (workerData.loading) {
             modalContent = `
                 <div class="text-center py-5">
@@ -581,11 +581,11 @@
             const claimedBy = worker.claimed_staff?.user?.user_fullname || 'Not claimed';
             const claimedStatus = worker.claimed_staff ? 'Claimed' : 'Available';
             const claimedBadge = worker.claimed_staff ? 'bg-success' : 'bg-warning text-dark';
-            
+
             // Generate avatar placeholder
             const userName = worker.staff_fullname || 'Worker';
             const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=6c757d&color=fff&size=200&bold=true&rounded=true`;
-            
+
             // Use worker image if exists and valid, otherwise use placeholder
             let imageSrc = placeholderImage;
             if (worker.staff_img && worker.staff_img.trim() !== '') {
@@ -598,7 +598,7 @@
                     imageSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
                 }
             }
-            
+
             // Format date for input field (YYYY-MM-DD to DD/MM/YYYY)
             function formatDateForDisplay(dateString) {
                 if (!dateString) return '-';
@@ -608,12 +608,12 @@
                 const year = date.getFullYear();
                 return `${day}/${month}/${year}`;
             }
-            
+
             // Helper function to display value or dash
             function displayValue(value) {
                 return (value && value.trim() !== '') ? value : '-';
             }
-            
+
             modalContent = `
                 <div class="row">
                     <div class="col-md-3 text-center mb-3 mb-md-0">
@@ -682,7 +682,7 @@
                 </div>
             `;
         }
-        
+
         // Create modal element
         const modalHTML = `
             <div class="modal fade" id="workerDetailsModal" tabindex="-1" aria-labelledby="workerDetailsModalLabel" aria-hidden="true">
@@ -709,10 +709,10 @@
                 </div>
             </div>
         `;
-        
+
         // Append modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         // Show modal using Bootstrap
         const modalElement = document.getElementById('workerDetailsModal');
         const modal = new bootstrap.Modal(modalElement, {
@@ -721,7 +721,7 @@
             focus: true
         });
         modal.show();
-        
+
         // Clean up modal and backdrop when hidden
         modalElement.addEventListener('hidden.bs.modal', function () {
             // Dispose of the modal instance
@@ -729,14 +729,14 @@
             if (modalInstance) {
                 modalInstance.dispose();
             }
-            
+
             // Remove the modal element
             modalElement.remove();
-            
+
             // Clean up any lingering backdrops
             const backdrops = document.querySelectorAll('.modal-backdrop');
             backdrops.forEach(backdrop => backdrop.remove());
-            
+
             // Ensure body classes and styles are reset
             if (!document.querySelector('.modal.show')) {
                 document.body.classList.remove('modal-open');
@@ -745,35 +745,35 @@
             }
         }, { once: true });
     }
-    
-    window.editWorker = function(workerId) {
+
+    window.editWorker = function (workerId) {
         // Get the current modal
         const currentModal = document.getElementById('workerDetailsModal');
         if (!currentModal) return;
-        
+
         // Switch to edit mode
         enableEditMode(workerId);
     };
-    
+
     // Function to enable edit mode in the current modal
     function enableEditMode(workerId) {
         const modal = document.getElementById('workerDetailsModal');
         if (!modal) return;
-        
+
         const modalBody = modal.querySelector('.modal-body');
         const modalFooter = modal.querySelector('.modal-footer');
-        
+
         // Get all readonly inputs
         const inputs = modalBody.querySelectorAll('input[readonly]');
-        
+
         // Convert inputs to editable
         inputs.forEach(input => {
             input.removeAttribute('readonly');
             input.classList.add('border-primary');
-            
+
             // Convert text inputs to appropriate types and add name attributes
             const label = input.previousElementSibling?.textContent || '';
-            
+
             if (label.includes('IC / Document ID')) {
                 input.setAttribute('name', 'staff_doc');
             } else if (label.includes('Full Name')) {
@@ -835,13 +835,13 @@
                 input.type = 'date';
                 input.setAttribute('name', 'staff_employment_start_date');
             }
-            
+
             // Clear dash values
             if (input.value === '-') {
                 input.value = '';
             }
         });
-        
+
         // Add "Change Photo" button in edit mode
         const imageContainer = modalBody.querySelector('.col-md-3.text-center');
         if (imageContainer && !imageContainer.querySelector('#changePhotoBtn')) {
@@ -850,17 +850,17 @@
             changePhotoBtn.type = 'button';
             changePhotoBtn.className = 'btn btn-sm btn-outline-primary mt-2';
             changePhotoBtn.innerHTML = '<i class="bi bi-camera"></i> Change Photo';
-            changePhotoBtn.onclick = function() {
+            changePhotoBtn.onclick = function () {
                 document.getElementById('workerDetailsImageInput').click();
             };
             imageContainer.querySelector('div').appendChild(changePhotoBtn);
-            
+
             // Add image preview functionality
             const imageInput = document.getElementById('workerDetailsImageInput');
             const imagePreview = document.getElementById('workerDetailsImagePreview');
-            
+
             if (imageInput && imagePreview) {
-                imageInput.addEventListener('change', function(e) {
+                imageInput.addEventListener('change', function (e) {
                     const file = e.target.files[0];
                     if (file) {
                         // Validate file type
@@ -877,7 +877,7 @@
                         }
                         // Show preview
                         const reader = new FileReader();
-                        reader.onload = function(event) {
+                        reader.onload = function (event) {
                             imagePreview.src = event.target.result;
                         };
                         reader.readAsDataURL(file);
@@ -885,7 +885,7 @@
                 });
             }
         }
-        
+
         // Update footer buttons
         modalFooter.innerHTML = `
             <button type="button" class="btn btn-secondary" onclick="cancelEditMode(${workerId})">
@@ -896,9 +896,9 @@
             </button>
         `;
     }
-    
+
     // Function to cancel edit mode and reload view mode
-    window.cancelEditMode = function(workerId) {
+    window.cancelEditMode = function (workerId) {
         const modal = document.getElementById('workerDetailsModal');
         if (modal) {
             const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -906,15 +906,15 @@
                 modalInstance.hide();
             }
         }
-        
+
         // Reload the view modal after a brief delay
         setTimeout(() => {
             viewWorkerDetails(workerId);
         }, 300);
     };
-    
+
     // Function to save worker changes
-    window.saveWorkerChanges = async function(workerId, event = null) {
+    window.saveWorkerChanges = async function (workerId, event = null) {
         try {
             const modal = document.getElementById('workerDetailsModal');
             if (!modal) {
@@ -1016,7 +1016,7 @@
                 Swals.fire({
                     icon: 'error',
                     title: 'Save Failed',
-                    text: errorMessage, 
+                    text: errorMessage,
                     confirmButtonColor: '#dc3545'
                 });
                 return;
@@ -1084,8 +1084,8 @@
             }
         }
     };
-    
-    window.deleteWorker = async function(workerId) {
+
+    window.deleteWorker = async function (workerId) {
         // Show confirmation dialog
         const confirmed = await Swal.fire({
             title: 'Delete Worker?',
@@ -1097,11 +1097,11 @@
             confirmButtonText: 'Yes, delete it!',
             cancelButtonText: 'Cancel'
         });
-        
+
         if (!confirmed.isConfirmed) {
             return; // User cancelled
         }
-        
+
         try {
             // Make DELETE request to API
             const response = await fetch(`${API_BASE_URL}/staff/${workerId}`, {
@@ -1112,7 +1112,7 @@
                     'Accept': 'application/json'
                 }
             });
-            
+
             // Try to parse the response body first to get server error messages
             let result;
             try {
@@ -1120,11 +1120,11 @@
             } catch (e) {
                 result = null;
             }
-            
+
             if (!response.ok) {
                 // Use server's error message if available
                 let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
-                
+
                 if (response.status === 401) {
                     errorMessage = 'Authentication failed. Please log in again.';
                 } else if (response.status === 403) {
@@ -1136,10 +1136,10 @@
                 } else if (response.status === 409) {
                     errorMessage = result?.message || 'Cannot delete worker. This worker may have related records (attendance, payroll, etc.).';
                 }
-                
+
                 throw new Error(errorMessage);
             }
-            
+
             // Show success message
             Swal.fire({
                 icon: 'success',
@@ -1149,10 +1149,10 @@
                 timer: 2000,
                 timerProgressBar: true
             });
-            
+
             // Refresh the worker list
             fetchWorkersList(currentSearch, currentPage);
-            
+
         } catch (error) {
             Swal.fire({
                 icon: 'error',
@@ -1162,20 +1162,20 @@
             });
         }
     };
-    
+
     // Toggle worker active/inactive status
-    window.toggleWorkerStatus = async function(workerId, isChecked) {
+    window.toggleWorkerStatus = async function (workerId, isChecked) {
         const checkbox = document.querySelector(`input[data-worker-id="${workerId}"]`);
-        
+
         if (!checkbox) {
             console.error('Checkbox not found for worker:', workerId);
             return;
         }
-        
+
         // Disable checkbox while updating
         checkbox.disabled = true;
         const originalState = !isChecked;
-        
+
         try {
             // API call to update status
             const headers = {
@@ -1183,16 +1183,16 @@
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             };
-            
+
             const newStatus = isChecked ? 'active' : 'inactive';
             const requestBody = { staff_status: newStatus };
-            
+
             const response = await fetch(`${API_BASE_URL}/staff/${workerId}/status`, {
                 method: 'PUT',
                 headers: headers,
                 body: JSON.stringify(requestBody)
             });
-            
+
             // Try to parse the response body
             let result;
             try {
@@ -1200,11 +1200,11 @@
             } catch (e) {
                 result = null;
             }
-            
+
             if (!response.ok) {
                 // Use server's error message if available
                 let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
-                
+
                 if (response.status === 401) {
                     errorMessage = 'Authentication failed. Please log in again.';
                 } else if (response.status === 403) {
@@ -1214,10 +1214,10 @@
                 } else if (response.status === 400) {
                     errorMessage = result?.message || 'Invalid status value.';
                 }
-                
+
                 throw new Error(errorMessage);
             }
-            
+
             // Show success message
             await Swal.fire({
                 icon: 'success',
@@ -1228,15 +1228,15 @@
                 timerProgressBar: true,
                 showConfirmButton: false
             });
-            
+
             // Force refresh list to show updated status and re-sort
             await fetchWorkersList(currentSearch, currentPage);
-            
+
         } catch (error) {
             // Revert checkbox state on error
             checkbox.checked = originalState;
             checkbox.disabled = false;
-            
+
             Swal.fire({
                 icon: 'error',
                 title: 'Update Failed',
@@ -1245,17 +1245,17 @@
             });
         }
     };
-    
+
     // Expose the main function globally so it can be called from manage-account.html
     window.fetchWorkersList = fetchWorkersList;
-    
+
     // Auto-load workers when the script is loaded
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Only auto-load if we're on the manage-account page and workers view is active
         if (document.body.dataset.page === 'manage-account') {
             fetchWorkersList();
         }
     });
-    
+
 })();
 

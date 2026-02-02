@@ -1,6 +1,6 @@
 // create_payment_rate.js
 
-const API_BASE_URL = "https://mwms.megacess.com/api/v1/payment-rates";
+const API_BASE_URL = `${API_URL}/payment-rates`;
 const TOKEN_KEYS = ['authToken', 'auth_token', 'token', 'access_token'];
 
 /* -------------------- Token Utilities -------------------- */
@@ -15,12 +15,12 @@ function getToken() {
     text: "Please login first before proceeding.",
     confirmButtonText: "Log in now."
   }).then((result) => {
-    if (result.isConfirmed){
+    if (result.isConfirmed) {
       window.location.href = "/pages/log-in.html";
     }
   });
   return null;
-} 
+}
 
 function getHeaders() {
   const token = getToken();
@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const body = {
       task_name,
       description,
-     // is_active,
+      // is_active,
       categories
     };
 

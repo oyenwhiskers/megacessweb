@@ -1,5 +1,5 @@
-$(document).ready(function() {
-  const API_URL = "https://mwms.megacess.com/api/v1/users"; 
+$(document).ready(function () {
+  const USER_SALARY_API_URL = `${API_URL}/users`;
   const token = getToken();
 
   if (!token) {
@@ -10,7 +10,7 @@ $(document).ready(function() {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then((result) => {
-      if (result.isConfirmed){
+      if (result.isConfirmed) {
         window.location.href = "/pages/log-in.html"
       }
     });
@@ -62,11 +62,11 @@ $(document).ready(function() {
     $("#staffList .row").html(skeletonHtml);
 
     $.ajax({
-      url: API_URL,
+      url: USER_SALARY_API_URL,
       method: "GET",
       headers: headers,
       data: params,
-      success: function(response) {
+      success: function (response) {
         if (response && response.success && Array.isArray(response.data)) {
           renderStaff(response.data);
           currentPage = response.meta.current_page;
@@ -77,7 +77,7 @@ $(document).ready(function() {
           $("#staffPagination").remove();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         console.error("Failed to load users:", xhr.responseText);
         $("#staffList .row").html('<div class="col-12 text-center text-danger">Error loading users</div>');
         $("#staffPagination").remove();
@@ -99,9 +99,9 @@ $(document).ready(function() {
       const name = user.user_nickname || user.user_fullname || "Unknown";
       const role = user.user_role ? user.user_role.charAt(0).toUpperCase() + user.user_role.slice(1) : "Staff";
       const img = user.user_img
-        ? (user.user_img.startsWith("http") ? user.user_img : `https://mwms.megacess.com${user.user_img}`)
+        ? (user.user_img.startsWith("http") ? user.user_img : `${STORAGE_DOMAIN}${user.user_img}`)
         : "https://via.placeholder.com/64";
-      
+
       // Safely access nested base_salary property
       let userBaseSalary = "Not set";
       if (user.base_salary && user.base_salary.base_salary != null) {
@@ -191,7 +191,7 @@ $(document).ready(function() {
   }
 
   // Search + filter triggers
-  $("#searchStaff").on("input", function() {
+  $("#searchStaff").on("input", function () {
     const value = $(this).val().trim();
     // Show/hide clear button
     if (value.length > 0) {
@@ -203,7 +203,7 @@ $(document).ready(function() {
   });
 
   // Clear search button
-  $("#clearSearchStaff").on("click", function() {
+  $("#clearSearchStaff").on("click", function () {
     $("#searchStaff").val("");
     $(this).hide();
     fetchUsers(1);

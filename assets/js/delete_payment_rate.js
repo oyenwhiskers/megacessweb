@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://mwms.megacess.com/api/v1/payment-rates";
+const API_BASE_URL = `${API_URL}/payment-rates`;
 
 /**
  * Delete a payment rate by ID
@@ -19,14 +19,14 @@ async function deletePaymentRate(id) {
       text: "Please login first before proceeding.",
       confirmButtonText: "Log in now."
     }).then((result) => {
-      if (result.isConfirmed){
+      if (result.isConfirmed) {
         window.location.href = "/pages/log-in.html"
       }
     });
     return;
   }
 
-   const result = await Swal.fire({
+  const result = await Swal.fire({
     title: "Delete payment rate?",
     text: "This action cannot be undone. Do you want to delete this payment rate?",
     icon: "warning",
@@ -47,18 +47,18 @@ async function deletePaymentRate(id) {
           "Content-Type": "application/json"
         }
       })
-      .then(async (resp) => {
-        const json = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-          const msg = json.message || `Request failed (${resp.status})`;
-          throw new Error(msg);
-        }
-        return json;
-      })
-      .catch((err) => {
-        Swal.showValidationMessage(err.message || "Delete request failed");
-        throw err;
-      });
+        .then(async (resp) => {
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const msg = json.message || `Request failed (${resp.status})`;
+            throw new Error(msg);
+          }
+          return json;
+        })
+        .catch((err) => {
+          Swal.showValidationMessage(err.message || "Delete request failed");
+          throw err;
+        });
     }
   });
 
@@ -137,18 +137,18 @@ async function deletePaymentRateCategory(id, categoryId) {
           "Content-Type": "application/json"
         }
       })
-      .then(async (resp) => {
-        const json = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-          const msg = json.message || `Request failed (${resp.status})`;
-          throw new Error(msg);
-        }
-        return json;
-      })
-      .catch((err) => {
-        Swal.showValidationMessage(err.message || "Delete request failed");
-        throw err;
-      });
+        .then(async (resp) => {
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const msg = json.message || `Request failed (${resp.status})`;
+            throw new Error(msg);
+          }
+          return json;
+        })
+        .catch((err) => {
+          Swal.showValidationMessage(err.message || "Delete request failed");
+          throw err;
+        });
     }
   });
 

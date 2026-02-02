@@ -1,17 +1,17 @@
-(function() {
+(function () {
     'use strict';
 
-    // API configuration
-    const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
-    
+    // API configuration (using global API_URL from config.js)
+    const API_BASE_URL = API_URL;
+
     // Get auth token from localStorage
     function getAuthToken() {
         // Check multiple possible token storage locations
-        return localStorage.getItem('authToken') || 
-               localStorage.getItem('auth_token') ||
-               sessionStorage.getItem('authToken') ||
-               sessionStorage.getItem('auth_token') ||
-               '';
+        return localStorage.getItem('authToken') ||
+            localStorage.getItem('auth_token') ||
+            sessionStorage.getItem('authToken') ||
+            sessionStorage.getItem('auth_token') ||
+            '';
     }
 
     // Format date for display (convert from YYYY-MM-DD to DD/MM/YY)
@@ -99,9 +99,9 @@
 
             if (!response.ok) {
                 // Handle API errors
-                const errorMessage = responseData.message || 
-                                   responseData.error || 
-                                   `HTTP error! status: ${response.status}`;
+                const errorMessage = responseData.message ||
+                    responseData.error ||
+                    `HTTP error! status: ${response.status}`;
                 throw new Error(errorMessage);
             }
 
@@ -160,9 +160,9 @@
 
             if (!response.ok) {
                 // Handle API errors
-                const errorMessage = responseData.message || 
-                                   responseData.error || 
-                                   `HTTP error! status: ${response.status}`;
+                const errorMessage = responseData.message ||
+                    responseData.error ||
+                    `HTTP error! status: ${response.status}`;
                 throw new Error(errorMessage);
             }
 
@@ -207,9 +207,9 @@
 
             if (!response.ok) {
                 // Handle API errors
-                const errorMessage = responseData.message || 
-                                   responseData.error || 
-                                   `HTTP error! status: ${response.status}`;
+                const errorMessage = responseData.message ||
+                    responseData.error ||
+                    `HTTP error! status: ${response.status}`;
                 throw new Error(errorMessage);
             }
 
@@ -231,7 +231,7 @@
 
             // Build query parameters
             const params = new URLSearchParams();
-            
+
             // Set user_id or staff_id based on user type
             if (userType === 'worker') {
                 params.append('staff_id', userId);
@@ -282,7 +282,7 @@
     // Render overtime records
     function renderOvertimeRecords(overtimeData) {
         const overtimeList = document.getElementById('overtimeList');
-        
+
         if (!overtimeData || !overtimeData.data || overtimeData.data.length === 0) {
             // Clear stored records when no data
             window.currentOvertimeRecords = [];
@@ -304,7 +304,7 @@
             const formattedStatus = formatStatus(record.status);
             const displayDate = formatDisplayDate(record.date_attendance?.date);
             const duration = formatDuration(record.duration);
-            
+
             return `
                 <div class="bg-white rounded p-3 mb-2">
                     <div class="d-flex align-items-start">
@@ -361,7 +361,7 @@
     // Load user overtime data
     async function loadUserOvertimeData(userId, userType, filters = {}) {
         const overtimeList = document.getElementById('overtimeList');
-        
+
         // Show loading state
         overtimeList.innerHTML = `
             <div class="text-center py-4">
@@ -391,7 +391,7 @@
     function filterOvertimeByMonth(month) {
         const currentUserId = window.currentOvertimeUserId;
         const currentUserType = window.currentOvertimeUserType;
-        
+
         if (!currentUserId || !currentUserType) {
             console.error('No user context available for filtering');
             return;
@@ -402,7 +402,7 @@
 
         // Calculate date range for the selected month using selected year
         const dateFrom = `${selectedYear}-${String(month).padStart(2, '0')}-01`;
-        
+
         // Get last day of the month
         const lastDay = new Date(selectedYear, month, 0).getDate();
         const dateTo = `${selectedYear}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
@@ -419,7 +419,7 @@
     function showAllOvertimeRecords() {
         const currentUserId = window.currentOvertimeUserId;
         const currentUserType = window.currentOvertimeUserType;
-        
+
         if (!currentUserId || !currentUserType) {
             console.error('No user context available for filtering');
             return;
@@ -427,7 +427,7 @@
 
         // Reset selected month
         selectedMonth = null;
-        
+
         // Reset filter button texts
         const yearBtn = document.getElementById('overtimeFilterYear');
         const monthBtn = document.getElementById('overtimeFilterMonth');
@@ -438,10 +438,10 @@
     }
 
     // Retry loading overtime data
-    window.retryLoadOvertimeData = function() {
+    window.retryLoadOvertimeData = function () {
         const currentUserId = window.currentOvertimeUserId;
         const currentUserType = window.currentOvertimeUserType;
-        
+
         if (!currentUserId || !currentUserType) {
             console.error('No user context available for retry');
             return;
@@ -460,7 +460,7 @@
         const endYear = currentYear + 1;
 
         yearDropdown.innerHTML = '';
-        
+
         for (let year = endYear; year >= startYear; year--) {
             const li = document.createElement('li');
             const a = document.createElement('a');
@@ -474,11 +474,11 @@
     }
 
     // Edit overtime record (placeholder)
-    window.editOvertimeRecord = function(recordId) {
+    window.editOvertimeRecord = function (recordId) {
         // Find the record data from the current overtime records
         const currentRecords = window.currentOvertimeRecords || [];
         const record = currentRecords.find(r => r.id == recordId);
-        
+
         if (!record) {
             Swal.fire({
                 icon: 'error',
@@ -492,11 +492,11 @@
         // Populate the edit form with current data
         document.getElementById('editOvertimeId').value = record.id;
         document.getElementById('editOvertimeDate').value = record.date_attendance?.date || '';
-        
+
         // Convert duration from minutes to hours for display
         const durationInHours = record.duration ? (record.duration / 60).toFixed(1) : '';
         document.getElementById('editOvertimeDuration').value = durationInHours;
-        
+
         document.getElementById('editOvertimeRemarks').value = record.remark || '';
 
         // Show the edit modal
@@ -505,7 +505,7 @@
     };
 
     // Delete overtime record with API integration
-    window.deleteOvertimeRecord = async function(recordId) {
+    window.deleteOvertimeRecord = async function (recordId) {
         // Show confirmation dialog with SweetAlert2
         const result = await Swal.fire({
             title: 'Are you sure?',
@@ -555,7 +555,7 @@
             } else {
                 // If button not found, still call the API
                 await window.deleteOvertimeRecordAPI(recordId);
-                
+
                 await Swal.fire({
                     icon: 'success',
                     title: 'Deleted!',
@@ -572,7 +572,7 @@
             }
         } catch (error) {
             console.error('Error deleting overtime record:', error);
-            
+
             // Provide specific error messages
             let errorMessage = 'Failed to delete overtime record.';
             if (error.message.includes('token')) {
@@ -586,7 +586,7 @@
             } else if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             await Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -601,13 +601,13 @@
         // Store current user context for filtering
         window.currentOvertimeUserId = userId;
         window.currentOvertimeUserType = userType;
-        
+
         // Set user information
         const userNameEl = document.getElementById('overtimeUserName');
         const userRoleEl = document.getElementById('overtimeUserRole');
         if (userNameEl) userNameEl.textContent = userName || 'Unknown User';
         if (userRoleEl) userRoleEl.textContent = userRole || 'Unknown Role';
-        
+
         // Set user avatar with comprehensive error handling
         const avatar = document.getElementById('overtimeUserAvatar');
         if (avatar) {
@@ -616,37 +616,37 @@
             if (userImage && typeof userImage === 'string' && userImage.trim() !== '') {
                 // Remove problematic suffixes like :1, :2, etc.
                 cleanImageUrl = userImage.replace(/:\d+$/, '').trim();
-                
+
                 // Additional cleaning for malformed URLs
                 cleanImageUrl = cleanImageUrl.replace(/\.jpg:.*$/, '.jpg');
                 cleanImageUrl = cleanImageUrl.replace(/\.png:.*$/, '.png');
                 cleanImageUrl = cleanImageUrl.replace(/\.jpeg:.*$/, '.jpeg');
                 cleanImageUrl = cleanImageUrl.replace(/\.gif:.*$/, '.gif');
-                
+
                 // Check if the cleaned URL is still valid
-                if (cleanImageUrl.length < 5 || 
-                    cleanImageUrl.includes('null') || 
+                if (cleanImageUrl.length < 5 ||
+                    cleanImageUrl.includes('null') ||
                     cleanImageUrl.includes('undefined') ||
                     cleanImageUrl.includes('…') || // Sometimes URLs get truncated with ellipsis
                     cleanImageUrl.endsWith(':')) {
                     cleanImageUrl = '';
                 }
             }
-            
+
             if (cleanImageUrl && cleanImageUrl.trim() !== '') {
                 // Try to construct the full URL
                 let imageSrc = cleanImageUrl;
-                
+
                 // If it's not a full URL, construct the proper path
                 if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
-                    imageSrc = `https://mwms.megacess.com/storage/user-images/${cleanImageUrl}`;
+                    imageSrc = `${STORAGE_DOMAIN}/storage/user-images/${cleanImageUrl}`;
                 } else if (cleanImageUrl.startsWith('/')) {
-                    imageSrc = `https://mwms.megacess.com${cleanImageUrl}`;
+                    imageSrc = `${STORAGE_DOMAIN}${cleanImageUrl}`;
                 }
-                
+
                 // Set the image with error fallback
                 avatar.src = imageSrc;
-                avatar.onerror = function() {
+                avatar.onerror = function () {
                     // Fallback to placeholder if image fails to load
                     const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=cccccc&color=fff&size=96`;
                     this.src = placeholderImage;
@@ -659,16 +659,16 @@
                 avatar.onerror = null; // Clear any previous error handler
             }
         }
-        
+
         // Reset filter buttons
         const allFilterBtn = document.getElementById('overtimeFilterAll');
         const monthFilterBtn = document.getElementById('overtimeFilterMonth');
         if (allFilterBtn) allFilterBtn.classList.add('active');
         if (monthFilterBtn) monthFilterBtn.textContent = 'Month';
-        
+
         // Load overtime data for this user using the real API
         loadUserOvertimeData(userId, userType);
-        
+
         // Show the modal
         const modalEl = document.getElementById('manageOvertimeModal');
         if (modalEl) {
@@ -680,7 +680,7 @@
     // Save overtime record with UI feedback
     async function saveOvertimeRecord(overtimeData) {
         const saveButton = document.querySelector('#addOvertimeForm button[type="submit"]');
-        
+
         try {
             // Show loading state
             if (saveButton) {
@@ -707,14 +707,14 @@
                 timer: 2000,
                 showConfirmButton: false
             });
-            
+
             // Refresh the overtime list
             if (window.currentOvertimeUserId && window.currentOvertimeUserType) {
                 loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
             }
         } catch (error) {
             console.error('Error saving overtime:', error);
-            
+
             // Provide specific error messages
             let errorMessage = 'Failed to save overtime record.';
             if (error.message.includes('token')) {
@@ -724,7 +724,7 @@
             } else if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             await Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -743,7 +743,7 @@
     // Update overtime record wrapper with UI feedback
     async function updateOvertimeRecordWithUI(overtimeData) {
         const updateButton = document.querySelector('#editOvertimeForm button[type="submit"]');
-        
+
         try {
             // Show loading state
             if (updateButton) {
@@ -770,14 +770,14 @@
                 timer: 2000,
                 showConfirmButton: false
             });
-            
+
             // Refresh the overtime list
             if (window.currentOvertimeUserId && window.currentOvertimeUserType) {
                 loadUserOvertimeData(window.currentOvertimeUserId, window.currentOvertimeUserType);
             }
         } catch (error) {
             console.error('Error updating overtime:', error);
-            
+
             // Provide specific error messages
             let errorMessage = 'Failed to update overtime record.';
             if (error.message.includes('token')) {
@@ -787,7 +787,7 @@
             } else if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             await Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -815,14 +815,14 @@
     window.deleteOvertimeRecordAPI = deleteOvertimeRecord; // Export the API function with different name
 
     // Initialize event listeners when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Populate year dropdown on page load
         populateYearDropdown();
 
         // Filter functionality for "All" button
         const allFilterBtn = document.getElementById('overtimeFilterAll');
         if (allFilterBtn) {
-            allFilterBtn.addEventListener('click', function() {
+            allFilterBtn.addEventListener('click', function () {
                 this.classList.add('active');
                 showAllOvertimeRecords();
             });
@@ -831,20 +831,20 @@
         // Year filter functionality
         const yearFilterItems = document.querySelectorAll('#overtimeYearDropdown a');
         yearFilterItems.forEach(item => {
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', function (e) {
                 e.preventDefault();
                 const year = parseInt(this.dataset.year);
                 selectedYear = year;
-                
+
                 // Update button text
                 document.getElementById('overtimeFilterYear').textContent = year;
-                
+
                 // Remove active class from "All" button
                 const allBtn = document.getElementById('overtimeFilterAll');
                 if (allBtn) {
                     allBtn.classList.remove('active');
                 }
-                
+
                 // If a month is already selected, re-apply the filter with new year
                 if (selectedMonth) {
                     filterOvertimeByMonth(selectedMonth);
@@ -855,26 +855,26 @@
         // Month filter functionality
         const monthFilterItems = document.querySelectorAll('#overtimeFilterMonth + .dropdown-menu a');
         monthFilterItems.forEach(item => {
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', function (e) {
                 e.preventDefault();
                 const month = parseInt(this.dataset.month);
                 const monthName = this.textContent;
-                
+
                 // Update button text
                 document.getElementById('overtimeFilterMonth').textContent = monthName;
-                
+
                 // Update year button to show selected year if not already shown
                 const yearBtn = document.getElementById('overtimeFilterYear');
                 if (yearBtn && yearBtn.textContent === 'Year') {
                     yearBtn.textContent = selectedYear;
                 }
-                
+
                 // Remove active class from "All" button
                 const allBtn = document.getElementById('overtimeFilterAll');
                 if (allBtn) {
                     allBtn.classList.remove('active');
                 }
-                
+
                 // Filter by month
                 filterOvertimeByMonth(month);
             });
@@ -883,16 +883,16 @@
         // Add overtime button functionality
         const addOvertimeBtn = document.getElementById('addOvertimeBtn');
         if (addOvertimeBtn) {
-            addOvertimeBtn.addEventListener('click', function() {
+            addOvertimeBtn.addEventListener('click', function () {
                 // Show the add overtime modal
                 const addOvertimeModal = new bootstrap.Modal(document.getElementById('addOvertimeModal'));
                 addOvertimeModal.show();
-                
+
                 // Set today's date as default
                 const today = new Date().toISOString().split('T')[0];
                 const overtimeDateInput = document.getElementById('overtimeDate');
                 if (overtimeDateInput) overtimeDateInput.value = today;
-                
+
                 // Clear form fields
                 const durationInput = document.getElementById('overtimeDuration');
                 const remarksInput = document.getElementById('overtimeRemarks');
@@ -904,13 +904,13 @@
         // Add overtime form submission
         const addOvertimeForm = document.getElementById('addOvertimeForm');
         if (addOvertimeForm) {
-            addOvertimeForm.addEventListener('submit', function(e) {
+            addOvertimeForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                
+
                 const overtimeDate = document.getElementById('overtimeDate').value;
                 const overtimeDuration = document.getElementById('overtimeDuration').value;
                 const overtimeRemarks = document.getElementById('overtimeRemarks').value;
-                
+
                 // Validate form
                 if (!overtimeDate) {
                     Swal.fire({
@@ -921,7 +921,7 @@
                     });
                     return;
                 }
-                
+
                 if (!overtimeDuration || overtimeDuration <= 0) {
                     Swal.fire({
                         icon: 'warning',
@@ -931,11 +931,11 @@
                     });
                     return;
                 }
-                
+
                 // Get current user context
                 const userId = window.currentOvertimeUserId;
                 const userType = window.currentOvertimeUserType;
-                
+
                 if (!userId || !userType) {
                     Swal.fire({
                         icon: 'error',
@@ -945,7 +945,7 @@
                     });
                     return;
                 }
-                
+
                 // Prepare data for API
                 const overtimeData = {
                     date: overtimeDate,
@@ -953,7 +953,7 @@
                     remark: overtimeRemarks || '',
                     status: 'approved'
                 };
-                
+
                 // Add user_id or staff_id based on type
                 if (userType === 'staff') {
                     overtimeData.user_id = parseInt(userId);
@@ -968,9 +968,9 @@
                     });
                     return;
                 }
-                
+
                 console.log('Submitting overtime data:', overtimeData);
-                
+
                 // Call API to save overtime
                 saveOvertimeRecord(overtimeData);
             });
@@ -979,14 +979,14 @@
         // Edit overtime form submission
         const editOvertimeForm = document.getElementById('editOvertimeForm');
         if (editOvertimeForm) {
-            editOvertimeForm.addEventListener('submit', function(e) {
+            editOvertimeForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                
+
                 const overtimeId = document.getElementById('editOvertimeId').value;
                 const overtimeDate = document.getElementById('editOvertimeDate').value;
                 const overtimeDuration = document.getElementById('editOvertimeDuration').value;
                 const overtimeRemarks = document.getElementById('editOvertimeRemarks').value;
-                
+
                 // Validate form
                 if (!overtimeDate) {
                     Swal.fire({
@@ -997,7 +997,7 @@
                     });
                     return;
                 }
-                
+
                 if (!overtimeDuration || overtimeDuration <= 0) {
                     Swal.fire({
                         icon: 'warning',
@@ -1007,11 +1007,11 @@
                     });
                     return;
                 }
-                
+
                 // Get current user context
                 const userId = window.currentOvertimeUserId;
                 const userType = window.currentOvertimeUserType;
-                
+
                 if (!userId || !userType) {
                     Swal.fire({
                         icon: 'error',
@@ -1021,7 +1021,7 @@
                     });
                     return;
                 }
-                
+
                 // Prepare data for API
                 const overtimeData = {
                     id: parseInt(overtimeId),
@@ -1029,7 +1029,7 @@
                     duration: parseFloat(overtimeDuration) * 60, // Convert hours to minutes
                     remark: overtimeRemarks || ''
                 };
-                
+
                 // Add user_id or staff_id based on type
                 if (userType === 'staff') {
                     overtimeData.user_id = parseInt(userId);
@@ -1044,9 +1044,9 @@
                     });
                     return;
                 }
-                
+
                 console.log('Updating overtime data:', overtimeData);
-                
+
                 // Call API to update overtime
                 updateOvertimeRecordWithUI(overtimeData);
             });

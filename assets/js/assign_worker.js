@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('searchInput');
     const mandorListContainer = document.getElementById('mandorList');
     const mandorListView = document.getElementById('mandorListView');
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const unassignedWorkersListContainer = document.getElementById('unassignedWorkersList');
     const unassignedWorkerSearchInput = document.getElementById('unassignedWorkerSearchInput');
     const saveAssignmentBtn = document.getElementById('saveAssignmentBtn');
-    
+
     let searchTimeout;
     let workerSearchTimeout;
     let unassignedSearchTimeout;
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch mandor list
     function fetchMandorList(searchQuery = '') {
         const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-        
+
         if (!token) {
             console.error('No authentication token found');
             mandorListContainer.innerHTML = `
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
 
-        const url = new URL('https://mwms.megacess.com/api/v1/users');
+        const url = new URL(`${API_URL}/users`);
         url.searchParams.append('role', 'mandor');
         if (searchQuery) {
             url.searchParams.append('search', searchQuery);
@@ -68,27 +68,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Accept': 'application/json'
             }
         })
-        .then(response => {
-            if (response.status === 401) {
-                localStorage.removeItem('token');
-                window.location.href = '/pages/log-in.html';
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data && data.data) {
-                displayMandorList(data.data);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching mandor list:', error);
-            mandorListContainer.innerHTML = `
+            .then(response => {
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/pages/log-in.html';
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.data) {
+                    displayMandorList(data.data);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching mandor list:', error);
+                mandorListContainer.innerHTML = `
                 <div class="alert alert-danger">
                     Failed to load mandor list. Please try again.
                 </div>
             `;
-        });
+            });
     }
 
     // Display mandor list with pagination
@@ -112,14 +112,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             mandorListContainer.innerHTML = pageMandors.map(mandor => {
                 const workerCount = mandor.staff_count || 0;
-                
+
                 // Handle image URL - prepend base URL if path is relative
                 let imageUrl = mandor.user_img;
                 if (imageUrl && !imageUrl.startsWith('http')) {
                     imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
                 }
 
-                const profileImage = imageUrl 
+                const profileImage = imageUrl
                     ? `<img src="${imageUrl}" 
                             alt="${mandor.user_fullname}" 
                             class="rounded-circle" 
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderMandorPagination();
         // Add click event listeners to mandor cards
         document.querySelectorAll('.mandor-card').forEach(card => {
-            card.addEventListener('click', function() {
+            card.addEventListener('click', function () {
                 const mandorId = this.getAttribute('data-mandor-id');
                 const mandorName = this.getAttribute('data-mandor-name');
                 showWorkerDetail(mandorId, mandorName);
@@ -164,13 +164,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderMandorPagination() {
         const container = document.getElementById('mandorList');
-        
+
         // Don't show pagination if only 1 page
         if (mandorTotalPages <= 1) return;
-        
+
         const paginationDiv = document.createElement('div');
         paginationDiv.className = 'mt-3 text-center';
-        
+
         // Previous button with chevron icon
         const prevBtn = document.createElement('button');
         prevBtn.className = 'btn btn-sm btn-outline-success mx-1';
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         paginationDiv.appendChild(prevBtn);
-        
+
         // Smart page buttons with ellipsis (max 7 buttons)
         let pages = [];
         if (mandorTotalPages <= 7) {
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pages = [1, '...', mandorCurrentPage - 1, mandorCurrentPage, mandorCurrentPage + 1, '...', mandorTotalPages];
             }
         }
-        
+
         // Render page buttons
         pages.forEach((page) => {
             if (page === '...') {
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 paginationDiv.appendChild(pageBtn);
             }
         });
-        
+
         // Next button with chevron icon
         const nextBtn = document.createElement('button');
         nextBtn.className = 'btn btn-sm btn-outline-success mx-1';
@@ -236,14 +236,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         paginationDiv.appendChild(nextBtn);
-        
+
         container.appendChild(paginationDiv);
     }
 
     // Fetch workers by mandor (placeholder function)
     function fetchWorkersByMandor(mandorId) {
         const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-        
+
         if (!token) {
             console.error('No authentication token found');
             workerListContainer.innerHTML = `
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
 
-        const url = new URL('https://mwms.megacess.com/api/v1/staff/my-staff');
+        const url = new URL(`${API_URL}/staff/my-staff`);
         url.searchParams.append('user_id', mandorId);
 
         fetch(url, {
@@ -275,39 +275,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Accept': 'application/json'
             }
         })
-        .then(response => {
-            if (response.status === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('authToken');
-                window.location.href = '/pages/log-in.html';
-                return null;
-            }
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data) return; // Handle 401 redirect case
-            
-            if (data && data.data && data.data.staff) {
-                // Workers are in data.data.staff
-                const workerList = Array.isArray(data.data.staff) ? data.data.staff : [];
-                allWorkers = workerList; // Store for filtering
-                displayWorkerList(workerList);
-            } else {
-                allWorkers = [];
-                displayWorkerList([]);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching workers:', error);
-            workerListContainer.innerHTML = `
+            .then(response => {
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/pages/log-in.html';
+                    return null;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data) return; // Handle 401 redirect case
+
+                if (data && data.data && data.data.staff) {
+                    // Workers are in data.data.staff
+                    const workerList = Array.isArray(data.data.staff) ? data.data.staff : [];
+                    allWorkers = workerList; // Store for filtering
+                    displayWorkerList(workerList);
+                } else {
+                    allWorkers = [];
+                    displayWorkerList([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching workers:', error);
+                workerListContainer.innerHTML = `
                 <div class="alert alert-danger">
                     Failed to load workers. Please try again.
                 </div>
             `;
-        });
+            });
     }
 
     // Display worker list with pagination
@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
                 }
 
-                const profileImage = imageUrl 
+                const profileImage = imageUrl
                     ? `<img src="${imageUrl}" 
                             alt="${worker.staff_fullname}" 
                             class="rounded-circle" 
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listeners for Remove buttons
         setTimeout(() => {
             document.querySelectorAll('.remove-worker-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
+                btn.addEventListener('click', function (e) {
                     const workerCard = e.target.closest('.worker-card');
                     const staffId = workerCard.getAttribute('data-worker-id');
                     if (!staffId || !selectedMandor) return;
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         return;
                     }
-                    
+
                     Swal.fire({
                         title: 'Remove Worker?',
                         text: 'Are you sure you want to unassign this worker?',
@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (result.isConfirmed) {
                             btn.disabled = true;
                             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Removing...';
-                            fetch(`https://mwms.megacess.com/api/v1/staff/${staffId}/unclaim`, {
+                            fetch(`${API_URL}/staff/${staffId}/unclaim`, {
                                 method: 'DELETE',
                                 headers: {
                                     'Authorization': `Bearer ${token}`,
@@ -404,45 +404,45 @@ document.addEventListener('DOMContentLoaded', function() {
                                     'Accept': 'application/json'
                                 }
                             })
-                            .then(response => {
-                                if (response.status === 401) {
-                                    localStorage.removeItem('token');
-                                    localStorage.removeItem('authToken');
-                                    window.location.href = '/pages/log-in.html';
-                                    return null;
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                btn.disabled = false;
-                                btn.innerHTML = 'Remove';
-                                if (data && data.success) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Removed!',
-                                        text: 'Worker unassigned successfully.',
-                                        confirmButtonColor: '#0d6832'
-                                    });
-                                    fetchWorkersByMandor(selectedMandor.id);
-                                } else {
+                                .then(response => {
+                                    if (response.status === 401) {
+                                        localStorage.removeItem('token');
+                                        localStorage.removeItem('authToken');
+                                        window.location.href = '/pages/log-in.html';
+                                        return null;
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    btn.disabled = false;
+                                    btn.innerHTML = 'Remove';
+                                    if (data && data.success) {
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Removed!',
+                                            text: 'Worker unassigned successfully.',
+                                            confirmButtonColor: '#0d6832'
+                                        });
+                                        fetchWorkersByMandor(selectedMandor.id);
+                                    } else {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Failed',
+                                            text: data && data.message ? data.message : 'Failed to remove worker.',
+                                            confirmButtonColor: '#0d6832'
+                                        });
+                                    }
+                                })
+                                .catch(error => {
+                                    btn.disabled = false;
+                                    btn.innerHTML = 'Remove';
                                     Swal.fire({
                                         icon: 'error',
-                                        title: 'Failed',
-                                        text: data && data.message ? data.message : 'Failed to remove worker.',
+                                        title: 'Error',
+                                        text: 'Failed to remove worker. Please try again.',
                                         confirmButtonColor: '#0d6832'
                                     });
-                                }
-                            })
-                            .catch(error => {
-                                btn.disabled = false;
-                                btn.innerHTML = 'Remove';
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error',
-                                    text: 'Failed to remove worker. Please try again.',
-                                    confirmButtonColor: '#0d6832'
                                 });
-                            });
                         }
                     });
                 });
@@ -452,13 +452,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderWorkerPagination() {
         const container = document.getElementById('workerList');
-        
+
         // Don't show pagination if only 1 page
         if (workerTotalPages <= 1) return;
-        
+
         const paginationDiv = document.createElement('div');
         paginationDiv.className = 'mt-3 text-center';
-        
+
         // Previous button with chevron icon
         const prevBtn = document.createElement('button');
         prevBtn.className = 'btn btn-sm btn-outline-success mx-1';
@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         paginationDiv.appendChild(prevBtn);
-        
+
         // Smart page buttons with ellipsis (max 7 buttons)
         let pages = [];
         if (workerTotalPages <= 7) {
@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pages = [1, '...', workerCurrentPage - 1, workerCurrentPage, workerCurrentPage + 1, '...', workerTotalPages];
             }
         }
-        
+
         // Render page buttons
         pages.forEach((page) => {
             if (page === '...') {
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 paginationDiv.appendChild(pageBtn);
             }
         });
-        
+
         // Next button with chevron icon
         const nextBtn = document.createElement('button');
         nextBtn.className = 'btn btn-sm btn-outline-success mx-1';
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         paginationDiv.appendChild(nextBtn);
-        
+
         container.appendChild(paginationDiv);
     }
 
@@ -541,7 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         unassignedWorkersListContainer.innerHTML = workerList.map(worker => {
             const isChecked = selectedWorkerIds.includes(worker.id) ? 'checked' : '';
-            
+
             return `
                 <div class="border-bottom py-3 unassigned-worker-item" data-worker-id="${worker.id}">
                     <div class="d-flex align-items-center justify-content-between">
@@ -556,7 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Add event listeners to checkboxes
         document.querySelectorAll('.worker-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
+            checkbox.addEventListener('change', function () {
                 const workerId = parseInt(this.value);
                 if (this.checked) {
                     if (!selectedWorkerIds.includes(workerId)) {
@@ -570,13 +570,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Open assign worker modal
-    assignWorkerBtn.addEventListener('click', function() {
+    assignWorkerBtn.addEventListener('click', function () {
         selectedWorkerIds = []; // Reset selected workers
         unassignedWorkerSearchInput.value = ''; // Clear search
-        
+
         // Show modal
         selectWorkerModal.show();
-        
+
         // Fetch unassigned workers (placeholder for now)
         fetchUnassignedWorkers();
     });
@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch unassigned workers (placeholder function)
     function fetchUnassignedWorkers() {
         const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-        
+
         if (!token) {
             console.error('No authentication token found');
             unassignedWorkersListContainer.innerHTML = `
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
 
-        const url = new URL('https://mwms.megacess.com/api/v1/staff');
+        const url = new URL(`${API_URL}/staff`);
         url.searchParams.append('claimed', '0');
 
         fetch(url, {
@@ -616,53 +616,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Accept': 'application/json'
             }
         })
-        .then(response => {
-            if (response.status === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('authToken');
-                window.location.href = '/pages/log-in.html';
-                return null;
-            }
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data) return; // Handle 401 redirect case
-            
-            if (data && data.data) {
-                // Ensure data.data is an array
-                const workerList = Array.isArray(data.data) ? data.data : [];
-                allUnassignedWorkers = workerList; // Store for filtering
-                displayUnassignedWorkers(workerList);
-            } else {
-                allUnassignedWorkers = [];
-                displayUnassignedWorkers([]);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching unassigned workers:', error);
-            unassignedWorkersListContainer.innerHTML = `
+            .then(response => {
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/pages/log-in.html';
+                    return null;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data) return; // Handle 401 redirect case
+
+                if (data && data.data) {
+                    // Ensure data.data is an array
+                    const workerList = Array.isArray(data.data) ? data.data : [];
+                    allUnassignedWorkers = workerList; // Store for filtering
+                    displayUnassignedWorkers(workerList);
+                } else {
+                    allUnassignedWorkers = [];
+                    displayUnassignedWorkers([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching unassigned workers:', error);
+                unassignedWorkersListContainer.innerHTML = `
                 <div class="alert alert-danger">
                     Failed to load workers. Please try again.
                 </div>
             `;
-        });
+            });
     }
 
     // Unassigned worker search functionality
-    unassignedWorkerSearchInput.addEventListener('input', function(e) {
+    unassignedWorkerSearchInput.addEventListener('input', function (e) {
         clearTimeout(unassignedSearchTimeout);
         unassignedSearchTimeout = setTimeout(() => {
             const searchQuery = e.target.value.trim().toLowerCase();
-            
+
             if (searchQuery === '') {
                 // Show all unassigned workers if search is empty
                 displayUnassignedWorkers(allUnassignedWorkers);
             } else {
                 // Filter workers by name
-                const filteredWorkers = allUnassignedWorkers.filter(worker => 
+                const filteredWorkers = allUnassignedWorkers.filter(worker =>
                     worker.staff_fullname.toLowerCase().includes(searchQuery)
                 );
                 displayUnassignedWorkers(filteredWorkers);
@@ -671,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Save assignment - Assign workers to mandor
-    saveAssignmentBtn.addEventListener('click', function() {
+    saveAssignmentBtn.addEventListener('click', function () {
         if (!selectedMandor) {
             console.error('No mandor selected');
             return;
@@ -688,7 +688,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-        
+
         if (!token) {
             console.error('No authentication token found');
             Swal.fire({
@@ -706,7 +706,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Create array of promises for all assignments
         const assignmentPromises = selectedWorkerIds.map(staffId => {
-            return fetch('https://mwms.megacess.com/api/v1/staff/claim', {
+            return fetch(`${API_URL}/staff/claim`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -718,18 +718,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     user_id: parseInt(selectedMandor.id)
                 })
             })
-            .then(response => {
-                if (response.status === 401) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('authToken');
-                    window.location.href = '/pages/log-in.html';
-                    return null;
-                }
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            });
+                .then(response => {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('authToken');
+                        window.location.href = '/pages/log-in.html';
+                        return null;
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                });
         });
 
         // Execute all assignments
@@ -737,17 +737,17 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(results => {
                 // Close modal
                 selectWorkerModal.hide();
-                
+
                 // Reset button state
                 saveAssignmentBtn.disabled = false;
                 saveAssignmentBtn.innerHTML = 'Save';
-                
+
                 // Clear selected workers
                 selectedWorkerIds = [];
-                
+
                 // Refresh worker list for current mandor
                 fetchWorkersByMandor(selectedMandor.id);
-                
+
                 // Show success message
                 Swal.fire({
                     icon: 'success',
@@ -758,11 +758,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error assigning workers:', error);
-                
+
                 // Reset button state
                 saveAssignmentBtn.disabled = false;
                 saveAssignmentBtn.innerHTML = 'Save';
-                
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Failed',
@@ -773,7 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Back to mandor list
-    backToMandorListBtn.addEventListener('click', function() {
+    backToMandorListBtn.addEventListener('click', function () {
         workerDetailView.style.display = 'none';
         mandorListView.style.display = 'block';
         selectedMandor = null;
@@ -782,17 +782,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Worker search functionality
-    workerSearchInput.addEventListener('input', function(e) {
+    workerSearchInput.addEventListener('input', function (e) {
         clearTimeout(workerSearchTimeout);
         workerSearchTimeout = setTimeout(() => {
             const searchQuery = e.target.value.trim().toLowerCase();
-            
+
             if (searchQuery === '') {
                 // Show all workers if search is empty
                 displayWorkerList(allWorkers);
             } else {
                 // Filter workers by name
-                const filteredWorkers = allWorkers.filter(worker => 
+                const filteredWorkers = allWorkers.filter(worker =>
                     worker.staff_fullname.toLowerCase().includes(searchQuery)
                 );
                 displayWorkerList(filteredWorkers);
@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Mandor search functionality
-    searchInput.addEventListener('input', function(e) {
+    searchInput.addEventListener('input', function (e) {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             fetchMandorList(e.target.value.trim());

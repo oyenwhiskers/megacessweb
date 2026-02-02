@@ -1,11 +1,11 @@
 // Leave Management - Navigation and Details Page
-(function() {
-    const API_BASE_URL = 'https://mwms.megacess.com/api/v1';
-    
+(function () {
+    const API_BASE_URL = API_URL; // Using global API_URL from config.js
+
     // ===========================
     // NAVIGATION FUNCTIONS
     // ===========================
-    
+
     // Navigate to worker leave details page
     function showWorkerLeaveModal(staffId, staffName, staffImage) {
         const params = new URLSearchParams({
@@ -16,7 +16,7 @@
         });
         window.location.href = `/pages/manage-leave-details.html?${params.toString()}`;
     }
-    
+
     // Navigate to staff leave details page
     function showStaffLeaveModal(userId, staffName, staffImage) {
         const params = new URLSearchParams({
@@ -27,51 +27,51 @@
         });
         window.location.href = `/pages/manage-leave-details.html?${params.toString()}`;
     }
-    
+
     // Expose navigation functions globally
     window.showWorkerLeaveModal = showWorkerLeaveModal;
     window.showStaffLeaveModal = showStaffLeaveModal;
-    
+
     // ===========================
     // LEAVE DETAILS PAGE LOGIC
     // ===========================
-    
+
     // Only run details page logic if we're on the details page
     if (window.location.pathname.includes('manage-leave-details')) {
-        
+
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('userId');
         const userType = urlParams.get('userType');
         const userName = urlParams.get('userName') || 'User';
         const userImage = urlParams.get('userImage') || '';
-        
+
         let filterYear = new Date().getFullYear().toString();
         let filterMonth = String(new Date().getMonth() + 1).padStart(2, '0');
         let filterType = '';
-        
+
         // Pagination state
         let currentPage = 1;
         let totalPages = 1;
         let perPage = 15;
         let totalRecords = 0;
-        
+
         // Token management
         function getAuthToken() {
-            const token = localStorage.getItem('auth_token') || 
-                         sessionStorage.getItem('auth_token') || 
-                         localStorage.getItem('authToken') ||
-                         sessionStorage.getItem('authToken');
-            
+            const token = localStorage.getItem('auth_token') ||
+                sessionStorage.getItem('auth_token') ||
+                localStorage.getItem('authToken') ||
+                sessionStorage.getItem('authToken');
+
             if (!token) {
                 console.error('No authentication token found. Please log in.');
                 window.location.href = '/pages/log-in.html';
                 return null;
             }
-            
+
             return token;
         }
-        
+
         // Initialize page
         function initializePage() {
             // Check if user data is available
@@ -86,20 +86,20 @@
                 });
                 return;
             }
-            
+
             // Set user info
             const userNameEl = document.getElementById('userName');
             const userTypeEl = document.getElementById('userType');
-            
+
             if (!userNameEl || !userTypeEl) return;
-            
+
             userNameEl.textContent = decodeURIComponent(userName);
             userTypeEl.textContent = userType === 'worker' ? 'Worker' : 'Staff Member';
-            
+
             // Set user avatar
             const avatarEl = document.getElementById('userAvatar');
             if (!avatarEl) return;
-            
+
             let cleanImageUrl = '';
             if (userImage && userImage !== 'null' && userImage !== 'undefined') {
                 cleanImageUrl = decodeURIComponent(userImage);
@@ -108,42 +108,42 @@
                 cleanImageUrl = cleanImageUrl.replace(/\.png:.*$/, '.png');
                 cleanImageUrl = cleanImageUrl.replace(/\.jpeg:.*$/, '.jpeg');
                 cleanImageUrl = cleanImageUrl.replace(/\.gif:.*$/, '.gif');
-                
+
                 if (cleanImageUrl.length < 5 || cleanImageUrl.includes('null') || cleanImageUrl.includes('undefined')) {
                     cleanImageUrl = '';
                 } else if (!cleanImageUrl.startsWith('http') && !cleanImageUrl.startsWith('/')) {
-                    cleanImageUrl = `https://mwms.megacess.com/storage/${userType === 'worker' ? 'staff-images' : 'user-images'}/${cleanImageUrl}`;
+                    cleanImageUrl = `${STORAGE_DOMAIN}/storage/${userType === 'worker' ? 'staff-images' : 'user-images'}/${cleanImageUrl}`;
                 } else if (cleanImageUrl.startsWith('/')) {
-                    cleanImageUrl = `https://mwms.megacess.com${cleanImageUrl}`;
+                    cleanImageUrl = `${STORAGE_DOMAIN}${cleanImageUrl}`;
                 }
             }
-            
+
             if (!cleanImageUrl) {
                 cleanImageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
             }
             avatarEl.src = cleanImageUrl;
-            avatarEl.onerror = function() {
+            avatarEl.onerror = function () {
                 this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
             };
-            
+
             // Populate year filter
             populateYearFilter();
-            
+
             // Set current month
             const filterMonthEl = document.getElementById('filterMonth');
             if (filterMonthEl) {
                 filterMonthEl.value = filterMonth;
             }
-            
+
             // Load leave records
             loadLeaveRecords();
-            
+
             // Event listeners
             const addLeaveBtn = document.getElementById('addLeaveBtn');
             const addLeaveForm = document.getElementById('addLeaveForm');
             const filterYearEl = document.getElementById('filterYear');
             const filterTypeEl = document.getElementById('filterType');
-            
+
             if (addLeaveBtn) addLeaveBtn.addEventListener('click', showAddLeaveModal);
             if (addLeaveForm) addLeaveForm.addEventListener('submit', handleAddLeave);
             if (filterYearEl) {
@@ -168,13 +168,13 @@
                 });
             }
         }
-        
+
         // Populate year filter
         function populateYearFilter() {
             const yearSelect = document.getElementById('filterYear');
             const currentYear = new Date().getFullYear();
             yearSelect.innerHTML = '';
-            
+
             for (let y = currentYear; y >= currentYear - 5; y--) {
                 const option = document.createElement('option');
                 option.value = y;
@@ -183,12 +183,12 @@
                 yearSelect.appendChild(option);
             }
         }
-        
+
         // Load leave records
         async function loadLeaveRecords() {
             const token = getAuthToken();
             if (!token) return;
-            
+
             const listContainer = document.getElementById('leaveRecordsList');
             if (!listContainer) return;
             listContainer.innerHTML = `
@@ -199,12 +199,12 @@
                     <p class="mt-3 text-muted">Loading leave records...</p>
                 </div>
             `;
-            
+
             try {
                 let apiEndpoint = userType === 'worker' ? 'staff-attendance' : 'user-attendance';
                 const url = new URL(`${API_BASE_URL}/${apiEndpoint}/${userId}/leaves`);
                 url.searchParams.append('month', `${filterYear}-${filterMonth}`);
-                
+
                 if (filterType) {
                     let apiType = filterType;
                     if (apiType === 'Sick Leave') apiType = 'sick_leave';
@@ -212,10 +212,10 @@
                     else if (apiType === 'Unpaid Leave') apiType = 'unpaid_leave';
                     url.searchParams.append('status', apiType);
                 }
-                
+
                 url.searchParams.append('page', currentPage);
                 url.searchParams.append('per_page', perPage);
-                
+
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
@@ -224,14 +224,14 @@
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success && result.data && Array.isArray(result.data.data)) {
                     totalRecords = result.data.total || 0;
                     currentPage = result.data.current_page || 1;
                     totalPages = result.data.last_page || 1;
-                    
+
                     renderLeaveRecords(result.data.data);
                     renderPagination();
                 } else {
@@ -243,41 +243,41 @@
                 listContainer.innerHTML = '<div class="text-center text-danger py-4">Error loading leave records.</div>';
             }
         }
-        
+
         // Render leave records
         function renderLeaveRecords(leaves) {
             const listContainer = document.getElementById('leaveRecordsList');
-            
+
             if (!leaves || leaves.length === 0) {
                 listContainer.innerHTML = '<div class="text-center text-muted py-4">No leave records found for the selected period.</div>';
                 return;
             }
-            
+
             let html = '<div class="row g-3">';
-            
+
             leaves.forEach(leave => {
                 const statusType = leave.type_of_leave || (leave.status ? leave.status.replace(/_/g, ' ') : 'Leave');
                 const date = leave.date || leave.start_date || leave.from_date || '';
                 const t = (statusType || '').toLowerCase();
-                
+
                 let color = '#6c757d';
                 let icon = '';
                 let label = statusType;
-                
-                if (t.includes('sick')) { 
-                    color = '#009dc4'; 
-                    icon = '<i class="bi bi-emoji-frown me-2"></i>'; 
-                    label = 'Sick Leave'; 
-                } else if (t.includes('annual')) { 
-                    color = '#0c4b7f'; 
-                    icon = '<i class="bi bi-calendar-heart me-2"></i>'; 
-                    label = 'Annual Leave'; 
-                } else if (t.includes('unpaid')) { 
-                    color = '#dc3545'; 
-                    icon = '<i class="bi bi-cash me-2"></i>'; 
-                    label = 'Unpaid Leave'; 
+
+                if (t.includes('sick')) {
+                    color = '#009dc4';
+                    icon = '<i class="bi bi-emoji-frown me-2"></i>';
+                    label = 'Sick Leave';
+                } else if (t.includes('annual')) {
+                    color = '#0c4b7f';
+                    icon = '<i class="bi bi-calendar-heart me-2"></i>';
+                    label = 'Annual Leave';
+                } else if (t.includes('unpaid')) {
+                    color = '#dc3545';
+                    icon = '<i class="bi bi-cash me-2"></i>';
+                    label = 'Unpaid Leave';
                 }
-                
+
                 html += `
                     <div class="col-12">
                         <div class="d-flex align-items-center" style="background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 8px solid ${color}; min-height: 70px; padding: 12px;">
@@ -294,30 +294,30 @@
                     </div>
                 `;
             });
-            
+
             html += '</div>';
             listContainer.innerHTML = html;
         }
-        
+
         // Render pagination controls
         function renderPagination() {
             const paginationContainer = document.getElementById('paginationControls');
             if (!paginationContainer) return;
-            
+
             if (totalPages <= 1) {
                 paginationContainer.innerHTML = '';
                 return;
             }
-            
+
             let html = '<div class="mt-3 text-center">';
-            
+
             // Previous button
             html += `
                 <button class="btn btn-sm btn-outline-success mx-1" ${currentPage === 1 ? 'disabled' : ''} onclick="window.goToPage(${currentPage - 1}); return false;">
                     <i class="bi bi-chevron-left"></i>
                 </button>
             `;
-            
+
             // Smart page buttons with ellipsis (max 7 buttons)
             let pages = [];
             if (totalPages <= 7) {
@@ -336,7 +336,7 @@
                     pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
                 }
             }
-            
+
             // Render page buttons
             pages.forEach((page) => {
                 if (page === '...') {
@@ -348,52 +348,52 @@
                     html += `<button class="btn btn-sm ${btnClass} mx-1" onclick="window.goToPage(${page}); return false;">${page}</button>`;
                 }
             });
-            
+
             // Next button
             html += `
                 <button class="btn btn-sm btn-outline-success mx-1" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.goToPage(${currentPage + 1}); return false;">
                     <i class="bi bi-chevron-right"></i>
                 </button>
             `;
-            
+
             html += '</div>';
-            
+
             paginationContainer.innerHTML = html;
         }
-        
+
         // Navigate to specific page
-        window.goToPage = function(page) {
+        window.goToPage = function (page) {
             if (page < 1 || page > totalPages) return;
             currentPage = page;
             loadLeaveRecords();
             document.getElementById('leaveRecordsList').scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
-        
+
         // Show add leave modal
         function showAddLeaveModal() {
             const modal = new bootstrap.Modal(document.getElementById('addLeaveModal'));
             document.getElementById('addLeaveForm').reset();
             modal.show();
         }
-        
+
         // --------------------------------------------------------------
         // ADD LEAVE FORM SUBMISSION LOGIC
         // --------------------------------------------------------------
         async function handleAddLeave(e) {
             e.preventDefault();
-            
+
             const leaveType = document.getElementById('leaveType').value;
             const fromDate = document.getElementById('leaveFromDate').value;
             const toDate = document.getElementById('leaveToDate').value;
             const notes = document.getElementById('leaveNotes').value;
-            
+
             const token = getAuthToken();
             if (!token) return;
-            
+
             try {
                 let apiEndpoint = userType === 'worker' ? 'staff-attendance' : 'user-attendance';
                 const idKey = userType === 'worker' ? 'staff_id' : 'user_id';
-                
+
                 const payload = {
                     [idKey]: userId,
                     from_date: fromDate,
@@ -401,7 +401,7 @@
                     status: leaveType,
                     notes: notes
                 };
-                
+
                 const response = await fetch(`${API_BASE_URL}/${apiEndpoint}/mark-leave`, {
                     method: 'POST',
                     headers: {
@@ -411,13 +411,13 @@
                     },
                     body: JSON.stringify(payload)
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     const modal = bootstrap.Modal.getInstance(document.getElementById('addLeaveModal'));
                     modal.hide();
-                    
+
                     await Swal.fire({
                         icon: 'success',
                         title: 'Success!',
@@ -426,7 +426,7 @@
                         timer: 2000,
                         showConfirmButton: false
                     });
-                    
+
                     currentPage = 1;
                     loadLeaveRecords();
                 } else {
@@ -447,35 +447,35 @@
                 });
             }
         }
-        
+
         // Show leave details modal
-        window.showLeaveDetails = function(leave) {
+        window.showLeaveDetails = function (leave) {
             const modal = new bootstrap.Modal(document.getElementById('viewLeaveDetailsModal'));
-            
+
             document.getElementById('detailLeaveType').textContent = leave.type_of_leave || leave.status || 'Leave';
             document.getElementById('detailCreatedBy').textContent = leave.created_by || '-';
             document.getElementById('detailCreatedAt').textContent = leave.created_at ? leave.created_at.split('T')[0] : leave.date || leave.start_date || '-';
             document.getElementById('detailStartDate').textContent = leave.start_date || leave.date || leave.from_date || '-';
             document.getElementById('detailEndDate').textContent = leave.end_date || leave.to_date || '-';
             document.getElementById('detailRemarks').textContent = leave.remarks || leave.notes || '-';
-            
+
             // Store leave ID for delete function
             const modalElement = document.getElementById('viewLeaveDetailsModal');
             if (modalElement) {
                 modalElement.dataset.leaveId = leave.id || leave.staff_attendance_id || '';
             }
-            
+
             modal.show();
         };
-        
+
         // Delete leave record function
-        window.deleteLeaveRecord = async function(leaveId) {
+        window.deleteLeaveRecord = async function (leaveId) {
             // Get leave ID from modal if not provided
             if (!leaveId) {
                 const modalElement = document.getElementById('viewLeaveDetailsModal');
                 leaveId = modalElement?.dataset?.leaveId;
             }
-            
+
             if (!leaveId) {
                 Swal.fire({
                     icon: 'error',
@@ -485,7 +485,7 @@
                 });
                 return;
             }
-            
+
             // Show confirmation dialog
             const confirmed = await Swal.fire({
                 title: 'Delete Leave Record?',
@@ -497,21 +497,21 @@
                 confirmButtonText: 'Yes, delete it!',
                 cancelButtonText: 'Cancel'
             });
-            
+
             if (!confirmed.isConfirmed) {
                 return;
             }
-            
+
             try {
                 const token = getAuthToken();
                 if (!token) return;
-                
+
                 // Determine the correct endpoint based on userType
                 // For workers: staff-attendance, for staff: user-attendance
-                const endpoint = userType === 'worker' 
+                const endpoint = userType === 'worker'
                     ? `${API_BASE_URL}/staff-attendance/${leaveId}`
                     : `${API_BASE_URL}/user-attendance/${leaveId}`;
-                
+
                 // Make DELETE request
                 const response = await fetch(endpoint, {
                     method: 'DELETE',
@@ -521,7 +521,7 @@
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 // Try to parse response
                 let result;
                 try {
@@ -529,11 +529,11 @@
                 } catch (e) {
                     result = null;
                 }
-                
+
                 if (!response.ok) {
                     // Use server's error message if available
                     let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
-                    
+
                     if (response.status === 401) {
                         errorMessage = 'Authentication failed. Please log in again.';
                         await Swal.fire({
@@ -553,17 +553,17 @@
                     } else if (response.status === 409) {
                         errorMessage = result?.message || 'Cannot delete leave record due to related records.';
                     }
-                    
+
                     throw new Error(errorMessage);
                 }
-                
+
                 // Close the modal
                 const modalElement = document.getElementById('viewLeaveDetailsModal');
                 const modalInstance = bootstrap.Modal.getInstance(modalElement);
                 if (modalInstance) {
                     modalInstance.hide();
                 }
-                
+
                 // Show success message
                 await Swal.fire({
                     icon: 'success',
@@ -573,10 +573,10 @@
                     timer: 2000,
                     timerProgressBar: true
                 });
-                
+
                 // Refresh the leave records list
                 loadLeaveRecords();
-                
+
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
@@ -586,7 +586,7 @@
                 });
             }
         };
-        
+
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializePage);
@@ -594,6 +594,6 @@
             initializePage();
         }
     }
-    
+
 })();
 

@@ -1,7 +1,7 @@
 (function () {
   const searchInput = document.getElementById('accountSearch');
   const staffView = document.getElementById('staffView');
-    // Shared variables
+  // Shared variables
   let currentRoleFilter = 'all';
   let currentSearch = '';
   let currentPage = 1;
@@ -12,7 +12,7 @@
     if (!searchTerm || !searchTerm.trim() || !text) {
       return text;
     }
-    
+
     const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escapedTerm})`, 'gi');
     return text.replace(regex, '<mark class="bg-warning text-dark">$1</mark>');
@@ -24,7 +24,7 @@
   function showLoading() {
     const loadingContainer = document.createElement('div');
     loadingContainer.className = 'list-group text-start js-status';
-    
+
     const loadingItem = document.createElement('div');
     loadingItem.className = 'list-group-item text-center py-5';
     loadingItem.innerHTML = `
@@ -33,13 +33,13 @@
       </div>
       <p class="text-muted mb-0">Loading staff list...</p>
     `;
-    
+
     loadingContainer.appendChild(loadingItem);
-    
+
     // Remove any previous status
     const prev = staffView.querySelector('.js-status');
     if (prev) prev.remove();
-    
+
     staffView.innerHTML = '';
     staffView.appendChild(loadingContainer);
   }
@@ -49,10 +49,10 @@
     // Create consistent list format for status messages
     const statusContainer = document.createElement('div');
     statusContainer.className = 'list-group text-start js-status';
-    
+
     const statusItem = document.createElement('div');
     statusItem.className = 'list-group-item text-center py-4';
-    
+
     if (type === 'danger') {
       statusItem.innerHTML = `
         <div class="alert alert-danger mb-0" role="alert">
@@ -66,13 +66,13 @@
     } else {
       statusItem.innerHTML = `<div class="text-${type}">${message}</div>`;
     }
-    
+
     statusContainer.appendChild(statusItem);
-    
+
     // remove any previous status nodes with .js-status
     const prev = staffView.querySelector('.js-status');
     if (prev) prev.remove();
-    
+
     // keep heading and note, replace content
     const heading = staffView.querySelector('h2');
     const note = staffView.querySelector('p');
@@ -88,21 +88,21 @@
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
     currentPage = page;
-    
+
     // Show loading animation immediately
     showLoading();
-    
+
     // retrieve token from localStorage / session
-    const token = localStorage.getItem('auth_token') || 
-                 sessionStorage.getItem('auth_token') || 
-                 localStorage.getItem('authToken') ||
-                 sessionStorage.getItem('authToken');
+    const token = localStorage.getItem('auth_token') ||
+      sessionStorage.getItem('auth_token') ||
+      localStorage.getItem('authToken') ||
+      sessionStorage.getItem('authToken');
     if (!token) {
       window.location.href = '/pages/log-in.html';
       return;
     }
 
-    const url = new URL("https://mwms.megacess.com/api/v1/users");
+    const url = new URL(`${API_URL}/users`);
     const params = {
       role: (role && role !== 'all') ? role : '',
       search: search || "",
@@ -180,18 +180,18 @@
     list.className = 'list-group text-start';
 
     const users = Array.isArray(payload.data) ? payload.data : (payload.users || payload || []);
-    
+
     // Update cache with current staff list
     staffListCache = users;
-    
+
     // Pagination meta from API (use directly, don't recalculate)
     const meta = payload.meta || {};
     const totalItems = meta.total || users.length;
     const totalPages = meta.last_page || 1;
-    
+
     if (!users || users.length === 0) {
-      const emptyMessage = currentSearch ? 
-        `No staff found matching "${currentSearch}".` : 
+      const emptyMessage = currentSearch ?
+        `No staff found matching "${currentSearch}".` :
         'No staff found.';
       list.innerHTML = `<div class="list-group-item text-center py-5"><div class="text-muted">${emptyMessage}</div></div>`;
     } else {
@@ -200,14 +200,14 @@
         const nick = u.user_nickname ? ` (${u.user_nickname})` : '';
         const role = u.user_role || u.role || '—';
         const staffCount = (typeof u.staff_count !== 'undefined') ? u.staff_count : 0;
-        
+
         // Apply search highlighting to staff name
         const highlightedName = highlightSearchTerm(name, currentSearch);
         const highlightedNick = nick ? ` (${highlightSearchTerm(u.user_nickname, currentSearch)})` : '';
-        
+
         // Get role badge color
         const getRoleBadgeColor = (role) => {
-          switch(role.toLowerCase()) {
+          switch (role.toLowerCase()) {
             case 'admin': return 'bg-danger';
             case 'manager': return 'bg-primary';
             case 'mandor': return 'bg-success';
@@ -215,10 +215,10 @@
             default: return 'bg-secondary';
           }
         };
-        
+
         // Set image source with fallback - generate avatar from name
         const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0d6efd&color=fff&size=128&bold=true&rounded=true`;
-        
+
         // Use staff image if exists and valid, otherwise use placeholder
         let imgSrc = placeholderImage;
         const userImage = u.user_img || u.user_image || '';
@@ -229,10 +229,10 @@
             imgSrc = imgPath;
           } else {
             // Construct full URL using API base URL
-            imgSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
+            imgSrc = `${STORAGE_DOMAIN}/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
           }
         }
-        
+
         // create item with similar structure to workers
         const item = document.createElement('div');
         item.className = 'list-group-item staff-list-item';
@@ -300,13 +300,13 @@
   let staffListCache = [];
 
   // Staff action functions - View details
-  window.viewStaffDetails = async function(staffId) {
+  window.viewStaffDetails = async function (staffId) {
     try {
       // Get authentication token
-      const token = localStorage.getItem('auth_token') || 
-                   sessionStorage.getItem('auth_token') || 
-                   localStorage.getItem('authToken') ||
-                   sessionStorage.getItem('authToken');
+      const token = localStorage.getItem('auth_token') ||
+        sessionStorage.getItem('auth_token') ||
+        localStorage.getItem('authToken') ||
+        sessionStorage.getItem('authToken');
       if (!token) {
         alert('Authentication token not found. Please log in again.');
         window.location.href = '/pages/log-in.html';
@@ -315,7 +315,7 @@
       // Show loading modal first
       showStaffDetailsModal({ loading: true });
       // Fetch staff details from API using staffId
-      const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}`, {
+      const response = await fetch(`${API_URL}/users/${staffId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -348,7 +348,7 @@
       });
     }
   };
-  
+
   // Function to display staff details in a modal
   function showStaffDetailsModal(staffData) {
     // Remove existing modal if present
@@ -360,20 +360,20 @@
       }
       existingModal.remove();
     }
-    
+
     // Remove any lingering backdrops
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => backdrop.remove());
-    
+
     // Remove modal-open class from body if no other modals are open
     if (!document.querySelector('.modal.show')) {
       document.body.classList.remove('modal-open');
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     }
-    
+
     let modalContent = '';
-    
+
     if (staffData.loading) {
       modalContent = `
         <div class="text-center py-5">
@@ -403,7 +403,7 @@
       const bankName = staffData.user_bank_name || '-';
       const bankNumber = staffData.user_bank_number || '-';
       const kwspNumber = staffData.user_kwsp_number || '-';
-      
+
       // Get image source with fallback
       const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0d6efd&color=fff&size=256&bold=true&rounded=true`;
       let imgSrc = placeholderImage;
@@ -413,10 +413,10 @@
         if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
           imgSrc = imgPath;
         } else {
-          imgSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
+          imgSrc = `${STORAGE_DOMAIN}/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
         }
       }
-      
+
       // Format date if available (convert YYYY-MM-DD to DD/MM/YYYY)
       let formattedDob = dob;
       if (dob && dob !== '-') {
@@ -429,10 +429,10 @@
           formattedDob = `${day}/${month}/${year}`;
         }
       }
-      
+
       // Format gender for display
       const genderDisplay = gender && gender !== '-' ? gender.charAt(0).toUpperCase() + gender.slice(1) : '-';
-      
+
       modalContent = `
         <div class="row">
           <div class="col-md-3 text-center mb-3 mb-md-0">
@@ -502,7 +502,7 @@
         </div>
       `;
     }
-    
+
     // Create modal HTML
     const modalHTML = `
       <div class="modal fade" id="staffDetailsModal" tabindex="-1" aria-labelledby="staffDetailsModalLabel" aria-hidden="true">
@@ -529,10 +529,10 @@
         </div>
       </div>
     `;
-    
+
     // Append modal to body
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
+
     // Show modal using Bootstrap
     const modalElement = document.getElementById('staffDetailsModal');
     const modal = new bootstrap.Modal(modalElement, {
@@ -541,7 +541,7 @@
       focus: true
     });
     modal.show();
-    
+
     // Clean up modal and backdrop when hidden
     modalElement.addEventListener('hidden.bs.modal', function () {
       // Dispose of the modal instance
@@ -549,14 +549,14 @@
       if (modalInstance) {
         modalInstance.dispose();
       }
-      
+
       // Remove modal element from DOM
       modalElement.remove();
-      
+
       // Remove any lingering backdrops
       const remainingBackdrops = document.querySelectorAll('.modal-backdrop');
       remainingBackdrops.forEach(backdrop => backdrop.remove());
-      
+
       // Ensure body classes and styles are cleaned up
       if (!document.querySelector('.modal.show')) {
         document.body.classList.remove('modal-open');
@@ -566,11 +566,11 @@
     });
   }
 
-  window.editStaff = function(staffId) {
+  window.editStaff = function (staffId) {
     // Get the current modal
     const currentModal = document.getElementById('staffDetailsModal');
     if (!currentModal) return;
-    
+
     // Switch to edit mode
     enableEditModeStaff(staffId);
   };
@@ -579,21 +579,21 @@
   function enableEditModeStaff(staffId) {
     const modal = document.getElementById('staffDetailsModal');
     if (!modal) return;
-    
+
     const modalBody = modal.querySelector('.modal-body');
     const modalFooter = modal.querySelector('.modal-footer');
-    
+
     // Get all readonly inputs
     const inputs = modalBody.querySelectorAll('input[readonly]');
-    
+
     // Convert inputs to editable
     inputs.forEach(input => {
       input.removeAttribute('readonly');
       input.classList.add('border-primary');
-      
+
       // Convert text inputs to appropriate types and add name attributes
       const label = input.previousElementSibling?.textContent || '';
-      
+
       if (label.includes('IC / Document ID')) {
         input.setAttribute('name', 'user_ic');
         input.setAttribute('required', 'required');
@@ -659,13 +659,13 @@
       } else if (label.includes('KWSP Number')) {
         input.setAttribute('name', 'user_kwsp_number');
       }
-      
+
       // Clear dash values
       if (input.value === '-') {
         input.value = '';
       }
     });
-    
+
     // Add password field in edit mode
     const lastRow = modalBody.querySelector('.row.g-2');
     // Remove password field if present
@@ -673,7 +673,7 @@
     if (passwordFieldContainer) {
       passwordFieldContainer.remove();
     }
-    
+
     // Add "Change Photo" button in edit mode
     const imageContainer = modalBody.querySelector('.col-md-3.text-center');
     if (imageContainer && !imageContainer.querySelector('#changePhotoStaffBtn')) {
@@ -682,17 +682,17 @@
       changePhotoBtn.type = 'button';
       changePhotoBtn.className = 'btn btn-sm btn-outline-primary mt-2';
       changePhotoBtn.innerHTML = '<i class="bi bi-camera"></i> Change Photo';
-      changePhotoBtn.onclick = function() {
+      changePhotoBtn.onclick = function () {
         document.getElementById('staffDetailsImageInput').click();
       };
       imageContainer.querySelector('div').appendChild(changePhotoBtn);
-      
+
       // Add image preview functionality
       const imageInput = document.getElementById('staffDetailsImageInput');
       const imagePreview = document.getElementById('staffDetailsImagePreview');
-      
+
       if (imageInput && imagePreview) {
-        imageInput.addEventListener('change', function(e) {
+        imageInput.addEventListener('change', function (e) {
           const file = e.target.files[0];
           if (file) {
             // Validate file type
@@ -701,17 +701,17 @@
               e.target.value = '';
               return;
             }
-            
+
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
               alert('Image size must be less than 5MB.');
               e.target.value = '';
               return;
             }
-            
+
             // Show preview
             const reader = new FileReader();
-            reader.onload = function(event) {
+            reader.onload = function (event) {
               imagePreview.src = event.target.result;
             };
             reader.readAsDataURL(file);
@@ -719,7 +719,7 @@
         });
       }
     }
-    
+
     // Update footer buttons
     modalFooter.innerHTML = `
       <button type="button" class="btn btn-secondary" onclick="cancelEditModeStaff(${staffId})">
@@ -732,7 +732,7 @@
   }
 
   // Function to cancel edit mode and reload view mode
-  window.cancelEditModeStaff = function(staffId) {
+  window.cancelEditModeStaff = function (staffId) {
     const modal = document.getElementById('staffDetailsModal');
     if (modal) {
       const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -740,7 +740,7 @@
         modalInstance.hide();
       }
     }
-    
+
     // Reload the view modal after a brief delay
     setTimeout(() => {
       viewStaffDetails(staffId);
@@ -748,131 +748,131 @@
   };
 
   // Update saveStaffChanges to accept event and fix button usage
-  window.saveStaffChanges = async function(staffId, event = null) {
+  window.saveStaffChanges = async function (staffId, event = null) {
     try {
-        const modal = document.getElementById('staffDetailsModal');
-        if (!modal) {
-            return;
-        }
-        const modalBody = modal.querySelector('.modal-body');
-        if (!modalBody) {
-            return;
-        }
-        // Collect all editable fields
-        const icInput = modalBody.querySelector('input[name="user_ic"]');
-        const nicknameInput = modalBody.querySelector('input[name="user_nickname"]');
-        const fullnameInput = modalBody.querySelector('input[name="user_fullname"]');
-        const phoneInput = modalBody.querySelector('input[name="user_phone"]');
-        const dobInput = modalBody.querySelector('input[name="user_dob"]');
-        const genderInput = modalBody.querySelector('select[name="user_gender"]');
-        const roleInput = modalBody.querySelector('select[name="user_role"]');
-        const bankNameInput = modalBody.querySelector('input[name="user_bank_name"]');
-        const bankNumberInput = modalBody.querySelector('input[name="user_bank_number"]');
-        const kwspNumberInput = modalBody.querySelector('input[name="user_kwsp_number"]');
-        const startDateInput = modalBody.querySelector('input[name="user_employment_start_date"]');
-        // Check if there's an image file to upload
-        const imageInput = document.getElementById('staffDetailsImageInput');
-        const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
-        // Get the save button
-        let saveButton = null;
-        if (event && event.target) {
-            saveButton = event.target;
-        } else {
-            saveButton = modal.querySelector('button[onclick*="saveStaffChanges"], .btn-primary, button[type="submit"]');
-        }
-        // Disable save button and show loading state
-        const originalButtonText = saveButton ? saveButton.innerHTML : '';
-        if (saveButton) {
-            saveButton.disabled = true;
-            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-        }
-        // Use FormData for all fields
-        const formData = new FormData();
-        if (icInput && icInput.value) formData.append('user_ic', icInput.value);
-        if (nicknameInput && nicknameInput.value) formData.append('user_nickname', nicknameInput.value);
-        if (fullnameInput && fullnameInput.value) formData.append('user_fullname', fullnameInput.value);
-        if (phoneInput && phoneInput.value) formData.append('user_phone', phoneInput.value);
-        if (dobInput && dobInput.value) formData.append('user_dob', dobInput.value);
-        if (genderInput && genderInput.value) formData.append('user_gender', genderInput.value);
-        if (roleInput && roleInput.value) formData.append('user_role', roleInput.value);
-        if (bankNameInput && bankNameInput.value) formData.append('user_bank_name', bankNameInput.value);
-        if (bankNumberInput && bankNumberInput.value) formData.append('user_bank_number', bankNumberInput.value);
-        if (kwspNumberInput && kwspNumberInput.value) formData.append('user_kwsp_number', kwspNumberInput.value);
-        if (startDateInput && startDateInput.value) formData.append('user_employment_start_date', startDateInput.value);
-        // Append image file if present
-        if (imageFile) {
-            formData.append('user_img', imageFile);
-        }
-        // Prepare headers
-        const headers = {
-            'Authorization': `Bearer ${getAuthToken()}`,
-            'Accept': 'application/json'
-            // Don't set Content-Type for FormData
-        };
-        // Make POST request to update staff (POST works better with file uploads)
-        const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}`, {
-            method: 'POST',
-            headers: headers,
-            body: formData
-        });
-        const result = await response.json();
-        if (!response.ok) {
-            const errorMessage = result.message || result.error || 'Failed to save changes.';
-            throw new Error(errorMessage);
-        }
-        if (!result.success) {
-            const errorMessage = result.message || 'Failed to save changes.';
-            throw new Error(errorMessage);
-        }
-        
-        Swal.fire({
-            icon: 'success',
-            title: 'Saved!',
-            text: 'Staff details updated successfully!',
-            confirmButtonColor: '#0d6832',
-            timer: 2000,
-            timerProgressBar: true
-        });
-        
-        const modalInstance = bootstrap.Modal.getInstance(modal);
-        if (modalInstance) {
-            modalInstance.hide();
-        }
-        setTimeout(() => {
-            fetchStaffList(currentSearch, currentRoleFilter);
-            viewStaffDetails(staffId);
-        }, 1000);
+      const modal = document.getElementById('staffDetailsModal');
+      if (!modal) {
+        return;
+      }
+      const modalBody = modal.querySelector('.modal-body');
+      if (!modalBody) {
+        return;
+      }
+      // Collect all editable fields
+      const icInput = modalBody.querySelector('input[name="user_ic"]');
+      const nicknameInput = modalBody.querySelector('input[name="user_nickname"]');
+      const fullnameInput = modalBody.querySelector('input[name="user_fullname"]');
+      const phoneInput = modalBody.querySelector('input[name="user_phone"]');
+      const dobInput = modalBody.querySelector('input[name="user_dob"]');
+      const genderInput = modalBody.querySelector('select[name="user_gender"]');
+      const roleInput = modalBody.querySelector('select[name="user_role"]');
+      const bankNameInput = modalBody.querySelector('input[name="user_bank_name"]');
+      const bankNumberInput = modalBody.querySelector('input[name="user_bank_number"]');
+      const kwspNumberInput = modalBody.querySelector('input[name="user_kwsp_number"]');
+      const startDateInput = modalBody.querySelector('input[name="user_employment_start_date"]');
+      // Check if there's an image file to upload
+      const imageInput = document.getElementById('staffDetailsImageInput');
+      const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
+      // Get the save button
+      let saveButton = null;
+      if (event && event.target) {
+        saveButton = event.target;
+      } else {
+        saveButton = modal.querySelector('button[onclick*="saveStaffChanges"], .btn-primary, button[type="submit"]');
+      }
+      // Disable save button and show loading state
+      const originalButtonText = saveButton ? saveButton.innerHTML : '';
+      if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+      }
+      // Use FormData for all fields
+      const formData = new FormData();
+      if (icInput && icInput.value) formData.append('user_ic', icInput.value);
+      if (nicknameInput && nicknameInput.value) formData.append('user_nickname', nicknameInput.value);
+      if (fullnameInput && fullnameInput.value) formData.append('user_fullname', fullnameInput.value);
+      if (phoneInput && phoneInput.value) formData.append('user_phone', phoneInput.value);
+      if (dobInput && dobInput.value) formData.append('user_dob', dobInput.value);
+      if (genderInput && genderInput.value) formData.append('user_gender', genderInput.value);
+      if (roleInput && roleInput.value) formData.append('user_role', roleInput.value);
+      if (bankNameInput && bankNameInput.value) formData.append('user_bank_name', bankNameInput.value);
+      if (bankNumberInput && bankNumberInput.value) formData.append('user_bank_number', bankNumberInput.value);
+      if (kwspNumberInput && kwspNumberInput.value) formData.append('user_kwsp_number', kwspNumberInput.value);
+      if (startDateInput && startDateInput.value) formData.append('user_employment_start_date', startDateInput.value);
+      // Append image file if present
+      if (imageFile) {
+        formData.append('user_img', imageFile);
+      }
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${getAuthToken()}`,
+        'Accept': 'application/json'
+        // Don't set Content-Type for FormData
+      };
+      // Make POST request to update staff (POST works better with file uploads)
+      const response = await fetch(`${API_URL}/users/${staffId}`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        const errorMessage = result.message || result.error || 'Failed to save changes.';
+        throw new Error(errorMessage);
+      }
+      if (!result.success) {
+        const errorMessage = result.message || 'Failed to save changes.';
+        throw new Error(errorMessage);
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Saved!',
+        text: 'Staff details updated successfully!',
+        confirmButtonColor: '#0d6832',
+        timer: 2000,
+        timerProgressBar: true
+      });
+
+      const modalInstance = bootstrap.Modal.getInstance(modal);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+      setTimeout(() => {
+        fetchStaffList(currentSearch, currentRoleFilter);
+        viewStaffDetails(staffId);
+      }, 1000);
     } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Save Failed',
-            text: error.message || 'Failed to save changes. Please try again.',
-            confirmButtonColor: '#dc3545'
-        });
-        const modal = document.getElementById('staffDetailsModal');
-        if (modal) {
-            const saveButton = modal.querySelector('button[onclick*="saveStaffChanges"], .btn-primary, button[type="submit"]');
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
-            }
+      Swal.fire({
+        icon: 'error',
+        title: 'Save Failed',
+        text: error.message || 'Failed to save changes. Please try again.',
+        confirmButtonColor: '#dc3545'
+      });
+      const modal = document.getElementById('staffDetailsModal');
+      if (modal) {
+        const saveButton = modal.querySelector('button[onclick*="saveStaffChanges"], .btn-primary, button[type="submit"]');
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.innerHTML = '<i class="bi bi-save me-1"></i>Save Changes';
         }
+      }
     }
   };
 
   // Helper function to get auth token
   function getAuthToken() {
-    return localStorage.getItem('auth_token') || 
-           sessionStorage.getItem('auth_token') || 
-           localStorage.getItem('authToken') ||
-           sessionStorage.getItem('authToken');
+    return localStorage.getItem('auth_token') ||
+      sessionStorage.getItem('auth_token') ||
+      localStorage.getItem('authToken') ||
+      sessionStorage.getItem('authToken');
   }
 
-  window.deleteStaff = async function(staffId) {
+  window.deleteStaff = async function (staffId) {
     // Find staff member details for confirmation message
     const staffMember = staffListCache.find(s => (s.id || s.user_id) === staffId);
     const staffName = staffMember ? (staffMember.user_fullname || staffMember.name || 'this staff member') : 'this staff member';
-    
+
     // Show confirmation dialog with SweetAlert
     const confirmed = await Swal.fire({
       title: 'Delete Staff?',
@@ -884,17 +884,17 @@
       confirmButtonText: 'Yes, delete it!',
       cancelButtonText: 'Cancel'
     });
-    
+
     if (!confirmed.isConfirmed) {
       return; // User cancelled
     }
-    
+
     try {
-      const token = localStorage.getItem('auth_token') || 
-                   sessionStorage.getItem('auth_token') || 
-                   localStorage.getItem('authToken') ||
-                   sessionStorage.getItem('authToken');
-      
+      const token = localStorage.getItem('auth_token') ||
+        sessionStorage.getItem('auth_token') ||
+        localStorage.getItem('authToken') ||
+        sessionStorage.getItem('authToken');
+
       if (!token) {
         await Swal.fire({
           icon: 'error',
@@ -905,9 +905,9 @@
         window.location.href = '/pages/log-in.html';
         return;
       }
-      
+
       // Make DELETE request
-      const response = await fetch(`https://mwms.megacess.com/api/v1/users/${staffId}`, {
+      const response = await fetch(`${API_URL}/users/${staffId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -915,7 +915,7 @@
           'Accept': 'application/json'
         }
       });
-      
+
       // Try to parse the response body first to get server error messages
       let result;
       try {
@@ -923,11 +923,11 @@
       } catch (e) {
         result = null;
       }
-      
+
       if (!response.ok) {
         // Use server's error message if available
         let errorMessage = result?.message || result?.error || `HTTP ${response.status}: ${response.statusText}`;
-        
+
         if (response.status === 401) {
           errorMessage = 'Authentication failed. Please log in again.';
           await Swal.fire({
@@ -947,10 +947,10 @@
         } else if (response.status === 409) {
           errorMessage = result?.message || 'Cannot delete staff. This staff member may have related records.';
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       // Show success message
       await Swal.fire({
         icon: 'success',
@@ -960,10 +960,10 @@
         timer: 2000,
         timerProgressBar: true
       });
-      
+
       // Refresh the staff list
       fetchStaffList(currentSearch, currentRoleFilter);
-      
+
     } catch (error) {
       Swal.fire({
         icon: 'error',
@@ -984,7 +984,7 @@
   }
 
   // Auto-load staff when the script is loaded
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     if (document.body.dataset.page === 'manage-account') {
       const staffTabActive = document.getElementById('staffView') && !document.getElementById('staffView').classList.contains('d-none');
       if (staffTabActive) {
@@ -994,7 +994,7 @@
   });
 
   // Add Reset Password modal logic
-  window.showResetPasswordModal = function(staffId) {
+  window.showResetPasswordModal = function (staffId) {
     // Remove existing modal if present
     const existingModal = document.getElementById('resetPasswordModal');
     if (existingModal) {
@@ -1051,7 +1051,7 @@
     // Password visibility toggle logic
     const newPasswordInput = modal.querySelector('#newPassword');
     const toggleNewPasswordBtn = modal.querySelector('#toggleNewPassword');
-    toggleNewPasswordBtn.addEventListener('click', function() {
+    toggleNewPasswordBtn.addEventListener('click', function () {
       if (newPasswordInput.type === 'password') {
         newPasswordInput.type = 'text';
         toggleNewPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
@@ -1062,7 +1062,7 @@
     });
     const confirmPasswordInput = modal.querySelector('#confirmPassword');
     const toggleConfirmPasswordBtn = modal.querySelector('#toggleConfirmPassword');
-    toggleConfirmPasswordBtn.addEventListener('click', function() {
+    toggleConfirmPasswordBtn.addEventListener('click', function () {
       if (confirmPasswordInput.type === 'password') {
         confirmPasswordInput.type = 'text';
         toggleConfirmPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
@@ -1072,7 +1072,7 @@
       }
     });
     // Handle form submit
-    modal.querySelector('#resetPasswordForm').onsubmit = async function(e) {
+    modal.querySelector('#resetPasswordForm').onsubmit = async function (e) {
       e.preventDefault();
       const password = modal.querySelector('#newPassword').value;
       const passwordConfirmation = modal.querySelector('#confirmPassword').value;
@@ -1107,7 +1107,7 @@
         submitBtn.innerHTML = '<i class="bi bi-check2-square"></i> Reset Password';
         return;
       }
-      const url = new URL(`https://mwms.megacess.com/api/v1/users/${staffId}/change-password`);
+      const url = new URL(`${API_URL}/users/${staffId}/change-password`);
       const headers = {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -1136,7 +1136,7 @@
         Swal.fire({
           icon: 'success',
           title: 'Password Reset',
-          text: 'Password reset successfully!', 
+          text: 'Password reset successfully!',
           confirmButtonColor: '#0d6832',
           timer: 2000,
           timerProgressBar: true

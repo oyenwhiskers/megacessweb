@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const workerTab = document.getElementById('workerTab');
   const staffTab = document.getElementById('staffTab');
   const advanceList = document.querySelector('.advance-list');
@@ -11,10 +11,10 @@ document.addEventListener('DOMContentLoaded', function() {
   let perPage = 5;
 
   // Helper: get token - expose globally for use in HTML
-  window.getAuthToken = function() {
+  window.getAuthToken = function () {
     return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
   };
-  
+
   // Use global function internally
   function getAuthToken() {
     return window.getAuthToken();
@@ -32,29 +32,29 @@ document.addEventListener('DOMContentLoaded', function() {
       const phone = item.phone || '';
       const role = type === 'worker' ? 'Worker' : (item.type === 'user' ? 'Staff' : 'Worker');
       let avatar = '';
-      
+
       // Handle image
       if (item.img) {
         let imageUrl = item.img;
         if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
-          imageUrl = `https://mwms.megacess.com/storage/user-images/${imageUrl}`;
+          imageUrl = `${STORAGE_DOMAIN}/storage/user-images/${imageUrl}`;
         } else if (imageUrl.startsWith('/')) {
-          imageUrl = `https://mwms.megacess.com${imageUrl}`;
+          imageUrl = `${STORAGE_DOMAIN}${imageUrl}`;
         }
         avatar = `<img src='${imageUrl}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
       } else {
         avatar = `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bi bi-person text-white" style="font-size:2.5rem;"></i></div>`;
       }
-      
+
       // Use person id for View button
       const personId = item.id;
       const personType = item.type || (type === 'worker' ? 'staff' : 'user');
-      
+
       // Format currency
       const formatCurrency = (amount) => {
         return parseFloat(amount || 0).toFixed(2);
       };
-      
+
       return `
         <div class="advance-card d-flex align-items-center justify-content-between border rounded mb-3 p-3" style="background:#fff;">
           <div class="d-flex align-items-center gap-3 flex-grow-1">
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Use correct type for API - staff tab shows users, worker tab shows staff
     const type = currentType === 'staff' ? 'user' : 'staff';
     const search = searchInput.value.trim();
-    let url = `https://mwms.megacess.com/api/v1/advances?type=${type}`;
+    let url = `${API_URL}/advances?type=${type}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (currentRole) url += `&role=${encodeURIComponent(currentRole)}`;
     url += `&per_page=${perPage}&page=${currentPage}`;
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (paginationWrapper) {
         paginationWrapper.innerHTML = '';
       }
-      
+
       advanceList.innerHTML = `<div class='text-center py-5'><div class='spinner-border text-success'></div></div>`;
       const res = await fetch(url, {
         method: 'GET',
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Attach event listeners to View buttons
   function attachViewButtonHandlers() {
     document.querySelectorAll('.view-advance-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function () {
         const personId = this.getAttribute('data-id');
         const personType = this.getAttribute('data-type');
         if (!personId || !personType) {
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Patch renderAdvances to attach handlers after rendering
   const origRenderAdvances = renderAdvances;
-  renderAdvances = function(data, type) {
+  renderAdvances = function (data, type) {
     origRenderAdvances(data, type);
     attachViewButtonHandlers();
   }
@@ -269,14 +269,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!token) {
       console.error('Not authenticated');
       Swal.fire({
-            icon: 'warning',
-            title: 'Not authenticated',
-            text: 'Please fill in all fields and select a worker/staff.',
-            confirmButtonColor: '#0d6832'
-          });
+        icon: 'warning',
+        title: 'Not authenticated',
+        text: 'Please fill in all fields and select a worker/staff.',
+        confirmButtonColor: '#0d6832'
+      });
       return { success: false, message: 'Not authenticated' };
     }
-    const url = 'https://mwms.megacess.com/api/v1/advances';
+    const url = `${API_URL}/advances`;
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Example: Attach handler to Add Advance form/button
   const addAdvanceForm = document.getElementById('addAdvanceForm');
   if (addAdvanceForm) {
-    addAdvanceForm.addEventListener('submit', async function(e) {
+    addAdvanceForm.addEventListener('submit', async function (e) {
       e.preventDefault();
       // Collect form data (adjust field names as needed)
       const formData = new FormData(addAdvanceForm);
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Tab switching
-  workerTab.addEventListener('click', function() {
+  workerTab.addEventListener('click', function () {
     workerTab.classList.remove('btn-light', 'border');
     workerTab.classList.add('btn-success');
     workerTab.style.background = '#11634b';
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
     currentPage = 1;
     fetchAdvances();
   });
-  staffTab.addEventListener('click', function() {
+  staffTab.addEventListener('click', function () {
     staffTab.classList.remove('btn-light', 'border');
     staffTab.classList.add('btn-success');
     staffTab.style.background = '#11634b';
@@ -359,13 +359,13 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Search
-  searchInput.addEventListener('input', function() {
+  searchInput.addEventListener('input', function () {
     currentPage = 1;
     fetchAdvances();
   });
 
   // Listen for refresh event from add advance modal
-  window.addEventListener('refreshAdvanceList', function() {
+  window.addEventListener('refreshAdvanceList', function () {
     fetchAdvances();
   });
 
