@@ -1738,7 +1738,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         // View payslip in new tab
                         const isUser = currentPayslipWorkerData && !!currentPayslipWorkerData.user_fullname;
                         const type = isUser ? 'user' : 'staff';
-                        const url = `https://mwms.megacess.com/payslips/${type}/${payslipId}`;
+                        const url = `${STORAGE_DOMAIN}/payslips/${type}/${payslipId}`;
                         window.open(url, '_blank');
                     }
                 }
@@ -1853,7 +1853,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // View payslip in new tab
                     const isUser = currentPayslipWorkerData && !!currentPayslipWorkerData.user_fullname;
                     const type = isUser ? 'user' : 'staff';
-                    const url = `https://mwms.megacess.com/payslips/${type}/${payslipId}`;
+                    const url = `${STORAGE_DOMAIN}/payslips/${type}/${payslipId}`;
                     window.open(url, '_blank');
                 }
             }

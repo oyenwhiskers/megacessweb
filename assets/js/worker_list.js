@@ -206,13 +206,18 @@
         let imageSrc = placeholderImage;
         if (worker.staff_img && worker.staff_img.trim() !== '') {
             const imgPath = worker.staff_img.trim();
+            console.log('Worker ID:', worker.id, 'Raw image path:', imgPath);
+
             // Check if it's a full URL or relative path
             if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
                 imageSrc = imgPath;
             } else {
                 // Construct full URL using API base URL
-                imageSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
+                imageSrc = `${STORAGE_DOMAIN}/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
             }
+            // Add cache-busting timestamp to force reload
+            imageSrc += `?t=${Date.now()}`;
+            console.log('→ Constructed URL:', imageSrc);
         }
 
         // Determine active/inactive status - check multiple possible field names and formats
@@ -595,8 +600,10 @@
                     imageSrc = imgPath;
                 } else {
                     // Construct full URL using API base URL
-                    imageSrc = `https://mwms.megacess.com/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
+                    imageSrc = `${STORAGE_DOMAIN}/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
                 }
+                // Add cache-busting timestamp to force reload after upload
+                imageSrc += `?t=${Date.now()}`;
             }
 
             // Format date for input field (YYYY-MM-DD to DD/MM/YYYY)
@@ -1000,6 +1007,20 @@
                 // Don't set Content-Type for FormData - browser will set it automatically with boundary
             };
 
+            // DEBUG: Log request details
+            console.log('=== Worker Edit Debug ===');
+            console.log('Worker ID:', workerId);
+            console.log('API URL:', `${API_BASE_URL}/staff/${workerId}`);
+            console.log('Token:', getAuthToken()?.substring(0, 20) + '...');
+            console.log('Has image file:', imageFile ? 'YES' : 'NO');
+            if (imageFile) {
+                console.log('Image:', imageFile.name, imageFile.size, 'bytes');
+            }
+            console.log('FormData fields:');
+            for (let pair of formData.entries()) {
+                console.log(' -', pair[0], '=', pair[1] instanceof File ? `[File: ${pair[1].name}]` : pair[1]);
+            }
+
             // Make POST request to update worker (POST works better with file uploads)
             const response = await fetch(`${API_BASE_URL}/staff/${workerId}`, {
                 method: 'POST',
@@ -1008,16 +1029,39 @@
             });
 
             // Parse response
-            const result = await response.json();
+            console.log('Response status:', response.status, response.statusText);
+
+            let result;
+            try {
+                result = await response.json();
+                console.log('Response data:', result);
+            } catch (e) {
+                console.error('Failed to parse JSON response:', e);
+                result = { message: 'Invalid response from server' };
+            }
 
             if (!response.ok) {
+                // Log detailed error info
+                console.error('API Error:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    result: result
+                });
+
                 // Handle API error response
-                const errorMessage = result.message || result.error || 'Failed to save changes.';
-                Swals.fire({
+                const errorMessage = result.message || result.error || `Failed to save changes (${response.status}).`;
+                Swal.fire({
                     icon: 'error',
                     title: 'Save Failed',
                     text: errorMessage,
-                    confirmButtonColor: '#dc3545'
+                    confirmButtonColor: '#dc3545',
+                    html: `
+                        <div style="text-align: left;">
+                            <p><strong>Error:</strong> ${errorMessage}</p>
+                            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                            ${result.errors ? `<p><strong>Details:</strong> ${JSON.stringify(result.errors)}</p>` : ''}
+                        </div>
+                    `
                 });
                 return;
             }
@@ -1025,7 +1069,7 @@
             if (!result.success) {
                 // Handle non-success response
                 const errorMessage = result.message || 'Failed to save changes.';
-                Swals.fire({
+                Swal.fire({
                     icon: 'error',
                     title: 'Save Failed',
                     text: errorMessage,

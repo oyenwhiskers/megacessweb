@@ -231,6 +231,8 @@
             // Construct full URL using API base URL
             imgSrc = `${STORAGE_DOMAIN}/${imgPath.startsWith('/') ? imgPath.substring(1) : imgPath}`;
           }
+          // Add cache-busting timestamp
+          imgSrc += `?t=${Date.now()}`;
         }
 
         // create item with similar structure to workers

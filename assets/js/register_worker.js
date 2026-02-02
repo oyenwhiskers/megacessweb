@@ -186,18 +186,56 @@
             const imageInput = document.getElementById('workerProfileImageInput');
             const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
 
-            // Format data for API
-            const apiData = formatFormDataForAPI(formData, imageFile);
+            // Use FormData to handle both regular fields and file upload
+            const formDataPayload = new FormData();
 
-            // Make API request
+            // Append all text fields
+            formDataPayload.append('staff_fullname', formData.fullname?.trim() || '');
+            formDataPayload.append('staff_phone', formData.phone?.trim() || '');
+            formDataPayload.append('staff_dob', formData.dob || '');
+            formDataPayload.append('staff_gender', formData.gender || '');
+            formDataPayload.append('staff_doc', formData.staff_doc?.trim() || '');
+
+            if (formData.staff_employment_start_date) {
+                formDataPayload.append('staff_employment_start_date', formData.staff_employment_start_date);
+            }
+            if (formData.banktype?.trim()) {
+                formDataPayload.append('staff_bank_name', formData.banktype.trim());
+            }
+            if (formData.bankaccount?.trim()) {
+                formDataPayload.append('staff_bank_number', formData.bankaccount.trim());
+            }
+            if (formData.kwsp?.trim()) {
+                formDataPayload.append('staff_kwsp_number', formData.kwsp.trim());
+            }
+
+            // Append image file if present
+            if (imageFile) {
+                formDataPayload.append('staff_img', imageFile);
+            }
+
+            // DEBUG: Log request details
+            console.log('=== Worker Registration Debug ===');
+            console.log('API URL:', `${API_BASE_URL}/staff/register`);
+            console.log('Token:', getAuthToken()?.substring(0, 20) + '...');
+            console.log('Has image:', !!imageFile);
+            if (imageFile) {
+                console.log('Image:', imageFile.name, imageFile.size, 'bytes');
+            }
+            console.log('FormData fields:');
+            for (let pair of formDataPayload.entries()) {
+                console.log(' -', pair[0], '=', pair[1] instanceof File ? `[File: ${pair[1].name}]` : pair[1]);
+            }
+
+            // Make API request with FormData
             const response = await fetch(`${API_BASE_URL}/staff/register`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${getAuthToken()}`,
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
+                    // Don't set Content-Type - browser will set it with boundary for FormData
                 },
-                body: JSON.stringify(apiData)
+                body: formDataPayload
             });
 
             const result = await response.json();
@@ -212,7 +250,7 @@
                         "confirmButtonText": "Log in now."
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = "/assets/pages/log-in.html"
+                            window.location.href = "../assets/pages/log-in.html"
                         }
                     });
                 } else if (response.status === 403) {

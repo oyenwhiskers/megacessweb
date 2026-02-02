@@ -16,7 +16,7 @@
             sessionStorage.getItem('authToken');
 
         if (!token) {
-            window.location.href = '/pages/log-in.html';
+            window.location.href = '../pages/log-in.html';
             return null;
         }
 
@@ -206,17 +206,55 @@
             const imageInput = document.getElementById('staffProfileImageInput');
             const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
 
-            // Format data for API
-            const apiData = formatFormDataForAPI(formData, imageFile);
+            // Use FormData to handle both regular fields and file upload
+            const formDataPayload = new FormData();
 
-            // Make API request
+            // Append all text fields
+            formDataPayload.append('user_nickname', formData.nickname?.trim() || '');
+            formDataPayload.append('user_fullname', formData.fullname?.trim() || '');
+            formDataPayload.append('password', formData.password?.trim() || '');
+            formDataPayload.append('user_role', formData.role || '');
+            formDataPayload.append('user_gender', formData.gender || '');
+            formDataPayload.append('user_dob', formData.dob || '');
+            formDataPayload.append('user_phone', formData.phone?.trim() || '');
+            formDataPayload.append('user_ic', formData.ic?.trim() || '');
+            formDataPayload.append('user_employment_start_date', formData.user_employment_start_date || '');
+
+            if (formData.banktype?.trim()) {
+                formDataPayload.append('user_bank_name', formData.banktype.trim());
+            }
+            if (formData.bankaccount?.trim()) {
+                formDataPayload.append('user_bank_number', formData.bankaccount.trim());
+            }
+            if (formData.kwsp?.trim()) {
+                formDataPayload.append('user_kwsp_number', formData.kwsp.trim());
+            }
+
+            // Append image file if present
+            if (imageFile) {
+                formDataPayload.append('user_img', imageFile);
+            }
+
+            // DEBUG: Log request details
+            console.log('=== Staff Registration Debug ===');
+            console.log('API URL:', `${API_BASE_URL}/auth/register`);
+            console.log('Has image:', !!imageFile);
+            if (imageFile) {
+                console.log('Image:', imageFile.name, imageFile.size, 'bytes');
+            }
+            console.log('FormData fields:');
+            for (let pair of formDataPayload.entries()) {
+                console.log(' -', pair[0], '=', pair[1] instanceof File ? `[File: ${pair[1].name}]` : pair[1]);
+            }
+
+            // Make API request with FormData
             const response = await fetch(`${API_BASE_URL}/auth/register`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
+                    // Don't set Content-Type - browser will set it with boundary for FormData
                 },
-                body: JSON.stringify(apiData)
+                body: formDataPayload
             });
 
             const result = await response.json();

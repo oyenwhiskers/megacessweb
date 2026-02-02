@@ -1,7 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Backend summary page URL
-    const SUMMARY_PAGE_URL = 'https://mwms.megacess.com/summary';
-    
+    const SUMMARY_PAGE_URL = `${STORAGE_DOMAIN}/summary`;
+
     const monthFilter = document.getElementById('monthFilter');
     const yearFilter = document.getElementById('yearFilter');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
@@ -13,11 +13,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeYearDropdown() {
         const currentYear = new Date().getFullYear();
         const years = [];
-        
+
         for (let i = -3; i <= 1; i++) {
             years.push(currentYear + i);
         }
-        
+
         yearFilter.innerHTML = years
             .map(year => `<option value="${year}">${year}</option>`)
             .join('');
@@ -33,11 +33,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function getInitialDateParams() {
         const urlParams = new URLSearchParams(window.location.search);
         const now = new Date();
-        
+
         // Check URL params first
         let month = urlParams.get('month');
         let year = urlParams.get('year');
-        
+
         // If no URL params, check localStorage for last selection
         if (!month || !year) {
             const lastSelection = localStorage.getItem('lastSummarySelection');
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-        
+
         // Final fallback to current month/year
         return {
             month: parseInt(month) || (now.getMonth() + 1),
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Construct the summary URL with query parameters
             const summaryUrl = `${SUMMARY_PAGE_URL}?month=${month}&year=${year}`;
-            
+
             // Create iframe with the backend summary page
             summaryContent.innerHTML = `
                 <div class="card shadow-sm">
@@ -128,25 +128,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Apply filter button
-    applyFilterBtn.addEventListener('click', function() {
+    applyFilterBtn.addEventListener('click', function () {
         const month = parseInt(monthFilter.value);
         const year = parseInt(yearFilter.value);
         loadSummary(month, year);
     });
 
     // Reset to current month button
-    resetFilterBtn.addEventListener('click', function() {
+    resetFilterBtn.addEventListener('click', function () {
         const now = new Date();
         const month = now.getMonth() + 1;
         const year = now.getFullYear();
-        
+
         monthFilter.value = month;
         yearFilter.value = year;
         loadSummary(month, year);
     });
 
     // Handle browser back/forward
-    window.addEventListener('popstate', function(event) {
+    window.addEventListener('popstate', function (event) {
         if (event.state) {
             monthFilter.value = event.state.month;
             yearFilter.value = event.state.year;
@@ -155,13 +155,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Allow Enter key to trigger filter
-    monthFilter.addEventListener('keypress', function(e) {
+    monthFilter.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             applyFilterBtn.click();
         }
     });
 
-    yearFilter.addEventListener('keypress', function(e) {
+    yearFilter.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             applyFilterBtn.click();
         }
@@ -169,11 +169,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize on page load
     initializeYearDropdown();
-    
+
     const initialParams = getInitialDateParams();
     monthFilter.value = initialParams.month;
     yearFilter.value = initialParams.year;
-    
+
     // Auto-load summary for initial month/year
     loadSummary(initialParams.month, initialParams.year);
 });
