@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (imageUrl.startsWith('/')) {
           imageUrl = `${STORAGE_DOMAIN}${imageUrl}`;
         }
-        avatar = `<img src='${imageUrl}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
+        avatar = `<img loading="lazy" src='${imageUrl}' class='rounded-circle' style='width:60px;height:60px;object-fit:cover;' alt='${name}'>`;
       } else {
         avatar = `<div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="bi bi-person text-white" style="font-size:2.5rem;"></i></div>`;
       }
@@ -178,18 +178,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Fetch advances from API
   async function fetchAdvances() {
-    const token = getAuthToken();
-    if (!token) {
-      advanceList.innerHTML = `<div class='text-center text-danger py-5'>Not authenticated. Please log in.</div>`;
-      return;
-    }
     // Use correct type for API - staff tab shows users, worker tab shows staff
     const type = currentType === 'staff' ? 'user' : 'staff';
     const search = searchInput.value.trim();
-    let url = `${API_URL}/advances?type=${type}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    if (currentRole) url += `&role=${encodeURIComponent(currentRole)}`;
-    url += `&per_page=${perPage}&page=${currentPage}`;
+
+    const params = new URLSearchParams();
+    params.append('type', type);
+    if (search) params.append('search', search);
+    if (currentRole) params.append('role', currentRole);
+    params.append('per_page', perPage);
+    params.append('page', currentPage);
+
     try {
       // Clear pagination during loading
       const paginationWrapper = document.getElementById('advancePaginationWrapper');
@@ -198,16 +197,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       advanceList.innerHTML = `<div class='text-center py-5'><div class='spinner-border text-success'></div></div>`;
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
+
+      const result = await apiFetch(`/advances?${params.toString()}`);
+
+      if (result.success) {
         renderAdvances(result.data, currentType);
         // Store pagination metadata - check both meta and pagination objects
         if (result.meta) {
@@ -251,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
         // Navigate to view advance details page
-        window.location.href = `/pages/view-advance-details.html?type=${encodeURIComponent(personType)}&id=${encodeURIComponent(personId)}`;
+        window.location.href = `../pages/view-advance-details.html?type=${encodeURIComponent(personType)}&id=${encodeURIComponent(personId)}`;
       });
     });
   }

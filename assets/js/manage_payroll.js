@@ -352,7 +352,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const startItem = (currentPage - 1) * itemsPerPage + 1;
         const endItem = Math.min(currentPage * itemsPerPage, totalItems);
         const itemType = workerTab.classList.contains('btn-success') ? 'workers' : 'staff';
-        paginationInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} ${itemType}`;
+        const paginationText = `Showing ${startItem} - ${endItem} of ${totalItems} ${itemType}`;
+
+        // Update both pagination info elements
+        paginationInfo.textContent = paginationText;
+        const paginationInfoHeader = document.getElementById('paginationInfoHeader');
+        if (paginationInfoHeader) {
+            paginationInfoHeader.textContent = paginationText;
+        }
 
         // Generate pagination controls
         let paginationHTML = '';
@@ -448,7 +455,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const avatarImage = workerImage
-            ? `<img src="${workerImage}" alt="${worker.staff_fullname}" class="rounded-circle" 
+            ? `<img loading="lazy" src="${workerImage}" alt="${worker.staff_fullname}" class="rounded-circle" 
                     style="width: 50px; height: 50px; object-fit: cover;" 
                     onerror="this.outerHTML='<div class=&quot;bg-dark rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>';">`
             : `<div class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
@@ -515,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const avatarImage = staffImage
-            ? `<img src="${staffImage}" alt="${staff.user_fullname}" class="rounded-circle" 
+            ? `<img loading="lazy" src="${staffImage}" alt="${staff.user_fullname}" class="rounded-circle" 
                     style="width: 50px; height: 50px; object-fit: cover;" 
                     onerror="this.outerHTML='<div class=&quot;bg-primary rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>'">`
             : `<div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
@@ -569,7 +576,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const staffContainer = document.querySelector('#staffList .col-12');
                 staffContainer.innerHTML = `
                     <div class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status">
+                        <div class="spinner-border text-success" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                         <p class="mt-2 text-muted">Loading staff...</p>
@@ -710,13 +717,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const searchLabel = document.querySelector('label[for="searchInput"]');
         if (searchLabel) searchLabel.textContent = 'Search worker name:';
         searchInput.placeholder = 'Enter worker name...';
-        document.querySelector('.row.mb-2 p.list-title').textContent = 'List of existing worker:';
+        const listTitle = document.querySelector('p.list-title');
+        if (listTitle) listTitle.textContent = 'List of existing worker:';
 
         // Reset pagination state
         currentPage = 1;
         totalPages = 0;
         totalItems = 0;
         const searchTerm = searchInput.value.trim();
+
+        // Immediately hide pagination while loading
+        updatePagination();
 
         // Use client-side pagination if we have data, otherwise fetch from API
         if (allWorkersData.length > 0) {
@@ -746,13 +757,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const searchLabel = document.querySelector('label[for="searchInput"]');
         if (searchLabel) searchLabel.textContent = 'Search staff name:';
         searchInput.placeholder = 'Enter staff name...';
-        document.querySelector('.row.mb-2 p.list-title').textContent = 'List of existing staff:';
+        const listTitle = document.querySelector('p.list-title');
+        if (listTitle) listTitle.textContent = 'List of existing staff:';
 
         // Reset pagination state
         currentPage = 1;
         totalPages = 0;
         totalItems = 0;
         const searchTerm = searchInput.value.trim();
+
+        // Immediately hide pagination while loading
+        updatePagination();
 
         // Use client-side pagination if we have data, otherwise fetch from API
         if (allStaffData.length > 0) {
@@ -1299,7 +1314,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!taskBreakdownContentEl) return;
         taskBreakdownContentEl.innerHTML = `
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-success" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <p class="text-muted mt-2 mb-0">Fetching task breakdown...</p>
@@ -2173,9 +2188,9 @@ document.addEventListener('DOMContentLoaded', function () {
         roleFilterContainer.style.display = 'none';
     }
 
-    // Fetch both worker and staff data on initial load
+    // Fetch only workers on initial load (default visible tab)
+    // Staff data will be lazy-loaded when user clicks the Staff tab
     fetchWorkers('', 1);
-    fetchStaff('', 1, 'all');
 
     // Initialize role filter state
     setActiveRoleFilter('all');

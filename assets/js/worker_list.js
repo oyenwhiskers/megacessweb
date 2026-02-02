@@ -242,7 +242,7 @@
             <div class="list-group-item worker-list-item ${claimedStatus}" style="${inactiveStyle}">
                 <div class="d-flex align-items-center">
                     <div style="width:48px;height:48px;flex:0 0 48px;">
-                        <img src="${imageSrc}" 
+                        <img loading="lazy" src="${imageSrc}" 
                              alt="${userName}" 
                              class="rounded-circle" 
                              style="width:48px;height:48px;object-fit:cover;background:#6c757d;" 
@@ -625,7 +625,7 @@
                 <div class="row">
                     <div class="col-md-3 text-center mb-3 mb-md-0">
                         <div style="border:2px solid #dee2e6; border-radius:8px; padding:10px; display:inline-block; background:#f8f9fa;">
-                            <img id="workerDetailsImagePreview" src="${imageSrc}" 
+                            <img loading="lazy" id="workerDetailsImagePreview" src="${imageSrc}" 
                                  alt="${userName}" 
                                  style="width:120px; height:120px; object-fit:cover; border-radius:8px;"
                                  onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">

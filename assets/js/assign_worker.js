@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const profileImage = imageUrl
-                    ? `<img src="${imageUrl}" 
+                    ? `<img loading="lazy" src="${imageUrl}" 
                             alt="${mandor.user_fullname}" 
                             class="rounded-circle" 
                             style="width: 60px; height: 60px; object-fit: cover;"
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const profileImage = imageUrl
-                    ? `<img src="${imageUrl}" 
+                    ? `<img loading="lazy" src="${imageUrl}" 
                             alt="${worker.staff_fullname}" 
                             class="rounded-circle" 
                             style="width: 60px; height: 60px; object-fit: cover;"

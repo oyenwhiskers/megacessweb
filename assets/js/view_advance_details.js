@@ -55,30 +55,14 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
-    const token = getAuthToken();
-    if (!token) {
-      showError('Not authenticated. Please log in again.');
-      return;
-    }
-
     try {
       loadingSpinner.classList.remove('d-none');
       contentArea.classList.add('d-none');
       errorMessage.classList.add('d-none');
 
-      const url = `${API_URL}/advances/${type}/${id}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+      const result = await apiFetch(`/advances/${type}/${id}`);
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (result.success) {
         displayAdvanceDetails(result.data);
       } else {
         showError(result.message || 'Failed to load advance details.');

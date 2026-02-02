@@ -241,7 +241,7 @@
         item.innerHTML = `
           <div class="d-flex align-items-center">
             <div style="width:48px;height:48px;flex:0 0 48px;">
-              <img src="${imgSrc}" 
+              <img loading="lazy" src="${imgSrc}" 
                    alt="${name}" 
                    class="rounded-circle" 
                    style="width:48px;height:48px;object-fit:cover;background:#6c757d;" 

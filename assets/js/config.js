@@ -27,7 +27,7 @@ const API_URL = API_URLS[ENV];
 const BASE_DOMAIN = DOMAIN_URLS[ENV];
 
 // Log current environment (helpful for debugging)
-console.log(`🌍 Environment: ${ENV.toUpperCase()} | API: ${API_URL} | Storage: ${STORAGE_DOMAIN}`);
+console.log(` Environment: ${ENV.toUpperCase()} | API: ${API_URL} | Storage: ${STORAGE_DOMAIN}`);
 
 // Validate environment configuration
 if (!API_URL || !BASE_DOMAIN) {

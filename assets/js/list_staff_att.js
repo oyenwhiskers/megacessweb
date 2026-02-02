@@ -164,7 +164,7 @@
                 <div class="list-group-item staff-attendance-item">
                     <div class="d-flex align-items-center">
                         <div style="width:50px;height:50px;flex:0 0 50px;">
-                            <img src="${imgSrc}" 
+                            <img loading="lazy" src="${imgSrc}" 
                                  alt="${userName}" 
                                  class="rounded-circle" 
                                  style="width:50px;height:50px;object-fit:cover" 
