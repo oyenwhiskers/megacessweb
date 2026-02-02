@@ -13,7 +13,7 @@ $(document).ready(function () {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = "/pages/log-in.html"
+        window.location.href = "../pages/log-in.html"
       }
     });
     return;
@@ -112,11 +112,10 @@ $(document).ready(function () {
             timerProgressBar: true,
             showConfirmButton: false
           }).then(() => {
-            window.location.href = "/pages/manage-payment-rate.html?employee=worker&type=salary";
+            window.location.href = "../pages/manage-payment-rate.html?employee=worker&type=salary";
           });
         },
         error: function (xhr) {
-          console.error("Failed to update base salary:", xhr.responseText);
           Swal.fire({
             icon: "error",
             text: "Failed to update base salary. Please try again.",

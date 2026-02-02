@@ -23,7 +23,7 @@ async function getPaymentRates() {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = "/pages/log-in.html"
+        window.location.href = "../pages/log-in.html"
       }
     });
     return;
@@ -41,7 +41,7 @@ async function getPaymentRates() {
   $('#workSection .task-editor .card-body').html('<div class="text-center py-5"><div class="skeleton skeleton-text mx-auto" style="width: 80%; height: 200px;"></div></div>');
 
   try {
-    const res = await fetch(API_URL, {
+    const res = await fetch(PAYMENT_RATES_API_URL, {
       headers: {
         "Authorization": `Bearer ${token}`,
         "Accept": "application/json",
@@ -508,14 +508,14 @@ async function updatePaymentRate(id, bodyData) {
       confirmButtonText: "Log in now."
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = "/pages/log-in.html"
+        window.location.href = "../pages/log-in.html"
       }
     });
     return;
   }
 
   try {
-    const res = await fetch(`${API_URL}/${id}`, {
+    const res = await fetch(`${PAYMENT_RATES_API_URL}/${id}`, {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${token}`,

@@ -153,7 +153,7 @@ $(document).ready(function () {
               <small class="text-muted d-block">Base Salary: <strong>${workerBaseSalary}</strong></small>
             </div>
             <div class="d-flex flex-column ms-auto">
-              <a href="/pages/manage-payment-rate-edit-salary-worker.html?id=${encodeURIComponent(workerId)}" 
+              <a href="../pages/manage-payment-rate-edit-salary-worker.html?id=${encodeURIComponent(workerId)}" 
                  class="btn btn-sm btn-outline-success" title="Edit base salary">
                  <i class="bi bi-pencil-fill"></i>
               </a>

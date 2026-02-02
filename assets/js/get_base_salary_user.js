@@ -112,12 +112,18 @@ $(document).ready(function () {
             timerProgressBar: true,
             showConfirmButton: false
           }).then(() => {
-            window.location.href = "/pages/manage-payment-rate.html?employee=staff&type=salary";
+            window.location.href = "../pages/manage-payment-rate.html?employee=staff&type=salary";
           });
         },
         error: function (xhr) {
-          console.error("Failed to update base salary:", xhr.responseText);
-          alert("Failed to update base salary. Please try again.");
+          Swal.fire({
+            icon: "error",
+            title: "Error!",
+            text: "Failed to update base salary. Please try again.",
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false
+          });
           $("#saveSalaryBtn").prop("disabled", false).text("Save Changes");
         }
       });
