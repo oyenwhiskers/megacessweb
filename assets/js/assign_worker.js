@@ -1,3 +1,10 @@
+// API Endpoint Constants
+const USERS_API_URL = `${API_URL}/users`;
+const STAFF_API_URL = `${API_URL}/staff`;
+const STAFF_MY_STAFF_API_URL = `${API_URL}/staff/my-staff`;
+const STAFF_CLAIM_API_URL = `${API_URL}/staff/claim`;
+const STAFF_UNCLAIM_API_URL = `${API_URL}/staff`;
+
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('searchInput');
     const mandorListContainer = document.getElementById('mandorList');
@@ -54,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-        const url = new URL(`${API_URL}/users`);
+        const url = new URL(USERS_API_URL);
         url.searchParams.append('role', 'mandor');
         if (searchQuery) {
             url.searchParams.append('search', searchQuery);
@@ -71,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => {
                 if (response.status === 401) {
                     localStorage.removeItem('token');
-                    window.location.href = '/pages/log-in.html';
+                    window.location.href = '../pages/log-in.html';
                     return;
                 }
                 return response.json();
@@ -116,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Handle image URL - prepend base URL if path is relative
                 let imageUrl = mandor.user_img;
                 if (imageUrl && !imageUrl.startsWith('http')) {
-                    imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+                    imageUrl = `${STORAGE_DOMAIN}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
                 }
 
                 const profileImage = imageUrl
@@ -264,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-        const url = new URL(`${API_URL}/staff/my-staff`);
+        const url = new URL(STAFF_MY_STAFF_API_URL);
         url.searchParams.append('user_id', mandorId);
 
         fetch(url, {
@@ -333,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Handle image URL - prepend base URL if path is relative
                 let imageUrl = worker.staff_img;
                 if (imageUrl && !imageUrl.startsWith('http')) {
-                    imageUrl = `https://mwms.megacess.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+                    imageUrl = `${STORAGE_DOMAIN}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
                 }
 
                 const profileImage = imageUrl
@@ -396,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (result.isConfirmed) {
                             btn.disabled = true;
                             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Removing...';
-                            fetch(`${API_URL}/staff/${staffId}/unclaim`, {
+                            fetch(`${STAFF_UNCLAIM_API_URL}/${staffId}/unclaim`, {
                                 method: 'DELETE',
                                 headers: {
                                     'Authorization': `Bearer ${token}`,
@@ -605,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-        const url = new URL(`${API_URL}/staff`);
+        const url = new URL(STAFF_API_URL);
         url.searchParams.append('claimed', '0');
 
         fetch(url, {
@@ -706,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Create array of promises for all assignments
         const assignmentPromises = selectedWorkerIds.map(staffId => {
-            return fetch(`${API_URL}/staff/claim`, {
+            return fetch(STAFF_CLAIM_API_URL, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
