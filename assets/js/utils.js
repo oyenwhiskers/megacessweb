@@ -21,7 +21,7 @@ async function apiFetch(path, options = {}) {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers: {
         Authorization: `Bearer ${token}`,

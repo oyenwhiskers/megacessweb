@@ -174,9 +174,8 @@ function renderToolPagination(current, last) {
 
   let html = "";
   const prevDisabled = current <= 1 ? "disabled" : "";
-  html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${
-    current - 1
-  }">Previous</a></li>`;
+  html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current - 1
+    }">Previous</a></li>`;
 
   const maxButtons = 5;
   let start = Math.max(1, current - 2);
@@ -185,15 +184,13 @@ function renderToolPagination(current, last) {
   if (end - start < maxButtons) start = Math.max(1, end - maxButtons + 1);
 
   for (let i = start; i <= end; i++) {
-    html += `<li class="page-item ${
-      i === current ? "active" : ""
-    }"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    html += `<li class="page-item ${i === current ? "active" : ""
+      }"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
   }
 
   const nextDisabled = current >= last ? "disabled" : "";
-  html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${
-    current + 1
-  }">Next</a></li>`;
+  html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current + 1
+    }">Next</a></li>`;
 
   container.innerHTML = html;
 
