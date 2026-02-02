@@ -301,17 +301,19 @@
             const token = getAuthToken();
             if (!token) return null;
 
-            // Use GET method as per API documentation
+            // Use POST method as per backend route configuration
             const url = new URL(`${API_BASE_URL}/attendance/check`);
-            url.searchParams.append('date', dateString);
 
             const response = await fetch(url, {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
-                }
+                },
+                body: JSON.stringify({
+                    date: dateString
+                })
             });
 
             if (!response.ok) {
