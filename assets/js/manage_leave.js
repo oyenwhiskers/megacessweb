@@ -14,7 +14,7 @@
             userName: encodeURIComponent(staffName || 'Worker'),
             userImage: encodeURIComponent(staffImage || '')
         });
-        window.location.href = `/pages/manage-leave-details.html?${params.toString()}`;
+        window.location.href = `../pages/manage-leave-details.html?${params.toString()}`;
     }
 
     // Navigate to staff leave details page
@@ -25,7 +25,7 @@
             userName: encodeURIComponent(staffName || 'Staff Member'),
             userImage: encodeURIComponent(staffImage || '')
         });
-        window.location.href = `/pages/manage-leave-details.html?${params.toString()}`;
+        window.location.href = `../pages/manage-leave-details.html?${params.toString()}`;
     }
 
     // Expose navigation functions globally
@@ -65,7 +65,7 @@
 
             if (!token) {
                 console.error('No authentication token found. Please log in.');
-                window.location.href = '/pages/log-in.html';
+                window.location.href = '../pages/log-in.html';
                 return null;
             }
 
@@ -82,7 +82,7 @@
                     text: 'Missing user information. Redirecting back...',
                     confirmButtonColor: '#dc3545'
                 }).then(() => {
-                    window.location.href = '/pages/manage-attendance.html';
+                    window.location.href = '../pages/manage-attendance.html';
                 });
                 return;
             }
