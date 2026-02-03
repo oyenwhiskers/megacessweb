@@ -105,7 +105,7 @@
         if (window.loadSidebar) {
           window.loadSidebar();
         }
-        var redirectTo = (data && data.redirect) ? data.redirect : '/index.html';
+        var redirectTo = (data && data.redirect) ? data.redirect : '../index.html';
         window.location.href = redirectTo;
         return;
       }
