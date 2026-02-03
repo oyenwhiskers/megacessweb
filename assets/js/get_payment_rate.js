@@ -448,7 +448,7 @@ function collectFormData(taskId) {
     }
 
     const category = {
-      id: original.id ?? null,
+    id: original.id ?? null,
       payment_rate_id: taskId,
       category_name: catName,
       category_key: catKey,
