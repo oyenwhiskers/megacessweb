@@ -285,47 +285,7 @@
         `;
     }
 
-    // Create pagination HTML
-    function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch) {
-        // Always show pagination bar, even if only 1 page
-        let paginationHTML = `
-            <nav aria-label="Worker list pagination" class="mt-4">
-                <ul class="pagination justify-content-center" style="background:#effaf3; border-radius:8px; padding:8px 16px;">
-        `;
-        // Previous button
-        paginationHTML += `
-            <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
-                <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchWorkersList('${currentSearch}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-            </li>
-        `;
-        // Only show one page button if totalPages === 1
-        if (totalPages === 1) {
-            paginationHTML += `
-                <li class="page-item active">
-                    <button class="page-link" style="background:#0d6832;color:#fff;border:none;">1</button>
-                </li>
-            `;
-        } else {
-            for (let i = 1; i <= totalPages; i++) {
-                paginationHTML += `
-                    <li class="page-item${i === currentPage ? ' active' : ''}">
-                        <button class="page-link" style="${i === currentPage ? 'background:#0d6832;color:#fff;border:none;' : 'background:transparent; border:none; color:#0d6832;'}" onclick="fetchWorkersList('${currentSearch}', ${i})">${i}</button>
-                    </li>
-                `;
-            }
-        }
-        // Next button
-        paginationHTML += `
-            <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
-                <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchWorkersList('${currentSearch}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-            </li>
-        `;
-        paginationHTML += `
-                </ul>
-            </nav>
-        `;
-        return paginationHTML;
-    }
+
 
     // Show loading state
     function showLoading() {
@@ -383,50 +343,14 @@
             currentSearch = search;
             currentPage = page;
 
-            // Build API URL - fetch ALL workers (we'll handle pagination client-side)
-            const url = new URL(`${API_BASE_URL}/staff`);
-
-            // Add query parameters - fetch large number to get all workers
-            const params = {
-                per_page: '1000', // Fetch all workers at once
-                page: '1',
-                role: 'worker' // Only fetch workers, not staff with other roles
-            };
-
-            // Add search parameter if provided
-            if (search && search.trim()) {
-                params.search = search.trim();
+            let endpoint = `/staff?page=${page}&per_page=${DEFAULT_PER_PAGE}`;
+            if (search) {
+                endpoint += `&search=${encodeURIComponent(search)}`;
             }
 
-            Object.keys(params).forEach(key => {
-                url.searchParams.append(key, params[key]);
-            });
+            // Cache for 5 minutes
+            const result = await apiFetchWithCache(endpoint, { method: 'GET' }, 5 * 60 * 1000);
 
-            // Make API request
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${getAuthToken()}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Authentication failed. Please log in again.');
-                } else if (response.status === 403) {
-                    throw new Error('Access denied. You do not have permission to view workers.');
-                } else if (response.status === 429) {
-                    throw new Error('Too many requests. Please wait a moment and try again.');
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-            }
-
-            const result = await response.json();
-
-            // Check if we have data
             if (!result.data || !Array.isArray(result.data)) {
                 throw new Error('Invalid response format');
             }
@@ -460,26 +384,27 @@
             });
 
             // Combine: active workers first, then inactive workers
-            const sortedWorkers = [...activeWorkers, ...inactiveWorkers];
+            // Note: This only sorts the *current page* of workers since we use server-side pagination.
+            const workersOnPage = [...activeWorkers, ...inactiveWorkers];
 
-            // Calculate client-side pagination
-            const totalWorkers = sortedWorkers.length;
-            const totalPages = Math.ceil(totalWorkers / DEFAULT_PER_PAGE);
-            const startIndex = (page - 1) * DEFAULT_PER_PAGE;
-            const endIndex = startIndex + DEFAULT_PER_PAGE;
-            const workersOnPage = sortedWorkers.slice(startIndex, endIndex);
+            // Get pagination info from API metadata
+            const meta = result.meta || {};
+            const totalWorkers = meta.total || workersOnPage.length;
+            const totalPages = meta.last_page || Math.ceil(totalWorkers / DEFAULT_PER_PAGE);
 
             // Render workers in list format
-            let workersHTML = `
+            workersView.innerHTML = `
                 <div class="list-group text-start">
                     ${workersOnPage.map(worker => createWorkerListItem(worker)).join('')}
                 </div>
+                <div id="workerPaginationContainer"></div>
             `;
 
-            // Add pagination
-            workersHTML += createPaginationHTML(page, totalPages, totalWorkers, search);
-
-            workersView.innerHTML = workersHTML;
+            // Render standardized pagination
+            renderPagination('workerPaginationContainer', {
+                current_page: page,
+                last_page: totalPages
+            }, (newPage) => fetchWorkersList(currentSearch, newPage));
 
         } catch (error) {
             showError(error.message || 'Failed to load workers. Please try again.', search);

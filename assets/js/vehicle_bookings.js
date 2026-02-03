@@ -110,7 +110,12 @@ async function getAllVehicleBookings({
     params.append("page", page);
     params.append("per_page", per_page);
 
-    const result = await apiFetch(`/vehicle-bookings?${params.toString()}`);
+    // Cache for 5 minutes
+    const result = await apiFetchWithCache(
+      `/vehicle-bookings?${params.toString()}`,
+      { method: 'GET' },
+      5 * 60 * 1000
+    );
 
     if (loading) loading.style.display = "none";
 
@@ -224,51 +229,23 @@ function populateVehicleBookingTable(bookings) {
 // ==================== PAGINATION ====================
 
 // Update pagination controls
+// Update pagination controls
 function updateBookingPaginationControls(meta) {
   bookingPaginationState = {
     ...bookingPaginationState,
     currentPage: meta.current_page,
     lastPage: meta.last_page,
   };
-  renderBookingPagination(meta.current_page, meta.last_page);
-}
 
-// Render pagination controls
-function renderBookingPagination(current, last) {
-  const container = document.getElementById("vehicleBookingPagination");
-  if (!container) return;
-
-  let html = "";
-  const prevDisabled = current <= 1 ? "disabled" : "";
-  html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current - 1
-    }">Previous</a></li>`;
-
-  // Simple pagination logic (show all or limited range logic here)
-  for (let i = 1; i <= last; i++) {
-    if (i === 1 || i === last || (i >= current - 2 && i <= current + 2)) {
-      html += `<li class="page-item ${i === current ? "active" : ""
-        }"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    } else if (html.slice(-4) !== "... ") {
-      // Add ellipsis
-    }
-  }
-
-  const nextDisabled = current >= last ? "disabled" : "";
-  html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current + 1
-    }">Next</a></li>`;
-
-  container.innerHTML = html;
-
-  container.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      const page = parseInt(e.target.dataset.page);
-      if (page && page !== current && page > 0 && page <= last) {
-        getAllVehicleBookings({ ...bookingPaginationState, page });
-      }
-    });
+  // Render standardized pagination
+  renderPagination('vehicleBookingPagination', meta, (newPage) => {
+    const search = document.getElementById("vehicleBookingSearch")?.value || "";
+    const filter = document.getElementById("vehicleBookingFilter")?.value || "";
+    getAllVehicleBookings(search, filter, newPage);
   });
 }
+
+
 
 // ==================== CRUD OPERATIONS ====================
 

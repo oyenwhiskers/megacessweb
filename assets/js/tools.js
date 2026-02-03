@@ -61,7 +61,8 @@ async function getAllSpareParts({ search = "", status = "", page = 1 } = {}) {
       per_page: sparePartsState.perPage,
     });
 
-    const result = await apiFetch(`/tools?${queryParams.toString()}`);
+    // Cache for 5 minutes
+    const result = await apiFetchWithCache(`/tools?${queryParams.toString()}`, { method: 'GET' }, 5 * 60 * 1000);
     loading.style.display = "none";
 
     if (result.data && result.data.length > 0) {
@@ -142,46 +143,18 @@ document.getElementById("toolsTableBody").addEventListener("click", (e) => {
 function updateToolPaginationControls(meta) {
   sparePartsState.lastPage = meta.last_page;
   sparePartsState.total = meta.total;
-  renderToolPagination(meta.current_page, meta.last_page);
-}
 
-function renderToolPagination(current, last) {
-  const container = document.getElementById("toolPagination");
-  if (!container) return;
-
-  let html = "";
-  const prevDisabled = current <= 1 ? "disabled" : "";
-  html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current - 1
-    }">Previous</a></li>`;
-
-  const maxButtons = 5;
-  let start = Math.max(1, current - 2);
-  let end = Math.min(last, start + maxButtons - 1);
-
-  if (end - start < maxButtons) start = Math.max(1, end - maxButtons + 1);
-
-  for (let i = start; i <= end; i++) {
-    html += `<li class="page-item ${i === current ? "active" : ""
-      }"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-  }
-
-  const nextDisabled = current >= last ? "disabled" : "";
-  html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current + 1
-    }">Next</a></li>`;
-
-  container.innerHTML = html;
-
-  container.querySelectorAll("a.page-link").forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      const page = parseInt(e.target.dataset.page);
-      if (page && page !== current && page > 0 && page <= last) {
-        getAllSpareParts({ ...sparePartsState, page });
-        window.scrollTo(0, 0);
-      }
-    });
+  // Render standardized pagination
+  renderPagination('toolPagination', {
+    current_page: meta.current_page,
+    last_page: meta.last_page
+  }, (newPage) => {
+    const search = document.getElementById("searchTools")?.value || "";
+    getAllSpareParts(search, newPage);
   });
 }
+
+
 
 // ==================== ANALYTICS ====================
 

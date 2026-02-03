@@ -31,9 +31,10 @@ async function getAllFuelUsages({
   params.append("per_page", per_page);
 
   try {
-    const result = await apiFetch(`/fuel-usages?${params.toString()}`, {
+    // Cache for 5 minutes
+    const result = await apiFetchWithCache(`/fuel-usages?${params.toString()}`, {
       method: "GET",
-    });
+    }, 5 * 60 * 1000);
 
     if (loading) loading.style.display = "none";
 
@@ -192,62 +193,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ==================== Render Pagination ====================
 function renderFuelUsagePagination(meta, search, filter) {
-  const container = document.getElementById("fuelUsagePagination");
-  if (!container) return;
-  container.innerHTML = "";
-
-  if (!meta || !meta.last_page) return; // Allow single page to show if needed, but usually we hide if 0 pages
-
-  const current = meta.current_page || 1;
-  const last = meta.last_page || 1;
-
-  // Always show pagination even if 1 page (as per user preference in other modules)
-
-  const createPageItem = (page, text, isActive = false, isDisabled = false) => {
-    const li = document.createElement("li");
-    li.className = `page-item ${isActive ? "active" : ""} ${isDisabled ? "disabled" : ""
-      }`;
-    li.innerHTML = `<a class="page-link" href="#">${text}</a>`;
-    if (!isDisabled && !isActive) {
-      li.addEventListener("click", (e) => {
-        e.preventDefault();
-        getAllFuelUsages({ search, usageFilter: filter, page: page });
-      });
-    }
-    return li;
-  };
-
-  // Previous
-  container.appendChild(
-    createPageItem(current - 1, "Previous", false, current <= 1)
-  );
-
-  // Page Numbers
-  let pages = [];
-  if (last <= 7) {
-    pages = Array.from({ length: last }, (_, i) => i + 1);
-  } else {
-    if (current <= 4) {
-      pages = [1, 2, 3, 4, 5, "...", last];
-    } else if (current >= last - 3) {
-      pages = [1, "...", last - 4, last - 3, last - 2, last - 1, last];
-    } else {
-      pages = [1, "...", current - 1, current, current + 1, "...", last];
-    }
-  }
-
-  pages.forEach((p) => {
-    if (p === "...") {
-      container.appendChild(createPageItem(null, "...", false, true));
-    } else {
-      container.appendChild(createPageItem(p, p, p === current));
-    }
+  // Render standardized pagination
+  renderPagination('fuelUsagePagination', {
+    current_page: meta.current_page,
+    last_page: meta.last_page
+  }, (newPage) => {
+    getAllFuelUsages({ search, usageFilter: filter, page: newPage });
   });
-
-  // Next
-  container.appendChild(
-    createPageItem(current + 1, "Next", false, current >= last)
-  );
 }
 
 // ==================== Create Usage ====================

@@ -92,45 +92,17 @@
     // Show loading animation immediately
     showLoading();
 
-    // retrieve token from localStorage / session
-    const token = localStorage.getItem('auth_token') ||
-      sessionStorage.getItem('auth_token') ||
-      localStorage.getItem('authToken') ||
-      sessionStorage.getItem('authToken');
-    if (!token) {
-      window.location.href = '/pages/log-in.html';
-      return;
+    let endpoint = `/users?page=${page}&per_page=${DEFAULT_PER_PAGE}`;
+    if (role && role !== 'all') {
+      endpoint += `&role=${encodeURIComponent(role)}`;
+    }
+    if (search) {
+      endpoint += `&search=${encodeURIComponent(search)}`;
     }
 
-    const url = new URL(`${API_URL}/users`);
-    const params = {
-      role: (role && role !== 'all') ? role : '',
-      search: search || "",
-      per_page: DEFAULT_PER_PAGE.toString(),
-      page: page.toString(),
-    };
-    Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
-
-    const headers = {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/json",
-    };
-
     try {
-      const res = await fetch(url.toString(), { method: "GET", headers });
-
-      if (res.status === 401) {
-        // unauthorized
-        showStatus('Unauthorized (401). Please login again or refresh your token.', 'danger');
-        return;
-      }
-
-      if (!res.ok) {
-        showStatus(`Failed to load staff list (${res.status})`, 'danger');
-        return;
-      }
-
-      const data = await res.json();
+      // Cache for 5 minutes
+      const data = await apiFetchWithCache(endpoint, { method: 'GET' }, 5 * 60 * 1000);
       renderStaff(data, role);
     } catch (err) {
       showStatus('Network or server error while loading staff list.', 'danger');
@@ -138,38 +110,7 @@
     }
   }
 
-  function createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentRole) {
-    if (totalPages <= 1) return '';
-    let paginationHTML = `
-      <nav aria-label="Staff list pagination" class="mt-4">
-        <ul class="pagination justify-content-center" style="background:#effaf3; border-radius:8px; padding:8px 16px;">
-    `;
-    // Previous button
-    paginationHTML += `
-      <li class="page-item${currentPage === 1 ? ' disabled' : ''}">
-        <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-      </li>
-    `;
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-      paginationHTML += `
-        <li class="page-item${i === currentPage ? ' active' : ''}">
-          <button class="page-link" style="${i === currentPage ? 'background:#0d6832;color:#fff;border:none;' : 'background:transparent; border:none; color:#0d6832;'}" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${i})">${i}</button>
-        </li>
-      `;
-    }
-    // Next button
-    paginationHTML += `
-      <li class="page-item${currentPage === totalPages ? ' disabled' : ''}">
-        <button class="page-link" style="background:transparent; border:none; color:#0d6832;" onclick="fetchStaffList('${currentSearch}', '${currentRole}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-      </li>
-    `;
-    paginationHTML += `
-        </ul>
-      </nav>
-    `;
-    return paginationHTML;
-  }
+
 
   function renderStaff(payload, roleFilter) {
     // remove any previous status nodes
@@ -179,13 +120,32 @@
     const list = document.createElement('div');
     list.className = 'list-group text-start';
 
-    const users = Array.isArray(payload.data) ? payload.data : (payload.users || payload || []);
+    console.log('[Debug] renderStaff payload:', payload); // Debug log
+
+    let users = [];
+    let meta = {};
+
+    // Robust data extraction
+    if (payload.data && Array.isArray(payload.data)) {
+      // Standard structure: { data: [...], meta: ... }
+      users = payload.data;
+      meta = payload.meta || {};
+    } else if (payload.data && payload.data.data && Array.isArray(payload.data.data)) {
+      // Nested pagination: { data: { data: [...], ... } }
+      users = payload.data.data;
+      meta = payload.data;
+    } else if (Array.isArray(payload)) {
+      // Direct array
+      users = payload;
+    } else if (payload.users && Array.isArray(payload.users)) {
+      // Legacy/Alternative key
+      users = payload.users;
+    }
 
     // Update cache with current staff list
     staffListCache = users;
 
-    // Pagination meta from API (use directly, don't recalculate)
-    const meta = payload.meta || {};
+    // Pagination meta extraction
     const totalItems = meta.total || users.length;
     const totalPages = meta.last_page || 1;
 
@@ -282,8 +242,7 @@
         `;
         list.appendChild(item);
       });
-      // Add pagination below the list
-      list.innerHTML += createPaginationHTML(currentPage, totalPages, totalItems, currentSearch, currentRoleFilter);
+
     }
 
     // keep heading and replace remaining contents
@@ -293,6 +252,19 @@
     if (heading) staffView.appendChild(heading);
     if (note) staffView.appendChild(note);
     staffView.appendChild(list);
+
+    // Create and append pagination container
+    if (users && users.length > 0) {
+      const paginationContainer = document.createElement('div');
+      paginationContainer.id = 'staffPaginationContainer';
+      staffView.appendChild(paginationContainer);
+
+      // Render standardized pagination
+      renderPagination(paginationContainer, {
+        current_page: currentPage,
+        last_page: totalPages
+      }, (newPage) => fetchStaffList(currentSearch, currentRoleFilter, newPage));
+    }
   }
 
   // expose function globally so page script can call when staff tab is selected

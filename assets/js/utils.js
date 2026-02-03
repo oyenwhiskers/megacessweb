@@ -56,18 +56,26 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes default TTL
  * @returns {Promise<any>} - JSON response
  */
 async function apiFetchWithCache(path, options = {}, ttl = CACHE_TTL) {
+  // Check for forceRefresh flag
+  const forceRefresh = options.forceRefresh || false;
+
+  // Clean options for fetch (remove custom flags)
+  const fetchOptions = { ...options };
+  delete fetchOptions.forceRefresh;
+
   // Only cache GET requests
-  const method = options.method ? options.method.toUpperCase() : 'GET';
+  const method = fetchOptions.method ? fetchOptions.method.toUpperCase() : 'GET';
   if (method !== 'GET') {
-    return apiFetch(path, options);
+    return apiFetch(path, fetchOptions);
   }
 
-  const cacheKey = `${path}_${JSON.stringify(options)}`;
-  const cached = apiCache.get(cacheKey);
+  const cacheKey = `${path}_${JSON.stringify(fetchOptions)}`;
 
-  if (cached && Date.now() - cached.timestamp < ttl) {
-    // console.log(`[Cache Hit] ${path}`);
-    return cached.data;
+  if (!forceRefresh) {
+    const cached = apiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < ttl) {
+      return cached.data;
+    }
   }
 
   // console.log(`[Cache Miss] ${path}`);
@@ -350,4 +358,93 @@ function initServerDropdown(
       dropdownEl.style.display = "none";
     }
   });
+}
+
+/**
+ * Renders a standardized pagination with ellipsis support (Vanilla JS).
+ * Match design from manage-payment-rate.html
+ * @param {HTMLElement|string} container - The DOM element or ID to render into.
+ * @param {object} meta - Pagination metadata ({ current_page, last_page }).
+ * @param {function} onPageChange - Callback function(newPage) when a page is clicked.
+ */
+function renderPagination(container, meta, onPageChange) {
+  const target = typeof container === 'string' ? document.getElementById(container) : container;
+  if (!target) return;
+
+  // Clear previous content
+  target.innerHTML = '';
+
+  // Normalize metadata properties
+  const currentPage = parseInt(meta.current_page || meta.currentPage || 1);
+  const lastPage = parseInt(meta.last_page || meta.lastPage || 1);
+
+  // Always show pagination if it's explicitly requested (e.g. by passing meta),
+  // but standard usually hides if single page. However user said "standardize".
+  // The reference impl hides if lastPage <= 1.
+  if (lastPage <= 1) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'mt-4 text-center';
+
+  // Helper to create button
+  const createBtn = (content, page, isActive = false, isDisabled = false, isEllipsis = false) => {
+    const btn = document.createElement('button');
+
+    if (isEllipsis) {
+      btn.className = 'btn btn-sm btn-outline-success mx-1 disabled';
+      btn.textContent = '...';
+      btn.disabled = true;
+      return btn;
+    }
+
+    btn.className = `btn btn-sm mx-1 ${isActive ? 'btn-success' : 'btn-outline-success'}`;
+    btn.innerHTML = content;
+
+    if (isDisabled) {
+      btn.disabled = true;
+    } else if (!isActive) {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        onPageChange(page);
+      });
+    }
+
+    return btn;
+  };
+
+  // Previous Button
+  wrapper.appendChild(createBtn('<i class="bi bi-chevron-left"></i>', currentPage - 1, false, currentPage === 1));
+
+  // Page Numbers Logic (Ellipsis)
+  let pages = [];
+  if (lastPage <= 7) {
+    // Show all if 7 or fewer
+    pages = Array.from({ length: lastPage }, (_, i) => i + 1);
+  } else {
+    // Smart ellipsis
+    if (currentPage <= 4) {
+      // Near start: [1] [2] [3] [4] [5] [...] [last]
+      pages = [1, 2, 3, 4, 5, '...', lastPage];
+    } else if (currentPage >= lastPage - 3) {
+      // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+      pages = [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
+    } else {
+      // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+      pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
+    }
+  }
+
+  // Render Page Buttons
+  pages.forEach(p => {
+    if (p === '...') {
+      wrapper.appendChild(createBtn(null, null, false, true, true));
+    } else {
+      wrapper.appendChild(createBtn(p, p, p === currentPage));
+    }
+  });
+
+  // Next Button
+  wrapper.appendChild(createBtn('<i class="bi bi-chevron-right"></i>', currentPage + 1, false, currentPage === lastPage));
+
+  target.appendChild(wrapper);
 }

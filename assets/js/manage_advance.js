@@ -96,84 +96,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Remove existing pagination
     const existingPagination = document.getElementById('advancePagination');
     if (existingPagination) existingPagination.remove();
-
-    if (lastPage <= 1) return;
-
-    const paginationContainer = document.createElement('div');
-    paginationContainer.id = 'advancePagination';
-    paginationContainer.className = 'mt-3 text-center';
-
-    // Previous button
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'btn btn-sm btn-success mx-1';
-    prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.addEventListener('click', () => {
-      currentPage--;
-      fetchAdvances();
-    });
-    paginationContainer.appendChild(prevBtn);
-
-    // Smart page buttons with ellipsis (max 7 buttons)
-    let pages = [];
-    if (lastPage <= 7) {
-      // Show all pages if 7 or fewer
-      pages = Array.from({ length: lastPage }, (_, i) => i + 1);
-    } else {
-      // Smart ellipsis logic
-      if (currentPage <= 4) {
-        // Near start: [1] [2] [3] [4] [5] [...] [last]
-        pages = [1, 2, 3, 4, 5, '...', lastPage];
-      } else if (currentPage >= lastPage - 3) {
-        // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
-        pages = [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
-      } else {
-        // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
-        pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
-      }
-    }
-
-    // Render page buttons
-    pages.forEach((page) => {
-      if (page === '...') {
-        // Ellipsis (non-clickable)
-        const ellipsis = document.createElement('button');
-        ellipsis.className = 'btn btn-sm btn-success mx-1';
-        ellipsis.disabled = true;
-        ellipsis.textContent = '...';
-        ellipsis.style.cursor = 'default';
-        paginationContainer.appendChild(ellipsis);
-      } else {
-        // Page button
-        const pageBtn = document.createElement('button');
-        pageBtn.className = 'btn btn-sm mx-1';
-        pageBtn.classList.add(page === currentPage ? 'btn-success' : 'btn-outline-success');
-        pageBtn.textContent = page;
-        pageBtn.addEventListener('click', () => {
-          currentPage = page;
-          fetchAdvances();
-        });
-        paginationContainer.appendChild(pageBtn);
-      }
-    });
-
-    // Next button
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn btn-sm btn-success mx-1';
-    nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
-    nextBtn.disabled = currentPage === lastPage;
-    nextBtn.addEventListener('click', () => {
-      currentPage++;
-      fetchAdvances();
-    });
-    paginationContainer.appendChild(nextBtn);
-
-    // Append pagination to the wrapper div
-    const paginationWrapper = document.getElementById('advancePaginationWrapper');
-    if (paginationWrapper) {
-      paginationWrapper.innerHTML = '';
-      paginationWrapper.appendChild(paginationContainer);
-    }
   }
 
   // Fetch advances from API
@@ -190,18 +112,19 @@ document.addEventListener('DOMContentLoaded', function () {
     params.append('page', currentPage);
 
     try {
-      // Clear pagination during loading
+      advanceList.innerHTML = `<div class='text-center py-5'><div class='spinner-border text-success'></div></div>`;
+
       const paginationWrapper = document.getElementById('advancePaginationWrapper');
       if (paginationWrapper) {
         paginationWrapper.innerHTML = '';
       }
 
-      advanceList.innerHTML = `<div class='text-center py-5'><div class='spinner-border text-success'></div></div>`;
-
-      const result = await apiFetch(`/advances?${params.toString()}`);
+      // Cache for 5 minutes
+      const result = await apiFetchWithCache(`/advances?${params.toString()}`, { method: 'GET' }, 5 * 60 * 1000);
 
       if (result.success) {
         renderAdvances(result.data, currentType);
+
         // Store pagination metadata - check both meta and pagination objects
         if (result.meta) {
           currentPage = result.meta.current_page || 1;
@@ -210,7 +133,15 @@ document.addEventListener('DOMContentLoaded', function () {
           currentPage = result.pagination.current_page || 1;
           lastPage = result.pagination.last_page || 1;
         }
-        renderPagination();
+
+        // Render standardized pagination
+        renderPagination('advancePaginationWrapper', {
+          current_page: currentPage,
+          last_page: lastPage
+        }, (newPage) => {
+          currentPage = newPage;
+          fetchAdvances();
+        });
       } else {
         advanceList.innerHTML = `<div class='text-center text-danger py-5'>${result.message || 'Failed to load advances.'}</div>`;
       }

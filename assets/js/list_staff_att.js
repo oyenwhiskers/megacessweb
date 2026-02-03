@@ -206,9 +206,7 @@
             `;
         }).join('');
 
-        // Create pagination
-        const paginationHtml = createStaffPaginationHtml(current_page, last_page, total, from, to, per_page);
-
+        // Render the attendance list with pagination holder
         staffAttendanceView.innerHTML = `
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -221,79 +219,17 @@
                     </div>
                 </div>
             </div>
-            ${paginationHtml}
+            <div id="staffAttPaginationContainer"></div>
         `;
+
+        // Render standardized pagination
+        renderPagination('staffAttPaginationContainer', {
+            current_page: current_page,
+            last_page: last_page
+        }, (newPage) => window.retryStaffAttendanceList(newPage));
     }
 
-    // Create pagination HTML (matching salary management style)
-    function createStaffPaginationHtml(currentPage, lastPage, total, from, to, perPage) {
-        // Ensure currentPage and lastPage are numbers
-        currentPage = parseInt(currentPage) || 1;
-        lastPage = parseInt(lastPage) || Math.ceil(total / perPage) || 1;
 
-        // Don't show pagination if only 1 page
-        if (lastPage <= 1) return '';
-
-        let paginationItems = '';
-
-        // Previous button with chevron icon
-        paginationItems += `
-            <button class="btn btn-sm btn-outline-success mx-1" ${currentPage <= 1 ? 'disabled' : ''} 
-                    onclick="window.retryStaffAttendanceList(${currentPage - 1})">
-                <i class="bi bi-chevron-left"></i>
-            </button>
-        `;
-
-        // Smart page buttons with ellipsis (max 7 buttons)
-        let pages = [];
-        if (lastPage <= 7) {
-            // Show all pages if 7 or fewer
-            pages = Array.from({ length: lastPage }, (_, i) => i + 1);
-        } else {
-            // Smart ellipsis logic
-            if (currentPage <= 4) {
-                // Near start: [1] [2] [3] [4] [5] [...] [last]
-                pages = [1, 2, 3, 4, 5, '...', lastPage];
-            } else if (currentPage >= lastPage - 3) {
-                // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
-                pages = [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
-            } else {
-                // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
-                pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
-            }
-        }
-
-        // Render page buttons
-        pages.forEach((page) => {
-            if (page === '...') {
-                // Ellipsis (non-clickable)
-                paginationItems += `<span class="btn btn-sm btn-outline-success mx-1 disabled">...</span>`;
-            } else {
-                // Page button - ensure type match for comparison
-                const btnClass = parseInt(page) === parseInt(currentPage) ? 'btn-success' : 'btn-outline-success';
-                paginationItems += `
-                    <button class="btn btn-sm ${btnClass} mx-1" 
-                            onclick="window.retryStaffAttendanceList(${page})">
-                        ${page}
-                    </button>
-                `;
-            }
-        });
-
-        // Next button with chevron icon
-        paginationItems += `
-            <button class="btn btn-sm btn-outline-success mx-1" ${currentPage >= lastPage ? 'disabled' : ''} 
-                    onclick="window.retryStaffAttendanceList(${currentPage + 1})">
-                <i class="bi bi-chevron-right"></i>
-            </button>
-        `;
-
-        return `
-            <div class="mt-3 text-center">
-                ${paginationItems}
-            </div>
-        `;
-    }
 
     // Check if date has an attendance ID
     async function checkDateAttendanceId(dateString) {
@@ -382,42 +318,14 @@
         }
 
         try {
-            const url = new URL(`${API_BASE_URL}/user-attendance`);
+            let endpoint = `/user-attendance?date_attendance_id=${dateAttendanceId}&page=${page}&per_page=${perPage}`;
 
-            // Add query parameters
-            const params = {
-                date_attendance_id: dateAttendanceId.toString(),
-                page: page.toString(),
-                per_page: perPage.toString()
-            };
-
-            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-
-            const headers = {
-                'Authorization': `Bearer ${getAuthToken()}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-
-            if (result.success && result.data) {
-                renderStaffAttendanceRecords(result.data);
-            } else {
-                showError(result.message || 'Failed to load staff attendance records');
-            }
-
-        } catch (error) {
-            showError(error.message || 'Failed to connect to the server. Please try again.');
+            // Cache for 5 minutes
+            const data = await apiFetchWithCache(endpoint, { method: 'GET' }, 5 * 60 * 1000);
+            renderStaffAttendanceRecords(data);
+        } catch (err) {
+            console.error('Error fetching staff attendance:', err);
+            showError('Failed to load attendance records. Please try again.');
         }
     }
 
