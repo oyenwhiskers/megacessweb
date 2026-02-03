@@ -10,51 +10,28 @@ let sparePartsState = {
 };
 
 // fetch vehicles for dropdown
-async function getAllVehicles() {
+// Wrapper for server-side vehicle search
+async function searchVehicles(term) {
   try {
-    let allData = [];
-
-    // 1. Fetch first page with larger page size
-    const firstPageResult = await apiFetch("/vehicles?page=1&per_page=100");
-    if (!firstPageResult.success) throw new Error(firstPageResult.message);
-
-    // Normalize data extraction
-    const getItems = (res) =>
-      Array.isArray(res.data) ? res.data : res.data.data || [];
-    const getMeta = (res) => res.meta || res.data;
-
-    const firstItems = getItems(firstPageResult);
-    allData = allData.concat(firstItems);
-
-    const meta = getMeta(firstPageResult);
-    const lastPage = meta.last_page || 1;
-
-    // 2. Fetch remaining pages in parallel if any
-    if (lastPage > 1) {
-      const promises = [];
-      for (let p = 2; p <= lastPage; p++) {
-        promises.push(apiFetch(`/vehicles?page=${p}&per_page=1000`));
-      }
-
-      const results = await Promise.all(promises);
-      results.forEach((res) => {
-        if (res.success) {
-          allData = allData.concat(getItems(res));
-        }
-      });
+    let endpoint = `/vehicles?per_page=20`;
+    if (term) {
+      endpoint += `&search=${encodeURIComponent(term)}`;
+    } else {
+      endpoint += `&status=Available`;
     }
 
-    allVehicles = allData.map((v) => ({
-      id: v.id,
-      vehicle_id: v.id,
-      vehicle_name: v.vehicle_name || null,
-      plate_number: v.plate_number || null,
-      displayLabel: `${v.vehicle_name} - ${v.plate_number}`,
-      name: `${v.vehicle_name} (${v.plate_number})`,
-    }));
-    console.log("🔧 Vehicles loaded:", allVehicles.length);
-  } catch (error) {
-    console.error("Error fetching vehicles:", error);
+    const result = await apiFetch(endpoint);
+    if (result.success) {
+      const items = Array.isArray(result.data) ? result.data : result.data.data || [];
+      return items.map(v => ({
+        ...v,
+        name: `${v.vehicle_name} (${v.plate_number})`,
+        displayLabel: `${v.vehicle_name} (${v.plate_number})`
+      }));
+    }
+    return [];
+  } catch (e) {
+    return [];
   }
 }
 
@@ -428,37 +405,35 @@ document
 window.addEventListener("DOMContentLoaded", () => {
   getAllSpareParts();
   refreshToolSummary();
-  getAllVehicles();
+  getAllSpareParts();
+  refreshToolSummary();
+  // getAllVehicles(); // Check if this is needed for anything else. If only for dropdowns, it's replaced.
 
   // Setup Autocompletes (Create Modal)
   // vehicle
-  initSearchableDropdown(
+  // Setup Autocompletes (Create Modal)
+  // vehicle
+  initServerDropdown(
     document.getElementById("toolVehicleInput"), //inputEl
     document.getElementById("toolVehicleDropdown"), //dropdownEl
-    async () => allVehicles, //fetchItems
+    searchVehicles, //fetchFunction
     (v) => {
       document.getElementById("toolVehicleInput").dataset.selectedId = v.id;
     }, //onSelect
-    (v) => `${v.vehicle_name} (${v.plate_number})`, //renderItem
-    (v, text) =>
-      v.vehicle_name.toLowerCase().includes(text) ||
-      v.plate_number.toLowerCase().includes(text) //filterItem
+    (v) => `${v.vehicle_name} (${v.plate_number})` //renderItem
   );
 
   // Setup Autocompletes (Update Modal)
   // vehicle
-  initSearchableDropdown(
+  initServerDropdown(
     document.getElementById("updateToolVehicleInput"),
     document.getElementById("updateToolVehicleDropdown"),
-    async () => allVehicles,
+    searchVehicles,
     (v) => {
       document.getElementById("updateToolVehicleInput").dataset.selectedId =
         v.id;
     },
-    (v) => `${v.vehicle_name} (${v.plate_number})`,
-    (v, text) =>
-      v.vehicle_name.toLowerCase().includes(text) ||
-      v.plate_number.toLowerCase().includes(text)
+    (v) => `${v.vehicle_name} (${v.plate_number})`
   );
 });
 

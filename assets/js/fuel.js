@@ -46,9 +46,8 @@ async function getAllFuels({
         if (paginationEl) paginationEl.innerHTML = "";
       }
     } else {
-      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${
-        result.message || "Unknown error"
-      }</div>`;
+      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || "Unknown error"
+        }</div>`;
       showError(result.message);
     }
   } catch (err) {
@@ -78,9 +77,8 @@ function populateFuelsTable(fuels) {
       <div class="col fw-bold text-dark">${fuel.user.user_fullname || "-"}</div>
       <div class="col">${fuel.fuel_type || "-"}</div>
       <div class="col">
-        <span class="badge ${fuelClass} px-3 py-2 fs-6">${
-      fuel.fuel_bought || "Unknown"
-    }</span>
+        <span class="badge ${fuelClass} px-3 py-2 fs-6">${fuel.fuel_bought || "Unknown"
+      }</span>
       </div>
       <div class="col">
         ${formatDateDisplay(fuel.date_bought)}
@@ -93,19 +91,17 @@ function populateFuelsTable(fuels) {
           data-buyer-name="${fuel.user?.user_fullname || ""}"
           data-fuel-type="${fuel.fuel_type || ""}"
           data-fuel-bought="${fuel.fuel_bought || ""}"
-          data-date-bought="${
-            fuel.date_bought
-              ? new Date(fuel.date_bought).toISOString().split("T")[0]
-              : ""
-          }"
+          data-date-bought="${fuel.date_bought
+        ? new Date(fuel.date_bought).toISOString().split("T")[0]
+        : ""
+      }"
           data-bs-toggle="modal" 
           data-bs-target="#editFuelModal"
           title="Edit">
           <i class="bi bi-pencil"></i>
         </button>
-        <button class="btn btn-sm btn-danger delete-fuel-btn" data-id="${
-          fuel.id
-        }" title="Delete">
+        <button class="btn btn-sm btn-danger delete-fuel-btn" data-id="${fuel.id
+      }" title="Delete">
           <i class="bi bi-trash"></i>
         </button>
       </div>
@@ -143,9 +139,8 @@ function renderFuelPagination(meta, search, filter, type) {
 
   const createPageItem = (page, text, isActive = false, isDisabled = false) => {
     const li = document.createElement("li");
-    li.className = `page-item ${isActive ? "active" : ""} ${
-      isDisabled ? "disabled" : ""
-    }`;
+    li.className = `page-item ${isActive ? "active" : ""} ${isDisabled ? "disabled" : ""
+      }`;
     li.innerHTML = `<a class="page-link" href="#">${text}</a>`;
     if (!isDisabled && !isActive) {
       li.addEventListener("click", (e) => {
@@ -262,9 +257,13 @@ async function handleDelete(btn) {
 }
 
 // ==================== Fetch Buyers ====================
-async function getAllBuyers() {
+// ==================== Fetch Buyers (Server Search) ====================
+async function searchBuyers(term) {
   try {
-    const result = await apiFetch("/users?per_page=100", { method: "GET" });
+    let endpoint = "/users?per_page=20";
+    if (term) endpoint += `&search=${encodeURIComponent(term)}`;
+
+    const result = await apiFetch(endpoint, { method: "GET" });
     return (
       result?.data?.map((u) => ({
         id: u.id,
@@ -287,17 +286,14 @@ const buyerDropdownEl = document.getElementById("buyerDropdown");
 
 const renderBuyer = (p) =>
   `${p.fullname}<small class="text-muted d-inline"> - (${p.role})</small>`;
-const filterBuyer = (p, s) =>
-  p.fullname.toLowerCase().includes(s) || String(p.id).includes(s);
 
 if (buyerInput && buyerDropdownEl) {
-  initSearchableDropdown(
+  initServerDropdown(
     buyerInput,
     buyerDropdownEl,
-    getAllBuyers,
+    searchBuyers,
     (sel) => (selectedBuyer = sel),
-    renderBuyer,
-    filterBuyer
+    renderBuyer
   );
 }
 
@@ -306,13 +302,12 @@ const editBuyerDropdownEl = document.getElementById("editBuyerDropdown");
 let editSelectedBuyer = null;
 
 if (editBuyerInput && editBuyerDropdownEl) {
-  initSearchableDropdown(
+  initServerDropdown(
     editBuyerInput,
     editBuyerDropdownEl,
-    getAllBuyers,
+    searchBuyers,
     (sel) => (editSelectedBuyer = sel),
-    renderBuyer,
-    filterBuyer
+    renderBuyer
   );
 }
 

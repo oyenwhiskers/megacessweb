@@ -91,33 +91,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showLoading(true);
-            const url = new URL(`${API_BASE_URL}/staff`);
+            let endpoint = `/payroll/staff`;
 
-            // For initial load, don't send pagination params to get all data
+            // Add search parameter if exists
             if (searchTerm) {
-                url.searchParams.append('search', searchTerm);
+                endpoint += `?search=${encodeURIComponent(searchTerm)}`;
             }
 
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${AUTH_TOKEN}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (response.status === 401) {
-                // Handle unauthorized access
-                showError('Session expired. Please log in again.');
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
+            // Use cached fetch with 10 minute TTL for worker list
+            const result = await apiFetchWithCache(endpoint, {
+                method: 'GET'
+            }, 10 * 60 * 1000);
 
             // Handle different API response structures
             let allData = [];
@@ -231,35 +215,25 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showLoading(true);
-            const url = new URL(`${API_BASE_URL}/users`);
+            let endpoint = `/payroll/users`;
+            const params = new URLSearchParams();
 
             // Add parameters
             if (searchTerm) {
-                url.searchParams.append('search', searchTerm);
+                params.append('search', searchTerm);
             }
             if (role && role !== 'all') {
-                url.searchParams.append('role', role);
+                params.append('role', role);
             }
 
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${AUTH_TOKEN}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (response.status === 401) {
-                showError('Session expired. Please log in again.');
-                return;
+            if (params.toString()) {
+                endpoint += `?${params.toString()}`;
             }
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
+            // Use cached fetch with 10 minute TTL for staff list
+            const result = await apiFetchWithCache(endpoint, {
+                method: 'GET'
+            }, 10 * 60 * 1000);
 
             // Handle API response
             let allData = [];

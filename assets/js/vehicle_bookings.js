@@ -18,70 +18,74 @@ async function fetchVehicle() {
     let allData = [];
     const availabilityFilter = "status=Available";
 
-    // 1. Fetch first page with larger page size to gauge total pages
-    // Using per_page=100 to minimize requests
-    const firstPageResult = await apiFetch(
-      `/vehicles?${availabilityFilter}&page=1&per_page=100`
-    );
+    // 1. Fetch only first page (limited to 50 items for initial view)
+    const result = await apiFetch(`/vehicles?${availabilityFilter}&page=1&per_page=50`);
 
-    if (!firstPageResult.success) throw new Error(firstPageResult.message);
+    if (!result.success) throw new Error(result.message);
 
-    // Normalize data structure
-    const getItems = (res) =>
-      Array.isArray(res.data) ? res.data : res.data.data || [];
-    const getMeta = (res) => res.meta || res.data;
-
-    const firstItems = getItems(firstPageResult);
-    allData = allData.concat(firstItems);
-
-    const meta = getMeta(firstPageResult);
-    const lastPage = meta.last_page || 1;
-
-    // 2. Fetch remaining pages in parallel if any
-    if (lastPage > 1) {
-      const promises = [];
-      for (let p = 2; p <= lastPage; p++) {
-        promises.push(
-          apiFetch(`/vehicles?${availabilityFilter}&page=${p}&per_page=100`)
-        );
-      }
-
-      const results = await Promise.all(promises);
-      results.forEach((res) => {
-        if (res.success) {
-          allData = allData.concat(getItems(res));
-        }
-      });
-    }
+    const getItems = (res) => Array.isArray(res.data) ? res.data : res.data.data || [];
+    const data = getItems(result);
 
     // takes each vehicle, copies all its data, and adds a new field called name
     // that combines the vehicle name and plate number.
-    allVehicles = allData.map((v) => ({
+    allVehicles = data.map((v) => ({
       ...v,
       name: `${v.vehicle_name} (${v.plate_number})`,
     }));
   } catch (error) {
-    console.error("Error fetching available vehicles:", error);
+    // console.error("Error fetching available vehicles:", error);
+  }
+}
+
+// Wrapper for server-side vehicle search
+async function searchVehicles(term) {
+  try {
+    let endpoint = `/vehicles?per_page=20`;
+    // Add search term if exists
+    if (term) {
+      endpoint += `&search=${encodeURIComponent(term)}`;
+    } else {
+      // If no search, filter by available (default behavior for dropdown)
+      endpoint += `&status=Available`;
+    }
+
+    const result = await apiFetch(endpoint);
+    if (result.success) {
+      const items = Array.isArray(result.data) ? result.data : result.data.data || [];
+      return items.map(v => ({
+        ...v,
+        name: `${v.vehicle_name} (${v.plate_number})`,
+        displayLabel: `${v.vehicle_name} (${v.plate_number})`
+      }));
+    }
+    return [];
+  } catch (e) {
+    return [];
   }
 }
 
 // for dropdown in modal
-async function fetchUserAndStaff() {
+// for dropdown in modal - Wrapper for server-side user/staff search
+async function searchUserAndStaff(term) {
   try {
-    const result = await apiFetch("/users-and-staff");
+    let endpoint = "/users-and-staff";
+    if (term) {
+      endpoint += `?search=${encodeURIComponent(term)}`;
+    }
+    const result = await apiFetch(endpoint);
     if (result.success) {
-      allUsersAndStaff = result.data.map((item) => ({
+      return result.data.map((item) => ({
         user_id: item.user_id || null,
         staff_id: item.staff_id || null,
         fullname: item.fullname,
         role: item.role,
         displayLabel: `${item.fullname} - ${item.role}`,
       }));
-    } else {
-      throw new Error(result.message);
     }
+    return [];
   } catch (error) {
-    console.error("Error fetching users:", error);
+    // console.error("Error fetching users:", error);
+    return [];
   }
 }
 
@@ -161,7 +165,7 @@ async function getAllVehicleBookings({
     }
   } catch (error) {
     if (loading) loading.style.display = "none";
-    console.error(error);
+    // console.error(error);
   }
 }
 
@@ -180,8 +184,8 @@ function populateVehicleBookingTable(bookings) {
     const userName = booking.user
       ? booking.user.user_fullname
       : booking.staff
-      ? booking.staff.staff_fullname
-      : "-";
+        ? booking.staff.staff_fullname
+        : "-";
     const dateBook = booking.datetime_booking
       ? new Date(booking.datetime_booking).toLocaleString("en-GB")
       : "-";
@@ -190,16 +194,15 @@ function populateVehicleBookingTable(bookings) {
       : "-";
 
     row.innerHTML = `
-            <div class="col ps-3 fw-bold text-dark">${booking.vehicle.vehicle_name}<br><small>(${
-      booking.vehicle.plate_number
-    })</small></div>
+            <div class="col ps-3 fw-bold text-dark">${booking.vehicle.vehicle_name}<br><small>(${booking.vehicle.plate_number
+      })</small></div>
             <div class="col fw-bold text-dark">${userName}</div>
             <div class="col">${dateBook}</div>
             <div class="col">${dateRet}</div>
             <div class="col text-center">
                 <button class="btn btn-sm btn-warning me-2 edit-btn" data-obj='${JSON.stringify(
-                  booking
-                ).replace(/'/g, "&apos;")}' title="Edit">
+        booking
+      ).replace(/'/g, "&apos;")}' title="Edit">
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-sm btn-danger delete-btn" 
@@ -237,25 +240,22 @@ function renderBookingPagination(current, last) {
 
   let html = "";
   const prevDisabled = current <= 1 ? "disabled" : "";
-  html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${
-    current - 1
-  }">Previous</a></li>`;
+  html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current - 1
+    }">Previous</a></li>`;
 
   // Simple pagination logic (show all or limited range logic here)
   for (let i = 1; i <= last; i++) {
     if (i === 1 || i === last || (i >= current - 2 && i <= current + 2)) {
-      html += `<li class="page-item ${
-        i === current ? "active" : ""
-      }"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+      html += `<li class="page-item ${i === current ? "active" : ""
+        }"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
     } else if (html.slice(-4) !== "... ") {
       // Add ellipsis
     }
   }
 
   const nextDisabled = current >= last ? "disabled" : "";
-  html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${
-    current + 1
-  }">Next</a></li>`;
+  html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current + 1
+    }">Next</a></li>`;
 
   container.innerHTML = html;
 
@@ -354,66 +354,58 @@ function openUpdateVehicleBookingModal(booking) {
 window.addEventListener("DOMContentLoaded", () => {
   // 1. Initial Data Fetch
   getAllVehicleBookings();
-  fetchVehicle();
-  fetchUserAndStaff();
+  fetchVehicle(); // Initial load for cache/fallback
+  // fetchUserAndStaff(); // Removed eager load
 
   // 2. Setup Autocompletes (Create Modal)
-  // vehicle
-  initSearchableDropdown(
+  // vehicle - switched to Server Dropdown
+  initServerDropdown(
     document.getElementById("bookingVehicleInput"), //inputEl
     document.getElementById("vehicleDropdown"), //dropdownEl
-    async () => allVehicles, //fetchItems
-    (v) => {
+    searchVehicles, //fetchFunction
+    (v) => { //onSelect
       document.getElementById("bookingVehicleInput").dataset.selectedId = v.id;
-    }, //onSelect
-    (v) => `${v.vehicle_name} (${v.plate_number})`, //renderItem
-    (v, text) =>
-      v.vehicle_name.toLowerCase().includes(text) ||
-      v.plate_number.toLowerCase().includes(text) //filterItem
+    },
+    (v) => `${v.vehicle_name} (${v.plate_number})` //renderItem
   );
 
-  // user and staff
-  initSearchableDropdown(
+  // user and staff - switched to Server Dropdown
+  initServerDropdown(
     document.getElementById("usedBy"),
     document.getElementById("usedByDropdown"),
-    async () => allUsersAndStaff,
+    searchUserAndStaff,
     (p) => {
       const input = document.getElementById("usedBy");
       input.dataset.selectedUserId = p.user_id;
       input.dataset.selectedStaffId = p.staff_id;
     },
-    (p) => p.displayLabel,
-    (p, text) => p.fullname.toLowerCase().includes(text)
+    (p) => `${p.fullname} - ${p.role}`
   );
 
   // 3. Setup Autocompletes (Update Modal)
   // vehicle
-  initSearchableDropdown(
+  initServerDropdown(
     document.getElementById("updateBookingVehicleInput"),
     document.getElementById("updateVehicleDropdown"),
-    async () => allVehicles,
+    searchVehicles,
     (v) => {
       document.getElementById("updateBookingVehicleInput").dataset.selectedId =
         v.id;
     },
-    (v) => `${v.vehicle_name} (${v.plate_number})`,
-    (v, text) =>
-      v.vehicle_name.toLowerCase().includes(text) ||
-      v.plate_number.toLowerCase().includes(text)
+    (v) => `${v.vehicle_name} (${v.plate_number})`
   );
 
   // user and staff
-  initSearchableDropdown(
+  initServerDropdown(
     document.getElementById("updateUsedBy"),
     document.getElementById("updateUsedByDropdown"),
-    async () => allUsersAndStaff,
+    searchUserAndStaff,
     (p) => {
       const input = document.getElementById("updateUsedBy");
       input.dataset.selectedUserId = p.user_id;
       input.dataset.selectedStaffId = p.staff_id;
     },
-    (p) => p.displayLabel,
-    (p, text) => p.fullname.toLowerCase().includes(text)
+    (p) => `${p.fullname} - ${p.role}`
   );
 
   // 4. Search Listeners

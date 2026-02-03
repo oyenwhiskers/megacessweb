@@ -56,9 +56,8 @@ async function getAllFuelUsages({
       }
     } else {
       if (tableBody)
-        tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${
-          result.message || "Unknown error"
-        }</div>`;
+        tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || "Unknown error"
+          }</div>`;
       showError(result.message);
     }
   } catch (err) {
@@ -92,8 +91,8 @@ function populateFuelUsageTable(usages) {
       descHtml = `
                 ${fullDesc.substring(0, 30)}...
                 <a href="javascript:void(0)" class="text-decoration-none small view-desc-btn" data-desc="${encodeURIComponent(
-                  fullDesc
-                )}">Read More</a>
+        fullDesc
+      )}">Read More</a>
             `;
     }
 
@@ -115,9 +114,8 @@ function populateFuelUsageTable(usages) {
 
     row.innerHTML = `
             <div class="col">
-                <span class="badge ${badgeClass} px-3 py-2 fs-6">${
-      usage.usage_quantity || 0
-    } Liters</span>
+                <span class="badge ${badgeClass} px-3 py-2 fs-6">${usage.usage_quantity || 0
+      } Liters</span>
             </div>
             <div class="col fw-bold text-dark">${assignedName}</div>
             <div class="col">${usage.fuel_type || "-"}</div>
@@ -135,18 +133,16 @@ function populateFuelUsageTable(usages) {
                 data-staff-id="${staffId}"
                 data-name="${rawName}"
                 data-type="${usage.fuel_type || ""}"
-                data-date="${
-                  usage.usage_date
-                    ? new Date(usage.usage_date).toISOString().split("T")[0]
-                    : ""
-                }"
+                data-date="${usage.usage_date
+        ? new Date(usage.usage_date).toISOString().split("T")[0]
+        : ""
+      }"
                 data-description="${usage.usage_description || ""}"
                 title="Edit">
                 <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-danger delete-usage-btn" data-id="${
-                  usage.id
-                }" title="Delete">
+                <button class="btn btn-sm btn-danger delete-usage-btn" data-id="${usage.id
+      }" title="Delete">
                 <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -209,9 +205,8 @@ function renderFuelUsagePagination(meta, search, filter) {
 
   const createPageItem = (page, text, isActive = false, isDisabled = false) => {
     const li = document.createElement("li");
-    li.className = `page-item ${isActive ? "active" : ""} ${
-      isDisabled ? "disabled" : ""
-    }`;
+    li.className = `page-item ${isActive ? "active" : ""} ${isDisabled ? "disabled" : ""
+      }`;
     li.innerHTML = `<a class="page-link" href="#">${text}</a>`;
     if (!isDisabled && !isActive) {
       li.addEventListener("click", (e) => {
@@ -542,9 +537,12 @@ if (refreshUsageBtn) {
 }
 
 // ==================== User and Staff Dropdown Logic ====================
-async function fetchAllUsersAndStaff() {
+async function searchUsersAndStaff(term) {
   try {
-    const result = await apiFetch("/users-and-staff", { method: "GET" });
+    let endpoint = "/users-and-staff";
+    if (term) endpoint += `?search=${encodeURIComponent(term)}`;
+
+    const result = await apiFetch(endpoint, { method: "GET" });
     return (
       result?.data?.map((u) => ({
         id: u.role === "user" ? `user-${u.user_id}` : `staff-${u.staff_id}`, // Unique ID for keying
@@ -552,6 +550,7 @@ async function fetchAllUsersAndStaff() {
         staff_id: u.role === "staff" ? u.staff_id : null,
         fullname: u.fullname,
         role: u.role,
+        displayLabel: `${u.fullname} - ${u.role}`
       })) || []
     );
   } catch (err) {
@@ -564,36 +563,35 @@ async function fetchAllUsersAndStaff() {
 document.addEventListener("DOMContentLoaded", () => {
   const renderUsageUser = (u) =>
     `${u.fullname} <small class="text-muted">(${u.role})</small>`;
-  const filterUsageUser = (u, s) => u.fullname.toLowerCase().includes(s);
+  // const filterUsageUser = (u, s) => u.fullname.toLowerCase().includes(s); // No longer needed
 
   // Load initial data
   getAllFuelUsages();
 
   // Add Modal Dropdown
+  // Add Modal Dropdown
   const addInput = document.getElementById("usedBy");
   const addDropdown = document.getElementById("addUsageUserDropdown");
-  initSearchableDropdown(
+  initServerDropdown(
     addInput,
     addDropdown,
-    fetchAllUsersAndStaff,
+    searchUsersAndStaff,
     (user) => {
       selectedUsageUser = user;
     },
-    renderUsageUser,
-    filterUsageUser
+    (u) => `${u.fullname} <small class="text-muted">(${u.role})</small>`
   );
 
   // Edit Modal Dropdown
   const editInput = document.getElementById("editUsedBy");
   const editDropdown = document.getElementById("editUsageUserDropdown");
-  initSearchableDropdown(
+  initServerDropdown(
     editInput,
     editDropdown,
-    fetchAllUsersAndStaff,
+    searchUsersAndStaff,
     (user) => {
       editSelectedUsageUser = user;
     },
-    renderUsageUser,
-    filterUsageUser
+    (u) => `${u.fullname} <small class="text-muted">(${u.role})</small>`
   );
 });

@@ -44,6 +44,62 @@ async function apiFetch(path, options = {}) {
   }
 }
 
+// ==================== CACHING IMPLEMENTATION ====================
+const apiCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes default TTL
+
+/**
+ * Fetches data from API with in-memory caching
+ * @param {string} path - API endpoint path
+ * @param {object} options - Fetch options
+ * @param {number} ttl - Time to live in milliseconds (optional, default 5 mins)
+ * @returns {Promise<any>} - JSON response
+ */
+async function apiFetchWithCache(path, options = {}, ttl = CACHE_TTL) {
+  // Only cache GET requests
+  const method = options.method ? options.method.toUpperCase() : 'GET';
+  if (method !== 'GET') {
+    return apiFetch(path, options);
+  }
+
+  const cacheKey = `${path}_${JSON.stringify(options)}`;
+  const cached = apiCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < ttl) {
+    // console.log(`[Cache Hit] ${path}`);
+    return cached.data;
+  }
+
+  // console.log(`[Cache Miss] ${path}`);
+  const data = await apiFetch(path, options);
+
+  apiCache.set(cacheKey, {
+    data,
+    timestamp: Date.now()
+  });
+
+  return data;
+}
+
+/**
+ * Clears API cache entries matching a pattern
+ * @param {string} pattern - Substring to match in cache keys (optional, clears all if empty)
+ */
+function clearApiCache(pattern = null) {
+  if (!pattern) {
+    apiCache.clear();
+    // console.log('[Cache] All cleared');
+    return;
+  }
+
+  for (const key of apiCache.keys()) {
+    if (key.includes(pattern)) {
+      apiCache.delete(key);
+      // console.log(`[Cache] Cleared: ${key}`);
+    }
+  }
+}
+
 // ==================== UI HELPERS (SweetAlert) ====================
 function showSuccess(title, msg = "") {
   Swal.fire({
@@ -212,6 +268,81 @@ function initSearchableDropdown(
     const search = inputEl.value.toLowerCase();
     const filtered = allItems.filter((item) => filterItem(item, search));
     showDropdown(filtered);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+      dropdownEl.style.display = "none";
+    }
+  });
+}
+
+/**
+ * Initializes a server-side searchable dropdown (Async/Lazy Load).
+ * @param {HTMLElement} inputEl - The input element.
+ * @param {HTMLElement} dropdownEl - The UL element for the dropdown.
+ * @param {Function} fetchFunction - Async function(searchTerm) returning array of items.
+ * @param {Function} onSelect - Callback when item is selected.
+ * @param {Function} renderItem - Function returning HTML string for an item.
+ */
+function initServerDropdown(
+  inputEl,
+  dropdownEl,
+  fetchFunction,
+  onSelect,
+  renderItem
+) {
+  if (!inputEl || !dropdownEl) return;
+
+  let debounceTimer;
+
+  const performSearch = async (term) => {
+    dropdownEl.innerHTML = '<li class="dropdown-item text-muted">Searching...</li>';
+    dropdownEl.style.display = "block";
+
+    try {
+      const items = await fetchFunction(term);
+      dropdownEl.innerHTML = "";
+
+      if (!items || items.length === 0) {
+        dropdownEl.innerHTML = '<li class="dropdown-item text-muted">No results found</li>';
+      } else {
+        items.forEach((item) => {
+          const li = document.createElement("li");
+          li.classList.add("dropdown-item");
+          li.style.cursor = "pointer";
+          li.innerHTML = renderItem(item);
+          li.addEventListener("click", () => {
+            // Determine display value (fallback logic similar to original)
+            const displayVal = item.displayLabel || item.fullname || item.name || item.vehicle_name || "";
+            if (displayVal) inputEl.value = displayVal;
+
+            dropdownEl.style.display = "none";
+            onSelect(item);
+          });
+          dropdownEl.appendChild(li);
+        });
+      }
+    } catch (e) {
+      console.error("Dropdown fetch error", e);
+      dropdownEl.innerHTML = '<li class="dropdown-item text-danger">Error loading data</li>';
+    }
+  };
+
+  // Debounced input handler
+  inputEl.addEventListener("input", () => {
+    const term = inputEl.value.trim();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => performSearch(term), 300);
+  });
+
+  // Focus handler (optional: load initial suggestions or nothing)
+  inputEl.addEventListener("focus", () => {
+    // Only search if empty to show recently used or defaults? 
+    // For now, let's search empty string (listing defaults)
+    if (inputEl.value.trim() === "") {
+      performSearch("");
+    }
   });
 
   document.addEventListener("click", (e) => {
