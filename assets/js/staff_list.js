@@ -58,7 +58,7 @@
         <div class="alert alert-danger mb-0" role="alert">
           <i class="bi bi-exclamation-triangle me-2"></i>
           <strong>Error:</strong> ${message}
-          <button class="btn btn-outline-danger btn-sm ms-3" onclick="fetchStaffList('', '${currentRoleFilter}')">
+          <button class="btn btn-outline-danger btn-sm ms-3" onclick="window.fetchStaffList('', '${currentRoleFilter}')">
             <i class="bi bi-arrow-clockwise me-1"></i>Retry
           </button>
         </div>
@@ -69,16 +69,8 @@
 
     statusContainer.appendChild(statusItem);
 
-    // remove any previous status nodes with .js-status
-    const prev = staffView.querySelector('.js-status');
-    if (prev) prev.remove();
-
-    // keep heading and note, replace content
-    const heading = staffView.querySelector('h2');
-    const note = staffView.querySelector('p');
+    // Completely clear current view before showing status
     staffView.innerHTML = '';
-    if (heading) staffView.appendChild(heading);
-    if (note) staffView.appendChild(note);
     staffView.appendChild(statusContainer);
   }
 
@@ -105,8 +97,8 @@
       const data = await apiFetchWithCache(endpoint, { method: 'GET' }, 5 * 60 * 1000);
       renderStaff(data, role);
     } catch (err) {
-      showStatus('Network or server error while loading staff list.', 'danger');
-      renderStaff({ data: [] });
+      console.error('[StaffList] Error fetching staff:', err);
+      showStatus(err.message || 'Network or server error while loading staff list.', 'danger');
     }
   }
 
@@ -126,13 +118,19 @@
     let meta = {};
 
     // Robust data extraction
-    if (payload.data && Array.isArray(payload.data)) {
+    if (!payload) {
+      users = [];
+    } else if (payload.data && Array.isArray(payload.data)) {
       // Standard structure: { data: [...], meta: ... }
       users = payload.data;
       meta = payload.meta || {};
     } else if (payload.data && payload.data.data && Array.isArray(payload.data.data)) {
       // Nested pagination: { data: { data: [...], ... } }
       users = payload.data.data;
+      meta = payload.data;
+    } else if (payload.data && payload.data.users && Array.isArray(payload.data.users)) {
+      // Another common pattern: { data: { users: [...], ... } }
+      users = payload.data.users;
       meta = payload.data;
     } else if (Array.isArray(payload)) {
       // Direct array
@@ -146,8 +144,9 @@
     staffListCache = users;
 
     // Pagination meta extraction
-    const totalItems = meta.total || users.length;
-    const totalPages = meta.last_page || 1;
+    // Ensure totalItems is a number
+    const totalItems = (meta && meta.total) ? meta.total : users.length;
+    const totalPages = (meta && meta.last_page) ? meta.last_page : 1;
 
     if (!users || users.length === 0) {
       const emptyMessage = currentSearch ?
@@ -222,17 +221,17 @@
             <div class="d-flex align-items-center gap-2">
               <div class="btn-group" role="group">
                 <button class="btn btn-sm btn-primary" 
-                        onclick="viewStaffDetails(${u.id || u.user_id})"
+                        onclick="window.viewStaffDetails(${u.id || u.user_id})"
                         title="View Details">
                   <i class="bi bi-eye"></i>
                 </button>
                 <button class="btn btn-sm btn-danger" 
-                        onclick="deleteStaff(${u.id || u.user_id})"
+                        onclick="window.deleteStaff(${u.id || u.user_id})"
                         title="Delete Staff">
                   <i class="bi bi-trash"></i>
                 </button>
                 <button class="btn btn-sm btn-warning" 
-                        onclick="showResetPasswordModal(${u.id || u.user_id})"
+                        onclick="window.showResetPasswordModal(${u.id || u.user_id})"
                         title="Reset Password">
                   <i class="bi bi-key"></i> Reset Password
                 </button>
@@ -245,12 +244,8 @@
 
     }
 
-    // keep heading and replace remaining contents
-    const heading = staffView.querySelector('h2');
-    const note = staffView.querySelector('p');
+    // Completely clear current view before rendering list
     staffView.innerHTML = '';
-    if (heading) staffView.appendChild(heading);
-    if (note) staffView.appendChild(note);
     staffView.appendChild(list);
 
     // Create and append pagination container
@@ -263,7 +258,7 @@
       renderPagination(paginationContainer, {
         current_page: currentPage,
         last_page: totalPages
-      }, (newPage) => fetchStaffList(currentSearch, currentRoleFilter, newPage));
+      }, (newPage) => window.fetchStaffList(currentSearch, currentRoleFilter, newPage));
     }
   }
 
@@ -493,7 +488,7 @@
             </div>
             <div class="modal-footer">
               ${!staffData.loading && !staffData.error ? `
-                <button type="button" class="btn btn-success" onclick="editStaff(${staffData.id})">
+                <button type="button" class="btn btn-success" onclick="window.editStaff(${staffData.id})">
                   <i class="bi bi-pencil me-1"></i>Edit
                 </button>
               ` : ''}
@@ -696,10 +691,10 @@
 
     // Update footer buttons
     modalFooter.innerHTML = `
-      <button type="button" class="btn btn-secondary" onclick="cancelEditModeStaff(${staffId})">
+      <button type="button" class="btn btn-secondary" onclick="window.cancelEditModeStaff(${staffId})">
         <i class="bi bi-x-circle me-1"></i>Cancel
       </button>
-      <button type="button" class="btn btn-primary" onclick="saveStaffChanges(${staffId}, event)">
+      <button type="button" class="btn btn-primary" onclick="window.saveStaffChanges(${staffId}, event)">
         <i class="bi bi-save me-1"></i>Save Changes
       </button>
     `;
