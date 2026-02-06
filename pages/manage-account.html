@@ -361,135 +361,138 @@
   </script>
 
   <script>
-    (function(){
-      const workerRadio = document.getElementById('workerTab');
-      const staffRadio = document.getElementById('staffTab');
-      const views = {
-        workers: document.getElementById('workersView'),
-        staff: document.getElementById('staffView')
-      };
-      const registerStaffBtn = document.getElementById('registerStaffBtn');
-      const registerWorkerBtn = document.getElementById('registerWorkerBtn');
-      const roleFilterContainer = document.getElementById('roleFilterContainer');
-      const genderFilterContainer = document.getElementById('genderFilterContainer');
-      const listTitle = document.querySelector('.list-title');
-      let currentRoleFilter = 'all';
+    // Wrap in DOMContentLoaded to ensure all external scripts are loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      (function(){
+        const workerRadio = document.getElementById('workerTab');
+        const staffRadio = document.getElementById('staffTab');
+        const views = {
+          workers: document.getElementById('workersView'),
+          staff: document.getElementById('staffView')
+        };
+        const registerStaffBtn = document.getElementById('registerStaffBtn');
+        const registerWorkerBtn = document.getElementById('registerWorkerBtn');
+        const roleFilterContainer = document.getElementById('roleFilterContainer');
+        const genderFilterContainer = document.getElementById('genderFilterContainer');
+        const listTitle = document.querySelector('.list-title');
+        let currentRoleFilter = 'all';
 
-      // Helper to get current type
-      function getCurrentType() {
-        return workerRadio.checked ? 'workers' : 'staff';
-      }
+        // Helper to get current type
+        function getCurrentType() {
+          return workerRadio.checked ? 'workers' : 'staff';
+        }
 
-      function show(type){
-        // show/hide views
-        Object.keys(views).forEach(k => {
-          const el = views[k];
-          if (!el) return;
-          if (k === type) el.classList.remove('d-none');
-          else el.classList.add('d-none');
-        });
-        
-        // Update list title
-        if (listTitle) {
-          listTitle.textContent = type === 'workers' ? 'List of existing workers:' : 'List of existing staff:';
+        function show(type){
+          // show/hide views
+          Object.keys(views).forEach(k => {
+            const el = views[k];
+            if (!el) return;
+            if (k === type) el.classList.remove('d-none');
+            else el.classList.add('d-none');
+          });
+          
+          // Update list title
+          if (listTitle) {
+            listTitle.textContent = type === 'workers' ? 'List of existing workers:' : 'List of existing staff:';
+          }
+          
+          // show/hide Register Staff button
+          if (registerStaffBtn) {
+            if (type === 'staff') registerStaffBtn.classList.remove('d-none');
+            else registerStaffBtn.classList.add('d-none');
+          }
+          // show/hide Register Worker button
+          if (registerWorkerBtn) {
+            if (type === 'workers') registerWorkerBtn.classList.remove('d-none');
+            else registerWorkerBtn.classList.add('d-none');
+          }
+          
+          // show/hide role filter container (for staff)
+          if (roleFilterContainer) {
+            if (type === 'staff') {
+              roleFilterContainer.style.display = '';
+            } else {
+              roleFilterContainer.style.display = 'none';
+            }
+          }
+          
+          // when staff view is shown, trigger staff list load
+          if (type === 'staff' && window.fetchStaffList) {
+            const searchEl = document.getElementById('accountSearch');
+            window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
+          }
+          // when workers view is shown, trigger worker list load
+          if (type === 'workers' && window.fetchWorkersList) {
+            const searchEl = document.getElementById('accountSearch');
+            window.fetchWorkersList(searchEl ? searchEl.value : '', 1);
+          }
         }
-        
-        // show/hide Register Staff button
-        if (registerStaffBtn) {
-          if (type === 'staff') registerStaffBtn.classList.remove('d-none');
-          else registerStaffBtn.classList.add('d-none');
-        }
-        // show/hide Register Worker button
-        if (registerWorkerBtn) {
-          if (type === 'workers') registerWorkerBtn.classList.remove('d-none');
-          else registerWorkerBtn.classList.add('d-none');
-        }
-        
-        // show/hide role filter container (for staff)
+
+        // Role filter logic (for staff)
         if (roleFilterContainer) {
-          if (type === 'staff') {
-            roleFilterContainer.style.display = '';
-          } else {
-            roleFilterContainer.style.display = 'none';
-          }
+          roleFilterContainer.addEventListener('click', function(e) {
+            if (e.target && e.target.matches('button[data-role]')) {
+              // Set active class
+              roleFilterContainer.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+              });
+              e.target.classList.remove('btn-outline-secondary');
+              e.target.classList.add('btn-success');
+              currentRoleFilter = e.target.getAttribute('data-role');
+              // Reload staff list with new filter
+              if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+                const searchEl = document.getElementById('accountSearch');
+                window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
+              }
+            }
+          });
+        }
+
+        // Search bar logic
+        const searchInput = document.getElementById('accountSearch');
+        if (searchInput) {
+          // On input (debounced)
+          let debounceTimer = null;
+          searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+              if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+                window.fetchStaffList(searchInput.value, currentRoleFilter);
+              } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
+                window.fetchWorkersList(searchInput.value, 1);
+              }
+            }, 300);
+          });
+          // On Enter key
+          searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+                window.fetchStaffList(searchInput.value, currentRoleFilter);
+              } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
+                window.fetchWorkersList(searchInput.value, 1);
+              }
+            }
+          });
+        }
+
+        // Radio button change events
+        if (workerRadio) {
+          workerRadio.addEventListener('change', function() {
+            if (this.checked) show('workers');
+          });
         }
         
-        // when staff view is shown, trigger staff list load
-        if (type === 'staff' && window.fetchStaffList) {
-          const searchEl = document.getElementById('accountSearch');
-          window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
+        if (staffRadio) {
+          staffRadio.addEventListener('change', function() {
+            if (this.checked) show('staff');
+          });
         }
-        // when workers view is shown, trigger worker list load
-        if (type === 'workers' && window.fetchWorkersList) {
-          const searchEl = document.getElementById('accountSearch');
-          window.fetchWorkersList(searchEl ? searchEl.value : '', 1);
-        }
-      }
 
-      // Role filter logic (for staff)
-      if (roleFilterContainer) {
-        roleFilterContainer.addEventListener('click', function(e) {
-          if (e.target && e.target.matches('button[data-role]')) {
-            // Set active class
-            roleFilterContainer.querySelectorAll('button').forEach(btn => {
-              btn.classList.remove('btn-success');
-              btn.classList.add('btn-outline-secondary');
-            });
-            e.target.classList.remove('btn-outline-secondary');
-            e.target.classList.add('btn-success');
-            currentRoleFilter = e.target.getAttribute('data-role');
-            // Reload staff list with new filter
-            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
-              const searchEl = document.getElementById('accountSearch');
-              window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
-            }
-          }
-        });
-      }
-
-      // Search bar logic
-      const searchInput = document.getElementById('accountSearch');
-      if (searchInput) {
-        // On input (debounced)
-        let debounceTimer = null;
-        searchInput.addEventListener('input', function() {
-          clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => {
-            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
-              window.fetchStaffList(searchInput.value, currentRoleFilter);
-            } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
-              window.fetchWorkersList(searchInput.value, 1);
-            }
-          }, 300);
-        });
-        // On Enter key
-        searchInput.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
-              window.fetchStaffList(searchInput.value, currentRoleFilter);
-            } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
-              window.fetchWorkersList(searchInput.value, 1);
-            }
-          }
-        });
-      }
-
-      // Radio button change events
-      if (workerRadio) {
-        workerRadio.addEventListener('change', function() {
-          if (this.checked) show('workers');
-        });
-      }
-      
-      if (staffRadio) {
-        staffRadio.addEventListener('change', function() {
-          if (this.checked) show('staff');
-        });
-      }
-
-      // initial state
-      show('workers');
-    })();
+        // initial state
+        show('workers');
+      })();
+    });
   </script>
 </body>
 </html>
