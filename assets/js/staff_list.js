@@ -1,6 +1,4 @@
 (function () {
-  const searchInput = document.getElementById('accountSearch');
-  const staffView = document.getElementById('staffView');
   // Shared variables
   let currentRoleFilter = 'all';
   let currentSearch = '';
@@ -18,10 +16,11 @@
     return text.replace(regex, '<mark class="bg-warning text-dark">$1</mark>');
   }
 
-  if (!staffView) return;
-
   // Show loading state
   function showLoading() {
+    const staffView = document.getElementById('staffView');
+    if (!staffView) return;
+
     const loadingContainer = document.createElement('div');
     loadingContainer.className = 'list-group text-start js-status';
 
@@ -46,6 +45,9 @@
 
   // helper to show status/error in the view
   function showStatus(message, type = 'muted') {
+    const staffView = document.getElementById('staffView');
+    if (!staffView) return;
+
     // Create consistent list format for status messages
     const statusContainer = document.createElement('div');
     statusContainer.className = 'list-group text-start js-status';
@@ -76,6 +78,14 @@
 
   // fetchStaffList is exposed on window so other scripts (page toggle) can call it
   async function fetchStaffList(search = '', role = 'all', page = 1) {
+    console.log('[StaffList] fetchStaffList called', { search, role, page });
+    // Check if view exists before proceeding (though it should for the page that calls this)
+    const staffView = document.getElementById('staffView');
+    if (!staffView) {
+      console.warn('[StaffList] staffView element not found in DOM');
+      return;
+    }
+
     const startTime = performance.now();
     currentRoleFilter = role || 'all';
     currentSearch = search || '';
@@ -105,6 +115,9 @@
 
 
   function renderStaff(payload, roleFilter) {
+    const staffView = document.getElementById('staffView');
+    if (!staffView) return;
+
     // remove any previous status nodes
     const prevStatus = staffView.querySelector('.js-status');
     if (prevStatus) prevStatus.remove();

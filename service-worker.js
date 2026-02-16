@@ -1,4 +1,4 @@
-const CACHE_NAME = 'megacess-static-v1';
+const CACHE_NAME = 'megacess-static-v2';
 const ASSETS_TO_CACHE = [
     // Pages (Core)
     './index.html',
