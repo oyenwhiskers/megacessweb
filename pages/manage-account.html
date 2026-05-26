@@ -139,6 +139,10 @@
                 <div class="invalid-feedback">Please provide a valid IC or Document ID.</div>
               </div>
               <div class="col-md-6">
+                <label class="form-label">No IC (Optional):</label>
+                <input type="text" class="form-control" name="staff_ic" placeholder="e.g., 900101-12-1234">
+              </div>
+              <div class="col-md-6">
                 <label class="form-label">Full Name:</label>
                 <input type="text" class="form-control" name="fullname" required placeholder="Enter full name" minlength="2">
                 <div class="invalid-feedback">Please provide a valid full name (minimum 2 characters).</div>
@@ -161,6 +165,16 @@
                   <option value="female">Female</option>
                 </select>
                 <div class="invalid-feedback">Please select a gender.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Role:</label>
+                <select class="form-select" name="designation" required>
+                  <option value="">Select Role</option>
+                  <option value="harvester">Harvester</option>
+                  <option value="operator">Operator</option>
+                  <option value="maintenance">Maintenance</option>
+                </select>
+                <div class="invalid-feedback">Please select a role.</div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Bank Type:</label>

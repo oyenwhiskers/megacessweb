@@ -175,7 +175,7 @@
     function renderAttendanceRecords(data) {
         if (!workersAttendanceView) return;
 
-        const { data: records, current_page, per_page, total, last_page, from, to } = data;
+        const { data: records, current_page, per_page, total, last_page, from, to } = data.data || data;
 
         if (!records || records.length === 0) {
             showEmpty();

@@ -249,7 +249,7 @@
                              onerror="if(this.src!=='${placeholderImage}'){this.src='${placeholderImage}';}">
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <div class="fw-semibold">${highlightedName}</div>
+                        <div class="fw-semibold">${highlightedName} <span class="badge bg-secondary ms-1 fw-normal text-capitalize">${worker.designation || 'Worker'}</span></div>
                         <div class="small text-muted mb-1">
                             <i class="bi bi-telephone me-1"></i>${formatPhone(worker.staff_phone)}
                             <span class="ms-3"><span class="badge ${claimedBadge}">${claimedText}</span></span>
@@ -566,6 +566,11 @@
                             </div>
                             
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold mb-1 small">No IC:</label>
+                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_ic)}" readonly>
+                            </div>
+                            
+                            <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">Full Name:</label>
                                 <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_fullname)}" readonly>
                             </div>
@@ -587,7 +592,7 @@
                             
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">Role:</label>
-                                <input type="text" class="form-control form-control-sm" value="${worker.role ? worker.role.charAt(0).toUpperCase() + worker.role.slice(1) : 'Worker'}" readonly>
+                                <input type="text" class="form-control form-control-sm" value="${worker.designation ? worker.designation.charAt(0).toUpperCase() + worker.designation.slice(1) : (worker.role ? worker.role.charAt(0).toUpperCase() + worker.role.slice(1) : 'Worker')}" readonly>
                             </div>
                             
                             <div class="col-md-6">
@@ -708,6 +713,8 @@
 
             if (label.includes('IC / Document ID')) {
                 input.setAttribute('name', 'staff_doc');
+            } else if (label.includes('No IC')) {
+                input.setAttribute('name', 'staff_ic');
             } else if (label.includes('Full Name')) {
                 input.setAttribute('name', 'staff_fullname');
             } else if (label.includes('Phone Number')) {
@@ -742,10 +749,18 @@
                 input.outerHTML = selectHTML;
                 return;
             } else if (label.includes('Role')) {
-                // Role field stays readonly - workers cannot change their role
-                input.classList.remove('border-primary');
-                input.setAttribute('readonly', 'readonly');
-                return; // Skip further processing for this field
+                // Role field is now editable
+                const currentValue = input.value.toLowerCase();
+                const selectHTML = `
+                    <select class="form-control form-control-sm border-primary" name="designation" required>
+                        <option value="">Select Role</option>
+                        <option value="harvester" ${currentValue.includes('harvester') ? 'selected' : ''}>Harvester</option>
+                        <option value="operator" ${currentValue.includes('operator') ? 'selected' : ''}>Operator</option>
+                        <option value="maintenance" ${currentValue.includes('maintenance') ? 'selected' : ''}>Maintenance</option>
+                    </select>
+                `;
+                input.outerHTML = selectHTML;
+                return;
             } else if (label.includes('Bank Type')) {
                 input.setAttribute('name', 'staff_bank_name');
             } else if (label.includes('Bank Account Number')) {
@@ -868,6 +883,8 @@
             const bankNameInput = modalBody.querySelector('input[name="staff_bank_name"]');
             const bankNumberInput = modalBody.querySelector('input[name="staff_bank_number"]');
             const kwspNumberInput = modalBody.querySelector('input[name="staff_kwsp_number"]');
+            const staffIcInput = modalBody.querySelector('input[name="staff_ic"]');
+            const designationInput = modalBody.querySelector('select[name="designation"]');
 
             // Check if there's an image file to upload
             const imageInput = document.getElementById('workerDetailsImageInput');
@@ -918,6 +935,12 @@
             }
             if (kwspNumberInput && kwspNumberInput.value) {
                 formData.append('staff_kwsp_number', kwspNumberInput.value);
+            }
+            if (staffIcInput) {
+                formData.append('staff_ic', staffIcInput.value);
+            }
+            if (designationInput && designationInput.value) {
+                formData.append('designation', designationInput.value);
             }
 
             // Append image file if present

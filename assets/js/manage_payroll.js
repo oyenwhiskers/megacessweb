@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="worker-info">
                         <h5 class="mb-0 fw-semibold">${worker.staff_fullname}</h5>
                         <p class="mb-0 text-muted">
-                            Worker • Joined ${worker.joined_since} • ${worker.payslips_count} payslips
+                            ${worker.designation ? worker.designation.charAt(0).toUpperCase() + worker.designation.slice(1) : 'Worker'} • Joined ${worker.joined_since} • ${worker.payslips_count} payslips
                         </p>
                         ${worker.staff_phone ? `<small class="text-muted">${worker.staff_phone}</small>` : ''}
                     </div>
@@ -779,7 +779,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         id: overviewData.staff.id,
                         name: overviewData.staff.staff_fullname,
                         joinedSince: overviewData.staff.joined_since,
-                        role: 'Worker',
+                        role: overviewData.staff.designation 
+                            ? overviewData.staff.designation.charAt(0).toUpperCase() + overviewData.staff.designation.slice(1) 
+                            : 'Worker',
                         age: overviewData.staff.age
                     };
                     payslipsData = overviewData.payslips || [];
@@ -1454,6 +1456,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Clear all fields for new entry
         document.getElementById('deductionTableBody').innerHTML = '';
         document.getElementById('totalDeductions').textContent = '0.00';
+        
+        // Reset overrides
+        const latenessOverrideEl = document.getElementById('latenessOverride');
+        if (latenessOverrideEl) latenessOverrideEl.value = '';
+        const earlyOutOverrideEl = document.getElementById('earlyOutOverride');
+        if (earlyOutOverrideEl) earlyOutOverrideEl.value = '';
         const advAmtEl = document.getElementById('advanceAmount');
         if (advAmtEl) {
             if (typeof advAmtEl.value !== 'undefined') advAmtEl.value = '0.00';
@@ -1932,6 +1940,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
+                // Read and append overrides to deductions
+                const latenessOverrideEl = document.getElementById('latenessOverride');
+                const earlyOutOverrideEl = document.getElementById('earlyOutOverride');
+                if (latenessOverrideEl && latenessOverrideEl.value.trim() !== '') {
+                    const latenessVal = parseFloat(latenessOverrideEl.value);
+                    if (!isNaN(latenessVal) && latenessVal >= 0) {
+                        deductions.push({
+                            deduction_type: 'Lateness',
+                            deduction_amount: latenessVal
+                        });
+                    }
+                }
+                if (earlyOutOverrideEl && earlyOutOverrideEl.value.trim() !== '') {
+                    const earlyOutVal = parseFloat(earlyOutOverrideEl.value);
+                    if (!isNaN(earlyOutVal) && earlyOutVal >= 0) {
+                        deductions.push({
+                            deduction_type: 'Early Out',
+                            deduction_amount: earlyOutVal
+                        });
+                    }
+                }
+
                 // Advance fields
                 const advanceAmountEl = document.getElementById('advanceAmount');
                 const advanceRemarksEl = document.getElementById('advanceRemarks');
@@ -2035,6 +2065,15 @@ document.addEventListener('DOMContentLoaded', function () {
             modalBody.innerHTML = '<div class="text-center text-danger">No payslip data found.</div>';
             return;
         }
+
+        const isUser = !!data.user;
+        const name = isUser ? (data.user?.user_fullname || '') : (data.staff?.staff_fullname || '');
+        const doc = isUser ? (data.user?.user_ic || '') : (data.staff?.staff_doc || '');
+        const staffIc = isUser ? '' : (data.staff?.staff_ic || '');
+        const designation = isUser 
+            ? (data.user?.user_role ? data.user.user_role.charAt(0).toUpperCase() + data.user.user_role.slice(1) : 'Staff') 
+            : (data.staff?.designation ? data.staff.designation.charAt(0).toUpperCase() + data.staff.designation.slice(1) : 'Worker');
+
         // Prepare income and deduction breakdowns
         let incomeRows = '';
         let totalIncome = 0;
@@ -2054,8 +2093,8 @@ document.addEventListener('DOMContentLoaded', function () {
         let totalDeduction = 0;
         if (Array.isArray(data.deductions)) {
             data.deductions.forEach(ded => {
-                deductionRows += `<tr><td>${ded.type || ded.name || ''}</td><td class='text-end'>${Number(ded.amount || ded.value || 0).toFixed(2)}</td></tr>`;
-                totalDeduction += Number(ded.amount || ded.value || 0);
+                deductionRows += `<tr><td>${ded.type || ded.name || ded.deduction_type || ''}</td><td class='text-end'>${Number(ded.amount || ded.value || ded.deduction_amount || 0).toFixed(2)}</td></tr>`;
+                totalDeduction += Number(ded.amount || ded.value || ded.deduction_amount || 0);
             });
         } else if (data.deductions && typeof data.deductions === 'object') {
             for (const [key, value] of Object.entries(data.deductions)) {
@@ -2080,11 +2119,13 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
         <div class="mb-2"><span class="fw-bold text-success">Month of Payroll:</span> ${data.payslip_month || ''}</div>
         <div class="mb-2 fw-bold text-success">Employee Details</div>
-        <div class="mb-2"><b>Name:</b> ${data.staff?.staff_fullname || ''}</div>
-        <div class="mb-2"><b>Document No:</b> ${data.staff?.staff_doc || ''}</div>
-        <div class="mb-2"><b>Bank:</b> ${data.staff?.staff_bank_name || ''}</div>
-        <div class="mb-2"><b>Bank Acc. Number:</b> ${data.staff?.staff_bank_number || ''}</div>
-        <div class="mb-2"><b>KWSP Number:</b> ${data.staff?.staff_kwsp_number || ''}</div>
+        <div class="mb-2"><b>Name:</b> ${name}</div>
+        <div class="mb-2"><b>Document No:</b> ${doc}</div>
+        ${staffIc ? `<div class="mb-2"><b>No IC:</b> ${staffIc}</div>` : ''}
+        <div class="mb-2"><b>Designation:</b> ${designation}</div>
+        <div class="mb-2"><b>Bank:</b> ${isUser ? (data.user?.user_bank_name || '') : (data.staff?.staff_bank_name || '')}</div>
+        <div class="mb-2"><b>Bank Acc. Number:</b> ${isUser ? (data.user?.user_bank_number || '') : (data.staff?.staff_bank_number || '')}</div>
+        <div class="mb-2"><b>KWSP Number:</b> ${isUser ? (data.user?.user_kwsp_number || '') : (data.staff?.staff_kwsp_number || '')}</div>
         <div class="fw-bold text-success mt-3 mb-2">Salary Amount</div>
         <div class="table-responsive">
           <table class="table table-bordered align-middle mb-0">

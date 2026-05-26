@@ -91,6 +91,10 @@
             errors.push('Gender is required');
         }
 
+        if (!formData.designation) {
+            errors.push('Role is required');
+        }
+
         // Validate start date (optional, but must be valid if present)
         if (formData.staff_employment_start_date) {
             const startDate = new Date(formData.staff_employment_start_date);
@@ -195,6 +199,13 @@
             formDataPayload.append('staff_dob', formData.dob || '');
             formDataPayload.append('staff_gender', formData.gender || '');
             formDataPayload.append('staff_doc', formData.staff_doc?.trim() || '');
+
+            if (formData.staff_ic?.trim()) {
+                formDataPayload.append('staff_ic', formData.staff_ic.trim());
+            }
+            if (formData.designation) {
+                formDataPayload.append('designation', formData.designation);
+            }
 
             if (formData.staff_employment_start_date) {
                 formDataPayload.append('staff_employment_start_date', formData.staff_employment_start_date);
