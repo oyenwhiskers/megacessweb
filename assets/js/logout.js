@@ -2,7 +2,7 @@
 
 (function () {
   const LOGOUT_URL = `${API_URL}/auth/logout`;
-  const LOGIN_PAGE = "/pages/log-in.html";
+  const LOGIN_PAGE = window.location.pathname.includes('/pages/') ? 'log-in.html' : 'pages/log-in.html';
 
   function findTokenFromStorage() {
     // try common keys first

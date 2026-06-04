@@ -135,7 +135,7 @@ function showErrorNoToken(msg) {
     title: "Missing authentication token",
     text: msg,
   }).then(() => {
-    window.location.replace("../log-in.html");
+    window.location.replace(window.location.pathname.includes('/pages/') ? 'log-in.html' : 'pages/log-in.html');
   });
 }
 

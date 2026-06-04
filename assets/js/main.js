@@ -75,10 +75,30 @@
       initTabs();
       return;
     }
-    fetch('/megacessweb/partials/sidebar.html', { cache: 'no-store' }) // change this when deploying
+    const isPages = window.location.pathname.includes('/pages/');
+    const sidebarUrl = isPages ? '../partials/sidebar.html' : 'partials/sidebar.html';
+    fetch(sidebarUrl, { cache: 'no-store' })
       .then(function (r) { return r.text(); })
       .then(function (html) {
         root.innerHTML = html;
+
+        // Dynamically adjust sidebar links based on whether we are in /pages/ or at the root
+        root.querySelectorAll('.nav-link').forEach(function (a) {
+          var href = a.getAttribute('href');
+          if (href && href.startsWith('/megacessweb/')) {
+            var cleanPath = href.substring('/megacessweb/'.length); // e.g. "index.html" or "pages/analytics.html"
+            if (isPages) {
+              if (cleanPath.startsWith('pages/')) {
+                a.setAttribute('href', cleanPath.substring('pages/'.length));
+              } else {
+                a.setAttribute('href', '../' + cleanPath);
+              }
+            } else {
+              a.setAttribute('href', cleanPath);
+            }
+          }
+        });
+
         initActiveNav();
         initSidebarToggle();
         // Run sidebar username update if present

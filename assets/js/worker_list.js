@@ -148,7 +148,7 @@
 
         if (!token) {
             // Redirect to login page
-            window.location.href = '/pages/log-in.html';
+            window.location.href = 'log-in.html';
             return null;
         }
 
