@@ -135,7 +135,8 @@ function showErrorNoToken(msg) {
     title: "Missing authentication token",
     text: msg,
   }).then(() => {
-    window.location.replace("../log-in.html");
+    const basePath = typeof APP_BASE_PATH !== 'undefined' ? APP_BASE_PATH : '/';
+    window.location.replace(basePath + "pages/log-in.html");
   });
 }
 

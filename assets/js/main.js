@@ -75,10 +75,18 @@
       initTabs();
       return;
     }
-    fetch('/megacessweb/partials/sidebar.html', { cache: 'no-store' }) // change this when deploying
+    var basePath = typeof APP_BASE_PATH !== 'undefined' ? APP_BASE_PATH : '/';
+    fetch(basePath + 'partials/sidebar.html', { cache: 'no-store' })
       .then(function (r) { return r.text(); })
       .then(function (html) {
         root.innerHTML = html;
+        // Rewrite sidebar links to match actual base path
+        root.querySelectorAll('a[href]').forEach(function(a) {
+          var href = a.getAttribute('href');
+          if (href && href.startsWith('/megacessweb/')) {
+            a.setAttribute('href', href.replace('/megacessweb/', basePath));
+          }
+        });
         initActiveNav();
         initSidebarToggle();
         // Run sidebar username update if present
@@ -157,12 +165,8 @@
       // Let's use getBaseUrl from config (if available) or assume relative path logic.
       // We can try to finding it relative to the current script or page.
 
-      let swPath = '/service-worker.js'; // Default absolute to domain root
-
-      // If we are inside /megacessweb/, we need to prepend it.
-      if (window.location.pathname.includes('/megacessweb/')) {
-        swPath = '/megacessweb/service-worker.js';
-      }
+      var basePath = typeof APP_BASE_PATH !== 'undefined' ? APP_BASE_PATH : '/';
+      let swPath = basePath + 'service-worker.js';
 
       navigator.serviceWorker.register(swPath)
         .then(function (registration) {

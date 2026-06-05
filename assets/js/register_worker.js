@@ -75,8 +75,16 @@
             errors.push('IC / Document ID is required');
         }
 
+        if (!formData.staff_ic?.trim()) {
+            errors.push('IC Number is required');
+        }
+
         if (!formData.fullname?.trim()) {
             errors.push('Full Name is required');
+        }
+
+        if (!formData.staff_role) {
+            errors.push('Worker designation is required');
         }
 
         if (!formData.phone?.trim()) {
@@ -130,6 +138,8 @@
         // Create JSON object for worker registration
         const apiData = {
             staff_fullname: formData.fullname?.trim() || '',
+            staff_ic: formData.staff_ic?.trim() || '',
+            staff_role: formData.staff_role || '',
             staff_phone: formData.phone?.trim() || '',
             staff_dob: formData.dob || '',
             staff_gender: formData.gender || '',
@@ -191,6 +201,8 @@
 
             // Append all text fields
             formDataPayload.append('staff_fullname', formData.fullname?.trim() || '');
+            formDataPayload.append('staff_ic', formData.staff_ic?.trim() || '');
+            formDataPayload.append('staff_role', formData.staff_role || '');
             formDataPayload.append('staff_phone', formData.phone?.trim() || '');
             formDataPayload.append('staff_dob', formData.dob || '');
             formDataPayload.append('staff_gender', formData.gender || '');

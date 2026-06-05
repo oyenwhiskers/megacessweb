@@ -1451,9 +1451,79 @@ document.addEventListener('DOMContentLoaded', function () {
             const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
             payslipMonth.innerHTML += `<option value="${val}">${label}</option>`;
         }
+
+        // On month change, fetch payroll calculations preview for deductions
+        payslipMonth.onchange = async function () {
+            const selectedMonth = payslipMonth.value;
+            if (!selectedMonth || selectedMonth === 'select month') return;
+
+            const tbody = document.getElementById('deductionTableBody');
+            // Remove existing auto-calculated deduction rows before adding new ones
+            tbody.querySelectorAll('tr[data-auto="true"]').forEach(tr => tr.remove());
+
+            const employeeId = workerData.id || workerData.staff_id || workerData.user_id || currentPayslipWorkerId;
+            const previewUrl = isStaff
+                ? `${API_URL}/payroll/users/${employeeId}/preview?payslip_month=${encodeURIComponent(selectedMonth)}`
+                : `${API_URL}/payroll/staff/${employeeId}/preview?payslip_month=${encodeURIComponent(selectedMonth)}`;
+
+            try {
+                const response = await fetch(previewUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${AUTH_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                const result = await response.json();
+                if (response.ok && result.success && result.data) {
+                    const data = result.data;
+                    const deductions = data.attendance_deductions;
+
+                    const latenessInput = document.getElementById('latenessDeductionInput');
+                    const earlyOutInput = document.getElementById('earlyOutDeductionInput');
+                    const latenessMeta = document.getElementById('latenessDeductionMeta');
+                    const earlyOutMeta = document.getElementById('earlyOutDeductionMeta');
+
+                    if (latenessInput) {
+                        latenessInput.value = '0.00';
+                    }
+                    if (latenessMeta && deductions.lateness) {
+                        latenessMeta.textContent = `Auto-calculated: ${deductions.lateness.count} arrival(s) late, total ${deductions.lateness.total_minutes} mins (Suggested: RM ${parseFloat(deductions.lateness.amount).toFixed(2)})`;
+                    }
+
+                    if (earlyOutInput) {
+                        earlyOutInput.value = '0.00';
+                    }
+                    if (earlyOutMeta && deductions.early_out) {
+                        earlyOutMeta.textContent = `Auto-calculated: ${deductions.early_out.count} early departure(s), total ${deductions.early_out.total_minutes} mins (Suggested: RM ${parseFloat(deductions.early_out.amount).toFixed(2)})`;
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching payroll preview:', err);
+            }
+        };
         // Clear all fields for new entry
         document.getElementById('deductionTableBody').innerHTML = '';
         document.getElementById('totalDeductions').textContent = '0.00';
+        const earningTbody = document.getElementById('earningTableBody');
+        if (earningTbody) earningTbody.innerHTML = '';
+        const totalExtraEarningsEl = document.getElementById('totalExtraEarnings');
+        if (totalExtraEarningsEl) totalExtraEarningsEl.textContent = '0.00';
+        const earningTypeInput = document.getElementById('earningTypeInput');
+        if (earningTypeInput) earningTypeInput.value = '';
+        const earningAmountInput = document.getElementById('earningAmountInput');
+        if (earningAmountInput) earningAmountInput.value = '';
+        
+        const latenessInput = document.getElementById('latenessDeductionInput');
+        if (latenessInput) latenessInput.value = '0.00';
+        const earlyOutInput = document.getElementById('earlyOutDeductionInput');
+        if (earlyOutInput) earlyOutInput.value = '0.00';
+        const latenessMeta = document.getElementById('latenessDeductionMeta');
+        if (latenessMeta) latenessMeta.textContent = '';
+        const earlyOutMeta = document.getElementById('earlyOutDeductionMeta');
+        if (earlyOutMeta) earlyOutMeta.textContent = '';
+
         const advAmtEl = document.getElementById('advanceAmount');
         if (advAmtEl) {
             if (typeof advAmtEl.value !== 'undefined') advAmtEl.value = '0.00';
@@ -1897,6 +1967,51 @@ document.addEventListener('DOMContentLoaded', function () {
                 row?.remove();
                 recalcTotal();
             });
+
+            // Wire earnings add/remove
+            const earningTypeEl = document.getElementById('earningTypeInput');
+            const earningAmtEl = document.getElementById('earningAmountInput');
+            const addEarningBtn = document.getElementById('addEarningBtn');
+            const earningTbody = document.getElementById('earningTableBody');
+            const totalEarningEl = document.getElementById('totalExtraEarnings');
+
+            function recalcEarningTotal() {
+                let sum = 0;
+                earningTbody.querySelectorAll('tr').forEach(tr => {
+                    const val = parseFloat(tr.getAttribute('data-amount') || '0');
+                    if (!isNaN(val)) sum += val;
+                });
+                if (totalEarningEl) totalEarningEl.textContent = sum.toFixed(2);
+            }
+
+            function addEarningRow() {
+                const t = (earningTypeEl?.value || '').trim();
+                const a = parseFloat(earningAmtEl?.value || '0');
+                if (!t) { alert('Enter or select earning type'); return; }
+                if (isNaN(a) || a <= 0) { alert('Enter a valid amount'); return; }
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-amount', a.toString());
+                tr.innerHTML = `
+                  <td>${t}</td>
+                  <td class="text-end">${a.toFixed(2)}</td>
+                  <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-earning">Remove</button></td>
+                `;
+                earningTbody.appendChild(tr);
+                earningTypeEl.value = '';
+                earningAmtEl.value = '';
+                recalcEarningTotal();
+            }
+
+            if (addEarningBtn) {
+                addEarningBtn.onclick = addEarningRow;
+            }
+            earningTbody.addEventListener('click', function (ev) {
+                const btn = ev.target.closest('.remove-earning');
+                if (!btn) return;
+                const row = btn.closest('tr');
+                row?.remove();
+                recalcEarningTotal();
+            });
         });
 
         // Generate button: call API
@@ -1918,7 +2033,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const deductionRows = document.querySelectorAll('#deductionTableBody tr');
                 const deductions = [];
                 deductionRows.forEach(row => {
-                    const type = row.children[0]?.textContent?.trim();
+                    let type = row.children[0]?.textContent?.trim() || '';
+                    // Clean up type if it contains '(Auto)'
+                    if (type.includes(' (Auto)')) {
+                        type = type.split(' (Auto)')[0].trim();
+                    }
                     // Get amount from data-amount attribute (source of truth) or parse from displayed text
                     const amountAttr = row.getAttribute('data-amount');
                     const amountText = amountAttr || row.children[1]?.textContent?.trim() || '0';
@@ -1928,6 +2047,40 @@ document.addEventListener('DOMContentLoaded', function () {
                         deductions.push({
                             deduction_type: type,
                             deduction_amount: amount
+                        });
+                    }
+                });
+
+                // Add manual/calculated Lateness and Early Out deductions
+                const latenessInput = document.getElementById('latenessDeductionInput');
+                if (latenessInput) {
+                    const latenessVal = parseFloat(latenessInput.value) || 0;
+                    deductions.push({
+                        deduction_type: 'Lateness',
+                        deduction_amount: latenessVal
+                    });
+                }
+                const earlyOutInput = document.getElementById('earlyOutDeductionInput');
+                if (earlyOutInput) {
+                    const earlyOutVal = parseFloat(earlyOutInput.value) || 0;
+                    deductions.push({
+                        deduction_type: 'Early Out',
+                        deduction_amount: earlyOutVal
+                    });
+                }
+
+                // Gather earnings
+                const earningRows = document.querySelectorAll('#earningTableBody tr');
+                const earnings = [];
+                earningRows.forEach(row => {
+                    const type = row.children[0]?.textContent?.trim() || '';
+                    const amountAttr = row.getAttribute('data-amount');
+                    const amountText = amountAttr || row.children[1]?.textContent?.trim() || '0';
+                    const amount = parseFloat(amountText.replace(/[^\d.-]/g, '')) || 0;
+                    if (type) {
+                        earnings.push({
+                            earning_type: type,
+                            earning_amount: amount
                         });
                     }
                 });
@@ -1953,7 +2106,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Build payload
                 const payload = {
                     payslip_month: payslipMonth,
-                    deductions: deductions
+                    deductions: deductions,
+                    earnings: earnings
                 };
 
                 // Add advance repayment if provided

@@ -139,9 +139,24 @@
                 <div class="invalid-feedback">Please provide a valid IC or Document ID.</div>
               </div>
               <div class="col-md-6">
+                <label class="form-label">No IC:</label>
+                <input type="text" class="form-control" name="staff_ic" required placeholder="Enter IC number (e.g. 950101-10-5678)">
+                <div class="invalid-feedback">Please provide a valid IC number.</div>
+              </div>
+              <div class="col-md-6">
                 <label class="form-label">Full Name:</label>
                 <input type="text" class="form-control" name="fullname" required placeholder="Enter full name" minlength="2">
                 <div class="invalid-feedback">Please provide a valid full name (minimum 2 characters).</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Worker Role / Designation:</label>
+                <select class="form-select" name="staff_role" required>
+                  <option value="worker" selected>Worker (No Specific Role)</option>
+                  <option value="worker-harvester">Harvester</option>
+                  <option value="worker-operator">Operator</option>
+                  <option value="worker-maintenance">Maintenance</option>
+                </select>
+                <div class="invalid-feedback">Please select a worker designation.</div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Phone Number:</label>

@@ -1,8 +1,18 @@
-// config.js - Centralized Environment Configuration
+// Centralized Environment Configuration
 // ==============================================
 // Change ENV to switch between environments: 'staging' or 'production'
 
 const ENV = 'staging'; // CHANGE THIS TO SWITCH ENVIRONMENTS
+
+// Dynamically detect local or sub-folder base path (e.g. '/megacessweb/' or '/')
+const getAppBasePath = () => {
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('/megacessweb/')) {
+        return '/megacessweb/';
+    }
+    return '/';
+};
+const APP_BASE_PATH = getAppBasePath();
 
 // API Base URLs for each environment
 const API_URLS = {
@@ -12,7 +22,7 @@ const API_URLS = {
 
 // Base Domain URLs for each environment
 const DOMAIN_URLS = {
-    staging: 'https://mwmsdemo.megacess.com',
+    staging: 'https://mwmsdemo.megacess.com/',
     production: 'https://mwms.megacess.com'
 };
 

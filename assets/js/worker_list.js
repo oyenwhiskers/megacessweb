@@ -566,6 +566,11 @@
                             </div>
                             
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold mb-1 small">No IC:</label>
+                                <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_ic)}" readonly>
+                            </div>
+                            
+                            <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">Full Name:</label>
                                 <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_fullname)}" readonly>
                             </div>
@@ -586,8 +591,8 @@
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-1 small">Role:</label>
-                                <input type="text" class="form-control form-control-sm" value="${worker.role ? worker.role.charAt(0).toUpperCase() + worker.role.slice(1) : 'Worker'}" readonly>
+                                <label class="form-label fw-semibold mb-1 small">Role / Designation:</label>
+                                <input type="text" class="form-control form-control-sm" value="${worker.staff_role ? worker.staff_role.replace('worker-', '').charAt(0).toUpperCase() + worker.staff_role.replace('worker-', '').slice(1) : 'Worker'}" readonly>
                             </div>
                             
                             <div class="col-md-6">
@@ -708,6 +713,8 @@
 
             if (label.includes('IC / Document ID')) {
                 input.setAttribute('name', 'staff_doc');
+            } else if (label.includes('No IC')) {
+                input.setAttribute('name', 'staff_ic');
             } else if (label.includes('Full Name')) {
                 input.setAttribute('name', 'staff_fullname');
             } else if (label.includes('Phone Number')) {
@@ -741,11 +748,19 @@
                 `;
                 input.outerHTML = selectHTML;
                 return;
-            } else if (label.includes('Role')) {
-                // Role field stays readonly - workers cannot change their role
-                input.classList.remove('border-primary');
-                input.setAttribute('readonly', 'readonly');
-                return; // Skip further processing for this field
+            } else if (label.includes('Role / Designation')) {
+                // Replace role input with select (worker roles)
+                const currentValue = input.value.toLowerCase();
+                const selectHTML = `
+                    <select class="form-control form-control-sm border-primary" name="staff_role" required>
+                        <option value="worker" ${currentValue === 'worker' ? 'selected' : ''}>Worker</option>
+                        <option value="worker-harvester" ${currentValue.includes('harvester') ? 'selected' : ''}>Harvester</option>
+                        <option value="worker-operator" ${currentValue.includes('operator') ? 'selected' : ''}>Operator</option>
+                        <option value="worker-maintenance" ${currentValue.includes('maintenance') ? 'selected' : ''}>Maintenance</option>
+                    </select>
+                `;
+                input.outerHTML = selectHTML;
+                return;
             } else if (label.includes('Bank Type')) {
                 input.setAttribute('name', 'staff_bank_name');
             } else if (label.includes('Bank Account Number')) {
@@ -860,7 +875,9 @@
 
             // Collect all editable fields
             const staffDocInput = modalBody.querySelector('input[name="staff_doc"]');
+            const staffIcInput = modalBody.querySelector('input[name="staff_ic"]');
             const fullNameInput = modalBody.querySelector('input[name="staff_fullname"]');
+            const staffRoleInput = modalBody.querySelector('select[name="staff_role"]');
             const phoneInput = modalBody.querySelector('input[name="staff_phone"]');
             const dobInput = modalBody.querySelector('input[name="staff_dob"]');
             const genderInput = modalBody.querySelector('input[name="gender"], select[name="gender"]');
@@ -895,8 +912,14 @@
             if (staffDocInput && staffDocInput.value) {
                 formData.append('staff_doc', staffDocInput.value);
             }
+            if (staffIcInput && staffIcInput.value) {
+                formData.append('staff_ic', staffIcInput.value);
+            }
             if (fullNameInput && fullNameInput.value) {
                 formData.append('staff_fullname', fullNameInput.value);
+            }
+            if (staffRoleInput && staffRoleInput.value) {
+                formData.append('staff_role', staffRoleInput.value);
             }
             if (phoneInput && phoneInput.value) {
                 formData.append('staff_phone', phoneInput.value);

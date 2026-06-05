@@ -2,7 +2,8 @@
 
 (function () {
   const LOGOUT_URL = `${API_URL}/auth/logout`;
-  const LOGIN_PAGE = "/pages/log-in.html";
+  const basePath = typeof APP_BASE_PATH !== 'undefined' ? APP_BASE_PATH : '/';
+  const LOGIN_PAGE = basePath + "pages/log-in.html";
 
   function findTokenFromStorage() {
     // try common keys first
