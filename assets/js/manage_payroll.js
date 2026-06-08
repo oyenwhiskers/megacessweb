@@ -20,6 +20,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Current selected role
     let currentRole = 'all';
 
+    // Helper to format worker roles nicely
+    function formatWorkerRole(role) {
+        if (!role) return 'Worker';
+        return role.replace(/worker-/i, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Worker';
+    }
+
     // Helper function to set active role filter button
     function setActiveRoleFilter(role) {
         currentRole = role;
@@ -59,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Pagination variables
     let currentPage = 1;
-    let itemsPerPage = 10;
+    let itemsPerPage = 15;
     let totalItems = 0;
     let totalPages = 0;
 
@@ -84,42 +90,46 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // If we have all data and this is just pagination/search, use client-side
-            if (allWorkersData.length > 0 && !searchTerm) {
-                handleClientSidePagination('', page);
-                return;
-            }
-
             showLoading(true);
-            let endpoint = `/payroll/staff`;
+            let endpoint = `/payroll/staff?page=${page}&per_page=${itemsPerPage}`;
 
             // Add search parameter if exists
             if (searchTerm) {
-                endpoint += `?search=${encodeURIComponent(searchTerm)}`;
+                endpoint += `&search=${encodeURIComponent(searchTerm)}`;
             }
 
-            // Use cached fetch with 10 minute TTL for worker list
+            // Fetch page-by-page from backend (1 minute cache TTL to allow quick updates)
             const result = await apiFetchWithCache(endpoint, {
                 method: 'GET'
-            }, 10 * 60 * 1000);
+            }, 60 * 1000);
 
-            // Handle different API response structures
-            let allData = [];
-            if (result.data && Array.isArray(result.data)) {
-                allData = result.data;
-
-                // Store all data for client-side pagination
-                if (!searchTerm) {
-                    allWorkersData = allData;
+            // Handle API response
+            if (result.data) {
+                if (result.data.items && Array.isArray(result.data.items)) {
+                    // Paginated response format
+                    workersData = result.data.items;
+                    totalItems = result.data.total;
+                    totalPages = result.data.last_page;
+                    currentPage = result.data.current_page;
+                } else if (Array.isArray(result.data)) {
+                    // Backward-compatible fallback unpaginated list
+                    const allData = result.data;
+                    totalItems = allData.length;
+                    totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+                    currentPage = Math.min(page, totalPages) || 1;
+                    
+                    const startIndex = (currentPage - 1) * itemsPerPage;
+                    const endIndex = startIndex + itemsPerPage;
+                    workersData = allData.slice(startIndex, endIndex);
+                } else {
+                    workersData = [];
+                    totalItems = 0;
+                    currentPage = 1;
+                    totalPages = 1;
                 }
-
-                // Calculate totalPages IMMEDIATELY to prevent race condition
-                totalItems = allData.length;
-                totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-                currentPage = Math.min(page, totalPages) || 1;
-
-                // Always use client-side pagination for consistent behavior
-                handleClientSidePagination(searchTerm, page, allData);
+                
+                renderWorkers(workersData);
+                updatePagination();
             } else {
                 workersData = [];
                 totalItems = 0;
@@ -143,33 +153,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Handle client-side pagination
-    function handleClientSidePagination(searchTerm = '', page = 1, dataSource = null) {
-        let sourceData = dataSource || allWorkersData;
-        let filteredData = sourceData;
-
-        // Filter data for search if search term exists
-        if (searchTerm) {
-            filteredData = sourceData.filter(worker =>
-                worker.staff_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (worker.staff_phone && worker.staff_phone.includes(searchTerm))
-            );
-        }
-
-        // Calculate pagination
-        totalItems = filteredData.length;
-        totalPages = Math.ceil(totalItems / itemsPerPage);
-        currentPage = Math.min(page, totalPages) || 1;
-
-        // Get only the items for current page (exactly 10 items)
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        workersData = filteredData.slice(startIndex, endIndex);
-
-        renderWorkers(workersData);
-        updatePagination();
-    }
-
     // Go to specific page
     window.goToPage = function (page) {
         if (page < 1 || page > totalPages || page === currentPage) return;
@@ -181,21 +164,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const isWorkerTab = workerTab.classList.contains('btn-success');
 
         if (isWorkerTab) {
-            // If we have cached data, use client-side pagination
-            if (allWorkersData && allWorkersData.length > 0) {
-                handleClientSidePagination(searchTerm, page, allWorkersData);
-            } else {
-                // Otherwise fetch from API
-                fetchWorkers(searchTerm, page);
-            }
+            fetchWorkers(searchTerm, page);
         } else {
-            // If we have cached data, use client-side pagination
-            if (allStaffData && allStaffData.length > 0) {
-                handleStaffClientSidePagination(searchTerm, page, allStaffData, currentRole);
-            } else {
-                // Otherwise fetch from API
-                fetchStaff(searchTerm, page, currentRole);
-            }
+            fetchStaff(searchTerm, page, currentRole);
         }
     };
 
@@ -208,51 +179,59 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // If we have all data and this is just pagination/search, use client-side
-            if (allStaffData.length > 0 && !searchTerm && role === 'all') {
-                handleStaffClientSidePagination('', page);
-                return;
-            }
-
             showLoading(true);
-            let endpoint = `/payroll/users`;
-            const params = new URLSearchParams();
-
-            // Add parameters
+            let endpoint = `/payroll/users?page=${page}&per_page=${itemsPerPage}`;
+            
             if (searchTerm) {
-                params.append('search', searchTerm);
+                endpoint += `&search=${encodeURIComponent(searchTerm)}`;
             }
             if (role && role !== 'all') {
-                params.append('role', role);
+                endpoint += `&role=${role}`;
             }
 
-            if (params.toString()) {
-                endpoint += `?${params.toString()}`;
-            }
-
-            // Use cached fetch with 10 minute TTL for staff list
+            // Fetch page-by-page from backend (1 minute cache TTL to allow quick updates)
             const result = await apiFetchWithCache(endpoint, {
                 method: 'GET'
-            }, 10 * 60 * 1000);
+            }, 60 * 1000);
 
             // Handle API response
-            let allData = [];
-            if (result.data && Array.isArray(result.data)) {
-                allData = result.data;
-
-                // Store all data for client-side pagination
-                if (!searchTerm && role === 'all') {
-                    allStaffData = allData;
+            if (result.data) {
+                if (result.data.items && Array.isArray(result.data.items)) {
+                    // Paginated response format
+                    staffData = result.data.items;
+                    totalItems = result.data.total;
+                    totalPages = result.data.last_page;
+                    currentPage = result.data.current_page;
+                } else if (Array.isArray(result.data)) {
+                    // Backward-compatible fallback unpaginated list
+                    let filteredData = result.data;
+                    
+                    if (role && role !== 'all') {
+                        filteredData = filteredData.filter(staff => staff.user_role === role);
+                    }
+                    if (searchTerm) {
+                        filteredData = filteredData.filter(staff =>
+                            staff.user_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (staff.user_nickname && staff.user_nickname.toLowerCase().includes(searchTerm.toLowerCase()))
+                        );
+                    }
+                    
+                    totalItems = filteredData.length;
+                    totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+                    currentPage = Math.min(page, totalPages) || 1;
+                    
+                    const startIndex = (currentPage - 1) * itemsPerPage;
+                    const endIndex = startIndex + itemsPerPage;
+                    staffData = filteredData.slice(startIndex, endIndex);
+                } else {
+                    staffData = [];
+                    totalItems = 0;
+                    currentPage = 1;
+                    totalPages = 1;
                 }
-
-                // Calculate totalPages IMMEDIATELY to prevent race condition
-                // Note: This is a rough estimate, will be refined in handleStaffClientSidePagination
-                totalItems = allData.length;
-                totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-                currentPage = Math.min(page, totalPages) || 1;
-
-                // Always use client-side pagination for consistent behavior
-                handleStaffClientSidePagination(searchTerm, page, allData, role);
+                
+                renderStaff(staffData);
+                updatePagination();
             } else {
                 staffData = [];
                 totalItems = 0;
@@ -274,38 +253,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             showLoading(false);
         }
-    }
-
-    // Handle staff client-side pagination
-    function handleStaffClientSidePagination(searchTerm = '', page = 1, dataSource = null, role = 'all') {
-        let sourceData = dataSource || allStaffData;
-        let filteredData = sourceData;
-
-        // Filter by role first if not 'all'
-        if (role && role !== 'all') {
-            filteredData = sourceData.filter(staff => staff.user_role === role);
-        }
-
-        // Filter data for search if search term exists
-        if (searchTerm) {
-            filteredData = filteredData.filter(staff =>
-                staff.user_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (staff.user_nickname && staff.user_nickname.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-        }
-
-        // Calculate pagination
-        totalItems = filteredData.length;
-        totalPages = Math.ceil(totalItems / itemsPerPage);
-        currentPage = Math.min(page, totalPages) || 1;
-
-        // Get only the items for current page (exactly 10 items)
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        staffData = filteredData.slice(startIndex, endIndex);
-
-        renderStaff(staffData);
-        updatePagination();
     }
 
     // Update pagination controls
@@ -436,6 +383,8 @@ document.addEventListener('DOMContentLoaded', function () {
                  <i class="bi bi-person text-white"></i>
                </div>`;
 
+        const displayRole = formatWorkerRole(worker.staff_role);
+
         return `
             <div class="worker-card mb-3 p-3 bg-white rounded border d-flex align-items-center justify-content-between" data-worker-id="${worker.id}">
                 <div class="d-flex align-items-center gap-3">
@@ -445,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="worker-info">
                         <h5 class="mb-0 fw-semibold">${worker.staff_fullname}</h5>
                         <p class="mb-0 text-muted">
-                            Worker • Joined ${worker.joined_since} • ${worker.payslips_count} payslips
+                            ${displayRole} • Joined ${worker.joined_since} • ${worker.payslips_count} payslips
                         </p>
                         ${worker.staff_phone ? `<small class="text-muted">${worker.staff_phone}</small>` : ''}
                     </div>
@@ -629,21 +578,9 @@ document.addEventListener('DOMContentLoaded', function () {
             currentPage = 1;
 
             if (workerTab.classList.contains('btn-success')) {
-                // Currently on workers tab - use client-side pagination if we have data
-                if (allWorkersData.length > 0) {
-                    handleClientSidePagination(searchTerm, 1);
-                } else {
-                    // No data yet, fetch from API
-                    fetchWorkers(searchTerm, 1);
-                }
+                fetchWorkers(searchTerm, 1);
             } else {
-                // Currently on staff tab - use client-side pagination if we have data
-                if (allStaffData.length > 0) {
-                    handleStaffClientSidePagination(searchTerm, 1, allStaffData, currentRole);
-                } else {
-                    // No data yet, fetch from API
-                    fetchStaff(searchTerm, 1, currentRole);
-                }
+                fetchStaff(searchTerm, 1, currentRole);
             }
         }, 300); // 300ms delay
     });
@@ -663,11 +600,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Only handle this for staff tab
                 if (staffTab.classList.contains('btn-success')) {
-                    if (allStaffData.length > 0) {
-                        handleStaffClientSidePagination(searchTerm, 1, allStaffData, selectedRole);
-                    } else {
-                        fetchStaff(searchTerm, 1, selectedRole);
-                    }
+                    fetchStaff(searchTerm, 1, selectedRole);
                 }
             });
         }
@@ -703,12 +636,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Immediately hide pagination while loading
         updatePagination();
 
-        // Use client-side pagination if we have data, otherwise fetch from API
-        if (allWorkersData.length > 0) {
-            handleClientSidePagination(searchTerm, 1);
-        } else {
-            fetchWorkers(searchTerm, 1);
-        }
+        fetchWorkers(searchTerm, 1);
     });
 
     // Switch to Staff tab
@@ -743,12 +671,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Immediately hide pagination while loading
         updatePagination();
 
-        // Use client-side pagination if we have data, otherwise fetch from API
-        if (allStaffData.length > 0) {
-            handleStaffClientSidePagination(searchTerm, 1, allStaffData, currentRole);
-        } else {
-            fetchStaff(searchTerm, 1, currentRole);
-        }
+        fetchStaff(searchTerm, 1, currentRole);
     });
 
     // Show Employment Overview
@@ -779,7 +702,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         id: overviewData.staff.id,
                         name: overviewData.staff.staff_fullname,
                         joinedSince: overviewData.staff.joined_since,
-                        role: 'Worker',
+                        role: formatWorkerRole(overviewData.staff.staff_role),
                         age: overviewData.staff.age
                     };
                     payslipsData = overviewData.payslips || [];
@@ -1478,25 +1401,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 const result = await response.json();
                 if (response.ok && result.success && result.data) {
                     const data = result.data;
-                    const deductions = data.attendance_deductions;
 
-                    const latenessInput = document.getElementById('latenessDeductionInput');
-                    const earlyOutInput = document.getElementById('earlyOutDeductionInput');
-                    const latenessMeta = document.getElementById('latenessDeductionMeta');
-                    const earlyOutMeta = document.getElementById('earlyOutDeductionMeta');
-
-                    if (latenessInput) {
-                        latenessInput.value = '0.00';
-                    }
-                    if (latenessMeta && deductions.lateness) {
-                        latenessMeta.textContent = `Auto-calculated: ${deductions.lateness.count} arrival(s) late, total ${deductions.lateness.total_minutes} mins (Suggested: RM ${parseFloat(deductions.lateness.amount).toFixed(2)})`;
+                    // Update task income hint
+                    const taskIncomeHintEl = document.getElementById('taskIncomeHint');
+                    if (taskIncomeHintEl && data.task_income !== undefined) {
+                        const autoTaskIncome = parseFloat(data.task_income || 0).toFixed(2);
+                        taskIncomeHintEl.textContent = `Auto-calculated from tasks: RM ${autoTaskIncome}`;
+                        const taskIncomeEl = document.getElementById('taskIncomeOverride');
+                        if (taskIncomeEl && parseFloat(taskIncomeEl.value || 0) === 0) {
+                            taskIncomeEl.value = autoTaskIncome;
+                        }
                     }
 
-                    if (earlyOutInput) {
-                        earlyOutInput.value = '0.00';
-                    }
-                    if (earlyOutMeta && deductions.early_out) {
-                        earlyOutMeta.textContent = `Auto-calculated: ${deductions.early_out.count} early departure(s), total ${deductions.early_out.total_minutes} mins (Suggested: RM ${parseFloat(deductions.early_out.amount).toFixed(2)})`;
+                    // Update overtime hint
+                    const overtimeHintEl = document.getElementById('overtimeIncomeHint');
+                    if (overtimeHintEl && data.overtime_earnings) {
+                        const autoOvertime = parseFloat(data.overtime_earnings.total_amount || 0).toFixed(2);
+                        overtimeHintEl.textContent = `Auto-calculated from overtime: RM ${autoOvertime}`;
+                        const overtimeEl = document.getElementById('overtimeIncomeOverride');
+                        if (overtimeEl && parseFloat(overtimeEl.value || 0) === 0) {
+                            overtimeEl.value = autoOvertime;
+                        }
                     }
                 }
             } catch (err) {
@@ -1514,11 +1439,24 @@ document.addEventListener('DOMContentLoaded', function () {
         if (earningTypeInput) earningTypeInput.value = '';
         const earningAmountInput = document.getElementById('earningAmountInput');
         if (earningAmountInput) earningAmountInput.value = '';
-        
+
+        // Clear override income fields
+        const taskIncomeOverrideEl = document.getElementById('taskIncomeOverride');
+        if (taskIncomeOverrideEl) taskIncomeOverrideEl.value = '0.00';
+        const overtimeIncomeOverrideEl = document.getElementById('overtimeIncomeOverride');
+        if (overtimeIncomeOverrideEl) overtimeIncomeOverrideEl.value = '0.00';
+        const taskIncomeHintEl = document.getElementById('taskIncomeHint');
+        if (taskIncomeHintEl) taskIncomeHintEl.textContent = '';
+        const overtimeIncomeHintEl = document.getElementById('overtimeIncomeHint');
+        if (overtimeIncomeHintEl) overtimeIncomeHintEl.textContent = '';
+        const baseSalaryHintEl = document.getElementById('baseSalaryHint');
+        if (baseSalaryHintEl) baseSalaryHintEl.textContent = '';
+
+        // Clear legacy hidden spans (no-op but safe)
         const latenessInput = document.getElementById('latenessDeductionInput');
-        if (latenessInput) latenessInput.value = '0.00';
+        if (latenessInput && latenessInput.tagName === 'INPUT') latenessInput.value = '0.00';
         const earlyOutInput = document.getElementById('earlyOutDeductionInput');
-        if (earlyOutInput) earlyOutInput.value = '0.00';
+        if (earlyOutInput && earlyOutInput.tagName === 'INPUT') earlyOutInput.value = '0.00';
         const latenessMeta = document.getElementById('latenessDeductionMeta');
         if (latenessMeta) latenessMeta.textContent = '';
         const earlyOutMeta = document.getElementById('earlyOutDeductionMeta');
@@ -1598,7 +1536,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('staffBankName').textContent = workerData.staff_bank_name || '-';
         document.getElementById('staffBankNumber').textContent = workerData.staff_bank_number || '-';
         document.getElementById('staffKwspNumber').textContent = workerData.staff_kwsp_number || '-';
-        // Income fields
+        // Income fields — populate override inputs with auto-calculated values as editable hints
         const baseSalaryEl = document.getElementById('baseSalary');
         let baseVal = '0.00';
         // Prefer API base-salary for staff endpoints (workers use staff id)
@@ -1616,13 +1554,19 @@ document.addEventListener('DOMContentLoaded', function () {
             baseVal = baseRaw ? parseFloat(baseRaw).toFixed(2) : '0.00';
         }
         if (baseSalaryEl) {
-            // Always set value for input fields
-            if (baseSalaryEl.tagName === 'INPUT') {
-                baseSalaryEl.value = baseVal;
-            } else {
-                baseSalaryEl.textContent = baseVal;
-            }
+            baseSalaryEl.value = baseVal;
         }
+        // Show hint for base salary
+        const baseSalaryHintFill = document.getElementById('baseSalaryHint');
+        if (baseSalaryHintFill) {
+            baseSalaryHintFill.textContent = baseVal !== '0.00' ? `System base salary: RM ${baseVal}` : '';
+        }
+        // Set task income override default from existing workerData (0.00 until month is selected)
+        const taskIncomeOvEl = document.getElementById('taskIncomeOverride');
+        if (taskIncomeOvEl) taskIncomeOvEl.value = '0.00';
+        // Set overtime override default (0.00 until month is selected)
+        const overtimeOvEl = document.getElementById('overtimeIncomeOverride');
+        if (overtimeOvEl) overtimeOvEl.value = '0.00';
         document.getElementById('taskIncome').textContent = workerData.task_income ? parseFloat(workerData.task_income).toFixed(2) : '0.00';
         document.getElementById('totalIncome').textContent = workerData.total_income ? parseFloat(workerData.total_income).toFixed(2) : '0.00';
         document.getElementById('totalDeduction').textContent = workerData.total_deduction ? parseFloat(workerData.total_deduction).toFixed(2) : '0.00';
@@ -1654,14 +1598,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const workerId = button.getAttribute('data-worker-id');
             const staffId = button.getAttribute('data-staff-id');
             if (workerId) {
-                const workerData = allWorkersData.find(worker => worker.id == workerId);
+                const workerData = workersData.find(worker => worker.id == workerId);
                 if (workerData) {
                     // Show employment overview only
                     const employeeData = {
                         id: workerId,
                         name: workerData.staff_fullname,
                         joinedSince: workerData.joined_since,
-                        role: 'Worker',
+                        role: formatWorkerRole(workerData.staff_role),
                         age: workerData.age || 'N/A',
                         staff_fullname: workerData.staff_fullname // for modal
                     };
@@ -1671,7 +1615,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     currentPayslipWorkerData = workerData;
                 }
             } else if (staffId) {
-                const staffDataObj = allStaffData.find(staff => staff.id == staffId);
+                const staffDataObj = staffData.find(staff => staff.id == staffId);
                 if (staffDataObj) {
                     // Show employment overview for staff
                     const employeeData = {
@@ -1746,7 +1690,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                                     id: currentPayslipWorkerData.id || currentPayslipWorkerId,
                                                     name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
                                                     joinedSince: currentPayslipWorkerData.joined_since,
-                                                    role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                                    role: workerTab.classList.contains('btn-success')
+                                                        ? formatWorkerRole(currentPayslipWorkerData.staff_role)
+                                                        : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
                                                     age: currentPayslipWorkerData.age || 'N/A',
                                                     staff_fullname: currentPayslipWorkerData.staff_fullname,
                                                     nickname: currentPayslipWorkerData.user_nickname || ''
@@ -1861,7 +1807,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 id: currentPayslipWorkerData.id || currentPayslipWorkerId,
                                                 name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
                                                 joinedSince: currentPayslipWorkerData.joined_since,
-                                                role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                                role: workerTab.classList.contains('btn-success')
+                                                    ? formatWorkerRole(currentPayslipWorkerData.staff_role)
+                                                    : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
                                                 age: currentPayslipWorkerData.age || 'N/A',
                                                 staff_fullname: currentPayslipWorkerData.staff_fullname,
                                                 nickname: currentPayslipWorkerData.user_nickname || ''
@@ -2051,24 +1999,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
-                // Add manual/calculated Lateness and Early Out deductions
-                const latenessInput = document.getElementById('latenessDeductionInput');
-                if (latenessInput) {
-                    const latenessVal = parseFloat(latenessInput.value) || 0;
-                    deductions.push({
-                        deduction_type: 'Lateness',
-                        deduction_amount: latenessVal
-                    });
-                }
-                const earlyOutInput = document.getElementById('earlyOutDeductionInput');
-                if (earlyOutInput) {
-                    const earlyOutVal = parseFloat(earlyOutInput.value) || 0;
-                    deductions.push({
-                        deduction_type: 'Early Out',
-                        deduction_amount: earlyOutVal
-                    });
-                }
-
                 // Gather earnings
                 const earningRows = document.querySelectorAll('#earningTableBody tr');
                 const earnings = [];
@@ -2103,12 +2033,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 const employerEis = employerEisEl ? parseFloat(employerEisEl.value || '0') : 0;
                 const employerPcb = employerPcbEl ? parseFloat(employerPcbEl.value || '0') : 0;
 
-                // Build payload
+                // Build payload with manual override values
+                const baseSalaryEl2 = document.getElementById('baseSalary');
+                const taskIncomeOvEl2 = document.getElementById('taskIncomeOverride');
+                const overtimeOvEl2 = document.getElementById('overtimeIncomeOverride');
+
                 const payload = {
                     payslip_month: payslipMonth,
                     deductions: deductions,
                     earnings: earnings
                 };
+
+                // Include manual income overrides
+                if (baseSalaryEl2) {
+                    const bsVal = parseFloat(baseSalaryEl2.value || '0');
+                    if (!isNaN(bsVal)) payload.base_salary = bsVal;
+                }
+                if (taskIncomeOvEl2) {
+                    const tiVal = parseFloat(taskIncomeOvEl2.value || '0');
+                    if (!isNaN(tiVal)) payload.task_income_override = tiVal;
+                }
+                if (overtimeOvEl2) {
+                    const otVal = parseFloat(overtimeOvEl2.value || '0');
+                    if (!isNaN(otVal)) payload.overtime_income_override = otVal;
+                }
 
                 // Add advance repayment if provided
                 if (!isNaN(advNum) && advNum > 0) {
@@ -2143,7 +2091,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         id: currentPayslipWorkerData.id || currentPayslipWorkerId,
                         name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
                         joinedSince: currentPayslipWorkerData.joined_since,
-                        role: isStaff ? (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : 'Staff') : 'Worker',
+                        role: isStaff ? (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : 'Staff') : formatWorkerRole(currentPayslipWorkerData.staff_role),
                         age: currentPayslipWorkerData.age || 'N/A',
                         staff_fullname: currentPayslipWorkerData.staff_fullname,
                         nickname: currentPayslipWorkerData.user_nickname || ''

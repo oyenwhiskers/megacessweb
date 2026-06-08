@@ -566,7 +566,7 @@
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-1 small">No IC:</label>
+                                <label class="form-label fw-semibold mb-1 small">No ID:</label>
                                 <input type="text" class="form-control form-control-sm" value="${displayValue(worker.staff_ic)}" readonly>
                             </div>
                             
@@ -592,7 +592,7 @@
                             
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold mb-1 small">Role / Designation:</label>
-                                <input type="text" class="form-control form-control-sm" value="${worker.staff_role ? worker.staff_role.replace('worker-', '').charAt(0).toUpperCase() + worker.staff_role.replace('worker-', '').slice(1) : 'Worker'}" readonly>
+                                <input type="text" class="form-control form-control-sm" value="${worker.staff_role ? worker.staff_role.replace(/worker-/i, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Worker' : 'Worker'}" readonly>
                             </div>
                             
                             <div class="col-md-6">
@@ -713,7 +713,7 @@
 
             if (label.includes('IC / Document ID')) {
                 input.setAttribute('name', 'staff_doc');
-            } else if (label.includes('No IC')) {
+            } else if (label.includes('No ID')) {
                 input.setAttribute('name', 'staff_ic');
             } else if (label.includes('Full Name')) {
                 input.setAttribute('name', 'staff_fullname');
@@ -755,8 +755,13 @@
                     <select class="form-control form-control-sm border-primary" name="staff_role" required>
                         <option value="worker" ${currentValue === 'worker' ? 'selected' : ''}>Worker</option>
                         <option value="worker-harvester" ${currentValue.includes('harvester') ? 'selected' : ''}>Harvester</option>
-                        <option value="worker-operator" ${currentValue.includes('operator') ? 'selected' : ''}>Operator</option>
+                        <option value="worker-operator" ${currentValue.includes('operator') && !currentValue.includes('lory') && !currentValue.includes('excavator') && !currentValue.includes('fordson') ? 'selected' : ''}>Operator</option>
                         <option value="worker-maintenance" ${currentValue.includes('maintenance') ? 'selected' : ''}>Maintenance</option>
+                        <option value="clerk" ${currentValue === 'clerk' ? 'selected' : ''}>Clerk</option>
+                        <option value="operator-lory" ${currentValue.includes('lory') ? 'selected' : ''}>Operator Lory</option>
+                        <option value="operator-excavator" ${currentValue.includes('excavator') ? 'selected' : ''}>Operator Excavator</option>
+                        <option value="operator-fordson" ${currentValue.includes('fordson') ? 'selected' : ''}>Operator Fordson</option>
+                        <option value="field-supervisor" ${currentValue.includes('supervisor') ? 'selected' : ''}>Field Supervisor</option>
                     </select>
                 `;
                 input.outerHTML = selectHTML;

@@ -207,20 +207,26 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Populate Fertilizer Types
   if (fertilizerTypeFilter) {
-    const types = [
-      { value: "", label: "All" },
-      { value: "NPK", label: "NPK" },
-      { value: "MOP", label: "MOP" },
-      { value: "BORATE", label: "BORATE" },
-      { value: "OTHER", label: "OTHER" },
-    ];
-    fertilizerTypeFilter.innerHTML = "";
-    types.forEach((t) => {
-      const opt = document.createElement("option");
-      opt.value = t.value;
-      opt.textContent = t.label;
-      fertilizerTypeFilter.appendChild(opt);
-    });
+    fertilizerTypeFilter.innerHTML = "<option value=\"\">All</option>";
+    const token = getAuthToken();
+    fetch(`${API_URL}/fertilizers`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      }
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success && Array.isArray(result.data)) {
+        result.data.forEach(item => {
+          const opt = document.createElement("option");
+          opt.value = item.name;
+          opt.textContent = item.name;
+          fertilizerTypeFilter.appendChild(opt);
+        });
+      }
+    })
+    .catch(err => console.error("Error fetching fertilizers for filter:", err));
   }
 
   const setActiveResourceButton = (selected) => {

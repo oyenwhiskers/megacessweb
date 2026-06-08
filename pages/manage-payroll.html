@@ -165,30 +165,35 @@
             <div class="mb-3 row align-items-center">
               <label class="col-sm-3 col-form-label fw-bold">Base Salary:</label>
               <div class="col-sm-9">
-                <input id="baseSalary" type="text" class="form-control" value="0.00" disabled>
+                <div class="input-group">
+                  <span class="input-group-text">RM</span>
+                  <input id="baseSalary" type="number" min="0" step="0.01" class="form-control" value="0.00" placeholder="0.00">
+                </div>
+                <div id="baseSalaryHint" class="text-muted small mt-1" style="font-size: 0.75rem;"></div>
               </div>
             </div>
 
-            <!-- Lateness and Early Out Deductions -->
-            <div class="mb-3">
-              <div class="fw-bold mb-2">Calculated Attendance Deductions:</div>
-              <div class="row g-2">
-                <div class="col-md-6">
-                  <label class="form-label small">Lateness Deduction:</label>
-                  <div class="input-group">
-                    <span class="input-group-text">RM</span>
-                    <input type="number" min="0" step="0.01" id="latenessDeductionInput" class="form-control" value="0.00" placeholder="0.00">
-                  </div>
-                  <div id="latenessDeductionMeta" class="text-muted small mt-1" style="font-size: 0.75rem;"></div>
+            <!-- Task Income Override -->
+            <div class="mb-3 row align-items-center">
+              <label class="col-sm-3 col-form-label fw-bold">Task Income:</label>
+              <div class="col-sm-9">
+                <div class="input-group">
+                  <span class="input-group-text">RM</span>
+                  <input id="taskIncomeOverride" type="number" min="0" step="0.01" class="form-control" value="0.00" placeholder="0.00">
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label small">Early Out Deduction:</label>
-                  <div class="input-group">
-                    <span class="input-group-text">RM</span>
-                    <input type="number" min="0" step="0.01" id="earlyOutDeductionInput" class="form-control" value="0.00" placeholder="0.00">
-                  </div>
-                  <div id="earlyOutDeductionMeta" class="text-muted small mt-1" style="font-size: 0.75rem;"></div>
+                <div id="taskIncomeHint" class="text-muted small mt-1" style="font-size: 0.75rem;"></div>
+              </div>
+            </div>
+
+            <!-- Overtime Income Override -->
+            <div class="mb-3 row align-items-center">
+              <label class="col-sm-3 col-form-label fw-bold">Overtime Income:</label>
+              <div class="col-sm-9">
+                <div class="input-group">
+                  <span class="input-group-text">RM</span>
+                  <input id="overtimeIncomeOverride" type="number" min="0" step="0.01" class="form-control" value="0.00" placeholder="0.00">
                 </div>
+                <div id="overtimeIncomeHint" class="text-muted small mt-1" style="font-size: 0.75rem;"></div>
               </div>
             </div>
 
@@ -240,7 +245,16 @@
               <div class="fw-bold mb-2">Add Deductions:</div>
               <div class="row g-2 align-items-center">
                 <div class="col-md-6">
-                  <input type="text" id="deductionTypeInput" class="form-control" placeholder="Enter deduction type">
+                  <input type="text" id="deductionTypeInput" class="form-control" placeholder="Enter or select deduction type" list="deductionTypeList">
+                  <datalist id="deductionTypeList">
+                    <option value="Lateness"></option>
+                    <option value="Early Out"></option>
+                    <option value="EPF"></option>
+                    <option value="SOCSO"></option>
+                    <option value="EIS"></option>
+                    <option value="PCB"></option>
+                    <option value="Advance Repayment"></option>
+                  </datalist>
                 </div>
                 <div class="col-md-4">
                   <div class="input-group">
@@ -367,6 +381,10 @@
               <span id="staffBankName"></span>
               <span id="staffBankNumber"></span>
               <span id="staffKwspNumber"></span>
+              <span id="latenessDeductionInput"></span>
+              <span id="earlyOutDeductionInput"></span>
+              <span id="latenessDeductionMeta"></span>
+              <span id="earlyOutDeductionMeta"></span>
             </div>
 
             <!-- Generate Button -->

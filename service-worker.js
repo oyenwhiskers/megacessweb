@@ -1,4 +1,4 @@
-const CACHE_NAME = 'megacess-static-v2';
+const CACHE_NAME = 'megacess-static-v4';
 const ASSETS_TO_CACHE = [
     // Pages (Core)
     './index.html',
@@ -12,6 +12,8 @@ const ASSETS_TO_CACHE = [
     './pages/manage-resources-tools.html',
     './pages/manage-resources-fuel.html',
     './pages/analytics.html',
+    './pages/manage-fertilizer.html',
+    './pages/individual-summary.html',
 
     // CSS
     './assets/css/style.css',
@@ -49,6 +51,8 @@ const ASSETS_TO_CACHE = [
     './assets/js/fuel_usage.js',
     './assets/js/analytics.js',
     './assets/js/manage_resources_analytics.js',
+    './assets/js/fertilizers.js',
+    './assets/js/individual_summary.js',
 
     // External Libraries (CDNs) - Note: CDNs are better handled by runtime caching, but we can try
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',

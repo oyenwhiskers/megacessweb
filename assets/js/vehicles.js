@@ -53,6 +53,33 @@ document.addEventListener("DOMContentLoaded", () => {
       refreshVehicleSummary();
     });
   }
+
+  // Dynamic Maintenance Remark Visibility togglers
+  const addStatusSelect = document.getElementById("addVehicleStatus");
+  const addRemarkGroup = document.getElementById("addMaintenanceRemarkGroup");
+  if (addStatusSelect && addRemarkGroup) {
+    addStatusSelect.addEventListener("change", (e) => {
+      if (e.target.value === "Under Maintenance") {
+        addRemarkGroup.classList.remove("d-none");
+      } else {
+        addRemarkGroup.classList.add("d-none");
+        document.getElementById("addMaintenanceRemark").value = "";
+      }
+    });
+  }
+
+  const updateStatusSelect = document.getElementById("updateVehicleStatus");
+  const updateRemarkGroup = document.getElementById("updateMaintenanceRemarkGroup");
+  if (updateStatusSelect && updateRemarkGroup) {
+    updateStatusSelect.addEventListener("change", (e) => {
+      if (e.target.value === "Under Maintenance") {
+        updateRemarkGroup.classList.remove("d-none");
+      } else {
+        updateRemarkGroup.classList.add("d-none");
+        document.getElementById("updateMaintenanceRemark").value = "";
+      }
+    });
+  }
 });
 
 // ==================== DATA FETCHING ====================
@@ -146,18 +173,25 @@ function populateVehicleTable(vehicles) {
     else if (vehicle.status.toLowerCase() === "under maintenance")
       statusClass = "bg-danger";
 
+    let remarkHtml = "";
+    if (vehicle.status.toLowerCase() === "under maintenance" && vehicle.maintenance_remark) {
+      remarkHtml = `<div class="small text-danger fw-semibold mt-1"><i class="bi bi-exclamation-triangle me-1"></i>Remark: ${vehicle.maintenance_remark}</div>`;
+    }
+
     row.innerHTML = `
             <div class="col ps-3 fw-bold text-dark">${vehicle.vehicle_name}</div>
             <div class="col">${vehicle.plate_number}</div>
-            <div class="col"><span class="badge ${statusClass}">${
-      vehicle.status
-    }</span></div>
+            <div class="col">
+                <span class="badge ${statusClass}">${vehicle.status}</span>
+                ${remarkHtml}
+            </div>
             <div class="col text-center">
                 <button class="btn btn-sm btn-warning me-2 edit-vehicle-btn" 
                         data-id="${vehicle.id}" 
                         data-name="${vehicle.vehicle_name}" 
                         data-plate="${vehicle.plate_number}" 
-                        data-status="${vehicle.status.toLowerCase()}"
+                        data-status="${vehicle.status}"
+                        data-remark="${vehicle.maintenance_remark || ''}"
                         title="Edit">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -389,6 +423,8 @@ if (addVehicleBtn) {
     const statusSelect = document.getElementById("addVehicleStatus");
     const status = statusSelect.value;
 
+    const remark = document.getElementById("addMaintenanceRemark").value.trim();
+
     if (!vehicleName || !plateNo || !status || status === "Choose status") {
       showError("Please fill in all fields.");
       return;
@@ -405,6 +441,7 @@ if (addVehicleBtn) {
           vehicle_name: vehicleName,
           plate_number: plateNo,
           status,
+          maintenance_remark: status === "Under Maintenance" ? remark : null,
         }),
       });
 
@@ -414,6 +451,8 @@ if (addVehicleBtn) {
         ).hide();
         document.getElementById("vehicleName").value = "";
         document.getElementById("plateNo").value = "";
+        document.getElementById("addMaintenanceRemark").value = "";
+        document.getElementById("addMaintenanceRemarkGroup").classList.add("d-none");
         statusSelect.value = "Choose status";
 
         if (typeof refreshVehicleSummary === "function")
@@ -465,7 +504,20 @@ function handleEdit(btn) {
   currentVehicleId = btn.dataset.id;
   document.getElementById("updateVehicleName").value = btn.dataset.name;
   document.getElementById("updatePlateNo").value = btn.dataset.plate;
-  document.getElementById("updateVehicleStatus").value = btn.dataset.status;
+  
+  const status = btn.dataset.status;
+  document.getElementById("updateVehicleStatus").value = status;
+  
+  const remarkGroup = document.getElementById("updateMaintenanceRemarkGroup");
+  const remarkField = document.getElementById("updateMaintenanceRemark");
+  if (status === "Under Maintenance") {
+    remarkGroup.classList.remove("d-none");
+    remarkField.value = btn.dataset.remark || "";
+  } else {
+    remarkGroup.classList.add("d-none");
+    remarkField.value = "";
+  }
+  
   bootstrap.Modal.getOrCreateInstance(
     document.getElementById("updateVehicleModal")
   ).show();
@@ -479,6 +531,8 @@ if (updateVehicleBtn) {
     const name = document.getElementById("updateVehicleName").value.trim();
     const plate = document.getElementById("updatePlateNo").value.trim();
     const status = document.getElementById("updateVehicleStatus").value;
+
+    const remark = document.getElementById("updateMaintenanceRemark").value.trim();
 
     if (!name || !plate || !status) {
       showError("Please fill in all fields.");
@@ -496,6 +550,7 @@ if (updateVehicleBtn) {
           vehicle_name: name,
           plate_number: plate,
           status,
+          maintenance_remark: status === "Under Maintenance" ? remark : null,
         }),
       });
 
