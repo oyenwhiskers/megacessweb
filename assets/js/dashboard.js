@@ -1,0 +1,588 @@
+// Dashboard API Integration
+let taskCompletionChart = null;
+
+// Loading helper functions
+function showLoading(container) {
+    if (!container) return;
+
+    // Add loading class
+    container.classList.add('position-relative');
+
+    // Create loading overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    `;
+
+    container.appendChild(loadingOverlay);
+}
+
+function hideLoading(container) {
+    if (!container) return;
+
+    const loadingOverlay = container.querySelector('.loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Populate year and month dropdowns
+    populateYearMonthDropdowns();
+    populateChartDropdowns();
+
+    // Get current month and year
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+    const year = currentDate.getFullYear();
+
+    // Set dropdowns to current year and month
+    document.getElementById('dashboard-year').value = year;
+    document.getElementById('dashboard-month').value = month;
+
+    const yearChart = document.getElementById('dashboard-year-chart');
+    const monthChart = document.getElementById('dashboard-month-chart');
+    if (yearChart) yearChart.value = year;
+    if (monthChart) monthChart.value = month;
+
+    // Initialize chart
+    initializeChart();
+
+    // Fetch dashboard data (top cards)
+    fetchDashboardData(month, year);
+
+    // Fetch yield data from audited summary
+    fetchYieldData(month, year);
+
+    // Fetch chart data (block chart)
+    fetchTasksByBlocks(year, month);
+
+    // Listen for top dashboard filter changes (independent)
+    document.getElementById('dashboard-year').addEventListener('change', function () {
+        const year = parseInt(document.getElementById('dashboard-year').value, 10);
+        const month = parseInt(document.getElementById('dashboard-month').value, 10);
+        fetchDashboardData(month, year);
+        fetchYieldData(month, year);
+    });
+    document.getElementById('dashboard-month').addEventListener('change', function () {
+        const year = parseInt(document.getElementById('dashboard-year').value, 10);
+        const month = parseInt(document.getElementById('dashboard-month').value, 10);
+        fetchDashboardData(month, year);
+        fetchYieldData(month, year);
+    });
+
+    // Listen for chart filter changes (independent)
+    const yearSelect = document.getElementById('dashboard-year-chart');
+    const monthSelect = document.getElementById('dashboard-month-chart');
+    const weekSelect = document.getElementById('dashboard-week');
+    if (yearSelect) yearSelect.addEventListener('change', onChartFilterChange);
+    if (monthSelect) monthSelect.addEventListener('change', onChartFilterChange);
+    if (weekSelect) weekSelect.addEventListener('change', onChartFilterChange);
+});
+
+function populateYearMonthDropdowns() {
+    const yearSelect = document.getElementById('dashboard-year');
+    const monthSelect = document.getElementById('dashboard-month');
+    if (!yearSelect || !monthSelect) return;
+
+    // Years: from 2022 to current year
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 2022; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+    }
+
+    // Months: January-December
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = monthNames[m - 1];
+        monthSelect.appendChild(opt);
+    }
+
+    // Weeks: 1-53
+    const weekSelect = document.getElementById('dashboard-week');
+    if (weekSelect) {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'All';
+        weekSelect.appendChild(defaultOpt);
+        for (let w = 1; w <= 53; w++) {
+            const opt = document.createElement('option');
+            opt.value = w;
+            opt.textContent = 'Week ' + w;
+            weekSelect.appendChild(opt);
+        }
+    }
+}
+
+function populateChartDropdowns() {
+    // Populate year, month, and week for the chart filters
+    const yearSelect = document.getElementById('dashboard-year-chart');
+    const monthSelect = document.getElementById('dashboard-month-chart');
+    const weekSelect = document.getElementById('dashboard-week');
+    if (!yearSelect || !monthSelect || !weekSelect) return;
+
+    // Years: from 2022 to current year
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 2022; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+    }
+
+    // Months: January-December
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = monthNames[m - 1];
+        monthSelect.appendChild(opt);
+    }
+
+    // Weeks: 1-53
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'All';
+    weekSelect.appendChild(defaultOpt);
+    for (let w = 1; w <= 53; w++) {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = 'Week ' + w;
+        weekSelect.appendChild(opt);
+    }
+}
+
+// Update event listeners to include week filter
+function onFilterChange() {
+    const year = parseInt(document.getElementById('dashboard-year').value, 10);
+    const month = parseInt(document.getElementById('dashboard-month').value, 10);
+    const weekValue = document.getElementById('dashboard-week').value;
+    const week = weekValue ? parseInt(weekValue, 10) : null;
+    fetchDashboardData(month, year);
+    fetchTasksByBlocks(year, month, week);
+}
+
+function onChartFilterChange() {
+    const year = parseInt(document.getElementById('dashboard-year-chart').value, 10);
+    const month = parseInt(document.getElementById('dashboard-month-chart').value, 10);
+    const weekValue = document.getElementById('dashboard-week').value;
+    const week = weekValue ? parseInt(weekValue, 10) : null;
+    fetchTasksByBlocks(year, month, week);
+}
+
+async function fetchDashboardData(month, year) {
+    try {
+        // Get token from localStorage (using 'authToken' key)
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
+
+        if (!token) {
+            console.error('No authentication token found. Please log in again.');
+            // Redirect to login page
+            // window.location.href = '/pages/log-in.html';
+            return;
+        }
+
+        // Show loading for all stat cards
+        const pendingLeaveCard = document.getElementById('pending-leave')?.closest('.card-body');
+        const absenceCard = document.getElementById('number-absence')?.closest('.card-body');
+        const payrollCard = document.getElementById('pending-payroll')?.closest('.card-body');
+        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
+        const equipmentCard = document.getElementById('equipment-bags')?.closest('.card-body');
+
+        [pendingLeaveCard, absenceCard, payrollCard, yieldCard, equipmentCard].forEach(card => {
+            if (card) showLoading(card);
+        });
+
+        const response = await fetch(
+            `${API_URL}/analytics/dashboard?month=${month}&year=${year}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.data) {
+            updateDashboard(result.data);
+        }
+    } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        // Keep the placeholder values if API fails
+    } finally {
+        // Hide loading for all stat cards
+        const pendingLeaveCard = document.getElementById('pending-leave')?.closest('.card-body');
+        const absenceCard = document.getElementById('number-absence')?.closest('.card-body');
+        const payrollCard = document.getElementById('pending-payroll')?.closest('.card-body');
+        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
+        const equipmentCard = document.getElementById('equipment-bags')?.closest('.card-body');
+
+        [pendingLeaveCard, absenceCard, payrollCard, yieldCard, equipmentCard].forEach(card => {
+            if (card) hideLoading(card);
+        });
+    }
+}
+
+// Fetch yield data from audited summary endpoint
+async function fetchYieldData(month, year) {
+    try {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
+
+        if (!token) {
+            console.error('No authentication token found for yield data');
+            return;
+        }
+
+        // Show loading for yield card
+        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
+        if (yieldCard) showLoading(yieldCard);
+
+        let url = `${API_URL}/analytics/audited-summary?`;
+        if (year && year !== "") url += `year=${year}&`;
+        if (month && month !== "") url += `month=${month}&`;
+        url = url.replace(/&$/, "");
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.data && result.data.summary) {
+            updateYieldData(result.data.summary);
+        } else {
+            // No data, set to 0
+            updateYieldData([]);
+        }
+    } catch (error) {
+        console.error('Error fetching yield data:', error);
+        // Keep placeholder values if API fails
+    } finally {
+        // Hide loading for yield card
+        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
+        if (yieldCard) hideLoading(yieldCard);
+    }
+}
+
+// Update yield display from audited summary data
+function updateYieldData(summaryData) {
+    // Find harvesting data
+    const harvestingData = summaryData.filter(item =>
+        item.task_type && item.task_type.toLowerCase() === 'harvesting'
+    );
+
+    if (harvestingData.length > 0) {
+        // Calculate total yield from all harvesting tasks
+        let totalYield = 0;
+        let recentBlock = null;
+
+        harvestingData.forEach(item => {
+            if (item.total_value !== undefined) {
+                totalYield += parseFloat(item.total_value) || 0;
+            }
+            // Get the most recent block from any harvesting task
+            if (item.recent_block && (!recentBlock || item.recent_block.checked_at > (recentBlock.checked_at || ''))) {
+                recentBlock = item.recent_block;
+            }
+        });
+
+        // Update total yield harvested
+        const yieldTotalElement = document.getElementById('yield-total');
+        if (yieldTotalElement) {
+            yieldTotalElement.textContent = totalYield.toFixed(2);
+        }
+
+        // Update recent harvested area
+        if (recentBlock) {
+            const areaNameElement = document.getElementById('area-name');
+            const areaTotalElement = document.getElementById('area-total');
+
+            if (areaNameElement && recentBlock.location_name) {
+                areaNameElement.textContent = recentBlock.location_name;
+            }
+
+            if (areaTotalElement && recentBlock.total_value !== undefined) {
+                const unit = harvestingData.find(item => item.recent_block === recentBlock)?.unit || 'ton';
+                areaTotalElement.textContent = parseFloat(recentBlock.total_value).toFixed(2) + ' ' + unit;
+            }
+        }
+    } else {
+        // No harvesting data found
+        const yieldTotalElement = document.getElementById('yield-total');
+        if (yieldTotalElement) {
+            yieldTotalElement.textContent = '0.00';
+        }
+    }
+}
+
+function updateDashboard(data) {
+    // Check if all main data is missing or zero
+    const noData =
+        (data.pending_leave === undefined && data.number_of_absence === undefined && data.pending_payroll === undefined) &&
+        (!data.total_yield_harvested || data.total_yield_harvested.total === undefined) &&
+        (!data.total_equipment_used || (data.total_equipment_used.bags === undefined && data.total_equipment_used.liters === undefined));
+
+    if (noData) {
+        // Hide all dashboard cards and show a message
+        document.querySelector('.row.g-3.mb-4').style.display = 'none';
+        document.querySelector('.row.g-3').style.display = 'none';
+        document.querySelector('.row.g-3.mt-3').style.display = 'none';
+        if (!document.getElementById('no-data-message')) {
+            const msg = document.createElement('div');
+            msg.id = 'no-data-message';
+            msg.className = 'alert alert-warning text-center my-4';
+            msg.textContent = 'There is no data during this period';
+            document.querySelector('.container-fluid.p-4').appendChild(msg);
+        }
+        return;
+    } else {
+        // Show dashboard cards and remove message if present
+        document.querySelector('.row.g-3.mb-4').style.display = '';
+        document.querySelector('.row.g-3').style.display = '';
+        document.querySelector('.row.g-3.mt-3').style.display = '';
+        const msg = document.getElementById('no-data-message');
+        if (msg) msg.remove();
+    }
+
+    // Update pending leave
+    const pendingLeaveElement = document.getElementById('pending-leave');
+    if (pendingLeaveElement && data.pending_leave !== undefined) {
+        pendingLeaveElement.textContent = data.pending_leave;
+    }
+
+    // Update number of absence
+    const absenceElement = document.getElementById('number-absence');
+    if (absenceElement && data.number_of_absence !== undefined) {
+        absenceElement.textContent = data.number_of_absence;
+    }
+
+    // Update pending payroll
+    const pendingPayrollElement = document.getElementById('pending-payroll');
+    if (pendingPayrollElement && data.pending_payroll !== undefined) {
+        pendingPayrollElement.textContent = data.pending_payroll;
+    }
+
+    // Update total yield harvested
+    if (data.total_yield_harvested) {
+        const yieldTotalElement = document.getElementById('yield-total');
+        if (yieldTotalElement) {
+            yieldTotalElement.textContent = data.total_yield_harvested.total.toFixed(2);
+        }
+
+        // Update recent harvested area
+        if (data.total_yield_harvested.recent_harvested_area) {
+            const areaNameElement = document.getElementById('area-name');
+            const areaTotalElement = document.getElementById('area-total');
+
+            if (areaNameElement) {
+                areaNameElement.textContent = data.total_yield_harvested.recent_harvested_area.location_name;
+            }
+
+            if (areaTotalElement) {
+                areaTotalElement.textContent = data.total_yield_harvested.recent_harvested_area.total.toFixed(2) + ' ton';
+            }
+        }
+    }
+
+    // Update total equipment used
+    if (data.total_equipment_used) {
+        const bagsElement = document.getElementById('equipment-bags');
+        const litersElement = document.getElementById('equipment-liters');
+
+        if (bagsElement && data.total_equipment_used.bags !== undefined) {
+            bagsElement.textContent = data.total_equipment_used.bags + ' bags';
+        }
+
+        if (litersElement && data.total_equipment_used.liters !== undefined) {
+            litersElement.textContent = data.total_equipment_used.liters + ' litre';
+        }
+    }
+}
+
+async function fetchTasksByBlocks(year, month, week = null) {
+    try {
+        // Get token from localStorage (using 'authToken' key)
+        const token = localStorage.getItem('authToken');
+
+        if (!token) {
+            console.error('No authentication token found');
+            return;
+        }
+
+        // Show loading state
+        const chartCanvas = document.getElementById('taskCompletionChart');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            showLoading(card);
+        }
+
+        // Build URL with parameters
+        let url = `${API_URL}/analytics/tasks-by-blocks?year=${year}&month=${month}`;
+        if (week) {
+            url += `&week=${week}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.data && result.data.data) {
+            updateChart(result.data.data);
+        }
+    } catch (error) {
+        console.error('Error fetching tasks by blocks:', error);
+        // Keep the default chart data if API fails
+    } finally {
+        // Hide loading state
+        const chartCanvas = document.getElementById('taskCompletionChart');
+        if (chartCanvas) {
+            const card = chartCanvas.closest('.card-body');
+            hideLoading(card);
+        }
+    }
+}
+
+function initializeChart() {
+    const ctx = document.getElementById('taskCompletionChart');
+    if (!ctx) return;
+
+    // Empty chart - will be populated by API
+    taskCompletionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Task Completed',
+                data: [],
+                backgroundColor: '#1e7e5c',
+                borderColor: '#1e7e5c',
+                borderWidth: 1,
+                borderRadius: 4,
+                barThickness: 30
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 20,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Tasks',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: true,
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Block',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateChart(apiData) {
+    if (!taskCompletionChart) return;
+
+    // Extract labels and values from API data
+    const labels = apiData.map(item => item.location_name);
+    const values = apiData.map(item => item.count);
+
+    // Find the maximum value to set appropriate scale
+    const maxValue = Math.max(...values);
+    const yAxisMax = Math.ceil(maxValue / 10) * 10 + 10; // Round up and add padding
+
+    // Update chart with API data
+    taskCompletionChart.data.labels = labels;
+    taskCompletionChart.data.datasets[0].data = values;
+    taskCompletionChart.options.scales.y.max = yAxisMax;
+    taskCompletionChart.update();
+}
+

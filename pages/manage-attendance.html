@@ -6,7 +6,9 @@
   <title>MegaCess Web • Manage Attendance</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/manageattendance.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body data-page="manage-attendance">
   <div class="app d-flex">
@@ -18,15 +20,138 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Attendance content will go here.</p>
+        <!-- Attendance type selection -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="employee-selection">
+              <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+                <input type="radio" class="salary-select-employee" name="employeeType" id="workersTab" autocomplete="off" checked>
+                <label class="select-employee-btn" for="workersTab"><i class="bi bi-person-fill me-2"></i>Worker</label>
+
+                <input type="radio" class="salary-select-employee" name="employeeType" id="staffAttTab" autocomplete="off">
+                <label class="select-employee-btn" for="staffAttTab"><i class="bi bi-person-badge me-2"></i>Staff</label>
+
+                <span class="selection-bg"></span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Date Filter -->
+        <div class="row mb-3">
+          <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+            <div>
+              <label class="form-label fw-semibold mb-2">Date:</label>
+              <input type="date" id="attendanceDate" class="form-control" value="">
+            </div>
+          </div>
+        </div>
+
+        <!-- content views -->
+        <div id="workersAttendanceView" class="view">
+          <div class="text-center py-4">
+            <div class="spinner-border text-success" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading worker attendance...</p>
+          </div>
+        </div>
+
+        <div id="staffAttendanceView" class="view d-none">
+          <div class="text-center py-4">
+            <div class="spinner-border text-success" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading staff attendance...</p>
+          </div>
+        </div>
+
       </div>
     </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/list_workers_att.js?v=4.0"></script>
+  <script src="../assets/js/list_staff_att.js?v=4.0"></script>
+  <script src="../assets/js/logout.js"></script>
+  <script>
+    (function(){
+      const workerRadio = document.getElementById('workersTab');
+      const staffRadio = document.getElementById('staffAttTab');
+      const views = {
+        workers: document.getElementById('workersAttendanceView'),
+        staff: document.getElementById('staffAttendanceView')
+      };
+      
+      // Set today's date as default
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('attendanceDate').value = today;
+      
+      function show(type){
+        // show/hide views
+        Object.keys(views).forEach(k => {
+          const el = views[k];
+          if (!el) return;
+          if (k === type) el.classList.remove('d-none');
+          else el.classList.add('d-none');
+        });
+        
+        // Load attendance data based on type
+        loadAttendanceData(type);
+      }
+      
+      // Get current active type
+      function getCurrentType() {
+        return workerRadio.checked ? 'workers' : 'staff';
+      }
+      
+      function loadAttendanceData(type) {
+        const dateValue = document.getElementById('attendanceDate').value;
+        
+        if (type === 'workers' && window.fetchWorkerAttendanceByDate) {
+          window.fetchWorkerAttendanceByDate(dateValue);
+        } else if (type === 'staff' && window.fetchStaffAttendanceByDate) {
+          window.fetchStaffAttendanceByDate(dateValue);
+        }
+      }
+      
+      // Date change event listener
+      const dateInput = document.getElementById('attendanceDate');
+      
+      if (dateInput) {
+        dateInput.addEventListener('change', function() {
+          const currentType = getCurrentType();
+          
+          if (currentType === 'workers' && window.fetchWorkerAttendanceByDate) {
+            window.fetchWorkerAttendanceByDate(dateInput.value);
+          } else if (currentType === 'staff' && window.fetchStaffAttendanceByDate) {
+            window.fetchStaffAttendanceByDate(dateInput.value);
+          }
+        });
+      }
+
+      
+      // Toggle event listeners for radio buttons
+      if (workerRadio) {
+        workerRadio.addEventListener('change', () => {
+          if (workerRadio.checked) show('workers');
+        });
+      }
+      
+      if (staffRadio) {
+        staffRadio.addEventListener('change', () => {
+          if (staffRadio.checked) show('staff');
+        });
+      }
+      
+      // Initial state
+      show('workers');
+
+    })();
+  </script>
 </body>
 </html>
+

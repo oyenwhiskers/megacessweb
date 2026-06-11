@@ -1,0 +1,577 @@
+// ==================== Fetch Fuels ====================
+async function getAllFuels({
+  search = "",
+  fuel_filter = "",
+  fuel_type = "",
+  page = 1,
+  per_page = 10,
+} = {}) {
+  const loading = document.getElementById("loading");
+  const tableBody = document.getElementById("fuelsTableBody");
+  const paginationEl = document.getElementById("fuelsPagination");
+
+  if (loading) loading.style.display = "block";
+  if (tableBody) tableBody.innerHTML = "";
+
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  if (fuel_filter && fuel_filter !== "default")
+    params.append("fuelFilter", fuel_filter);
+  if (fuel_type && fuel_type !== "default")
+    params.append("fuel_type", fuel_type);
+  params.append("page", page);
+  params.append("per_page", per_page);
+
+  try {
+    // Cache for 5 minutes
+    const result = await apiFetchWithCache(`/fuels?${params.toString()}`, {
+      method: "GET",
+    }, 5 * 60 * 1000);
+
+    if (loading) loading.style.display = "none";
+
+    if (result.success) {
+      let data = [];
+      let meta = {};
+
+      if (result.meta) {
+        data = result.data;
+        meta = result.meta;
+      }
+
+      if (data && data.length > 0) {
+        populateFuelsTable(data);
+        renderFuelPagination(meta, search, fuel_filter, fuel_type);
+      } else {
+        tableBody.innerHTML = `<div class="text-center text-muted py-3">No fuels found</div>`;
+        if (paginationEl) paginationEl.innerHTML = "";
+      }
+    } else {
+      tableBody.innerHTML = `<div class="text-center text-danger py-3">Error: ${result.message || "Unknown error"
+        }</div>`;
+      showError(result.message);
+    }
+  } catch (err) {
+    if (loading) loading.style.display = "none";
+    tableBody.innerHTML = `<div class="text-center text-danger py-3">Failed to load fuels</div>`;
+    showError("Failed to load fuels. Please try again.");
+    console.error(err);
+  }
+}
+
+// ==================== Populate Fuels Table ====================
+function populateFuelsTable(fuels) {
+  const tableBody = document.getElementById("fuelsTableBody");
+  tableBody.innerHTML = "";
+
+  const fragment = document.createDocumentFragment();
+
+  fuels.forEach((fuel) => {
+    if (!fuel.user) fuel.user = { user_fullname: "-" };
+    const row = document.createElement("div");
+    row.className = "content-row d-flex border-bottom py-2 align-items-center";
+
+    let fuelClass = "bg-success text-white"; // customize based on fuel amount if needed
+
+    row.innerHTML = `
+      <div class="col fw-bold text-dark">${fuel.supplier_name || "Unnamed Fuel"}</div>
+      <div class="col fw-bold text-dark">${fuel.user.user_fullname || "-"}</div>
+      <div class="col">${fuel.fuel_type || "-"}</div>
+      <div class="col">
+        <span class="badge ${fuelClass} px-3 py-2 fs-6">${fuel.fuel_bought || "Unknown"
+      }</span>
+      </div>
+      <div class="col">
+        ${formatDateDisplay(fuel.date_bought)}
+      </div>
+      <div class="col text-center">
+        <button class="btn btn-sm btn-warning me-2 update-fuel-btn"
+          data-id="${fuel.id}"
+          data-supplier-name="${fuel.supplier_name || ""}"
+          data-buyer-id="${fuel.user?.id || ""}"
+          data-buyer-name="${fuel.user?.user_fullname || ""}"
+          data-fuel-type="${fuel.fuel_type || ""}"
+          data-fuel-bought="${fuel.fuel_bought || ""}"
+          data-date-bought="${fuel.date_bought
+        ? new Date(fuel.date_bought).toISOString().split("T")[0]
+        : ""
+      }"
+          data-bs-toggle="modal" 
+          data-bs-target="#editFuelModal"
+          title="Edit">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-danger delete-fuel-btn" data-id="${fuel.id
+      }" title="Delete">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    `;
+
+    fragment.appendChild(row);
+  });
+
+  tableBody.appendChild(fragment);
+}
+
+// ==================== Event Delegation ====================
+document.addEventListener("DOMContentLoaded", () => {
+  const tableBody = document.getElementById("fuelsTableBody");
+  if (tableBody) {
+    tableBody.addEventListener("click", (e) => {
+      const deleteBtn = e.target.closest(".delete-fuel-btn");
+      if (deleteBtn) {
+        handleDelete(deleteBtn);
+      }
+    });
+  }
+});
+
+// ==================== Render Pagination ====================
+function renderFuelPagination(meta, search, filter, type) {
+  // Render standardized pagination
+  renderPagination('fuelsPagination', {
+    current_page: meta.current_page,
+    last_page: meta.last_page
+  }, (newPage) => {
+    getAllFuels({
+      search,
+      fuel_filter: filter,
+      fuel_type: type,
+      page: newPage,
+    });
+  });
+}
+
+// ==================== Create / Add Fuel ====================
+async function createFuelRecord(payload) {
+  try {
+    const result = await apiFetch("/fuels", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    result.success
+      ? showSuccess("Fuel record added successfully!")
+      : showError(result.message || "Failed to add fuel record.");
+    getAllFuels();
+    refreshFuelSummary();
+  } catch (err) {
+    console.error(err);
+    showError("Failed to add fuel record. Try again.");
+  }
+}
+
+// ==================== Update Fuel ====================
+async function updateFuelRecord(fuelId, payload) {
+  if (!fuelId) {
+    console.error("Fuel ID is required");
+    return false;
+  }
+
+  try {
+    const result = await apiFetch(`/fuels/${fuelId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+    if (result.success) {
+      getAllFuels();
+      refreshFuelSummary();
+      return true;
+    }
+    showError(result.message || "Failed to update fuel");
+    return false;
+  } catch (err) {
+    console.error(err);
+    showError("Failed to update fuel. Please try again.");
+    return false;
+  }
+}
+
+// ==================== Delete Fuel ====================
+
+async function handleDelete(btn) {
+  const fuelId = btn.dataset.id;
+
+  showConfirm("You want to delete this fuel?", async () => {
+    showLoading();
+    try {
+      const result = await apiFetch(`/fuels/${fuelId}`, { method: "DELETE" });
+      if (result.success) {
+        showSuccess(result.message);
+        getAllFuels();
+        refreshFuelSummary();
+      } else showError(result.message);
+    } catch (err) {
+      console.error(err);
+      showError("Failed to delete fuel. Please try again.");
+    } finally {
+      hideLoading();
+    }
+  });
+}
+
+// ==================== Fetch Buyers ====================
+// ==================== Fetch Buyers (Server Search) ====================
+async function searchBuyers(term) {
+  try {
+    let endpoint = "/users?per_page=20";
+    if (term) endpoint += `&search=${encodeURIComponent(term)}`;
+
+    const result = await apiFetch(endpoint, { method: "GET" });
+    return (
+      result?.data?.map((u) => ({
+        id: u.id,
+        fullname: u.user_fullname,
+        role: u.user_role,
+        account_type: "user",
+      })) || []
+    );
+  } catch (err) {
+    console.error(err);
+    showError("Failed to load buyers.");
+    return [];
+  }
+}
+
+// ==================== Generic Buyer Dropdown ====================
+let selectedBuyer = null;
+const buyerInput = document.getElementById("assignedPerson");
+const buyerDropdownEl = document.getElementById("buyerDropdown");
+
+const renderBuyer = (p) =>
+  `${p.fullname}<small class="text-muted d-inline"> - (${p.role})</small>`;
+
+if (buyerInput && buyerDropdownEl) {
+  initServerDropdown(
+    buyerInput,
+    buyerDropdownEl,
+    searchBuyers,
+    (sel) => (selectedBuyer = sel),
+    renderBuyer
+  );
+}
+
+const editBuyerInput = document.getElementById("editAssignedPerson");
+const editBuyerDropdownEl = document.getElementById("editBuyerDropdown");
+let editSelectedBuyer = null;
+
+if (editBuyerInput && editBuyerDropdownEl) {
+  initServerDropdown(
+    editBuyerInput,
+    editBuyerDropdownEl,
+    searchBuyers,
+    (sel) => (editSelectedBuyer = sel),
+    renderBuyer
+  );
+}
+
+// ==================== Form Handlers ====================
+
+// Add Fuel
+document.getElementById("addFuelForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  // Validation: Check all fields are filled
+  const supplierName = document.getElementById("supplierName").value.trim();
+  const fuelBought = document.getElementById("fuelBought").value.trim();
+  const dateBought = document.getElementById("dateBought").value.trim();
+  const fuelType = document.getElementById("fuelType").value.trim();
+
+  if (!supplierName) return showError("Please enter supplier name.");
+  if (!selectedBuyer) return showError("Please select a buyer.");
+  if (!fuelBought) return showError("Please enter fuel amount.");
+  if (!dateBought) return showError("Please select date bought.");
+  if (!fuelType) return showError("Please select fuel type.");
+
+  const payload = {
+    supplier_name: supplierName,
+    fuel_bought: fuelBought,
+    fuel_type: fuelType,
+    date_bought: dateBought,
+    user_id: selectedBuyer.id,
+  };
+  const saveBtn = document.getElementById("saveFuelBtn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Adding...";
+  try {
+    await createFuelRecord(payload);
+    bootstrap.Modal.getOrCreateInstance(
+      document.getElementById("addFuelModal")
+    ).hide();
+    getAllFuels();
+    refreshFuelSummary();
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save Fuel";
+  }
+});
+
+// Edit Fuel
+document
+  .getElementById("editFuelForm")
+  .addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fuelId = document.getElementById("editFuelId").value;
+
+    // Validation: Check all fields are filled
+    const editSupplierName = document
+      .getElementById("editSupplierName")
+      .value.trim();
+    const editFuelBought = document
+      .getElementById("editFuelBought")
+      .value.trim();
+    const editDateBought = document
+      .getElementById("editDateBought")
+      .value.trim();
+    const editFuelType = document.getElementById("editFuelType").value.trim();
+
+    if (!editSupplierName) return showError("Please enter supplier name.");
+    if (!editSelectedBuyer) return showError("Please select a buyer.");
+    if (!editFuelBought) return showError("Please enter fuel amount.");
+    if (!editDateBought) return showError("Please select date bought.");
+
+    const payload = {
+      supplier_name: editSupplierName,
+      fuel_bought: editFuelBought,
+      date_bought: editDateBought,
+      user_id: editSelectedBuyer.id,
+      fuel_type: editFuelType,
+    };
+    const saveBtn = document.getElementById("saveEditFuelBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Updating...";
+    const success = await updateFuelRecord(fuelId, payload);
+    if (success) {
+      bootstrap.Modal.getOrCreateInstance(
+        document.getElementById("editFuelModal")
+      ).hide();
+      showSuccess("Fuel updated successfully");
+      refreshFuelSummary();
+    }
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Update Fuel";
+  });
+
+// ==================== Attach Edit Listeners (FIXED METHOD) ====================
+const editModalEl = document.getElementById("editFuelModal");
+if (!editModalEl) console.error("CRITICAL: Edit Fuel Modal not found in DOM");
+
+if (editModalEl) {
+  // 1. Listen for the moment Bootstrap starts to show the modal
+  editModalEl.addEventListener("show.bs.modal", (event) => {
+    // 2. Determine which button triggered the modal
+    const btn = event.relatedTarget;
+
+    // 3. Extract data from the button's data-attributes
+    const fuelId = btn.dataset.id;
+    const supplierName = btn.dataset.supplierName || "";
+    const buyerId = btn.dataset.buyerId || "";
+    const buyerName = btn.dataset.buyerName || "";
+    const fuelType = btn.dataset.fuelType || "";
+    const fuelBought = btn.dataset.fuelBought || "";
+    const dateBought = btn.dataset.dateBought || "";
+
+    // 4. Data Population (Mapping to your Modal's IDs)
+    document.getElementById("editFuelId").value = fuelId;
+    document.getElementById("editSupplierName").value = supplierName;
+    document.getElementById("editFuelType").value = fuelType;
+    document.getElementById("editFuelBought").value = fuelBought;
+    document.getElementById("editDateBought").value = dateBought;
+
+    // 5. Prefill Buyer/User Dropdown
+    if (buyerName) {
+      // Note: editBuyerInput is the global variable set from initBuyerDropdownGeneric
+      editBuyerInput.value = buyerName;
+      editSelectedBuyer = buyerId
+        ? { id: parseInt(buyerId, 10), fullname: buyerName }
+        : null;
+    } else {
+      editBuyerInput.value = "";
+      editSelectedBuyer = null;
+    }
+
+    // Ensure the dropdown is hidden if it was open from a previous action
+    document.getElementById("editBuyerDropdown").style.display = "none";
+  });
+}
+
+// ==================== Search & Filter State ====================
+let currentSearch = "";
+let currentFilter = "default";
+
+// ==================== Update Fuels Table ====================
+function updateFuelTable() {
+  const searchValue = document.getElementById("fuelSearch")?.value.trim() || "";
+  const sortValue = document.getElementById("fuelFilter")?.value || "default";
+  const typeValue =
+    document.getElementById("fuelTypeFilter")?.value || "default";
+
+  getAllFuels({
+    search: searchValue,
+    fuel_filter: sortValue,
+    fuel_type: typeValue,
+  });
+}
+
+// ==================== Debounced Search Input ====================
+const handleFuelSearch = debounce(updateFuelTable, 300);
+
+// ==================== ANALYTICS ====================
+function animateCount(el, value, duration = 1500) {
+  if (!el) return;
+  let start = 0;
+  const startTime = performance.now();
+
+  el.style.opacity = 0;
+  el.style.transform = "scale(0.9)";
+  el.style.transition = "opacity 0.4s ease-out, transform 0.4s ease-out";
+
+  requestAnimationFrame(() => {
+    el.style.opacity = 1;
+    el.style.transform = "scale(1)";
+  });
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    // For fuel, we might have decimals, but animateCount usually does integers.
+    // If we want decimals, we should adjust. Assuming integers for now based on other files.
+    // If value is float, we might want to show it.
+    // Let's stick to the provided animateCount which does Math.floor.
+    // If fuel is float, we might want to change this.
+    // However, the user said "just like ... tools", and tools uses Math.floor.
+    // I'll stick to the existing implementation for consistency, but maybe allow float if needed later.
+    const current = Math.floor(start + (value - start) * eased);
+    el.textContent = current;
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      el.textContent = value;
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+function setStatsLoading(isLoading) {
+  const mapping = [
+    ["fuelRemainingSpinner", "fuelRemainingValue"],
+    ["fuelTotalBoughtSpinner", "fuelTotalBoughtValue"],
+    ["fuelTotalUsedSpinner", "fuelTotalUsedValue"],
+    // Fuel Types
+    ["fuelPetSpinner", "fuelPetValue"],
+    ["fuelDiesSpinner", "fuelDiesValue"],
+    ["fuelH10Spinner", "fuelH10Value"],
+    ["fuelH40Spinner", "fuelH40Value"],
+    ["fuelH68Spinner", "fuelH68Value"],
+    ["fuelH90Spinner", "fuelH90Value"],
+  ];
+
+  mapping.forEach(([spinnerId, valueId]) => {
+    const spinner = document.getElementById(spinnerId);
+    const valueEl = document.getElementById(valueId);
+    if (!spinner || !valueEl) return;
+
+    if (isLoading) {
+      spinner.classList.remove("d-none");
+      valueEl.classList.add("opacity-50");
+    } else {
+      spinner.classList.add("d-none");
+      valueEl.classList.remove("opacity-50");
+    }
+  });
+}
+
+async function refreshFuelSummary() {
+  setStatsLoading(true);
+  try {
+    const result = await apiFetch("/analytics/resources-usage");
+    if (result.data && result.data.fuel_analytics) {
+      const stats = result.data.fuel_analytics;
+      // Totals
+      animateCount(
+        document.getElementById("fuelRemainingValue"),
+        Number(stats.remaining_fuel) || 0,
+        1200
+      );
+      animateCount(
+        document.getElementById("fuelTotalBoughtValue"),
+        Number(stats.total_fuel_bought) || 0,
+        1200
+      );
+      animateCount(
+        document.getElementById("fuelTotalUsedValue"),
+        Number(stats.total_fuel_used) || 0,
+        1200
+      );
+
+      // Breakdown by Type
+      // We accept fuel_by_type array: [{fuel_type: "Petrol", remaining_fuel: 100}, ...]
+      let breakdownMap = {};
+
+      if (stats.fuel_by_type && Array.isArray(stats.fuel_by_type)) {
+        stats.fuel_by_type.forEach((item) => {
+          if (item.fuel_type)
+            breakdownMap[item.fuel_type] = item.remaining_fuel || 0;
+        });
+      }
+
+      // Map of "Fuel Type Name" -> "HTML ID"
+      const typeToId = {
+        Petrol: "fuelPetValue",
+        Diesel: "fuelDiesValue",
+        "Hydraulic Oil 10": "fuelH10Value",
+        "Hydraulic Oil 40": "fuelH40Value",
+        "Hydraulic Oil 68": "fuelH68Value",
+        "Hydraulic Oil 90": "fuelH90Value",
+      };
+
+      Object.entries(typeToId).forEach(([type, id]) => {
+        const val = breakdownMap[type];
+        animateCount(document.getElementById(id), Number(val) || 0, 1200);
+      });
+    }
+  } catch (err) {
+    console.warn("Analytics fetch failed:", err);
+  } finally {
+    setStatsLoading(false);
+  }
+}
+window.refreshFuelSummary = refreshFuelSummary;
+
+// ==================== Initialize Page ====================
+document.addEventListener("DOMContentLoaded", () => {
+  // Load initial data
+  getAllFuels();
+  refreshFuelSummary();
+
+  // Attach search listener
+  const fuelSearchInput = document.getElementById("fuelSearch");
+  if (fuelSearchInput) {
+    fuelSearchInput.addEventListener("input", handleFuelSearch);
+  }
+
+  // Attach filter listener
+  const fuelFilterSelect = document.getElementById("fuelFilter");
+  const fuelTypeSelect = document.getElementById("fuelTypeFilter");
+  if (fuelFilterSelect) {
+    fuelFilterSelect.addEventListener("change", updateFuelTable);
+  }
+  if (fuelTypeSelect) {
+    fuelTypeSelect.addEventListener("change", updateFuelTable);
+  }
+
+  // Attach refresh button
+  const refreshBtn = document.getElementById("refreshFuelBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      document.getElementById("fuelSearch").value = "";
+      document.getElementById("fuelFilter").value = "default";
+      document.getElementById("fuelTypeFilter").value = "default";
+      getAllFuels();
+      refreshFuelSummary();
+    });
+  }
+});

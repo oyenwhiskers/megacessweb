@@ -1,0 +1,594 @@
+/* ===================================================
+   Layout: Sidebar + Content
+================================================== */
+body, html {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.app {
+  display: flex;       
+  flex-direction: row; 
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;     
+  top: 0;
+  left: 0;
+  width: 260px;         
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f8f9fa; 
+  z-index: 100;        
+}
+
+/* Adjust content to avoid sidebar overlap */
+.content {
+  margin-left: 250px;   
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 100vh;
+  width: calc(100% - 250px);
+}
+
+
+.content-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 2rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.content-inner {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* ===================================================
+   Payment Rate Containers
+================================================== */
+.payment-rate-container {
+  width: 100%;
+  margin: 0 auto;
+  max-width: 1200px; /* optional max width */
+}
+
+/* Salary Section */
+.staff-list {
+  width: 100%;
+}
+
+/* Work-based Section */
+.work-based-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 992px) {
+  .work-based-container {
+    flex-direction: row;
+  }
+}
+
+.task-list {
+  flex: 1 1 35%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.task-editor {
+  flex: 1 1 65%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ===================================================
+   Slider (To switch between Salary Management & Work-based Management)
+====================================================== */
+
+.type-of-payment-slider .btn-group {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  padding: 6px;
+  border-radius: 50px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8);
+}
+
+.rate-btn {
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  padding: 16px 35px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.rate-btn i {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
+}
+
+.rate-btn:first-of-type {
+  border-radius: 50px;
+}
+.rate-btn:last-of-type {
+  border-radius: 50px;
+}
+
+.btn-check:checked + .rate-btn {
+  background: linear-gradient(135deg, #0d6832 0%, #0a5528 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(13,104,50,0.4), inset 0 1px 2px rgba(255,255,255,0.2);
+  transform: scale(1.02);
+}
+
+.btn-check:checked + .rate-btn i {
+  transform: scale(1.1);
+}
+
+.btn-check:checked + .rate-btn:hover {
+  background: linear-gradient(135deg, #0a5528 0%, #083f20 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(13,104,50,0.5), inset 0 1px 2px rgba(255,255,255,0.2);
+}
+
+.rate-btn:hover:not(.btn-check:checked + *) {
+  background: rgba(13,104,50,0.08);
+  color: #0d6832;
+  transform: translateY(-1px);
+}
+
+.rate-btn:active {
+  transform: scale(0.98);
+}
+
+/* ===================================================
+   Employee Type Selection / Slider ( Worker / Staff )
+====================================================== */
+
+.type-of-employee-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #f0f0f0;
+  padding: 4px;
+  border-radius: 30px;
+  width: 220px;   
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.type-of-employee-btn input[type="radio"] {
+  display: none;
+}
+
+.type-of-employee-btn label {
+  position: relative;
+  z-index: 2;
+  width: 50%;
+  text-align: center;
+  padding: 10px 0;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+  color: #495057;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 26px;
+}
+
+.type-of-employee-btn .selection-bg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background: #0d6832;          
+  border-radius: 26px;
+  z-index: 1;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.type-of-employee-btn label:hover {
+  color: #212529;
+}
+
+/* When STAFF is selected → move slider right */
+#staff:checked ~ .selection-bg {
+  transform: translateX(calc(100% + 4px));
+}
+
+/* Active label should turn white */
+#worker:checked + label {
+  color: white;
+  font-weight: 700;
+}
+#staff:checked + label {
+  color: white;
+  font-weight: 700;
+}
+
+/* =======================================
+Filter for Staff tab in Salary Management
+========================================== */
+
+.filter-group {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+}
+
+.filter-btn {
+  border-radius: 8px !important;
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-weight: 500;
+  transition: all 0.25s ease-in-out;
+}
+
+.btn-check:checked + .filter-btn {
+  background-color: #0d6832;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(13,104,50,0.3);
+  border-color: #0d6832;
+}
+
+.filter-btn:hover {
+  background-color: #c6c6c6;
+  color: #0d6832;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-check:checked + .filter-btn:hover {
+  background-color: #095022;
+  color: #cdcdcd;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(13,104,50,0.4);
+}
+
+
+/* ==============================================
+List of tasks in Work-based Rate Tab (left panel)
+================================================= */
+
+.form-check-input:checked {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.form-check-input:checked:focus {
+  box-shadow: 0 0 0 0.25rem rgba(40,167,69,0.25);
+}
+
+.form-check-input {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.list-group-item.active {
+  background-color: #ebebeb;
+  border: #7f7f7f;
+  color: #000000;
+}
+
+/* =======================================
+Edit Salary Page - Remove card borders
+========================================== */
+
+.content-container .salary-card-shadow-sm .salary-card-header {
+  border-bottom: none !important;
+  background-color: transparent !important;
+}
+
+.content-container .salary-card-shadow-sm .salary-card-body {
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+
+#workerBaseSalaryContainer {
+  border-top: none !important;
+}
+
+#staffBaseSalaryContainer {
+  border-top: none !important;
+}
+
+/* =======================================
+Add new Category Modal
+========================================== */
+.modal-header {
+  background-color: #0d6832;
+  color: white;
+}
+
+/* =======================================
+Skeleton Loading Animation
+========================================== */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-text {
+  border-radius: 4px;
+}
+
+.skeleton-button {
+  border-radius: 6px;
+}
+
+.skeleton-badge {
+  border-radius: 12px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* =======================================
+Pagination Styling
+========================================== */
+#workerPagination,
+#staffPagination {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: inline-block;
+  text-align: center;
+}
+
+#workerList,
+#staffList {
+  text-align: center;
+}
+
+#workerPagination .btn,
+#staffPagination .btn {
+  background-color: white;
+  border: 1px solid #dee2e6;
+}
+
+#workerPagination .btn:hover:not(:disabled),
+#staffPagination .btn:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #0d6832;
+  color: #0d6832;
+}
+
+#workerPagination .btn.btn-success,
+#staffPagination .btn.btn-success {
+  background-color: #0d6832;
+  border-color: #0d6832;
+  color: white;
+}
+
+#workerPagination .btn:disabled,
+#staffPagination .btn:disabled {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  opacity: 0.5;
+}
+
+/* =======================================
+Search bar styling
+========================================== */
+
+/* Remove hover/active/focus states from search input */
+#searchWorker:hover,
+#searchWorker:focus,
+#searchWorker:active,
+#searchStaff:hover,
+#searchStaff:focus,
+#searchStaff:active {
+  border-color: #ced4da !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Search clear button styling */
+.search-clear-btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding: 0.375rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.search-clear-btn:hover {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+  transform: scale(1.05);
+}
+
+.search-clear-btn i {
+  font-size: 0.875rem;
+}
+
+/* =======================================
+   Mobile Responsive Styles
+========================================== */
+
+@media (max-width: 991.98px) {
+  /* Adjust content when sidebar is hidden on mobile */
+  .content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Stack payment type buttons vertically on mobile */
+  .type-of-payment-slider .btn-group {
+    width: 100%;
+  }
+
+  .type-of-payment-slider .rate-btn {
+    padding: 0.75rem 1rem;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Make employee selection responsive */
+  .employee-selection .type-of-employee-btn {
+    width: 100%;
+  }
+
+  /* Adjust filter buttons */
+  .filter-group .filter-btn {
+    min-width: 80px;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Allow horizontal scroll for filter buttons if needed */
+  .filter-section .card-body {
+    overflow-x: auto;
+  }
+
+  .filter-group {
+    flex-wrap: nowrap;
+  }
+
+  /* Work-based rate panels - stack on mobile */
+  .work-based-container {
+    flex-direction: column !important;
+  }
+
+  .work-based-container .task-list,
+  .work-based-container .task-editor {
+    width: 100% !important;
+  }
+
+  /* Reduce padding on mobile */
+  .container-fluid {
+    padding: 1rem !important;
+  }
+
+  .content-inner {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* Adjust card spacing */
+  .card-body {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* Extra small devices */
+  .topbar {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .topbar .page-title {
+    font-size: 1rem !important;
+  }
+
+  /* Smaller text on mobile */
+  .type-of-payment-slider {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .rate-btn {
+    font-size: 0.875rem;
+  }
+
+  /* Filter buttons stack vertically on very small screens */
+  .filter-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .filter-group .filter-btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem !important;
+  }
+
+  .filter-group .filter-btn:first-of-type {
+    border-top-left-radius: 0.25rem !important;
+    border-top-right-radius: 0.25rem !important;
+  }
+
+  .filter-group .filter-btn:last-of-type {
+    border-bottom-left-radius: 0.25rem !important;
+    border-bottom-right-radius: 0.25rem !important;
+  }
+
+  /* Reduce pagination button size */
+  #workerPagination .btn,
+  #staffPagination .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Adjust search bar */
+  .search-section .form-label {
+    font-size: 0.875rem;
+  }
+
+  /* Card grid spacing */
+  .row.g-3 {
+    gap: 0.75rem !important;
+  }
+
+  /* Back button responsive */
+  .back-btn .btn {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  /* Form inputs responsive */
+  .category-header-section {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .category-header-section #addCategoryBtn {
+    width: 100%;
+  }
+
+  /* Stacked form columns on mobile */
+  .row.mb-3 .col-md-6,
+  .row.mb-3 .col-md-3 {
+    margin-bottom: 0.75rem;
+  }
+}

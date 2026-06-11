@@ -6,27 +6,485 @@
   <title>MegaCess Web • Manage Advance</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/manageadvance.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body data-page="manage-advance">
   <div class="app d-flex">
     <aside class="sidebar p-3" id="sidebar-root"></aside>
 
     <main class="content flex-grow-1">
-      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+      <div class="topbar py-3 px-4 d-flex align-items-center justify-content-between">
         <h1 class="page-title h5 mb-0">Manage Advance</h1>
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
+
+      <!-- Manage Advance container-->
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Advance content will go here.</p>
+        <!-- Employee Selection -->
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between align-items-start gap-3 mb-3">
+          <div class="employee-selection">
+              <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+              <input type="radio" class="salary-select-employee" name="employeeType" id="workerTab" autocomplete="off" checked>
+              <label class="select-employee-btn" for="workerTab"><i class="bi bi-person-fill me-2"></i>Worker</label> 
+
+              <input type="radio" class="salary-select-employee" name="employeeType" id="staffTab" autocomplete="off">
+              <label class="select-employee-btn" for="staffTab"><i class="bi bi-person-badge me-2"></i>Staff</label> 
+
+              <span class="selection-bg"></span>
+              </div>
+            </div>
+          <div class="add-advance-btn-wrapper">
+            <button class="addAdvanceBtn shadow-sm px-4 py-2 d-flex align-items-center justify-content-center gap-3" id="addAdvanceBtn" data-bs-toggle="modal" data-bs-target="#addAdvanceModal">
+              <i class="bi bi-plus-circle"></i>
+              Add advance
+            </button>
+          </div>
         </div>
+        <!-- Search Bar -->
+        <div class="mb-3">
+          <label for="advanceSearch" class="form-label fw-semibold mb-1">Search:</label>
+          <input type="text" class="form-control" id="advanceSearch" placeholder="Enter name to search..">
+        </div>
+        <hr>
+        <div class="mb-3 fw-semibold">List of existing advance:</div>
+          <div class="advance-list">
+            <!-- List items will be rendered by JS.-->
+          </div>
+          <!-- Pagination Section -->
+          <div class="d-flex justify-content-center mt-2">
+            <div id="advancePaginationWrapper" class="bg-white rounded px-3 py-2 shadow-sm">
+              <!-- Pagination will be inserted here by JS -->
+            </div>
+          </div>
       </div>
     </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/logout.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/manage_advance.js"></script>
+
+  <!-- Add Advance Modal -->
+  <div class="modal fade" id="addAdvanceModal" tabindex="-1" aria-labelledby="addAdvanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header pb-3">
+          <h5 class="modal-title fw-bold" id="addAdvanceModalLabel">Add new Advance & Expenses Records</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <div class="fw-bold fs-5 mb-2">Select a worker/staff:</div>
+              <!-- Employee Selection in Add new Advance Modal -->
+                <div class="employee-selection my-4">
+                  <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+                    <input type="radio" class="salary-select-employee" name="employeeType" id="modalWorkerBtn" autocomplete="off" checked>
+                    <label class="select-employee-btn" for="modalWorkerBtn"><i class="bi bi-person-fill me-2"></i>Worker</label> 
+
+                    <input type="radio" class="salary-select-employee" name="employeeType" id="modalStaffBtn" autocomplete="off">
+                    <label class="select-employee-btn" for="modalStaffBtn"><i class="bi bi-person-badge me-2"></i>Staff</label> 
+
+                    <span class="selection-bg"></span>
+                    </div>
+                  </div>
+                </div>
+              <!-- Search Bar for Add new Advance Modal -->
+              <div class="mb-2">
+                <label class="form-label fw-bold mb-1" for="userSearch">Search:</label>
+                <input type="text" class="form-control" id="userSearch" placeholder="Search Worker/Staff Name">
+              </div>
+              <div class="filter-section d-flex flex-wrap gap-2 mb-2 p-3" id="staffFilterRow">
+                <button type="button" class="filter-btn border flex-fill py-2 active">All</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Mandor</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Manager</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Checker</button>
+                <button type="button" class="filter-btn border flex-fill py-2">Admin</button>
+              </div>
+              <hr>
+              <!-- Selected Worker/Staff Section -->
+              <div class="modal-list-of-employee mb-3 p-3">
+                <label for="selectedPerson" class="form-label fw-bold">Selected Worker/Staff:</label>
+                <input type="text" class="form-control" id="selectedPerson" placeholder="No one selected" readonly>
+              </div>
+              <div class="modal-list-of-group-section p-3">
+                <div class="list-group">
+                  <!-- Worker/Staff list will be populated by JS -->
+                </div>
+              </div>
+            <div class="modal-details-section mb-3 mt-3">
+              <label for="advanceDate" class="form-label fw-bold">Date:</label>
+              <div class="input-group">
+                <input type="date" class="form-control" id="advanceDate" placeholder="Select date..">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="advanceAmount" class="form-label fw-bold">Amount:</label>
+              <div class="input-group">
+                <span class="input-group-text">RM</span>
+                <input type="number" class="form-control" id="advanceAmount" placeholder="Enter amount..">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="advanceRemarks" class="form-label fw-bold">Remarks:</label>
+              <textarea class="form-control" id="advanceRemarks" rows="3" placeholder="Enter remarks.."></textarea>
+            </div>
+            <div class="d-grid mb-3">
+              <button type="button" class="add-advance-btn fw-bold px-3 py-2">Add Record</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Toggle filter row in modal
+    document.addEventListener('DOMContentLoaded', function() {
+      var workerBtn = document.getElementById('modalWorkerBtn');
+      var staffBtn = document.getElementById('modalStaffBtn');
+      var filterRow = document.getElementById('staffFilterRow');
+      if(workerBtn && staffBtn && filterRow) {
+        filterRow.classList.add('d-none');
+      
+        workerBtn.addEventListener('click', function() {
+          workerBtn.classList.add('btn-success');
+          workerBtn.classList.remove('btn-light');
+          workerBtn.style.background = '#11634b';
+          staffBtn.classList.remove('btn-success');
+          staffBtn.classList.add('btn-light');
+          staffBtn.style.background = '';
+          filterRow.classList.add('d-none');
+        });
+        staffBtn.addEventListener('click', function() {
+          staffBtn.classList.add('btn-success');
+          staffBtn.classList.remove('btn-light');
+          staffBtn.style.background = '#11634b';
+          workerBtn.classList.remove('btn-success');
+          workerBtn.classList.add('btn-light');
+          workerBtn.style.background = '';
+          filterRow.classList.remove('d-none');
+        });
+      }
+    });
+  </script>
+  <script>
+    // Worker and Staff list population for Add Advance modal
+    let staffRoleFilter = '';
+    function showLoadingState() {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading...</span></div><p class="text-muted mt-2">Loading...</p></div>';
+    }
+    function renderWorkerList(workers) {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.innerHTML = workers.length === 0
+        ? '<div class="text-center text-muted py-3">No workers found.</div>'
+        : workers.map(worker => {
+          let workerImage = worker.staff_img;
+          if (workerImage) {
+            if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+              workerImage = `${STORAGE_DOMAIN}/storage/user-images/${workerImage}`;
+            } else if (workerImage.startsWith('/')) {
+              workerImage = `${STORAGE_DOMAIN}${workerImage}`;
+            }
+          }
+          return `
+            <button type="button" class="list-group-item list-group-item-action employee-list-item d-flex align-items-center gap-3" data-id="${worker.id}">
+              ${workerImage ?
+                `<img src="${workerImage}" class="employee-avatar" alt="${worker.staff_fullname}">` :
+                `<span class="employee-avatar-placeholder"><i class="bi bi-person"></i></span>`
+              }
+              <div class="employee-info">
+                <div class="employee-name">${worker.staff_fullname}</div>
+                <div class="employee-detail">${worker.staff_phone || ''}</div>
+              </div>
+            </button>
+          `;
+        }).join('');
+    }
+    function renderStaffList(staffs) {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.innerHTML = staffs.length === 0
+        ? '<div class="text-center text-muted py-3">No staff found.</div>'
+        : staffs.map(staff => {
+          let staffImage = staff.user_img;
+          if (staffImage) {
+            if (!staffImage.startsWith('http') && !staffImage.startsWith('/')) {
+              staffImage = `${STORAGE_DOMAIN}/storage/user-images/${staffImage}`;
+            } else if (staffImage.startsWith('/')) {
+              staffImage = `${STORAGE_DOMAIN}${staffImage}`;
+            }
+          }
+          return `
+            <button type="button" class="list-group-item list-group-item-action employee-list-item d-flex align-items-center gap-3" data-id="${staff.id}">
+              ${staffImage ?
+                `<img src="${staffImage}" class="employee-avatar" alt="${staff.user_fullname}">` :
+                `<span class="employee-avatar-placeholder"><i class="bi bi-person"></i></span>`
+              }
+              <div class="employee-info">
+                <div class="employee-name">${staff.user_fullname}</div>
+                <div class="employee-detail">${staff.user_role || ''}</div>
+              </div>
+            </button>
+          `;
+        }).join('');
+    }
+    function fetchWorkerList(query = '') {
+      const token = getAuthToken();
+      if (!token) return;
+      showLoadingState();
+      fetch(`${API_URL}/advances/staff/list?search=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success && Array.isArray(result.data)) {
+            renderWorkerList(result.data);
+          } else {
+            const listGroup = document.querySelector('#addAdvanceModal .list-group');
+            if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Failed to load workers.</div>';
+          }
+        })
+        .catch(err => {
+          const listGroup = document.querySelector('#addAdvanceModal .list-group');
+          if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Error loading workers.</div>';
+        });
+    }
+    function fetchStaffList(query = '', role = '') {
+      const token = getAuthToken();
+      if (!token) return;
+      showLoadingState();
+      let url = `${API_URL}/advances/users/list?search=${encodeURIComponent(query)}`;
+      if (role && role !== 'all') url += `&role=${encodeURIComponent(role)}`;
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success && Array.isArray(result.data)) {
+            renderStaffList(result.data);
+          } else {
+            const listGroup = document.querySelector('#addAdvanceModal .list-group');
+            if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Failed to load staff.</div>';
+          }
+        })
+        .catch(err => {
+          const listGroup = document.querySelector('#addAdvanceModal .list-group');
+          if (listGroup) listGroup.innerHTML = '<div class="text-center text-danger py-3">Error loading staff.</div>';
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      const userSearch = document.getElementById('userSearch');
+      const addAdvanceModal = document.getElementById('addAdvanceModal');
+      const workerBtn = document.getElementById('modalWorkerBtn');
+      const staffBtn = document.getElementById('modalStaffBtn');
+      const filterRow = document.getElementById('staffFilterRow');
+      if (addAdvanceModal) {
+        addAdvanceModal.addEventListener('show.bs.modal', function() {
+          // Default to worker list on modal open
+          if(workerBtn.checked) {
+            fetchWorkerList('');
+          } else {
+            fetchStaffList('', staffRoleFilter);
+          }
+        });
+        
+        // Reset filter to "All" when modal is closed
+        addAdvanceModal.addEventListener('hidden.bs.modal', function() {
+          staffRoleFilter = '';
+          if (filterRow) {
+            filterRow.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            filterRow.querySelector('button:first-child').classList.add('active');
+          }
+        });
+      }
+      if (userSearch) {
+        userSearch.addEventListener('input', function() {
+          if(workerBtn.checked) {
+            fetchWorkerList(this.value);
+          } else {
+            fetchStaffList(this.value, staffRoleFilter);
+          }
+        });
+      }
+      if (workerBtn && staffBtn && filterRow) {
+        workerBtn.addEventListener('click', function() {
+          userSearch.placeholder = 'Search Worker Name';
+          fetchWorkerList(userSearch.value);
+        });
+        staffBtn.addEventListener('click', function() {
+          userSearch.placeholder = 'Search Staff Name';
+          fetchStaffList(userSearch.value, staffRoleFilter);
+        });
+        filterRow.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', function() {
+            filterRow.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            staffRoleFilter = this.textContent.trim().toLowerCase() === 'all' ? '' : this.textContent.trim().toLowerCase();
+            fetchStaffList(userSearch.value, staffRoleFilter);
+          });
+        });
+        // Set initial placeholder
+        if(workerBtn.classList.contains('btn-success')) {
+          userSearch.placeholder = 'Search Worker Name';
+        } else {
+          userSearch.placeholder = 'Search Staff Name';
+        }
+      }
+    });
+  </script>
+  <script>
+    // --- Set selected worker/staff in input field ---
+    function setSelectedPerson(name, id) {
+      const selectedInput = document.getElementById('selectedPerson');
+      if (selectedInput) selectedInput.value = name;
+      // Store selected id for later use
+      selectedInput.dataset.id = id;
+    }
+    function attachListGroupClickHandlers() {
+      const listGroup = document.querySelector('#addAdvanceModal .list-group');
+      if (!listGroup) return;
+      listGroup.querySelectorAll('button.list-group-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const name = this.querySelector('.employee-name')?.textContent?.trim() || '';
+          const id = this.dataset.id || '';
+          // Also store type for correct API usage
+          const selectedInput = document.getElementById('selectedPerson');
+          if (selectedInput) {
+            selectedInput.value = name;
+            selectedInput.dataset.id = id;
+            // Store type: 'worker' or 'staff' (for Add Advance form logic)
+            const workerBtn = document.getElementById('modalWorkerBtn');
+            selectedInput.dataset.type = workerBtn && workerBtn.checked ? 'worker' : 'staff';
+          }
+        });
+      });
+    }
+    // Patch renderWorkerList and renderStaffList to call attachListGroupClickHandlers
+    const origRenderWorkerList = renderWorkerList;
+    renderWorkerList = function(workers) {
+      origRenderWorkerList(workers);
+      attachListGroupClickHandlers();
+    };
+    const origRenderStaffList = renderStaffList;
+    renderStaffList = function(staffs) {
+      origRenderStaffList(staffs);
+      attachListGroupClickHandlers();
+    };
+  </script>
+  <script>
+    // --- Add Record button handler ---
+    document.addEventListener('DOMContentLoaded', function() {
+      const addAdvanceModal = document.getElementById('addAdvanceModal');
+      const addRecordBtn = document.querySelector('#addAdvanceModal .add-advance-btn');
+      if (!addRecordBtn) return;
+      addRecordBtn.addEventListener('click', async function() {
+        const selectedInput = document.getElementById('selectedPerson');
+        const selectedName = selectedInput.value;
+        const selectedDataId = selectedInput.dataset.id;
+        const selectedType = selectedInput.dataset.type; // 'worker' or 'staff'
+        const date = document.getElementById('advanceDate').value;
+        const amount = document.getElementById('advanceAmount').value;
+        const remarks = document.getElementById('advanceRemarks').value;
+        let type = selectedType === 'worker' ? 'staff' : 'user';
+        let staff_id = null, user_id = null;
+        if(selectedDataId) {
+          if(selectedType === 'worker') {
+            staff_id = selectedDataId;
+          } else {
+            user_id = selectedDataId;
+          }
+        }
+        if(!date || !amount || !remarks || !selectedDataId) {
+          return Swal.fire({
+            icon: 'warning',
+            title: 'Incomplete Information',
+            text: 'Please fill in all fields and select a worker/staff.',
+            confirmButtonColor: '#0d6832'
+          });
+        }
+        const token = getAuthToken();
+        if (!token) return;
+        try {
+          const payload = {
+            type,
+            loan_date: date,
+            loan_amount: amount,
+            loan_remarks: remarks,
+            loan_status: 'not_paid'
+          };
+          if (selectedType === 'worker') {
+            payload.staff_id = staff_id;
+          } else {
+            payload.user_id = user_id;
+          }
+          const response = await fetch(`${API_URL}/advances`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (result.success) {
+            Swal.fire({
+            icon: 'success',
+            title: 'The advance has been added successfully.',
+            confirmButtonColor: '#0d6832'
+          });
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(addAdvanceModal);
+            if (modal) modal.hide();
+            addAdvanceModal.querySelector('form').reset();
+            selectedInput.value = 'No one selected';
+            selectedInput.dataset.id = '';
+            selectedInput.dataset.type = '';
+            fetchWorkerList('');
+            fetchStaffList('', staffRoleFilter);
+            // Refresh the advance list
+            if (typeof fetchAdvances === 'function') {
+              fetchAdvances();
+            } else {
+              // Trigger a custom event that manage_advance.js can listen to
+              window.dispatchEvent(new CustomEvent('refreshAdvanceList'));
+            }
+          } else {
+            console.error('Failed to add record:', result.message);
+            Swal.fire({
+            icon: 'error',
+            text: 'Failed to add record: ' + (result.message || 'Unknown error'),
+            confirmButtonColor: '#0d6832'
+          });
+          }
+        } catch (error) {
+          console.error('Error adding record:', error);
+          Swal.fire({
+            icon: 'error',
+            text: 'An error occurred while adding the record. Please try again later.',
+            confirmButtonColor: '#0d6832'
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>

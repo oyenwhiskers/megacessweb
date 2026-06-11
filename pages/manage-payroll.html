@@ -6,27 +6,379 @@
   <title>MegaCess Web • Manage Payroll</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/managepayroll.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body data-page="manage-payroll">
   <div class="app d-flex">
     <aside class="sidebar p-3" id="sidebar-root"></aside>
 
     <main class="content flex-grow-1">
-      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+      <div class="topbar py-3 px-4 d-flex align-items-center justify-content-between">
         <h1 class="page-title h5 mb-0">Manage Payroll</h1>
-        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+        <div class="d-flex gap-2 align-items-center">
+          <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+        </div>
       </div>
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Payroll content will go here.</p>
+        <!-- Tab Navigation (Worker or Staff) -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="employee-selection d-flex justify-content-between align-items-center">
+              <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+              <input type="radio" class="salary-select-employee" name="employeeType" id="workerTab" autocomplete="off" checked>
+              <label class="select-employee-btn" for="workerTab"><i class="bi bi-person-fill me-2"></i>Worker</label> 
+
+              <input type="radio" class="salary-select-employee" name="employeeType" id="staffTab" autocomplete="off">
+              <label class="select-employee-btn" for="staffTab"><i class="bi bi-person-badge me-2"></i>Staff</label> 
+
+              <span class="selection-bg"></span>
+              </div>
+
+              <a href="../pages/monthly-summary.html" class="btn btn-success d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span class="d-none d-md-inline">Monthly Summary</span>
+                <span class="d-md-none">Summary</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="row mb-2">
+          <div class="col-12">
+            <div class="search-container">
+              <label for="searchInput" class="fw-semibold mb-2">Search worker name:</label>
+              <input type="text" class="form-control form-control-lg" placeholder="Enter worker name..." id="searchInput">
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Filter Buttons (Initially Hidden) -->
+        <div class="row mb-2" id="roleFilterContainer" style="display: none;">
+          <div class="col-12">
+            <div class="filter-section d-flex flex-wrap p-3 gap-2">
+              <button class="btn btn-success flex-fill py-2" id="roleFilterAll" data-role="all">
+                All
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterMandor" data-role="mandor">
+                Mandor
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterManager" data-role="manager">
+                Manager
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterChecker" data-role="checker">
+                Checker
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterAdmin" data-role="admin">
+                Admin
+              </button>
+            </div>
+          </div>
+        </div>
+        <hr>
+        
+        <!-- Worker List Header -->
+        <div class="row mb-3">
+          <div class="d-flex justify-content-md-between align-items-center">
+            <p class="list-title fw-semibold">List of existing worker:</p>
+              <div class="pagination-info">
+                <span class="text-muted" id="paginationInfoHeader">Showing 0 - 0 of 0 items</span>
+              </div>
+          </div>
+        </div>
+
+        <!-- Worker List -->
+        <div class="row" id="workerList">
+          <div class="col-12" id="workerContainer">
+            <!-- Workers will be populated here -->
+          </div>
+        </div>
+
+        <!-- Staff List (Initially Hidden) -->
+        <div class="row d-none" id="staffList">
+          <div class="col-12">
+            <div class="text-center py-5">
+              <i class="bi bi-person-badge display-1 text-muted"></i>
+              <h4 class="text-muted mt-3">No staff members found</h4>
+              <p class="text-muted">Staff payroll information will appear here.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Pagination Controls -->
+        <div class="row">
+          <div class="col-12 d-flex justify-content-center mt-4">
+            <div id="paginationContainer" class="bg-white rounded p-3">
+              <div class="d-flex justify-content-center align-items-center">
+                <small class="text-muted me-3" id="paginationInfo"></small>
+                <nav aria-label="Pagination">
+                  <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                    <!-- Pagination buttons will be generated here -->
+                  </ul>
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/logout.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/manage_payroll.js"></script>
+
+  <!-- Generate Payslip Modal -->
+  <div class="modal fade" id="payslipModal" tabindex="-1" aria-labelledby="payslipModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-3">
+          <h2 class="modal-title w-100 text-center fw-semibold" id="payslipModalLabel">Payslip Generation</h2>
+          <button type="button" class="btn-close btn-close-light" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <!-- Name -->
+            <div class="mb-3 row align-items-center">
+              <label class="col-sm-3 col-form-label fw-bold">Name:</label>
+              <div class="col-sm-9 d-flex align-items-center">
+                <span id="payslipName" class="fs-6">-</span>
+              </div>
+            </div>
+
+            <!-- Month Selection -->
+            <div class="mb-3 row align-items-center">
+              <label class="col-sm-3 col-form-label fw-bold">Month Selection:</label>
+              <div class="col-sm-9">
+                <select id="payslipMonth" class="form-select">
+                  <option selected disabled>select month</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Base Salary / Income Summary -->
+            <div class="mb-3 row align-items-center">
+              <label class="col-sm-3 col-form-label fw-bold">Base Salary:</label>
+              <div class="col-sm-9">
+                <input id="baseSalary" type="text" class="form-control" value="0.00" disabled>
+              </div>
+            </div>
+
+            <!-- Overrides Section -->
+            <div class="mb-3 row align-items-center">
+              <label class="col-sm-3 col-form-label fw-bold">Lateness Override:</label>
+              <div class="col-sm-9">
+                <input id="latenessOverride" type="number" min="0" step="0.01" class="form-control" placeholder="Leave empty for auto-calculation">
+              </div>
+            </div>
+
+            <div class="mb-3 row align-items-center">
+              <label class="col-sm-3 col-form-label fw-bold">Early Out Override:</label>
+              <div class="col-sm-9">
+                <input id="earlyOutOverride" type="number" min="0" step="0.01" class="form-control" placeholder="Leave empty for auto-calculation">
+              </div>
+            </div>
+
+            <!-- Add Deductions -->
+            <div class="mb-3">
+              <div class="fw-bold mb-2">Add Deductions:</div>
+              <div class="row g-2 align-items-center">
+                <div class="col-md-6">
+                  <input type="text" id="deductionTypeInput" class="form-control" placeholder="Enter deduction type">
+                </div>
+                <div class="col-md-4">
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" step="0.01" id="deductionAmountInput" class="form-control" placeholder="Enter deduction amount">
+                  </div>
+                </div>
+                <div class="col-md-2 d-grid">
+                  <button class="btn btn-primary" id="addDeductionBtn">Add</button>
+                </div>
+              </div>
+              <div class="table-responsive mt-3">
+                <table class="table table-sm align-middle">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th class="text-end">Amount (RM)</th>
+                      <th class="text-end">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="deductionTableBody"></tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Total</th>
+                      <th class="text-end"><span id="totalDeductions">0.00</span></th>
+                      <th></th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- Outstanding Balance Section -->
+            <div class="mb-3" id="outstandingBalanceSection" style="display: none;">
+              <div class="fw-bold mb-2">Outstanding Advance Balance:</div>
+              <div class="card bg-light p-3">
+                <div class="row g-2 small">
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Outstanding Balance:</span>
+                      <span class="fw-bold text-danger" id="outstandingBalance">RM 0.00</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Total Loans:</span>
+                      <span class="fw-semibold" id="totalLoanAmount">RM 0.00</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Total Paid:</span>
+                      <span class="fw-semibold text-success" id="totalPaidAmount">RM 0.00</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">No of Loans:</span>
+                      <span class="fw-semibold" id="loanCount">0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Advance Section -->
+            <div class="mb-3">
+              <div class="fw-bold mb-2">Advance Repayment:</div>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" step="0.01" id="advanceAmount" class="form-control" value="0.00">
+                  </div>
+                </div>
+                <div class="col-md-8">
+                  <input type="text" id="advanceRemarks" class="form-control" placeholder="Remarks (optional)">
+                </div>
+              </div>
+            </div>
+
+            <!-- Employer Contributions Section -->
+            <div class="mb-3">
+              <div class="fw-bold mb-2">Employer Contributions:</div>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label small">Employer EPF</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="99999" step="0.01" id="employerEpf" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Employer SOCSO</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="99999" step="0.01" id="employerSocso" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Employer EIS</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="99999" step="0.01" id="employerEis" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Employer PCB</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RM</span>
+                    <input type="number" min="0" max="99999" step="0.01" id="employerPcb" class="form-control" value="0" placeholder="RM0">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hidden placeholders expected by JS (avoid runtime errors) -->
+            <div class="d-none">
+              <span id="taskIncome"></span>
+              <span id="totalIncome"></span>
+              <span id="totalDeduction"></span>
+              <span id="netSalary"></span>
+              <span id="staffDoc"></span>
+              <span id="staffBankName"></span>
+              <span id="staffBankNumber"></span>
+              <span id="staffKwspNumber"></span>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="d-grid mt-4">
+              <button class="btn btn-success btn-md" id="generatePayslipBtn">Generate Payslip</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payslip View Modal -->
+  <div class="modal fade" id="viewPayslipModal" tabindex="-1" aria-labelledby="viewPayslipModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h2 class="modal-title w-100 text-center fw-bold" id="viewPayslipModalLabel">Payslip Details</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="viewPayslipModalBody">
+          <!-- Payslip details will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Breakdown Modal -->
+  <div class="modal fade" id="taskBreakdownModal" tabindex="-1" aria-labelledby="taskBreakdownTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="taskBreakdownTitle">Task Breakdown</h5>
+            <div class="text-white small fw-semibold" id="taskBreakdownSubtitle"></div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 align-items-end mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Month</label>
+              <select class="form-select" id="taskBreakdownMonth"></select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Year</label>
+              <input type="number" class="form-control" id="taskBreakdownYear" min="2000" max="2100" placeholder="2025">
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary w-100" id="taskBreakdownFetchBtn">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                Refresh
+              </button>
+            </div>
+            <div class="col-md-2 text-md-end">
+              <span id="taskBreakdownStatus" class="text-muted small"></span>
+            </div>
+          </div>
+          <div id="taskBreakdownContent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
+

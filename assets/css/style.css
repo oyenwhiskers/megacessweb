@@ -13,19 +13,37 @@ body{
   color: var(--text);
 }
 
+/* Utility Classes */
+.bg-light-green {
+  background-color: #a8e6cf !important;
+}
+
+.bg-light-blue {
+  background-color: #a8d8ea !important;
+}
+
+.text-success {
+  color: #2c5530 !important;
+}
+
 /* Layout */
 .app{min-height:100vh;}
 .sidebar{
-  width: 270px;
+  width: 260px;
   background: #f7f9f8;
   display:flex;
   flex-direction:column;
   border-right:1px solid #e6eee9;
   box-shadow: 0 0 0 rgba(0,0,0,0);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 .topbar{
   background: var(--brand-dark);
   color:#fff;
+  padding-left: 4rem;
 }
 .content{min-height:100vh;background:var(--brand-contrast);} 
 
@@ -69,9 +87,174 @@ body{
 .page-title{margin:0;font-weight:600;}
 .placeholder-card{border:2px dashed #cfe4d6;background:#fff;border-radius:.75rem;padding:2rem;}
 
+/* Loading overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 0.375rem;
+}
+
+.loading-overlay .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
 /* Small screens */
 @media (max-width: 991.98px){
   .sidebar{position:fixed;z-index:1040;height:100%;transform:translateX(-100%);transition:transform .2s ease-in-out;}
   .sidebar.open{transform:translateX(0)}
   .content{min-height:100vh;margin-left:0;}
+}
+
+/* Payroll Page Styles */
+.worker-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #e1efe7 !important;
+}
+
+.worker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 107, 79, 0.1);
+  border-color: #cfe4d6 !important;
+}
+
+.worker-avatar .bg-dark {
+  background: var(--brand-dark) !important;
+}
+
+.search-container input {
+  border-radius: 12px;
+  border: 1px solid #e1efe7;
+  padding: 12px 20px;
+  font-size: 16px;
+  background: #fff;
+}
+
+.search-container input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(15, 107, 79, 0.1);
+  outline: none;
+}
+
+.btn.rounded-pill {
+  border-radius: 25px !important;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-success.rounded-pill {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.btn-success.rounded-pill:hover {
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
+  transform: translateY(-1px);
+}
+
+.btn-outline-secondary.rounded-pill {
+  color: #6c757d;
+  border-color: #dee2e6;
+}
+
+.btn-outline-secondary.rounded-pill:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+.payroll-action .btn {
+  background: linear-gradient(45deg, #00bcd4, #26c6da);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.payroll-action .btn:hover {
+  background: linear-gradient(45deg, #0097a7, #00acc1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 188, 212, 0.3);
+}
+
+/* Employment Overview Styles */
+.employment-overview {
+  background: var(--brand-contrast);
+  min-height: 100vh;
+  padding: 0;
+}
+
+.employment-overview .card {
+  border: none;
+  background: #f8f9fa;
+}
+
+.employment-overview .card-body {
+  background: white;
+  border-radius: 12px;
+}
+
+.employment-overview h3 {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 2rem;
+}
+
+.employment-overview h4 {
+  color: #34495e;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+/* Info Cards */
+.info-card {
+  background: linear-gradient(135deg, #a8e6cf, #88d8a3) !important;
+  border: 1px solid #7dd87a;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(125, 216, 122, 0.2);
+}
+
+.info-card .fw-semibold {
+  color: #2c5530 !important;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card .h6 {
+  color: #1a4b20 !important;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .employment-overview .row .col-md-4 {
+    margin-bottom: 1rem;
+  }
+  
+  .employment-overview h3 {
+    font-size: 1.5rem;
+  }
+  
+  .info-card {
+    padding: 1rem;
+  }
 }

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaCess Web • Leave Details</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/manageattendance.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body data-page="manage-leave-details">
+  <div class="app d-flex">
+    <aside class="sidebar p-3" id="sidebar-root"></aside>
+
+    <main class="content flex-grow-1">
+      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+        <h1 class="page-title h5 mb-0">Manage Leave</h1>
+        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+      </div>
+      
+      <div class="container-fluid p-4">
+        <!-- Back Button -->
+        <div class="mb-3">
+          <a href="../pages/manage-attendance.html" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Attendance
+          </a>
+        </div>
+
+        <!-- User Info Card -->
+        <div class="card mb-4" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <img id="userAvatar" src="" alt="User Avatar" class="rounded-circle me-3" 
+                     style="width: 80px; height: 80px; object-fit: cover; background-color: #333;">
+                <div>
+                  <h4 class="mb-1 fw-bold" id="userName">Loading...</h4>
+                  <p class="mb-0 text-muted" id="userType">Loading...</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-success" id="addLeaveBtn">
+                <i class="bi bi-plus-circle me-2"></i>Add New Leave
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="card mb-4" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div class="card-body">
+            <h6 class="mb-3 fw-bold">Filter Leave Records</h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Year</label>
+                <select class="form-select" id="filterYear">
+                  <!-- Years will be populated by JS -->
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Month</label>
+                <select class="form-select" id="filterMonth">
+                  <option value="01">January</option>
+                  <option value="02">February</option>
+                  <option value="03">March</option>
+                  <option value="04">April</option>
+                  <option value="05">May</option>
+                  <option value="06">June</option>
+                  <option value="07">July</option>
+                  <option value="08">August</option>
+                  <option value="09">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Leave Type</label>
+                <select class="form-select" id="filterType">
+                  <option value="">All Types</option>
+                  <option value="Annual Leave">Annual Leave</option>
+                  <option value="Sick Leave">Sick Leave</option>
+                  <option value="Unpaid Leave">Unpaid Leave</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leave Records List -->
+        <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div class="card-body">
+            <h6 class="mb-3 fw-bold">Leave Records</h6>
+            <div id="leaveRecordsList">
+              <!-- Loading spinner -->
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">Loading leave records...</p>
+              </div>
+            </div>
+            <!-- Pagination controls -->
+            <div id="paginationControls"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Leave Modal -->
+  <div class="modal fade" id="addLeaveModal" tabindex="-1" aria-labelledby="addLeaveModalLabel">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #f8f9fa; border: none; border-radius: 15px;">
+        <div class="modal-body px-4 py-3">
+          <div class="d-flex align-items-center my-2">
+            <button type="button" class="btn btn-link p-0 me-3" data-bs-dismiss="modal" style="color: #6c757d;">
+              <i class="bi bi-arrow-left" style="font-size: 1.2rem;"></i>
+            </button>
+            <div>
+              <h5 class="mb-1 fw-bold text-dark">Add New Leave</h5>
+              <p class="mb-0 text-muted small">Fill in the details for the leave request</p>
+            </div>
+          </div>
+
+          <form id="addLeaveForm">
+            <div class="my-3">
+              <label class="form-label fw-semibold text-dark mb-2">Leave Type:</label>
+              <select id="leaveType" class="form-select py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;" required>
+                <option value="">Select leave type...</option>
+                <option value="annual_leave">Annual Leave</option>
+                <option value="sick_leave">Sick Leave</option>
+                <option value="unpaid_leave">Unpaid Leave</option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">From Date:</label>
+              <div class="position-relative">
+                <input type="date" id="leaveFromDate" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;" required>
+                <i class="bi bi-calendar3 position-absolute end-0 top-50 translate-middle-y me-3" style="color: #6c757d; pointer-events: none;"></i>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">To Date:</label>
+              <div class="position-relative">
+                <input type="date" id="leaveToDate" class="form-control py-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;" required>
+                <i class="bi bi-calendar3 position-absolute end-0 top-50 translate-middle-y me-3" style="color: #6c757d; pointer-events: none;"></i>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark mb-2">Notes (Optional):</label>
+              <textarea id="leaveNotes" class="form-control" rows="4" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px; resize: none;" placeholder="Enter reason or additional notes..."></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-success px-4 py-2 d-flex align-items-center" style="border-radius: 8px;">
+                <i class="bi bi-calendar-plus me-2"></i>
+                Submit Leave
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Leave Details Modal -->
+  <div class="modal fade" id="viewLeaveDetailsModal" tabindex="-1" aria-labelledby="viewLeaveDetailsModalLabel">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #e5e5e5; border: none; border-radius: 15px;">
+        <div class="modal-body px-4 py-3">
+          <div style="font-size: 1.4rem; font-weight: 700; margin-bottom: 8px;">Leave Details</div>
+          <hr style="margin: 0 0 18px 0;">
+          
+          <div style="margin-bottom: 18px;">
+            <div style="color: #666; font-size: 1.05rem; margin-bottom: 6px;">Type of leave:</div>
+            <span id="detailLeaveType" style="display: inline-flex; align-items: center; justify-content: center; background: #0d6efd; color: #fff; font-weight: 600; min-width: 150px; height: 38px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-size: 1.08rem; padding: 0 18px;">-</span>
+          </div>
+          
+          <div class="row" style="display: flex; flex-wrap: wrap; margin-bottom: 12px;">
+            <div style="flex: 1 1 180px; margin-bottom: 10px;">
+              <div style="color: #666; font-size: 1.01rem;">Created by:</div>
+              <div id="detailCreatedBy" style="font-size: 1.08rem;">-</div>
+            </div>
+            <div style="flex: 1 1 180px; margin-bottom: 10px;">
+              <div style="color: #666; font-size: 1.01rem;">Created at:</div>
+              <div id="detailCreatedAt" style="font-size: 1.08rem;">-</div>
+            </div>
+            <div style="flex: 1 1 180px; margin-bottom: 10px;">
+              <div style="color: #666; font-size: 1.01rem;">Start Date:</div>
+              <div id="detailStartDate" style="font-size: 1.08rem;">-</div>
+            </div>
+            <div style="flex: 1 1 180px; margin-bottom: 10px;">
+              <div style="color: #666; font-size: 1.01rem;">End Date:</div>
+              <div id="detailEndDate" style="font-size: 1.08rem;">-</div>
+            </div>
+          </div>
+          
+          <div style="color: #666; font-size: 1.01rem;">Remarks:</div>
+          <div id="detailRemarks" style="font-size: 1.08rem;">-</div>
+          
+          <div class="mt-3 d-flex gap-2">
+            <button type="button" class="btn btn-danger" onclick="deleteLeaveRecord()" style="min-width: 100px;">
+              <i class="bi bi-trash me-1"></i>Delete
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-width: 100px;">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/manage_leave.js"></script>
+  <script src="../assets/js/logout.js"></script>
+</body>
+</html>
+

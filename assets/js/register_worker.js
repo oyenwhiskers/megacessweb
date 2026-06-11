@@ -1,0 +1,451 @@
+// Register Worker functionality
+(function () {
+    // Configuration
+    const API_BASE_URL = API_URL; // Using global API_URL from config.js
+
+    // Get the register worker form and modal
+    const registerWorkerForm = document.getElementById('registerWorkerForm');
+    const registerWorkerModal = document.getElementById('registerWorkerModal');
+    let modalInstance = null;
+
+    // Get auth token
+    function getAuthToken() {
+        const token = localStorage.getItem('auth_token') ||
+            sessionStorage.getItem('auth_token') ||
+            localStorage.getItem('authToken') ||
+            sessionStorage.getItem('authToken');
+
+        if (!token) {
+            window.location.href = '/pages/log-in.html';
+            return null;
+        }
+
+        return token;
+    }
+
+    // Show loading state on form
+    function showFormLoading(show = true) {
+        const submitBtn = registerWorkerForm.querySelector('button[type="submit"]');
+        const formInputs = registerWorkerForm.querySelectorAll('input, select');
+
+        if (show) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+            formInputs.forEach(input => input.disabled = true);
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Create';
+            formInputs.forEach(input => input.disabled = false);
+        }
+    }
+
+    // Show success message
+    function showSuccess(message, workerData) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            html: message + (workerData ? `<br><small class="text-muted">Worker ID: ${workerData.id}</small>` : ''),
+            showConfirmButton: true,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0d6832',
+            timer: 3000,
+            timerProgressBar: true
+        });
+    }
+
+    // Show error message
+    function showError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: message,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#dc3545',
+            timer: 5000,
+            timerProgressBar: true
+        });
+    }
+
+    // Validate form data
+    function validateForm(formData) {
+        const errors = [];
+
+        // Required fields
+        if (!formData.staff_doc?.trim()) {
+            errors.push('IC / Document ID is required');
+        }
+
+        if (!formData.fullname?.trim()) {
+            errors.push('Full Name is required');
+        }
+
+        if (!formData.phone?.trim()) {
+            errors.push('Phone Number is required');
+        }
+
+        if (!formData.dob) {
+            errors.push('Date of Birth is required');
+        }
+
+        if (!formData.gender) {
+            errors.push('Gender is required');
+        }
+
+        if (!formData.designation) {
+            errors.push('Role is required');
+        }
+
+        // Validate start date (optional, but must be valid if present)
+        if (formData.staff_employment_start_date) {
+            const startDate = new Date(formData.staff_employment_start_date);
+            const today = new Date();
+            if (isNaN(startDate.getTime())) {
+                errors.push('Start Date is invalid');
+            } else if (startDate > today) {
+                errors.push('Start Date cannot be in the future');
+            }
+        }
+
+        // Validate phone number format (basic validation)
+        if (formData.phone && !/^[\+]?[0-9\-\s\(\)]+$/.test(formData.phone.trim())) {
+            errors.push('Please enter a valid phone number');
+        }
+
+        // Validate date of birth (must be in the past and not too old)
+        if (formData.dob) {
+            const dob = new Date(formData.dob);
+            const today = new Date();
+            const age = today.getFullYear() - dob.getFullYear();
+
+            if (dob > today) {
+                errors.push('Date of Birth cannot be in the future');
+            } else if (age < 16) {
+                errors.push('Worker must be at least 16 years old');
+            } else if (age > 100) {
+                errors.push('Please enter a valid Date of Birth');
+            }
+        }
+
+        return errors;
+    }
+
+    // Format form data for API
+    function formatFormDataForAPI(formData, imageFile = null) {
+        // Create JSON object for worker registration
+        const apiData = {
+            staff_fullname: formData.fullname?.trim() || '',
+            staff_phone: formData.phone?.trim() || '',
+            staff_dob: formData.dob || '',
+            staff_gender: formData.gender || '',
+            staff_doc: formData.staff_doc?.trim() || '',
+            staff_employment_start_date: formData.staff_employment_start_date || '',
+            staff_bank_name: formData.banktype?.trim() || '',
+            staff_bank_number: formData.bankaccount?.trim() || '',
+            staff_kwsp_number: formData.kwsp?.trim() || '',
+            staff_img: '' // Image upload handled separately if needed
+        };
+
+        return apiData;
+    }
+
+    // Reset form
+    function resetForm() {
+        registerWorkerForm.reset();
+
+        // Reset image preview to placeholder generated from default name
+        const imagePreview = document.getElementById('workerProfilePreview');
+        if (imagePreview) {
+            const placeholderImage = `https://ui-avatars.com/api/?name=${encodeURIComponent('Worker')}&background=6c757d&color=fff&size=128&bold=true&rounded=true`;
+            imagePreview.src = placeholderImage;
+        }
+
+        // Remove any alerts
+        const existingAlert = registerWorkerModal.querySelector('.alert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+
+        // Remove validation classes
+        const inputs = registerWorkerForm.querySelectorAll('.form-control, .form-select');
+        inputs.forEach(input => {
+            input.classList.remove('is-valid', 'is-invalid');
+        });
+
+        // Reset form state
+        showFormLoading(false);
+    }
+
+    // Main function to register worker
+    async function registerWorker(formData) {
+        try {
+            showFormLoading(true);
+
+            // Validate form
+            const errors = validateForm(formData);
+            if (errors.length > 0) {
+                throw new Error(errors.join(', '));
+            }
+
+            // Get image file if uploaded
+            const imageInput = document.getElementById('workerProfileImageInput');
+            const imageFile = imageInput && imageInput.files.length > 0 ? imageInput.files[0] : null;
+
+            // Use FormData to handle both regular fields and file upload
+            const formDataPayload = new FormData();
+
+            // Append all text fields
+            formDataPayload.append('staff_fullname', formData.fullname?.trim() || '');
+            formDataPayload.append('staff_phone', formData.phone?.trim() || '');
+            formDataPayload.append('staff_dob', formData.dob || '');
+            formDataPayload.append('staff_gender', formData.gender || '');
+            formDataPayload.append('staff_doc', formData.staff_doc?.trim() || '');
+
+            if (formData.staff_ic?.trim()) {
+                formDataPayload.append('staff_ic', formData.staff_ic.trim());
+            }
+            if (formData.designation) {
+                formDataPayload.append('designation', formData.designation);
+            }
+
+            if (formData.staff_employment_start_date) {
+                formDataPayload.append('staff_employment_start_date', formData.staff_employment_start_date);
+            }
+            if (formData.banktype?.trim()) {
+                formDataPayload.append('staff_bank_name', formData.banktype.trim());
+            }
+            if (formData.bankaccount?.trim()) {
+                formDataPayload.append('staff_bank_number', formData.bankaccount.trim());
+            }
+            if (formData.kwsp?.trim()) {
+                formDataPayload.append('staff_kwsp_number', formData.kwsp.trim());
+            }
+
+            // Append image file if present
+            if (imageFile) {
+                formDataPayload.append('staff_img', imageFile);
+            }
+
+            // DEBUG: Log request details
+            console.log('=== Worker Registration Debug ===');
+            console.log('API URL:', `${API_BASE_URL}/staff/register`);
+            console.log('Token:', getAuthToken()?.substring(0, 20) + '...');
+            console.log('Has image:', !!imageFile);
+            if (imageFile) {
+                console.log('Image:', imageFile.name, imageFile.size, 'bytes');
+            }
+            console.log('FormData fields:');
+            for (let pair of formDataPayload.entries()) {
+                console.log(' -', pair[0], '=', pair[1] instanceof File ? `[File: ${pair[1].name}]` : pair[1]);
+            }
+
+            // Make API request with FormData
+            const response = await fetch(`${API_BASE_URL}/staff/register`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${getAuthToken()}`,
+                    'Accept': 'application/json'
+                    // Don't set Content-Type - browser will set it with boundary for FormData
+                },
+                body: formDataPayload
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                // Handle different error types
+                if (response.status === 401) {
+                    Swal.fire({
+                        "icon": "error",
+                        "title": "Authentication Failed!",
+                        "text": "Your session has expired. Please log in again.",
+                        "confirmButtonText": "Log in now."
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "../assets/pages/log-in.html"
+                        }
+                    });
+                } else if (response.status === 403) {
+                    Swal.fire({
+                        "icon": "error",
+                        "title": "Access Denied",
+                        "text": "You do not have permission to register workers.",
+                        "timer": 3000,
+                        "timerProgressBar": true,
+                    })
+                } else if (response.status === 422) {
+                    // Validation errors from server
+                    const errorMessages = [];
+                    if (result.errors) {
+                        Object.keys(result.errors).forEach(field => {
+                            if (Array.isArray(result.errors[field])) {
+                                errorMessages.push(...result.errors[field]);
+                            }
+                        });
+                    }
+                    throw new Error(errorMessages.length > 0 ? errorMessages.join(', ') : result.message || 'Validation failed');
+                } else if (response.status === 429) {
+                    throw new Error('Too many requests. Please wait a moment and try again.');
+                } else {
+                    throw new Error(result.message || `HTTP ${response.status}: ${response.statusText}`);
+                }
+            }
+
+            // Show success message when registration is successful
+            Swal.fire({
+                icon: 'success',
+                title: 'Worker Registered!',
+                html: `Worker "<strong>${formData.fullname}</strong>" has been registered successfully!` +
+                    (result.data?.id ? `<br><small class="text-muted">Worker ID: ${result.data.id}</small>` : ''),
+                showConfirmButton: true,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d6832',
+                timer: 3000,
+                timerProgressBar: true
+            }).then(() => {
+                resetForm();
+
+                // Close modal after successful registration
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+
+                // Refresh the workers list if it's visible and the function exists
+                if (window.fetchWorkersList &&
+                    document.getElementById('workersView') &&
+                    !document.getElementById('workersView').classList.contains('d-none')) {
+
+                    const searchInput = document.getElementById('accountSearch');
+                    const currentGender = document.querySelector('#genderFilterGroup .btn.active')?.getAttribute('data-gender') || 'all';
+                    window.fetchWorkersList(searchInput ? searchInput.value : '', 1, currentGender);
+                }
+            });
+
+        } catch (error) {
+            showError(error.message || 'Failed to register worker. Please try again.');
+        } finally {
+            showFormLoading(false);
+        }
+    }
+
+    // Initialize the form handler
+    function initializeRegisterWorker() {
+        if (!registerWorkerForm) {
+            return;
+        }
+
+        // Initialize Bootstrap modal
+        if (registerWorkerModal) {
+            modalInstance = new bootstrap.Modal(registerWorkerModal);
+
+            // Reset form when modal is opened
+            registerWorkerModal.addEventListener('show.bs.modal', function () {
+                resetForm();
+
+                // Set max date for date of birth (today's date)
+                const dobInput = registerWorkerForm.querySelector('input[name="dob"]');
+                if (dobInput) {
+                    const today = new Date();
+                    const maxDate = today.toISOString().split('T')[0];
+                    dobInput.setAttribute('max', maxDate);
+
+                    // Set a reasonable min date (100 years ago)
+                    const minDate = new Date();
+                    minDate.setFullYear(today.getFullYear() - 100);
+                    dobInput.setAttribute('min', minDate.toISOString().split('T')[0]);
+                }
+            });
+        }
+
+        // Handle form submission
+        registerWorkerForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Get form data
+            const formData = new FormData(registerWorkerForm);
+            const data = Object.fromEntries(formData.entries());
+
+            // Register worker
+            registerWorker(data);
+        });
+
+        // Add real-time validation
+        const inputs = registerWorkerForm.querySelectorAll('input[required], select[required]');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function () {
+                validateField(this);
+            });
+
+            input.addEventListener('input', function () {
+                if (this.classList.contains('is-invalid')) {
+                    validateField(this);
+                }
+            });
+        });
+
+        // Phone number formatting
+        const phoneInput = registerWorkerForm.querySelector('input[name="phone"]');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function () {
+                // Remove non-numeric characters except +, -, (, ), and spaces
+                this.value = this.value.replace(/[^\d\+\-\(\)\s]/g, '');
+                validateField(this);
+            });
+        }
+
+        // Bank account and KWSP number validation
+        const bankAccountInput = registerWorkerForm.querySelector('input[name="bankaccount"]');
+        const kwspInput = registerWorkerForm.querySelector('input[name="kwsp"]');
+
+        [bankAccountInput, kwspInput].forEach(input => {
+            if (input) {
+                input.addEventListener('input', function () {
+                    // Allow only numbers and hyphens
+                    this.value = this.value.replace(/[^0-9\-]/g, '');
+                });
+            }
+        });
+    }
+
+    // Validate individual field
+    function validateField(field) {
+        let isValid = true;
+
+        if (field.hasAttribute('required') && !field.value.trim()) {
+            isValid = false;
+        } else if (field.name === 'fullname' && field.value.trim().length < 2) {
+            isValid = false;
+        } else if (field.name === 'phone' && field.value.trim() && !/^[\+]?[0-9\-\s\(\)]+$/.test(field.value.trim())) {
+            isValid = false;
+        } else if (field.name === 'dob' && field.value) {
+            const dob = new Date(field.value);
+            const today = new Date();
+            const age = today.getFullYear() - dob.getFullYear();
+
+            if (dob > today || age < 16 || age > 100) {
+                isValid = false;
+            }
+        }
+
+        if (isValid) {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        } else {
+            field.classList.remove('is-valid');
+            field.classList.add('is-invalid');
+        }
+
+        return isValid;
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeRegisterWorker);
+    } else {
+        initializeRegisterWorker();
+    }
+
+    // Expose function globally for external access
+    window.registerWorker = registerWorker;
+
+})();
+

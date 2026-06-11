@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaCess Web • Monthly Summary</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body data-page="monthly-summary">
+  <div class="app d-flex">
+    <aside class="sidebar p-3" id="sidebar-root"></aside>
+
+    <main class="content flex-grow-1">
+      <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
+        <h1 class="page-title h5 mb-0">Monthly Summary</h1>
+        <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+      </div>
+
+      <div class="container-fluid p-4">
+        <!-- Back Button -->
+        <div class="mb-3">
+          <a href="../pages/manage-payroll.html" class="btn btn-success">
+            <i class="bi bi-arrow-left me-1"></i>Back to Payroll
+          </a>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <!-- Month Selection -->
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-calendar-month me-1"></i>Month
+                </label>
+                <select class="form-select" id="monthFilter">
+                  <option value="1">January</option>
+                  <option value="2">February</option>
+                  <option value="3">March</option>
+                  <option value="4">April</option>
+                  <option value="5">May</option>
+                  <option value="6">June</option>
+                  <option value="7">July</option>
+                  <option value="8">August</option>
+                  <option value="9">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+              </div>
+
+              <!-- Year Selection -->
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-calendar me-1"></i>Year
+                </label>
+                <select class="form-select" id="yearFilter">
+                  <!-- Populated by JavaScript -->
+                </select>
+              </div>
+
+              <!-- Actions -->
+              <div class="col-md-4">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-success flex-fill" id="applyFilterBtn">
+                    <i class="bi bi-funnel me-1"></i>View Summary
+                  </button>
+                  <button class="btn btn-outline-secondary" id="resetFilterBtn" title="Reset to Current Month">
+                    <i class="bi bi-arrow-clockwise"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Current View Info -->
+              <div class="col-md-2 text-end">
+                <div class="text-muted small">Viewing:</div>
+                <div class="fw-bold text-success" id="currentViewLabel">December 2024</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Content Container -->
+        <div id="summaryContent">
+          <!-- Content loaded here via iframe or AJAX -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/logout.js"></script>
+  <script src="../assets/js/monthly_summary.js"></script>
+</body>
+</html>
+
+

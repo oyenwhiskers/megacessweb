@@ -1,0 +1,2212 @@
+document.addEventListener('DOMContentLoaded', function () {
+    // Tab functionality (Main Page Manage Payroll)
+    const workerTab = document.getElementById('workerTab');
+    const staffTab = document.getElementById('staffTab');
+    const workerList = document.getElementById('workerList');
+    const staffList = document.getElementById('staffList');
+    const searchInput = document.getElementById('searchInput');
+    const workerContainer = document.getElementById('workerContainer');
+    const roleFilterContainer = document.getElementById('roleFilterContainer');
+
+    // Role filter buttons
+    const roleFilterButtons = {
+        all: document.getElementById('roleFilterAll'),
+        mandor: document.getElementById('roleFilterMandor'),
+        manager: document.getElementById('roleFilterManager'),
+        checker: document.getElementById('roleFilterChecker'),
+        admin: document.getElementById('roleFilterAdmin')
+    };
+
+    // Current selected role
+    let currentRole = 'all';
+
+    // Helper function to set active role filter button
+    function setActiveRoleFilter(role) {
+        currentRole = role;
+
+        // Reset all buttons to inactive state
+        Object.values(roleFilterButtons).forEach(button => {
+            if (button) {
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }
+        });
+
+        // Set the selected button to active state
+        if (roleFilterButtons[role]) {
+            roleFilterButtons[role].classList.remove('btn-outline-secondary');
+            roleFilterButtons[role].classList.add('btn-success');
+        }
+    }
+
+    // Store fetched data
+    let workersData = [];
+    let allWorkersData = []; // Store all workers for client-side pagination
+    let staffData = [];
+    let allStaffData = []; // Store all staff for client-side pagination
+
+    // Task breakdown modal elements
+    const taskBreakdownModalEl = document.getElementById('taskBreakdownModal');
+    const taskBreakdownContentEl = document.getElementById('taskBreakdownContent');
+    const taskBreakdownStatusEl = document.getElementById('taskBreakdownStatus');
+    const taskBreakdownMonthEl = document.getElementById('taskBreakdownMonth');
+    const taskBreakdownYearEl = document.getElementById('taskBreakdownYear');
+    const taskBreakdownFetchBtn = document.getElementById('taskBreakdownFetchBtn');
+    const taskBreakdownTitleEl = document.getElementById('taskBreakdownTitle');
+    const taskBreakdownSubtitleEl = document.getElementById('taskBreakdownSubtitle');
+    let currentTaskBreakdownStaffId = null;
+    let currentTaskBreakdownName = '';
+
+    // Pagination variables
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let totalItems = 0;
+    let totalPages = 0;
+
+    // Payslip pagination state (employment overview)
+    const payslipItemsPerPage = 5;
+    let currentPayslipPage = 1;
+    let currentPayslipRecords = [];
+    let payslipShowTaskButton = true;
+
+    // API Configuration (using global API_URL from config.js)
+    const API_BASE_URL = `${API_URL}/payroll`;
+    const API_BASE_URL_ADVANCES = `${API_URL}/advances`;
+    // Get token from localStorage (matches login.js token storage)
+    const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+
+    // Fetch workers data
+    async function fetchWorkers(searchTerm = '', page = 1) {
+        try {
+            // Check if token exists
+            if (!AUTH_TOKEN) {
+                showError('Authentication required. Please log in first.');
+                return;
+            }
+
+            // If we have all data and this is just pagination/search, use client-side
+            if (allWorkersData.length > 0 && !searchTerm) {
+                handleClientSidePagination('', page);
+                return;
+            }
+
+            showLoading(true);
+            let endpoint = `/payroll/staff`;
+
+            // Add search parameter if exists
+            if (searchTerm) {
+                endpoint += `?search=${encodeURIComponent(searchTerm)}`;
+            }
+
+            // Use cached fetch with 10 minute TTL for worker list
+            const result = await apiFetchWithCache(endpoint, {
+                method: 'GET'
+            }, 10 * 60 * 1000);
+
+            // Handle different API response structures
+            let allData = [];
+            if (result.data && Array.isArray(result.data)) {
+                allData = result.data;
+
+                // Store all data for client-side pagination
+                if (!searchTerm) {
+                    allWorkersData = allData;
+                }
+
+                // Calculate totalPages IMMEDIATELY to prevent race condition
+                totalItems = allData.length;
+                totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+                currentPage = Math.min(page, totalPages) || 1;
+
+                // Always use client-side pagination for consistent behavior
+                handleClientSidePagination(searchTerm, page, allData);
+            } else {
+                workersData = [];
+                totalItems = 0;
+                currentPage = 1;
+                totalPages = 1;
+                renderWorkers(workersData);
+                updatePagination();
+            }
+
+            showLoading(false);
+        } catch (error) {
+            console.error('Error fetching workers:', error);
+
+            if (error.message.includes('fetch')) {
+                showError('Network error. Please check your connection and try again.');
+            } else {
+                showError('Failed to load workers data. Please try again.');
+            }
+
+            showLoading(false);
+        }
+    }
+
+    // Handle client-side pagination
+    function handleClientSidePagination(searchTerm = '', page = 1, dataSource = null) {
+        let sourceData = dataSource || allWorkersData;
+        let filteredData = sourceData;
+
+        // Filter data for search if search term exists
+        if (searchTerm) {
+            filteredData = sourceData.filter(worker =>
+                worker.staff_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (worker.staff_phone && worker.staff_phone.includes(searchTerm))
+            );
+        }
+
+        // Calculate pagination
+        totalItems = filteredData.length;
+        totalPages = Math.ceil(totalItems / itemsPerPage);
+        currentPage = Math.min(page, totalPages) || 1;
+
+        // Get only the items for current page (exactly 10 items)
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        workersData = filteredData.slice(startIndex, endIndex);
+
+        renderWorkers(workersData);
+        updatePagination();
+    }
+
+    // Go to specific page
+    window.goToPage = function (page) {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+
+        currentPage = page;
+        const searchTerm = searchInput.value.trim();
+
+        // Check which tab is active
+        const isWorkerTab = workerTab.classList.contains('btn-success');
+
+        if (isWorkerTab) {
+            // If we have cached data, use client-side pagination
+            if (allWorkersData && allWorkersData.length > 0) {
+                handleClientSidePagination(searchTerm, page, allWorkersData);
+            } else {
+                // Otherwise fetch from API
+                fetchWorkers(searchTerm, page);
+            }
+        } else {
+            // If we have cached data, use client-side pagination
+            if (allStaffData && allStaffData.length > 0) {
+                handleStaffClientSidePagination(searchTerm, page, allStaffData, currentRole);
+            } else {
+                // Otherwise fetch from API
+                fetchStaff(searchTerm, page, currentRole);
+            }
+        }
+    };
+
+    // Fetch staff data
+    async function fetchStaff(searchTerm = '', page = 1, role = 'all') {
+        try {
+            // Check if token exists
+            if (!AUTH_TOKEN) {
+                showError('Authentication required. Please log in first.');
+                return;
+            }
+
+            // If we have all data and this is just pagination/search, use client-side
+            if (allStaffData.length > 0 && !searchTerm && role === 'all') {
+                handleStaffClientSidePagination('', page);
+                return;
+            }
+
+            showLoading(true);
+            let endpoint = `/payroll/users`;
+            const params = new URLSearchParams();
+
+            // Add parameters
+            if (searchTerm) {
+                params.append('search', searchTerm);
+            }
+            if (role && role !== 'all') {
+                params.append('role', role);
+            }
+
+            if (params.toString()) {
+                endpoint += `?${params.toString()}`;
+            }
+
+            // Use cached fetch with 10 minute TTL for staff list
+            const result = await apiFetchWithCache(endpoint, {
+                method: 'GET'
+            }, 10 * 60 * 1000);
+
+            // Handle API response
+            let allData = [];
+            if (result.data && Array.isArray(result.data)) {
+                allData = result.data;
+
+                // Store all data for client-side pagination
+                if (!searchTerm && role === 'all') {
+                    allStaffData = allData;
+                }
+
+                // Calculate totalPages IMMEDIATELY to prevent race condition
+                // Note: This is a rough estimate, will be refined in handleStaffClientSidePagination
+                totalItems = allData.length;
+                totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+                currentPage = Math.min(page, totalPages) || 1;
+
+                // Always use client-side pagination for consistent behavior
+                handleStaffClientSidePagination(searchTerm, page, allData, role);
+            } else {
+                staffData = [];
+                totalItems = 0;
+                currentPage = 1;
+                totalPages = 1;
+                renderStaff(staffData);
+                updatePagination();
+            }
+
+            showLoading(false);
+        } catch (error) {
+            console.error('Error fetching staff:', error);
+
+            if (error.message.includes('fetch')) {
+                showError('Network error. Please check your connection and try again.');
+            } else {
+                showError('Failed to load staff data. Please try again.');
+            }
+
+            showLoading(false);
+        }
+    }
+
+    // Handle staff client-side pagination
+    function handleStaffClientSidePagination(searchTerm = '', page = 1, dataSource = null, role = 'all') {
+        let sourceData = dataSource || allStaffData;
+        let filteredData = sourceData;
+
+        // Filter by role first if not 'all'
+        if (role && role !== 'all') {
+            filteredData = sourceData.filter(staff => staff.user_role === role);
+        }
+
+        // Filter data for search if search term exists
+        if (searchTerm) {
+            filteredData = filteredData.filter(staff =>
+                staff.user_fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (staff.user_nickname && staff.user_nickname.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+
+        // Calculate pagination
+        totalItems = filteredData.length;
+        totalPages = Math.ceil(totalItems / itemsPerPage);
+        currentPage = Math.min(page, totalPages) || 1;
+
+        // Get only the items for current page (exactly 10 items)
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        staffData = filteredData.slice(startIndex, endIndex);
+
+        renderStaff(staffData);
+        updatePagination();
+    }
+
+    // Update pagination controls
+    function updatePagination() {
+        const paginationContainer = document.getElementById('paginationContainer');
+        const paginationInfo = document.getElementById('paginationInfo');
+        const paginationControls = document.getElementById('paginationControls');
+
+        // Show/hide pagination based on total pages
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        }
+
+        paginationContainer.style.display = 'block';
+
+        // Update pagination info
+        const startItem = (currentPage - 1) * itemsPerPage + 1;
+        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+        const itemType = workerTab.classList.contains('btn-success') ? 'workers' : 'staff';
+        const paginationText = `Showing ${startItem} - ${endItem} of ${totalItems} ${itemType}`;
+
+        // Update both pagination info elements
+        paginationInfo.textContent = paginationText;
+        const paginationInfoHeader = document.getElementById('paginationInfoHeader');
+        if (paginationInfoHeader) {
+            paginationInfoHeader.textContent = paginationText;
+        }
+
+        // Generate pagination controls
+        let paginationHTML = '';
+
+        // Previous button
+        const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item">
+                <button class="btn btn-sm btn-outline-success mx-1" data-page="${currentPage - 1}" ${prevDisabled}>
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </li>
+        `;
+
+        // Page numbers with smart ellipsis (like fuel.js)
+        let pages = [];
+        if (totalPages <= 7) {
+            // Show all pages if 7 or fewer
+            pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+        } else {
+            // Smart ellipsis logic
+            if (currentPage <= 4) {
+                // Near the start: [1] [2] [3] [4] [5] [...] [last]
+                pages = [1, 2, 3, 4, 5, '...', totalPages];
+            } else if (currentPage >= totalPages - 3) {
+                // Near the end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+                pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+            } else {
+                // In the middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+                pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+            }
+        }
+
+        // Generate page buttons
+        pages.forEach((page) => {
+            if (page === '...') {
+                paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            } else {
+                const isActive = page === currentPage;
+                const btnClass = isActive ? 'btn btn-sm btn-success mx-1' : 'btn btn-sm btn-outline-success mx-1';
+                paginationHTML += `
+                    <li class="page-item">
+                        <button class="${btnClass}" data-page="${page}">${page}</button>
+                    </li>
+                `;
+            }
+        });
+
+        // Next button
+        const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item">
+                <button class="btn btn-sm btn-outline-success mx-1" data-page="${currentPage + 1}" ${nextDisabled}>
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </li>
+        `;
+
+        paginationControls.innerHTML = paginationHTML;
+    }
+
+    // Render workers list
+    function renderWorkers(workers) {
+        if (workers.length === 0) {
+            workerContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-person-workspace display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No workers found</h4>
+                    <p class="text-muted">No workers match your search criteria.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const workersHTML = workers.map(worker => createWorkerCard(worker)).join('');
+        workerContainer.innerHTML = workersHTML;
+    }
+
+    // Create worker card HTML
+    function createWorkerCard(worker) {
+        // Handle image path properly using the provided logic
+        let workerImage = worker.staff_img || '';
+
+        // Check if the cleaned URL is still valid
+        if (workerImage.length < 5 || workerImage.includes('null') || workerImage.includes('undefined') || workerImage.includes('…')) {
+            workerImage = '';
+        } else if (!workerImage.startsWith('http') && !workerImage.startsWith('/')) {
+            // Construct full URL if it's just a filename
+            workerImage = `${STORAGE_DOMAIN}/storage/user-images/${workerImage}`;
+        } else if (workerImage.startsWith('/')) {
+            // Add domain if it starts with /
+            workerImage = `${STORAGE_DOMAIN}${workerImage}`;
+        }
+
+        const avatarImage = workerImage
+            ? `<img loading="lazy" src="${workerImage}" alt="${worker.staff_fullname}" class="rounded-circle" 
+                    style="width: 50px; height: 50px; object-fit: cover;" 
+                    onerror="this.outerHTML='<div class=&quot;bg-dark rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>';">`
+            : `<div class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                 <i class="bi bi-person text-white"></i>
+               </div>`;
+
+        return `
+            <div class="worker-card mb-3 p-3 bg-white rounded border d-flex align-items-center justify-content-between" data-worker-id="${worker.id}">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="worker-avatar">
+                        ${avatarImage}
+                    </div>
+                    <div class="worker-info">
+                        <h5 class="mb-0 fw-semibold">${worker.staff_fullname}</h5>
+                        <p class="mb-0 text-muted">
+                            ${worker.designation ? worker.designation.charAt(0).toUpperCase() + worker.designation.slice(1) : 'Worker'} • Joined ${worker.joined_since} • ${worker.payslips_count} payslips
+                        </p>
+                        ${worker.staff_phone ? `<small class="text-muted">${worker.staff_phone}</small>` : ''}
+                    </div>
+                </div>
+                <div class="payroll-action">
+                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-worker-id="${worker.id}">
+                        <i class="bi bi-calculator"></i>
+                        Payroll
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Render staff list
+    function renderStaff(staff) {
+        const staffContainer = document.querySelector('#staffList .col-12');
+
+        if (staff.length === 0) {
+            staffContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-person-badge display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No staff found</h4>
+                    <p class="text-muted">No staff match your search criteria.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const staffHTML = staff.map(member => createStaffCard(member)).join('');
+        staffContainer.innerHTML = staffHTML;
+    }
+
+    // Create staff card HTML
+    function createStaffCard(staff) {
+        // Handle image path properly
+        let staffImage = staff.user_img || '';
+
+        // Check if the cleaned URL is still valid
+        if (staffImage.length < 5 || staffImage.includes('null') || staffImage.includes('undefined') || staffImage.includes('…')) {
+            staffImage = '';
+        } else if (!staffImage.startsWith('http') && !staffImage.startsWith('/')) {
+            // Construct full URL if it's just a filename
+            staffImage = `${STORAGE_DOMAIN}/storage/user-images/${staffImage}`;
+        } else if (staffImage.startsWith('/')) {
+            // Add domain if it starts with /
+            staffImage = `${STORAGE_DOMAIN}${staffImage}`;
+        }
+
+        const avatarImage = staffImage
+            ? `<img loading="lazy" src="${staffImage}" alt="${staff.user_fullname}" class="rounded-circle" 
+                    style="width: 50px; height: 50px; object-fit: cover;" 
+                    onerror="this.outerHTML='<div class=&quot;bg-primary rounded-circle d-flex align-items-center justify-content-center&quot; style=&quot;width: 50px; height: 50px;&quot;><i class=&quot;bi bi-person text-white&quot;></i></div>'">`
+            : `<div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                 <i class="bi bi-person text-white"></i>
+               </div>`;
+
+        const baseSalary = staff.base_salary ? `RM${staff.base_salary.base_salary}` : 'Not set';
+        const roleCapitalized = staff.user_role.charAt(0).toUpperCase() + staff.user_role.slice(1);
+
+        return `
+            <div class="worker-card mb-3 p-3 bg-white rounded border d-flex align-items-center justify-content-between" data-staff-id="${staff.id}">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="worker-avatar">
+                        ${avatarImage}
+                    </div>
+                    <div class="worker-info">
+                        <h5 class="mb-0 fw-semibold">${staff.user_fullname}</h5>
+                        <p class="mb-0 text-muted">
+                            ${roleCapitalized} • Joined ${staff.joined_since} • ${staff.payslips_count} payslips
+                        </p>
+                        <small class="text-muted">Base Salary: ${baseSalary}</small>
+                        ${staff.user_nickname ? `<small class="text-muted d-block">Nickname: ${staff.user_nickname}</small>` : ''}
+                    </div>
+                </div>
+                <div class="payroll-action">
+                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-staff-id="${staff.id}">
+                        <i class="bi bi-calculator"></i>
+                        Payroll
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Show/hide loading state
+    function showLoading(show) {
+        if (show) {
+            // Show loading based on active tab
+            if (workerTab.classList.contains('btn-success')) {
+                // Worker tab is active - show loading in worker container
+                workerContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading workers...</p>
+                    </div>
+                `;
+            } else {
+                // Staff tab is active - show loading in staff container
+                const staffContainer = document.querySelector('#staffList .col-12');
+                staffContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading staff...</p>
+                    </div>
+                `;
+            }
+        } else {
+            // Loading is done - content will be populated by render functions
+            // No need to hide anything as renderWorkers/renderStaff will replace content
+        }
+    }
+
+    // Show error message
+    function showError(message) {
+        const activeContainer = workerTab.classList.contains('btn-success') ? workerContainer : document.querySelector('#staffList .col-12');
+
+        activeContainer.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                <h4 class="text-muted mt-3">Error</h4>
+                <p class="text-muted">${message}</p>
+                <div class="d-flex gap-2 justify-content-center mt-3">
+                    <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Retry
+                    </button>
+                    ${!AUTH_TOKEN ? `
+                        <button class="btn btn-primary btn-sm" onclick="redirectToLogin()">
+                            <i class="bi bi-box-arrow-in-right"></i> Login
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Redirect to login function
+    window.redirectToLogin = function () {
+        window.location.href = '/pages/log-in.html';
+    };
+
+    // Helper function to set auth token (for testing)
+    window.setAuthToken = function (token) {
+        localStorage.setItem('authToken', token);
+        location.reload();
+    };
+
+    // Helper function to clear auth token
+    window.clearAuthToken = function () {
+        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('authToken');
+        location.reload();
+    };
+
+    // Helper function to test staff API (for debugging)
+    window.testStaffAPI = async function (staffId) {
+        try {
+            const result = await fetchStaffPayrollOverview(staffId);
+            return result;
+        } catch (error) {
+            console.error('Staff API test failed:', error);
+            return null;
+        }
+    };;
+
+    // Search functionality with debouncing
+    let searchTimeout;
+    searchInput.addEventListener('input', function () {
+        const searchTerm = this.value.trim();
+
+        // Clear previous timeout
+        clearTimeout(searchTimeout);
+
+        // Set new timeout for debounced search
+        searchTimeout = setTimeout(() => {
+            // Reset to page 1 when searching
+            currentPage = 1;
+
+            if (workerTab.classList.contains('btn-success')) {
+                // Currently on workers tab - use client-side pagination if we have data
+                if (allWorkersData.length > 0) {
+                    handleClientSidePagination(searchTerm, 1);
+                } else {
+                    // No data yet, fetch from API
+                    fetchWorkers(searchTerm, 1);
+                }
+            } else {
+                // Currently on staff tab - use client-side pagination if we have data
+                if (allStaffData.length > 0) {
+                    handleStaffClientSidePagination(searchTerm, 1, allStaffData, currentRole);
+                } else {
+                    // No data yet, fetch from API
+                    fetchStaff(searchTerm, 1, currentRole);
+                }
+            }
+        }, 300); // 300ms delay
+    });
+
+    // Role filter functionality
+    Object.entries(roleFilterButtons).forEach(([role, button]) => {
+        if (button) {
+            button.addEventListener('click', function () {
+                const selectedRole = this.getAttribute('data-role');
+                const searchTerm = searchInput.value.trim();
+
+                // Update active button state
+                setActiveRoleFilter(selectedRole);
+
+                // Reset to page 1 when filtering
+                currentPage = 1;
+
+                // Only handle this for staff tab
+                if (staffTab.classList.contains('btn-success')) {
+                    if (allStaffData.length > 0) {
+                        handleStaffClientSidePagination(searchTerm, 1, allStaffData, selectedRole);
+                    } else {
+                        fetchStaff(searchTerm, 1, selectedRole);
+                    }
+                }
+            });
+        }
+    });
+
+    // Switch to Worker tab
+    workerTab.addEventListener('click', function () {
+        workerTab.classList.remove('btn-outline-secondary');
+        workerTab.classList.add('btn-success');
+        staffTab.classList.remove('btn-success');
+        staffTab.classList.add('btn-outline-secondary');
+
+        workerList.classList.remove('d-none');
+        staffList.classList.add('d-none');
+
+        // Hide role filter for worker tab
+        if (roleFilterContainer) {
+            roleFilterContainer.style.display = 'none';
+        }
+
+        const searchLabel = document.querySelector('label[for="searchInput"]');
+        if (searchLabel) searchLabel.textContent = 'Search worker name:';
+        searchInput.placeholder = 'Enter worker name...';
+        const listTitle = document.querySelector('p.list-title');
+        if (listTitle) listTitle.textContent = 'List of existing worker:';
+
+        // Reset pagination state
+        currentPage = 1;
+        totalPages = 0;
+        totalItems = 0;
+        const searchTerm = searchInput.value.trim();
+
+        // Immediately hide pagination while loading
+        updatePagination();
+
+        // Use client-side pagination if we have data, otherwise fetch from API
+        if (allWorkersData.length > 0) {
+            handleClientSidePagination(searchTerm, 1);
+        } else {
+            fetchWorkers(searchTerm, 1);
+        }
+    });
+
+    // Switch to Staff tab
+    staffTab.addEventListener('click', function () {
+        staffTab.classList.remove('btn-outline-secondary');
+        staffTab.classList.add('btn-success');
+        workerTab.classList.remove('btn-success');
+        workerTab.classList.add('btn-outline-secondary');
+
+        staffList.classList.remove('d-none');
+        workerList.classList.add('d-none');
+
+        // Show role filter for staff tab
+        if (roleFilterContainer) {
+            roleFilterContainer.style.display = 'block';
+            // Reset to "All" when switching to staff tab
+            setActiveRoleFilter('all');
+        }
+
+        const searchLabel = document.querySelector('label[for="searchInput"]');
+        if (searchLabel) searchLabel.textContent = 'Search staff name:';
+        searchInput.placeholder = 'Enter staff name...';
+        const listTitle = document.querySelector('p.list-title');
+        if (listTitle) listTitle.textContent = 'List of existing staff:';
+
+        // Reset pagination state
+        currentPage = 1;
+        totalPages = 0;
+        totalItems = 0;
+        const searchTerm = searchInput.value.trim();
+
+        // Immediately hide pagination while loading
+        updatePagination();
+
+        // Use client-side pagination if we have data, otherwise fetch from API
+        if (allStaffData.length > 0) {
+            handleStaffClientSidePagination(searchTerm, 1, allStaffData, currentRole);
+        } else {
+            fetchStaff(searchTerm, 1, currentRole);
+        }
+    });
+
+    // Show Employment Overview
+    async function showEmploymentOverview(employeeData, isWorker = true) {
+        const container = document.querySelector('.container-fluid');
+
+        // Show loading first
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading employment overview...</p>
+            </div>
+        `;
+
+        try {
+            // Fetch real payroll data for both workers and staff
+            let realEmployeeData = employeeData;
+            let payslipsData = [];
+            let baseSalary = null;
+
+            if (isWorker) {
+                const overviewData = await fetchWorkerPayrollOverview(employeeData.id);
+                if (overviewData) {
+                    // Update employee data with real API data
+                    realEmployeeData = {
+                        id: overviewData.staff.id,
+                        name: overviewData.staff.staff_fullname,
+                        joinedSince: overviewData.staff.joined_since,
+                        role: overviewData.staff.designation 
+                            ? overviewData.staff.designation.charAt(0).toUpperCase() + overviewData.staff.designation.slice(1) 
+                            : 'Worker',
+                        age: overviewData.staff.age
+                    };
+                    payslipsData = overviewData.payslips || [];
+                }
+            } else {
+                // Fetch staff payroll data
+                const overviewData = await fetchStaffPayrollOverview(employeeData.id);
+
+                if (overviewData) {
+                    // Update employee data with real API data
+                    realEmployeeData = {
+                        id: overviewData.user.id,
+                        name: overviewData.user.user_fullname,
+                        joinedSince: overviewData.user.joined_since,
+                        role: overviewData.user.user_role.charAt(0).toUpperCase() + overviewData.user.user_role.slice(1),
+                        age: overviewData.user.age,
+                        nickname: overviewData.user.user_nickname
+                    };
+                    payslipsData = overviewData.payslips || [];
+                    baseSalary = overviewData.base_salary;
+                }
+            }
+
+            // Create the employment overview HTML
+            const overviewHTML = `
+                <div id="employmentOverview" class="employment-overview">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex align-items-center text-white gap-3">
+                            <button class="btn btn-success d-flex align-items-center gap-2" id="backToList">
+                                <i class="bi bi-arrow-left"></i> Back to List 
+                            </button>
+                        </div>
+                        <button class="btn btn-success d-flex align-items-center gap-2" id="generatePayslip">
+                            <i class="bi bi-plus-circle"></i>Generate Payslip
+                        </button>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <h3 class="mb-4">Name: ${realEmployeeData.name}${realEmployeeData.nickname ? ` (${realEmployeeData.nickname})` : ''}</h3>
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="info-card bg-light-green rounded p-3 text-center">
+                                        <div class="fw-semibold text-success mb-1">Joined Since</div>
+                                        <div class="h6 mb-0">${realEmployeeData.joinedSince}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-card bg-light-green rounded p-3 text-center">
+                                        <div class="fw-semibold text-success mb-1">Role</div>
+                                        <div class="h6 mb-0">${realEmployeeData.role}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-card bg-light-green rounded p-3 text-center">
+                                        <div class="fw-semibold text-success mb-1">Age</div>
+                                        <div class="h6 mb-0">${realEmployeeData.age || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <h4 class="mb-4">Payslip Record:</h4>
+                            <div class="payslip-records" id="payslipRecords"></div>
+                            <div class="d-flex justify-content-between align-items-center mt-4" id="payslipPagination" style="display: none;">
+                                <small class="text-muted" id="payslipPaginationInfo"></small>
+                                <nav aria-label="Payslip pagination">
+                                    <ul class="pagination pagination-sm mb-0" id="payslipPaginationControls"></ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Show the employment overview
+            container.innerHTML = overviewHTML;
+
+            // Render payslips with pagination (defaults to first page)
+            renderPayslipRecords(payslipsData, 1, isWorker);
+
+            // Add event listener for back button
+            document.getElementById('backToList').addEventListener('click', function () {
+                location.reload(); // Simple way to go back to the list
+            });
+            // The Generate Payslip button remains in the HTML, but no event listener is attached
+
+        } catch (error) {
+            console.error('Error loading employment overview:', error);
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                    <h4 class="text-muted mt-3">Error Loading Data</h4>
+                    <p class="text-muted">Failed to load employment overview. Please try again.</p>
+                    <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Retry
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Fetch worker payroll overview data
+    async function fetchWorkerPayrollOverview(workerId) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+
+            const url = new URL(`${API_BASE_URL}/staff/${workerId}/overview`);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.data) {
+                return result.data;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error fetching worker payroll overview:', error);
+            throw error;
+        }
+    }
+
+    // Fetch current base salary for a staff (worker) or user (staff) by ID
+    async function fetchBaseSalaryForStaff(staffId, isUser = false) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+            // Use correct endpoint based on employee type
+            // Staff members (users) use /api/v1/users/{id}/base-salary
+            // Workers use /api/v1/staff/{id}/base-salary
+            const endpoint = isUser
+                ? `${API_URL}/users/${staffId}/base-salary`
+                : `${API_URL}/staff/${staffId}/base-salary`;
+            const url = new URL(endpoint);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result.success === false) {
+                throw new Error(result.message || `HTTP error! status: ${response.status}`);
+            }
+            // If result has base_salary, return just the value for easier use
+            if (result && typeof result.base_salary !== 'undefined') {
+                return result.base_salary;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching base salary:', error);
+            return null;
+        }
+    }
+
+    // Fetch staff payroll overview data
+    async function fetchStaffPayrollOverview(staffId) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+
+            const url = new URL(`${API_BASE_URL}/users/${staffId}/overview`);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.data) {
+                return result.data;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error fetching staff payroll overview:', error);
+            throw error;
+        }
+    }
+
+    // Normalize month/year info from payslip objects for task breakdown API
+    function extractMonthYearFromPayslip(payslip = {}) {
+        function normalizeYear(input) {
+            const yearNum = parseInt(input, 10);
+            if (isNaN(yearNum)) return null;
+            if (yearNum < 100) {
+                return 2000 + yearNum;
+            }
+            return yearNum;
+        }
+
+        let month = null;
+        let year = null;
+        const monthStr = payslip.payslip_month || payslip.month || '';
+        const createdAt = payslip.created_at || payslip.updated_at || '';
+
+        if (typeof monthStr === 'string' && monthStr.trim()) {
+            const slashMatch = monthStr.match(/(\d{1,2})[\/-](\d{2,4})/);
+            if (slashMatch) {
+                month = parseInt(slashMatch[1], 10);
+                year = normalizeYear(slashMatch[2]);
+            } else {
+                const parsed = new Date(monthStr);
+                if (!isNaN(parsed)) {
+                    month = parsed.getMonth() + 1;
+                    year = parsed.getFullYear();
+                }
+            }
+        }
+
+        if ((!month || !year) && createdAt) {
+            const parsed = new Date(createdAt);
+            if (!isNaN(parsed)) {
+                month = parsed.getMonth() + 1;
+                year = parsed.getFullYear();
+            }
+        }
+
+        return { month, year };
+    }
+
+    // Generate payslip records HTML from API data
+    function generatePayslipRecordsFromAPI(payslips, showTaskButton = true) {
+        if (!payslips || payslips.length === 0) {
+            return `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-file-earmark-text display-4"></i>
+                    <h5 class="mt-2">No payslip records found</h5>
+                    <p>Generate a payslip to get started.</p>
+                </div>
+            `;
+        }
+
+        let recordsHTML = '';
+        payslips.forEach(payslip => {
+            // Check if it's worker data (has total_income/total_deduction) or staff data (only net_salary)
+            const hasDetailedBreakdown = payslip.hasOwnProperty('total_income') && payslip.hasOwnProperty('total_deduction');
+            const { month, year } = extractMonthYearFromPayslip(payslip);
+            const staffIdAttr = payslip.staff_id || payslip.user_id || payslip.staff?.id || payslip.user?.id || '';
+
+            recordsHTML += `
+                <div class="payslip-record-item d-flex justify-content-between align-items-center p-3 mb-2 border rounded">
+                    <div class="payslip-details">
+                        <div class="payslip-month">
+                            <span class="fw-medium">${payslip.payslip_month}</span>
+                        </div>
+                        <div class="payslip-summary text-muted small">
+                            ${hasDetailedBreakdown ? `
+                                <span class="me-3">Income: RM${payslip.total_income.toLocaleString()}</span>
+                                <span class="me-3">Deduction: RM${payslip.total_deduction.toLocaleString()}</span>
+                            ` : ''}
+                            <span class="text-success fw-semibold">Net: RM${payslip.net_salary.toLocaleString()}</span>
+                            ${payslip.status ? `<span class="ms-3 badge bg-secondary">${payslip.status}</span>` : ''}
+                        </div>
+                        ${payslip.created_at ? `<div class="text-muted small">Created: ${new Date(payslip.created_at).toLocaleDateString()}</div>` : ''}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-payslip-id="${payslip.id}">
+                            <i class="bi bi-eye"></i>
+                            View
+                        </button>
+
+                        ${showTaskButton ? `
+                            <button class="btn btn-secondary btn-sm d-flex align-items-center gap-2 view-task-btn"
+                                data-payslip-id="${payslip.id}"
+                                ${staffIdAttr ? `data-staff-id="${staffIdAttr}"` : ''}
+                                ${month ? `data-month="${month}"` : ''}
+                                ${year ? `data-year="${year}"` : ''}>
+                                <i class="bi bi-list-task"></i>
+                                View Task
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-danger btn-sm d-flex align-items-center gap-2" data-payslip-id="${payslip.id}" style="background-color:#dc3545;border-color:#dc3545;">
+                            <i class="bi bi-trash"></i>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        return recordsHTML;
+    }
+
+    // Render payslip records with simple pagination
+    function renderPayslipRecords(payslips = null, page = 1, showTaskButton = true) {
+        const recordsContainer = document.getElementById('payslipRecords');
+        const paginationContainer = document.getElementById('payslipPagination');
+        const paginationInfoEl = document.getElementById('payslipPaginationInfo');
+        const paginationControlsEl = document.getElementById('payslipPaginationControls');
+
+        if (!recordsContainer) return;
+
+        // Update stored records only when a new array is provided
+        if (Array.isArray(payslips)) {
+            currentPayslipRecords = payslips;
+        }
+        payslipShowTaskButton = showTaskButton;
+
+        const totalPayslips = currentPayslipRecords.length;
+        const totalPayslipPages = Math.max(1, Math.ceil(totalPayslips / payslipItemsPerPage));
+        currentPayslipPage = Math.min(Math.max(page, 1), totalPayslipPages);
+
+        const startIndex = (currentPayslipPage - 1) * payslipItemsPerPage;
+        const endIndex = startIndex + payslipItemsPerPage;
+        const pageItems = currentPayslipRecords.slice(startIndex, endIndex);
+
+        recordsContainer.innerHTML = generatePayslipRecordsFromAPI(pageItems, payslipShowTaskButton);
+
+        if (!paginationContainer || !paginationInfoEl || !paginationControlsEl) return;
+
+        // Hide pagination when not needed
+        if (totalPayslips <= payslipItemsPerPage) {
+            paginationContainer.style.display = 'none';
+            paginationControlsEl.innerHTML = '';
+            paginationInfoEl.textContent = '';
+            return;
+        }
+
+        paginationContainer.style.display = 'flex';
+        paginationInfoEl.textContent = `Showing ${startIndex + 1} - ${Math.min(endIndex, totalPayslips)} of ${totalPayslips} payslips`;
+
+        const disablePrev = currentPayslipPage === 1;
+        const disableNext = currentPayslipPage === totalPayslipPages;
+
+        let controlsHtml = `
+            <li class="page-item ${disablePrev ? 'disabled' : ''}">
+                <button class="page-link" data-payslip-page="${currentPayslipPage - 1}" ${disablePrev ? 'disabled' : ''}>Prev</button>
+            </li>
+        `;
+
+        for (let i = 1; i <= totalPayslipPages; i++) {
+            controlsHtml += `
+                <li class="page-item ${i === currentPayslipPage ? 'active' : ''}">
+                    <button class="page-link" data-payslip-page="${i}" ${i === currentPayslipPage ? 'aria-current="page"' : ''}>${i}</button>
+                </li>
+            `;
+        }
+
+        controlsHtml += `
+            <li class="page-item ${disableNext ? 'disabled' : ''}">
+                <button class="page-link" data-payslip-page="${currentPayslipPage + 1}" ${disableNext ? 'disabled' : ''}>Next</button>
+            </li>
+        `;
+
+        paginationControlsEl.innerHTML = controlsHtml;
+    }
+
+    // Build task meta list items
+    function renderTaskMeta(meta = {}) {
+        if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return '';
+        return Object.entries(meta).map(([key, value]) => {
+            const label = key.replace(/_/g, ' ');
+            return `<span class="badge bg-light text-dark border me-1 mb-1">${label}: ${value ?? '-'}</span>`;
+        }).join('');
+    }
+
+    // Render task breakdown cards into modal body
+    function renderTaskBreakdownCards(data = []) {
+        if (!taskBreakdownContentEl) return;
+        if (!data || data.length === 0) {
+            taskBreakdownContentEl.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-card-checklist display-5"></i>
+                    <p class="mb-0 mt-2">No tasks found for the selected month.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const statusClass = {
+            completed: 'success',
+            pending: 'warning',
+            in_progress: 'info',
+            cancelled: 'secondary'
+        };
+
+        let html = '';
+        data.forEach(worker => {
+            const tasks = Array.isArray(worker.tasks) ? worker.tasks : [];
+            const taskList = tasks.map(task => {
+                const badge = statusClass[task.task_status?.toLowerCase?.()] || 'secondary';
+                const metaHtml = renderTaskMeta(task.meta);
+                return `
+                    <div class="list-group-item border-0 border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold">${task.task_name || '-'}</div>
+                                <div class="text-muted small">${task.task_type || ''}</div>
+                            </div>
+                            <span class="badge bg-${badge} text-uppercase">${task.task_status || '-'}</span>
+                        </div>
+                        <div class="text-muted small mt-1 d-flex flex-wrap gap-3">
+                            <span><i class="bi bi-calendar2-week me-1"></i>${task.task_date || '-'}</span>
+                            ${task.location?.name ? `<span><i class="bi bi-geo-alt me-1"></i>${task.location.name}</span>` : ''}
+                        </div>
+                        ${metaHtml ? `<div class="mt-2 small d-flex flex-wrap">${metaHtml}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            html += `
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div class="fw-bold h6 mb-1">${worker.worker_name || 'Worker'}</div>
+                                <div class="text-muted small">${worker.worker_phone || '-'}</div>
+                            </div>
+                            <span class="badge bg-primary">Total Tasks: ${worker.total_tasks ?? tasks.length}</span>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            ${taskList || '<div class="text-muted">No tasks.</div>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        taskBreakdownContentEl.innerHTML = html;
+    }
+
+    // Fetch task breakdown from API
+    async function fetchTaskBreakdown(staffId, month, year) {
+        if (!AUTH_TOKEN) throw new Error('Authentication required');
+        if (!staffId) throw new Error('Missing staff ID');
+        if (!month || !year) throw new Error('Month and year are required');
+
+        const url = new URL(`${API_URL}/tasks/staff/${staffId}/breakdown-by-worker`);
+        url.searchParams.append('month', month);
+        url.searchParams.append('year', year);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${AUTH_TOKEN}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.success === false) {
+            throw new Error(result.message || `Failed to fetch task breakdown (status ${response.status})`);
+        }
+
+        return result.data || [];
+    }
+
+    function setTaskBreakdownStatus(message, tone = 'muted') {
+        if (!taskBreakdownStatusEl) return;
+        taskBreakdownStatusEl.className = `text-${tone} small`;
+        taskBreakdownStatusEl.textContent = message;
+    }
+
+    function monthLabel(month) {
+        const date = new Date(2000, (month ?? 1) - 1, 1);
+        return date.toLocaleString('default', { month: 'long' });
+    }
+
+    function populateTaskBreakdownMonthSelect(selectedMonth) {
+        if (!taskBreakdownMonthEl) return;
+        taskBreakdownMonthEl.innerHTML = '';
+        for (let m = 1; m <= 12; m++) {
+            taskBreakdownMonthEl.innerHTML += `<option value="${m}" ${selectedMonth === m ? 'selected' : ''}>${monthLabel(m)}</option>`;
+        }
+    }
+
+    async function loadTaskBreakdown(staffId, month, year, staffName) {
+        if (!taskBreakdownContentEl) return;
+        taskBreakdownContentEl.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2 mb-0">Fetching task breakdown...</p>
+            </div>
+        `;
+
+        try {
+            const data = await fetchTaskBreakdown(staffId, month, year);
+            renderTaskBreakdownCards(data);
+            const label = `${monthLabel(month)} ${year}`;
+            if (taskBreakdownSubtitleEl) {
+                taskBreakdownSubtitleEl.textContent = `${staffName || 'Staff'} • ${label}`;
+            }
+        } catch (error) {
+            console.error('Task breakdown error:', error);
+            taskBreakdownContentEl.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <div class="fw-semibold mb-1">Unable to load task breakdown</div>
+                    <div>${error.message || 'Unknown error'}</div>
+                </div>
+            `;
+            setTaskBreakdownStatus(error.message || 'Failed to load tasks', 'danger');
+        }
+    }
+
+    function openTaskBreakdownModal({ staffId, staffName, month, year }) {
+        if (!taskBreakdownModalEl) return;
+        const fallbackDate = new Date();
+        const selectedMonth = month || (fallbackDate.getMonth() + 1);
+        const selectedYear = year || fallbackDate.getFullYear();
+
+        currentTaskBreakdownStaffId = staffId;
+        currentTaskBreakdownName = staffName || 'Staff';
+
+        populateTaskBreakdownMonthSelect(selectedMonth);
+        if (taskBreakdownYearEl) {
+            taskBreakdownYearEl.value = selectedYear;
+        }
+        if (taskBreakdownTitleEl) {
+            taskBreakdownTitleEl.textContent = 'Task Breakdown';
+        }
+        if (taskBreakdownSubtitleEl) {
+            taskBreakdownSubtitleEl.textContent = `${staffName || 'Staff'} • ${monthLabel(selectedMonth)} ${selectedYear}`;
+        }
+
+        const modal = bootstrap.Modal.getOrCreateInstance(taskBreakdownModalEl);
+        modal.show();
+
+        loadTaskBreakdown(staffId, selectedMonth, selectedYear, staffName);
+    }
+
+    // Manual refresh inside the modal
+    if (taskBreakdownFetchBtn) {
+        taskBreakdownFetchBtn.addEventListener('click', function () {
+            if (!currentTaskBreakdownStaffId) {
+                alert('No staff/worker selected.');
+                return;
+            }
+            const monthVal = parseInt(taskBreakdownMonthEl?.value, 10);
+            const yearVal = parseInt(taskBreakdownYearEl?.value, 10);
+            if (!monthVal || !yearVal) {
+                alert('Please select month and year to fetch tasks.');
+                return;
+            }
+            loadTaskBreakdown(currentTaskBreakdownStaffId, monthVal, yearVal, currentTaskBreakdownName);
+        });
+    }
+
+    // Fetch outstanding advance balance for staff/user
+    async function fetchOutstandingBalance(type, id) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required');
+            }
+
+            const url = new URL(`${API_BASE_URL_ADVANCES}/${type}/${id}/outstanding-balance`);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired');
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                return result.data;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error fetching outstanding balance:', error);
+            return null;
+        }
+    }
+
+    // Generate staff payslip - refactored function
+    async function generateStaffPayslip(staffId, payload) {
+        try {
+            if (!AUTH_TOKEN) {
+                throw new Error('Authentication required. Please log in first.');
+            }
+
+            const isStaff = !!currentPayslipWorkerData?.user_fullname;
+            const url = isStaff
+                ? `${API_BASE_URL}/users/${staffId}/generate`
+                : `${API_BASE_URL}/staff/${staffId}/generate`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.status === 401) {
+                throw new Error('Session expired. Please log in again.');
+            }
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok || result.success === false) {
+                throw new Error(result.message || `Failed to generate payslip (${response.status})`);
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error generating payslip:', error);
+            throw error;
+        }
+    }
+
+    // Helper to fill modal with real worker data (always use selected worker, never static)
+    async function fillPayslipModal(workerData) {
+        // Detect if staff or worker
+        const isStaff = !!workerData.user_fullname;
+        // Set name
+        document.getElementById('payslipName').textContent = isStaff ? (workerData.user_fullname || '') : (workerData.staff_fullname || '');
+        // Populate month options (last 6 months)
+        const payslipMonth = document.getElementById('payslipMonth');
+        payslipMonth.innerHTML = '<option selected disabled>select month</option>';
+        const now = new Date();
+        for (let i = 0; i < 6; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const val = `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear().toString().slice(-2)}`;
+            const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+            payslipMonth.innerHTML += `<option value="${val}">${label}</option>`;
+        }
+        // Clear all fields for new entry
+        document.getElementById('deductionTableBody').innerHTML = '';
+        document.getElementById('totalDeductions').textContent = '0.00';
+        
+        // Reset overrides
+        const latenessOverrideEl = document.getElementById('latenessOverride');
+        if (latenessOverrideEl) latenessOverrideEl.value = '';
+        const earlyOutOverrideEl = document.getElementById('earlyOutOverride');
+        if (earlyOutOverrideEl) earlyOutOverrideEl.value = '';
+        const advAmtEl = document.getElementById('advanceAmount');
+        if (advAmtEl) {
+            if (typeof advAmtEl.value !== 'undefined') advAmtEl.value = '0.00';
+            else advAmtEl.textContent = '0.00';
+        }
+        const advRemEl = document.getElementById('advanceRemarks');
+        if (advRemEl) {
+            if (typeof advRemEl.value !== 'undefined') advRemEl.value = '';
+            else advRemEl.textContent = '';
+        }
+
+        // Fetch and display outstanding advance balance
+        const employeeId = workerData.id || workerData.staff_id || workerData.user_id || currentPayslipWorkerId;
+        const employeeType = isStaff ? 'user' : 'staff';
+
+        if (employeeId) {
+            try {
+                const outstandingData = await fetchOutstandingBalance(employeeType, employeeId);
+                if (outstandingData) {
+                    // Update outstanding balance display
+                    const outstandingBalanceEl = document.getElementById('outstandingBalance');
+                    const totalLoanEl = document.getElementById('totalLoanAmount');
+                    const totalPaidEl = document.getElementById('totalPaidAmount');
+                    const loanCountEl = document.getElementById('loanCount');
+
+                    if (outstandingBalanceEl) {
+                        outstandingBalanceEl.textContent = `RM ${parseFloat(outstandingData.total_outstanding_balance || 0).toFixed(2)}`;
+                    }
+                    if (totalLoanEl) {
+                        totalLoanEl.textContent = `RM ${parseFloat(outstandingData.total_loan_amount || 0).toFixed(2)}`;
+                    }
+                    if (totalPaidEl) {
+                        totalPaidEl.textContent = `RM ${parseFloat(outstandingData.total_paid_amount || 0).toFixed(2)}`;
+                    }
+                    if (loanCountEl) {
+                        loanCountEl.textContent = outstandingData.loan_count || 0;
+                    }
+
+                    // Show the outstanding balance section
+                    const outstandingSection = document.getElementById('outstandingBalanceSection');
+                    if (outstandingSection) {
+                        outstandingSection.style.display = 'block';
+                    }
+                } else {
+                    // Hide section if no data
+                    const outstandingSection = document.getElementById('outstandingBalanceSection');
+                    if (outstandingSection) {
+                        outstandingSection.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading outstanding balance:', error);
+                // Hide section on error
+                const outstandingSection = document.getElementById('outstandingBalanceSection');
+                if (outstandingSection) {
+                    outstandingSection.style.display = 'none';
+                }
+            }
+        }
+
+        // Reset employer contribution fields
+        const employerEpfEl = document.getElementById('employerEpf');
+        const employerSocsoEl = document.getElementById('employerSocso');
+        const employerEisEl = document.getElementById('employerEis');
+        const employerPcbEl = document.getElementById('employerPcb');
+        if (employerEpfEl) employerEpfEl.value = '0';
+        if (employerSocsoEl) employerSocsoEl.value = '0';
+        if (employerEisEl) employerEisEl.value = '0';
+        if (employerPcbEl) employerPcbEl.value = '0';
+        // Staff details
+        document.getElementById('staffDoc').textContent = workerData.staff_doc || '-';
+        document.getElementById('staffBankName').textContent = workerData.staff_bank_name || '-';
+        document.getElementById('staffBankNumber').textContent = workerData.staff_bank_number || '-';
+        document.getElementById('staffKwspNumber').textContent = workerData.staff_kwsp_number || '-';
+        // Income fields
+        const baseSalaryEl = document.getElementById('baseSalary');
+        let baseVal = '0.00';
+        // Prefer API base-salary for staff endpoints (workers use staff id)
+        // Use isStaff already declared at function start to determine employee type
+        // Try to use staff_id if present, else fallback to currentPayslipWorkerId
+        let staffIdForSalary = workerData.staff_id || workerData.id || currentPayslipWorkerId;
+        const baseData = await fetchBaseSalaryForStaff(staffIdForSalary, isStaff);
+        if (baseData !== null && typeof baseData !== 'undefined') {
+            baseVal = (!isNaN(parseFloat(baseData))) ? parseFloat(baseData).toFixed(2) : '0.00';
+        } else {
+            // Fallback to existing data shape
+            const baseRaw = (workerData.base_salary && typeof workerData.base_salary === 'object')
+                ? workerData.base_salary.base_salary
+                : workerData.base_salary;
+            baseVal = baseRaw ? parseFloat(baseRaw).toFixed(2) : '0.00';
+        }
+        if (baseSalaryEl) {
+            // Always set value for input fields
+            if (baseSalaryEl.tagName === 'INPUT') {
+                baseSalaryEl.value = baseVal;
+            } else {
+                baseSalaryEl.textContent = baseVal;
+            }
+        }
+        document.getElementById('taskIncome').textContent = workerData.task_income ? parseFloat(workerData.task_income).toFixed(2) : '0.00';
+        document.getElementById('totalIncome').textContent = workerData.total_income ? parseFloat(workerData.total_income).toFixed(2) : '0.00';
+        document.getElementById('totalDeduction').textContent = workerData.total_deduction ? parseFloat(workerData.total_deduction).toFixed(2) : '0.00';
+        document.getElementById('netSalary').textContent = workerData.net_salary ? parseFloat(workerData.net_salary).toFixed(2) : '0.00';
+    }
+
+    // Payroll button functionality
+    // Store current worker id for payslip generation
+    let currentPayslipWorkerId = null;
+    let currentPayslipWorkerData = null;
+
+    // Payroll button functionality
+    // Only show employment overview on Payroll button
+    document.addEventListener('click', function (e) {
+        const payslipPageBtn = e.target.closest('[data-payslip-page]');
+        if (payslipPageBtn) {
+            if (payslipPageBtn.disabled || payslipPageBtn.classList.contains('disabled')) {
+                return;
+            }
+            const targetPage = parseInt(payslipPageBtn.getAttribute('data-payslip-page'), 10);
+            if (!isNaN(targetPage)) {
+                renderPayslipRecords(currentPayslipRecords, targetPage, payslipShowTaskButton);
+            }
+            return;
+        }
+
+        if (e.target.closest('.payroll-action button')) {
+            const button = e.target.closest('.payroll-action button');
+            const workerId = button.getAttribute('data-worker-id');
+            const staffId = button.getAttribute('data-staff-id');
+            if (workerId) {
+                const workerData = allWorkersData.find(worker => worker.id == workerId);
+                if (workerData) {
+                    // Show employment overview only
+                    const employeeData = {
+                        id: workerId,
+                        name: workerData.staff_fullname,
+                        joinedSince: workerData.joined_since,
+                        role: 'Worker',
+                        age: workerData.age || 'N/A',
+                        staff_fullname: workerData.staff_fullname // for modal
+                    };
+                    showEmploymentOverview(employeeData, true);
+                    // Store for later use in modal
+                    currentPayslipWorkerId = workerId;
+                    currentPayslipWorkerData = workerData;
+                }
+            } else if (staffId) {
+                const staffDataObj = allStaffData.find(staff => staff.id == staffId);
+                if (staffDataObj) {
+                    // Show employment overview for staff
+                    const employeeData = {
+                        id: staffId,
+                        name: staffDataObj.user_fullname,
+                        joinedSince: staffDataObj.joined_since,
+                        role: staffDataObj.user_role.charAt(0).toUpperCase() + staffDataObj.user_role.slice(1),
+                        age: staffDataObj.age || 'N/A',
+                        nickname: staffDataObj.user_nickname || ''
+                    };
+                    showEmploymentOverview(employeeData, false);
+                    // Optionally store for payslip modal if needed
+                    currentPayslipWorkerId = staffId;
+                    currentPayslipWorkerData = staffDataObj;
+                }
+            } else if (e.target && e.target.id === 'generatePayslip') {
+                // Only open payslip modal here, using stored worker data
+                if (currentPayslipWorkerData) {
+                    fillPayslipModal(currentPayslipWorkerData);
+                    var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
+                    payslipModal.show();
+                }
+            } else if (e.target.closest('button[data-payslip-id]')) {
+                const btn = e.target.closest('button[data-payslip-id]');
+                const payslipId = btn.getAttribute('data-payslip-id');
+                // Check if this is the Delete button
+                if (btn.classList.contains('btn-danger')) {
+                    // Only allow delete for Worker or Staff option
+                    if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
+                        if (!payslipId) return;
+
+                        Swal.fire({
+                            title: 'Delete Payslip?',
+                            text: 'This action cannot be undone.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, delete it',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                (async function () {
+                                    try {
+                                        const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+                                        if (!AUTH_TOKEN) throw new Error('No auth token');
+                                        let url;
+                                        if (workerTab.classList.contains('btn-success')) {
+                                            url = `${API_URL}/payroll/staff/payslips/${payslipId}`;
+                                        } else {
+                                            url = `${API_URL}/payroll/payslips/${payslipId}`;
+                                        }
+                                        const res = await fetch(url, {
+                                            method: 'DELETE',
+                                            headers: {
+                                                'Authorization': `Bearer ${AUTH_TOKEN}`,
+                                                'Content-Type': 'application/json',
+                                                'Accept': 'application/json'
+                                            }
+                                        });
+                                        const response = await res.json();
+                                        if (res.ok && response.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Deleted!',
+                                                text: 'Payslip deleted successfully.',
+                                                confirmButtonColor: '#0d6832'
+                                            });
+                                            // Refresh the employment overview to update the list
+                                            if (currentPayslipWorkerData) {
+                                                const employeeData = {
+                                                    id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                                                    name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                                                    joinedSince: currentPayslipWorkerData.joined_since,
+                                                    role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                                    age: currentPayslipWorkerData.age || 'N/A',
+                                                    staff_fullname: currentPayslipWorkerData.staff_fullname,
+                                                    nickname: currentPayslipWorkerData.user_nickname || ''
+                                                };
+                                                showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
+                                            } else {
+                                                location.reload();
+                                            }
+                                        } else {
+                                            let msg = response.message || 'Unknown error';
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Delete Failed',
+                                                text: msg,
+                                                confirmButtonColor: '#0d6832'
+                                            });
+                                        }
+                                    } catch (err) {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Error',
+                                            text: err.message,
+                                            confirmButtonColor: '#0d6832'
+                                        });
+                                    }
+                                })();
+                            }
+                        });
+                    }
+                } else {
+                    // View Task: open in-modal breakdown
+                    if (btn.classList.contains('view-task-btn')) {
+                        const staffId = btn.getAttribute('data-staff-id') || currentPayslipWorkerId;
+                        const monthAttr = parseInt(btn.getAttribute('data-month'), 10);
+                        const yearAttr = parseInt(btn.getAttribute('data-year'), 10);
+                        if (!staffId) {
+                            alert('Unable to determine staff/worker for tasks.');
+                            return;
+                        }
+                        const staffName = currentPayslipWorkerData?.staff_fullname || currentPayslipWorkerData?.user_fullname || 'Staff';
+                        openTaskBreakdownModal({
+                            staffId,
+                            staffName,
+                            month: isNaN(monthAttr) ? undefined : monthAttr,
+                            year: isNaN(yearAttr) ? undefined : yearAttr
+                        });
+                    } else if (payslipId) {
+                        // View payslip in new tab
+                        const isUser = currentPayslipWorkerData && !!currentPayslipWorkerData.user_fullname;
+                        const type = isUser ? 'user' : 'staff';
+                        const url = `${STORAGE_DOMAIN}/payslips/${type}/${payslipId}`;
+                        window.open(url, '_blank');
+                    }
+                }
+            }
+        } else if (e.target && e.target.id === 'generatePayslip') {
+            // Only open payslip modal here, using stored worker data
+            if (currentPayslipWorkerData) {
+                fillPayslipModal(currentPayslipWorkerData);
+                var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
+                payslipModal.show();
+            }
+        } else if (e.target.closest('button[data-payslip-id]')) {
+            const btn = e.target.closest('button[data-payslip-id]');
+            const payslipId = btn.getAttribute('data-payslip-id');
+            // Check if this is the Delete button
+            if (btn.classList.contains('btn-danger')) {
+                // Only allow delete for Worker or Staff option
+                if (workerTab.classList.contains('btn-success') || staffTab.classList.contains('btn-success')) {
+                    if (!payslipId) return;
+
+                    Swal.fire({
+                        title: 'Delete Payslip?',
+                        text: 'This action cannot be undone.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, delete it',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            (async function () {
+                                try {
+                                    const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
+                                    if (!AUTH_TOKEN) throw new Error('No auth token');
+                                    let url;
+                                    if (workerTab.classList.contains('btn-success')) {
+                                        url = `${API_URL}/payroll/staff/payslips/${payslipId}`;
+                                    } else {
+                                        url = `${API_URL}/payroll/payslips/${payslipId}`;
+                                    }
+                                    const res = await fetch(url, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'Authorization': `Bearer ${AUTH_TOKEN}`,
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json'
+                                        }
+                                    });
+                                    const response = await res.json();
+                                    if (res.ok && response.success) {
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Deleted!',
+                                            text: 'Payslip deleted successfully.',
+                                            confirmButtonColor: '#0d6832'
+                                        });
+                                        // Refresh the employment overview to update the list
+                                        if (currentPayslipWorkerData) {
+                                            const employeeData = {
+                                                id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                                                name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                                                joinedSince: currentPayslipWorkerData.joined_since,
+                                                role: workerTab.classList.contains('btn-success') ? 'Worker' : (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : ''),
+                                                age: currentPayslipWorkerData.age || 'N/A',
+                                                staff_fullname: currentPayslipWorkerData.staff_fullname,
+                                                nickname: currentPayslipWorkerData.user_nickname || ''
+                                            };
+                                            showEmploymentOverview(employeeData, workerTab.classList.contains('btn-success'));
+                                        } else {
+                                            location.reload();
+                                        }
+                                    } else {
+                                        let msg = response.message || 'Unknown error';
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Delete Failed',
+                                            text: msg,
+                                            confirmButtonColor: '#0d6832'
+                                        });
+                                    }
+                                } catch (err) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: err.message,
+                                        confirmButtonColor: '#0d6832'
+                                    });
+                                }
+                            })();
+                        }
+                    });
+                }
+            } else {
+                // View Task: open in-modal breakdown
+                if (btn.classList.contains('view-task-btn')) {
+                    const staffId = btn.getAttribute('data-staff-id') || currentPayslipWorkerId;
+                    const monthAttr = parseInt(btn.getAttribute('data-month'), 10);
+                    const yearAttr = parseInt(btn.getAttribute('data-year'), 10);
+                    if (!staffId) {
+                        alert('Unable to determine staff/worker for tasks.');
+                        return;
+                    }
+                    const staffName = currentPayslipWorkerData?.staff_fullname || currentPayslipWorkerData?.user_fullname || 'Staff';
+                    openTaskBreakdownModal({
+                        staffId,
+                        staffName,
+                        month: isNaN(monthAttr) ? undefined : monthAttr,
+                        year: isNaN(yearAttr) ? undefined : yearAttr
+                    });
+                } else if (payslipId) {
+                    // View payslip in new tab
+                    const isUser = currentPayslipWorkerData && !!currentPayslipWorkerData.user_fullname;
+                    const type = isUser ? 'user' : 'staff';
+                    const url = `${STORAGE_DOMAIN}/payslips/${type}/${payslipId}`;
+                    window.open(url, '_blank');
+                }
+            }
+        }
+    });
+
+    // Payslip modal: handle GENERATE button
+    const payslipModalEl = document.getElementById('payslipModal');
+    if (payslipModalEl) {
+        // Wire deduction add/remove when modal is shown
+        payslipModalEl.addEventListener('shown.bs.modal', function () {
+            const typeEl = document.getElementById('deductionTypeInput');
+            const amtEl = document.getElementById('deductionAmountInput');
+            const addBtn = document.getElementById('addDeductionBtn');
+            const tbody = document.getElementById('deductionTableBody');
+            const totalEl = document.getElementById('totalDeductions');
+
+            function recalcTotal() {
+                let sum = 0;
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    const val = parseFloat(tr.getAttribute('data-amount') || '0');
+                    if (!isNaN(val)) sum += val;
+                });
+                if (totalEl) totalEl.textContent = sum.toFixed(2);
+            }
+
+            function addRow() {
+                const t = (typeEl?.value || '').trim();
+                const a = parseFloat(amtEl?.value || '0');
+                if (!t) { alert('Enter deduction type'); return; }
+                if (isNaN(a) || a <= 0) { alert('Enter a valid amount'); return; }
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-amount', a.toString());
+                tr.innerHTML = `
+                  <td>${t}</td>
+                  <td class="text-end">${a.toFixed(2)}</td>
+                  <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-deduction">Remove</button></td>
+                `;
+                tbody.appendChild(tr);
+                typeEl.value = '';
+                amtEl.value = '';
+                recalcTotal();
+            }
+
+            if (addBtn) {
+                addBtn.onclick = addRow;
+            }
+            tbody.addEventListener('click', function (ev) {
+                const btn = ev.target.closest('.remove-deduction');
+                if (!btn) return;
+                const row = btn.closest('tr');
+                row?.remove();
+                recalcTotal();
+            });
+        });
+
+        // Generate button: call API
+        document.getElementById('generatePayslipBtn').onclick = async function () {
+            try {
+                if (!currentPayslipWorkerId) {
+                    alert('No staff/worker selected. Please try again.');
+                    return;
+                }
+
+                // Validate month selection
+                const payslipMonth = document.getElementById('payslipMonth').value;
+                if (!payslipMonth || payslipMonth === 'select month') {
+                    alert('Please select a payslip month.');
+                    return;
+                }
+
+                // Gather deductions as objects with deduction_type and deduction_amount
+                const deductionRows = document.querySelectorAll('#deductionTableBody tr');
+                const deductions = [];
+                deductionRows.forEach(row => {
+                    const type = row.children[0]?.textContent?.trim();
+                    // Get amount from data-amount attribute (source of truth) or parse from displayed text
+                    const amountAttr = row.getAttribute('data-amount');
+                    const amountText = amountAttr || row.children[1]?.textContent?.trim() || '0';
+                    const amount = parseFloat(amountText.replace(/[^\d.-]/g, '')) || 0;
+
+                    if (type) {
+                        deductions.push({
+                            deduction_type: type,
+                            deduction_amount: amount
+                        });
+                    }
+                });
+
+                // Read and append overrides to deductions
+                const latenessOverrideEl = document.getElementById('latenessOverride');
+                const earlyOutOverrideEl = document.getElementById('earlyOutOverride');
+                if (latenessOverrideEl && latenessOverrideEl.value.trim() !== '') {
+                    const latenessVal = parseFloat(latenessOverrideEl.value);
+                    if (!isNaN(latenessVal) && latenessVal >= 0) {
+                        deductions.push({
+                            deduction_type: 'Lateness',
+                            deduction_amount: latenessVal
+                        });
+                    }
+                }
+                if (earlyOutOverrideEl && earlyOutOverrideEl.value.trim() !== '') {
+                    const earlyOutVal = parseFloat(earlyOutOverrideEl.value);
+                    if (!isNaN(earlyOutVal) && earlyOutVal >= 0) {
+                        deductions.push({
+                            deduction_type: 'Early Out',
+                            deduction_amount: earlyOutVal
+                        });
+                    }
+                }
+
+                // Advance fields
+                const advanceAmountEl = document.getElementById('advanceAmount');
+                const advanceRemarksEl = document.getElementById('advanceRemarks');
+                const advVal = advanceAmountEl ? (advanceAmountEl.value ?? advanceAmountEl.textContent) : '';
+                const advNum = parseFloat((advVal || '').toString());
+                const advRemarks = (advanceRemarksEl?.value || advanceRemarksEl?.textContent || '').trim();
+
+                // Employer contribution fields
+                const employerEpfEl = document.getElementById('employerEpf');
+                const employerSocsoEl = document.getElementById('employerSocso');
+                const employerEisEl = document.getElementById('employerEis');
+                const employerPcbEl = document.getElementById('employerPcb');
+
+                const employerEpf = employerEpfEl ? parseFloat(employerEpfEl.value || '0') : 0;
+                const employerSocso = employerSocsoEl ? parseFloat(employerSocsoEl.value || '0') : 0;
+                const employerEis = employerEisEl ? parseFloat(employerEisEl.value || '0') : 0;
+                const employerPcb = employerPcbEl ? parseFloat(employerPcbEl.value || '0') : 0;
+
+                // Build payload
+                const payload = {
+                    payslip_month: payslipMonth,
+                    deductions: deductions
+                };
+
+                // Add advance repayment if provided
+                if (!isNaN(advNum) && advNum > 0) {
+                    payload.advance_repayment_amount = advNum.toFixed(2);
+                    payload.advance_repayment_remarks = advRemarks || '';
+                }
+
+                // Add employer contributions if provided
+                if (employerEpf > 0) payload.employer_epf = employerEpf;
+                if (employerSocso > 0) payload.employer_socso = employerSocso;
+                if (employerEis > 0) payload.employer_eis = employerEis;
+                if (employerPcb > 0) payload.employer_pcb = employerPcb;
+
+                // Generate payslip using refactored function
+                const result = await generateStaffPayslip(currentPayslipWorkerId, payload);
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Payslip generated successfully.',
+                        confirmButtonColor: '#0d6832'
+                    });
+                } else {
+                    throw new Error(result.message || 'Failed to generate payslip');
+                }
+
+                // Refresh employment overview to reflect new record
+                if (currentPayslipWorkerData) {
+                    const isStaff = !!currentPayslipWorkerData?.user_fullname;
+                    const employeeData = {
+                        id: currentPayslipWorkerData.id || currentPayslipWorkerId,
+                        name: currentPayslipWorkerData.staff_fullname || currentPayslipWorkerData.user_fullname,
+                        joinedSince: currentPayslipWorkerData.joined_since,
+                        role: isStaff ? (currentPayslipWorkerData.user_role ? currentPayslipWorkerData.user_role.charAt(0).toUpperCase() + currentPayslipWorkerData.user_role.slice(1) : 'Staff') : 'Worker',
+                        age: currentPayslipWorkerData.age || 'N/A',
+                        staff_fullname: currentPayslipWorkerData.staff_fullname,
+                        nickname: currentPayslipWorkerData.user_nickname || ''
+                    };
+                    showEmploymentOverview(employeeData, !isStaff);
+                }
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(payslipModalEl);
+                modal?.hide();
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        };
+    }
+
+    // Helper: fetch payslip details by payslip id (for worker)
+    async function fetchWorkerPayslipDetails(payslipId) {
+        try {
+            if (!AUTH_TOKEN) throw new Error('Authentication required');
+            const url = `${API_URL}/payroll/staff/payslips/${payslipId}?view=html`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            if (!response.ok) throw new Error('Failed to fetch payslip details');
+            const result = await response.json();
+            if (result.success && result.data) return result.data;
+            throw new Error(result.message || 'No payslip data');
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Helper: render payslip details in modal
+    function renderPayslipDetailsModal(data) {
+        const modalBody = document.getElementById('viewPayslipModalBody');
+        if (!data) {
+            modalBody.innerHTML = '<div class="text-center text-danger">No payslip data found.</div>';
+            return;
+        }
+
+        const isUser = !!data.user;
+        const name = isUser ? (data.user?.user_fullname || '') : (data.staff?.staff_fullname || '');
+        const doc = isUser ? (data.user?.user_ic || '') : (data.staff?.staff_doc || '');
+        const staffIc = isUser ? '' : (data.staff?.staff_ic || '');
+        const designation = isUser 
+            ? (data.user?.user_role ? data.user.user_role.charAt(0).toUpperCase() + data.user.user_role.slice(1) : 'Staff') 
+            : (data.staff?.designation ? data.staff.designation.charAt(0).toUpperCase() + data.staff.designation.slice(1) : 'Worker');
+
+        // Prepare income and deduction breakdowns
+        let incomeRows = '';
+        let totalIncome = 0;
+        if (data.breakdown && typeof data.breakdown === 'object') {
+            for (const [key, value] of Object.entries(data.breakdown)) {
+                if (value > 0) {
+                    incomeRows += `<tr><td>${key}</td><td class='text-end'>${Number(value).toFixed(2)}</td></tr>`;
+                    totalIncome += Number(value);
+                }
+            }
+        } else {
+            incomeRows += `<tr><td>Basic Salary</td><td class='text-end'>${Number(data.base_salary).toFixed(2)}</td></tr>`;
+            totalIncome = Number(data.base_salary);
+        }
+        // Deductions
+        let deductionRows = '';
+        let totalDeduction = 0;
+        if (Array.isArray(data.deductions)) {
+            data.deductions.forEach(ded => {
+                deductionRows += `<tr><td>${ded.type || ded.name || ded.deduction_type || ''}</td><td class='text-end'>${Number(ded.amount || ded.value || ded.deduction_amount || 0).toFixed(2)}</td></tr>`;
+                totalDeduction += Number(ded.amount || ded.value || ded.deduction_amount || 0);
+            });
+        } else if (data.deductions && typeof data.deductions === 'object') {
+            for (const [key, value] of Object.entries(data.deductions)) {
+                deductionRows += `<tr><td>${key}</td><td class='text-end'>${Number(value).toFixed(2)}</td></tr>`;
+                totalDeduction += Number(value);
+            }
+        }
+        // If no breakdown, fallback to base_salary
+        if (!incomeRows) {
+            incomeRows = `<tr><td>Basic Salary</td><td class='text-end'>${Number(data.base_salary).toFixed(2)}</td></tr>`;
+            totalIncome = Number(data.base_salary);
+        }
+        // If no deduction, show empty row
+        if (!deductionRows) {
+            deductionRows = `<tr><td colspan='2' class='text-center text-muted'>-</td></tr>`;
+        }
+        // HTML layout
+        modalBody.innerHTML = `
+      <div class="container-fluid">
+        <div class="text-center mb-2">
+          <h2 class="fw-bold">MEGACESS Sdn Bhd</h2>
+        </div>
+        <div class="mb-2"><span class="fw-bold text-success">Month of Payroll:</span> ${data.payslip_month || ''}</div>
+        <div class="mb-2 fw-bold text-success">Employee Details</div>
+        <div class="mb-2"><b>Name:</b> ${name}</div>
+        <div class="mb-2"><b>Document No:</b> ${doc}</div>
+        ${staffIc ? `<div class="mb-2"><b>No IC:</b> ${staffIc}</div>` : ''}
+        <div class="mb-2"><b>Designation:</b> ${designation}</div>
+        <div class="mb-2"><b>Bank:</b> ${isUser ? (data.user?.user_bank_name || '') : (data.staff?.staff_bank_name || '')}</div>
+        <div class="mb-2"><b>Bank Acc. Number:</b> ${isUser ? (data.user?.user_bank_number || '') : (data.staff?.staff_bank_number || '')}</div>
+        <div class="mb-2"><b>KWSP Number:</b> ${isUser ? (data.user?.user_kwsp_number || '') : (data.staff?.staff_kwsp_number || '')}</div>
+        <div class="fw-bold text-success mt-3 mb-2">Salary Amount</div>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="text-center">INCOME</th>
+                <th class="text-center">DEDUCTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="vertical-align:top; padding:0;">
+                  <table class="table table-borderless mb-0">
+                    ${incomeRows}
+                    <tr class="fw-bold"><td>Total Income</td><td class='text-end'>${Number(data.total_income || totalIncome).toFixed(2)}</td></tr>
+                  </table>
+                </td>
+                <td style="vertical-align:top; padding:0;">
+                  <table class="table table-borderless mb-0">
+                    ${deductionRows}
+                    <tr class="fw-bold"><td>Total Deduction</td><td class='text-end'>${Number(data.total_deduction || totalDeduction).toFixed(2)}</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2" class="fw-bold">Net Salary: <span class="text-primary">${Number(data.net_salary).toFixed(2)}</span></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="row mt-4">
+          <div class="col-6 text-center">
+            <div class="mb-5">Approved By:</div>
+            <div style="border-bottom:1px solid #333; width:80%; margin:0 auto;"></div>
+          </div>
+          <div class="col-6 text-center">
+            <div class="mb-5">Received By:</div>
+            <div style="border-bottom:1px solid #333; width:80%; margin:0 auto;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    }
+
+    // Event delegation for pagination buttons
+    const paginationControls = document.getElementById('paginationControls');
+    if (paginationControls) {
+        paginationControls.addEventListener('click', (e) => {
+            const button = e.target.closest('button[data-page]');
+            if (button && !button.disabled) {
+                const page = parseInt(button.getAttribute('data-page'));
+                if (!isNaN(page) && page > 0) {
+                    e.preventDefault();
+                    goToPage(page);
+                }
+            }
+        });
+    }
+
+    // Initial load of workers data
+    // Set worker tab as active on page load to match the data we're fetching
+    workerTab.classList.remove('btn-outline-secondary');
+    workerTab.classList.add('btn-success');
+    staffTab.classList.remove('btn-success');
+    staffTab.classList.add('btn-outline-secondary');
+
+    // Show worker list, hide staff list
+    workerList.classList.remove('d-none');
+    staffList.classList.add('d-none');
+
+    // Hide role filter on initial load (worker tab)
+    if (roleFilterContainer) {
+        roleFilterContainer.style.display = 'none';
+    }
+
+    // Fetch only workers on initial load (default visible tab)
+    // Staff data will be lazy-loaded when user clicks the Staff tab
+    fetchWorkers('', 1);
+
+    // Initialize role filter state
+    setActiveRoleFilter('all');
+});

@@ -1,32 +1,475 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MegaCess Web • Manage Resources</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+
+  <link rel="stylesheet" href="../assets/css/roderickv1.css"> <!-- Links to Roderick's css style -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .section-content {
+      padding: 1.5rem;
+      border-top: 1px solid #dee2e6;
+      background: #fff;
+    }
+
+    .section-content {
+      padding: 1.5rem;
+      border-top: 1px solid #dee2e6;
+      background: #fff;
+    }
+
+    /* .stat-card styles now in roderickv1.css */
+
+    .chart-container {
+      background: #fff;
+      border-radius: 1rem;
+      padding: 1rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      margin-top: 1.5rem;
+      height: 400px;
+    }
+
+    .chart-title {
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 1rem;
+    }
+
+    .chart-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
 </head>
+
 <body data-page="manage-resources">
   <div class="app d-flex">
     <aside class="sidebar p-3" id="sidebar-root"></aside>
 
     <main class="content flex-grow-1">
+      <!-- Topbar -->
       <div class="topbar py-3 px-3 d-flex align-items-center justify-content-between">
         <h1 class="page-title h5 mb-0">Manage Resources</h1>
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
+      <!-- Analytics Section -->
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Resources content will go here.</p>
+        <div class="d-flex justify-content-between align-items-end mb-4">
+          <div>
+            <h3 class="fw-bold text-dark">Analytics Dashboard</h3>
+            <p class="text-secondary mb-0">Deep dive into resource usage and performance metrics.</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button id="toggleAllAnalyticsBtn" class="btn btn-outline-secondary shadow-sm" data-expanded="false">
+              <i class="bi bi-arrows-expand me-1"></i> Expand All
+            </button>
+            <select id="analyticsPeriod" class="form-select w-auto shadow-sm" aria-label="Select analytics period">
+              <option value="day">Daily</option>
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
+              <option value="year" selected>Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- VEHICLE ANALYTICS -->
+        <div class="analytics-section mb-4">
+          <div class="section-header" data-bs-toggle="collapse" data-bs-target="#vehicleSection" aria-expanded="true">
+            <div class="section-title">
+              <i class="bi bi-truck text-primary"></i>
+              <span>Vehicle Analytics</span>
+            </div>
+            <div class="collapse-icon-wrapper">
+              <i class="bi bi-chevron-down collapse-icon"></i>
+            </div>
+          </div>
+          <div id="vehicleSection" class="collapse section-content">
+            <div class="row g-4">
+              <div class="col-md-3 col-6">
+                <div class="stat-card border-start border-4 border-primary">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="stat-title">Total Vehicles</div>
+                      <div class="stat-value" id="vehicle-total">-</div>
+                    </div>
+                    <div class="stat-icon bg-primary-subtle text-primary rounded p-3">
+                      <i class="bi bi-truck fs-4"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <div class="stat-card border-start border-4 border-success">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="stat-title">Available</div>
+                      <div class="stat-value" id="vehicle-available">-</div>
+                    </div>
+                    <div class="stat-icon bg-success-subtle text-success rounded p-3">
+                      <i class="bi bi-check-circle fs-4"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <div class="stat-card border-start border-4 border-info">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="stat-title">In Use</div>
+                      <div class="stat-value" id="vehicle-in-use">-</div>
+                    </div>
+                    <div class="stat-icon bg-info-subtle text-info rounded p-3">
+                      <i class="bi bi-arrow-repeat fs-4"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <div class="stat-card border-start border-4 border-danger">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="stat-title">Maintenance</div>
+                      <div class="stat-value" id="vehicle-maintenance">-</div>
+                    </div>
+                    <div class="stat-icon bg-danger-subtle text-danger rounded p-3">
+                      <i class="bi bi-wrench fs-4"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="chart-container mt-4">
+              <h5 class="chart-title mb-3">Vehicle Usage</h5>
+              <div style="height: 300px;">
+                <canvas id="vehicleChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- TOOL ANALYTICS -->
+        <div class="analytics-section mb-4">
+          <div class="section-header" data-bs-toggle="collapse" data-bs-target="#toolsSection" aria-expanded="true">
+            <div class="section-title">
+              <i class="bi bi-wrench text-success"></i>
+              <span>Tools Analytics</span>
+            </div>
+            <div class="collapse-icon-wrapper">
+              <i class="bi bi-chevron-down collapse-icon"></i>
+            </div>
+          </div>
+          <div id="toolsSection" class="collapse section-content">
+            <div class="row g-4">
+              <!-- Left Side: Stats -->
+              <div class="col-lg-7">
+                <div class="row g-4 h-100 align-content-center">
+                  <div class="col-md-6">
+                    <div class="stat-card border-start border-4 border-primary">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="stat-title">Total Tools</div>
+                          <div class="stat-value" id="tools-total">-</div>
+                        </div>
+                        <div class="stat-icon bg-primary-subtle text-primary rounded p-3">
+                          <i class="bi bi-tools fs-4"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="stat-card border-start border-4 border-success">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="stat-title">Available</div>
+                          <div class="stat-value" id="tools-available">-</div>
+                        </div>
+                        <div class="stat-icon bg-success-subtle text-success rounded p-3">
+                          <i class="bi bi-check-circle fs-4"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="stat-card border-start border-4 border-info">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="stat-title">In Use</div>
+                          <div class="stat-value" id="tools-in-use">-</div>
+                        </div>
+                        <div class="stat-icon bg-info-subtle text-info rounded p-3">
+                          <i class="bi bi-person-gear fs-4"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="stat-card border-start border-4 border-danger">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="stat-title">Broken</div>
+                          <div class="stat-value" id="tools-broken">-</div>
+                        </div>
+                        <div class="stat-icon bg-danger-subtle text-danger rounded p-3">
+                          <i class="bi bi-exclamation-triangle fs-4"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Side: Chart -->
+              <div class="col-lg-5">
+                <div class="chart-container mt-0 h-100 d-flex flex-column">
+                  <h5 class="chart-title mb-auto">Tool Status Distribution</h5>
+                  <div class="flex-grow-1" style="min-height: 300px;">
+                    <canvas id="toolsChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- FUEL ANALYTICS -->
+        <div class="analytics-section mb-4">
+          <div class="section-header" data-bs-toggle="collapse" data-bs-target="#fuelSection" aria-expanded="true">
+            <div class="section-title">
+              <i class="bi bi-fuel-pump text-warning"></i>
+              <span>Fuel Analytics</span>
+            </div>
+            <div class="collapse-icon-wrapper">
+              <i class="bi bi-chevron-down collapse-icon"></i>
+            </div>
+          </div>
+          <div id="fuelSection" class="collapse section-content">
+            <!-- Fuel Stats Row -->
+            <div class="row g-4 mb-4">
+              <div class="col-md-4">
+                <div class="stat-card border-start border-4 border-primary">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="stat-title">Fuel Remaining</div>
+                      <div class="stat-value" id="fuel-remaining">-</div>
+                    </div>
+                    <div class="stat-icon bg-primary-subtle text-primary rounded p-3">
+                      <i class="bi bi-droplet-half fs-4"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-card border-start border-4 border-success">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="stat-title">Total Bought</div>
+                      <div class="stat-value" id="fuel-total-bought">-</div>
+                    </div>
+                    <div class="stat-icon bg-success-subtle text-success rounded p-3">
+                      <i class="bi bi-cart-plus fs-4"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-card border-start border-4 border-danger">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="stat-title">Total Used</div>
+                      <div class="stat-value" id="fuel-total-used">-</div>
+                    </div>
+                    <div class="stat-icon bg-danger-subtle text-danger rounded p-3">
+                      <i class="bi bi-graph-down fs-4"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fuel Breakdown -->
+            <h5 class="fw-bold mb-3 mt-4 text-secondary">Fuel Breakdown (Remaining)</h5>
+            <div class="row g-4">
+              <!-- Petrol -->
+              <div class="col-xl-2 col-md-4 col-6">
+                <div class="stat-card h-100 border-start border-4 border-danger">
+                  <div class="d-flex flex-column justify-content-between h-100">
+                    <div>
+                      <div class="stat-title text-danger mb-1"><i class="bi bi-fuel-pump-fill me-1"></i> Petrol</div>
+                      <div class="stat-value fs-5" id="fuelPetValue">-</div>
+                    </div>
+                    <small class="text-muted">Liters</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Diesel -->
+              <div class="col-xl-2 col-md-4 col-6">
+                <div class="stat-card h-100 border-start border-4 border-dark">
+                  <div class="d-flex flex-column justify-content-between h-100">
+                    <div>
+                      <div class="stat-title text-dark mb-1"><i class="bi bi-fuel-pump-fill me-1"></i> Diesel</div>
+                      <div class="stat-value fs-5" id="fuelDiesValue">-</div>
+                    </div>
+                    <small class="text-muted">Liters</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hydraulic Oil 10 -->
+              <div class="col-xl-2 col-md-4 col-6">
+                <div class="stat-card h-100 border-start border-4 border-warning">
+                  <div class="d-flex flex-column justify-content-between h-100">
+                    <div>
+                      <div class="stat-title text-warning mb-1"><i class="bi bi-droplet-fill me-1"></i> Oil 10</div>
+                      <div class="stat-value fs-5" id="fuelH10Value">-</div>
+                    </div>
+                    <small class="text-muted">Liters</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hydraulic Oil 40 -->
+              <div class="col-xl-2 col-md-4 col-6">
+                <div class="stat-card h-100 border-start border-4 border-warning">
+                  <div class="d-flex flex-column justify-content-between h-100">
+                    <div>
+                      <div class="stat-title text-warning mb-1"><i class="bi bi-droplet-fill me-1"></i> Oil 40</div>
+                      <div class="stat-value fs-5" id="fuelH40Value">-</div>
+                    </div>
+                    <small class="text-muted">Liters</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hydraulic Oil 68 -->
+              <div class="col-xl-2 col-md-4 col-6">
+                <div class="stat-card h-100 border-start border-4 border-warning">
+                  <div class="d-flex flex-column justify-content-between h-100">
+                    <div>
+                      <div class="stat-title text-warning mb-1"><i class="bi bi-droplet-fill me-1"></i> Oil 68</div>
+                      <div class="stat-value fs-5" id="fuelH68Value">-</div>
+                    </div>
+                    <small class="text-muted">Liters</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hydraulic Oil 90 -->
+              <div class="col-xl-2 col-md-4 col-6">
+                <div class="stat-card h-100 border-start border-4 border-warning">
+                  <div class="d-flex flex-column justify-content-between h-100">
+                    <div>
+                      <div class="stat-title text-warning mb-1"><i class="bi bi-droplet-fill me-1"></i> Oil 90</div>
+                      <div class="stat-value fs-5" id="fuelH90Value">-</div>
+                    </div>
+                    <small class="text-muted">Liters</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="chart-container">
+              <h5 class="chart-title">Fuel Usage Trend</h5>
+              <canvas id="fuelChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back to Top Button -->
+        <div class="d-flex justify-content-center mt-3 mb-2">
+          <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+            class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+            <i class="bi bi-arrow-up me-2"></i> Back to Top
+          </button>
+        </div>
+      </div>
+      <!-- Navigation Cards -->
+      <div class="container-fluid p-4 ">
+        <div class="mb-4">
+          <h3 class="fw-bold text-dark">Resource Overview</h3>
+          <p class="text-secondary mb-0">Manage your vehicles, tools, and fuel usage efficiently.</p>
+        </div>
+        <div class="row g-4 mb-4">
+          <!-- Vehicle Nav Card -->
+          <div class="col-md-4">
+            <a href="manage-resources-vehicle.html" class="nav-card">
+              <div class="nav-card-icon bg-primary-subtle text-primary">
+                <i class="bi bi-truck"></i>
+              </div>
+              <div class="nav-card-content">
+                <h5 class="nav-card-title">Manage Vehicles</h5>
+                <p class="nav-card-desc">Track fleet availability, maintenance & bookings</p>
+              </div>
+              <i class="bi bi-chevron-right nav-card-arrow fs-5"></i>
+            </a>
+          </div>
+
+          <!-- Tools Nav Card -->
+          <div class="col-md-4">
+            <a href="manage-resources-tools.html" class="nav-card">
+              <div class="nav-card-icon bg-success-subtle text-success">
+                <i class="bi bi-wrench"></i>
+              </div>
+              <div class="nav-card-content">
+                <h5 class="nav-card-title">Manage Tools</h5>
+                <p class="nav-card-desc">Monitor spare parts inventory & status</p>
+              </div>
+              <i class="bi bi-chevron-right nav-card-arrow fs-5"></i>
+            </a>
+          </div>
+
+          <!-- Fuels Nav Card -->
+          <div class="col-md-4">
+            <a href="manage-resources-fuel.html" class="nav-card">
+              <div class="nav-card-icon bg-warning-subtle text-warning">
+                <i class="bi bi-fuel-pump"></i>
+              </div>
+              <div class="nav-card-content">
+                <h5 class="nav-card-title">Manage Fuels</h5>
+                <p class="nav-card-desc">Analyze fuel consumption & breakdown</p>
+              </div>
+              <i class="bi bi-chevron-right nav-card-arrow fs-5"></i>
+            </a>
+          </div>
         </div>
       </div>
     </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/logout.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/manage_resources_analytics.js"></script>
+
+  <script>
+    // Charts will be initialized in manage_resources_analytics.js
+
+    // Toggle All Analytics Logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleBtn = document.getElementById('toggleAllAnalyticsBtn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          const sections = document.querySelectorAll('.analytics-section .collapse');
+          const isExpanded = toggleBtn.getAttribute('data-expanded') === 'true';
+
+          sections.forEach(sec => {
+            const bsCol = bootstrap.Collapse.getOrCreateInstance(sec, { toggle: false });
+            isExpanded ? bsCol.hide() : bsCol.show();
+          });
+
+          toggleBtn.setAttribute('data-expanded', !isExpanded);
+          toggleBtn.innerHTML = !isExpanded
+            ? '<i class="bi bi-arrows-collapse me-1"></i> Collapse All'
+            : '<i class="bi bi-arrows-expand me-1"></i> Expand All';
+        });
+      }
+    });
+  </script>
 </body>
+
 </html>

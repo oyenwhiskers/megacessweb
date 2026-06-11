@@ -11,6 +11,10 @@ megacessweb/
 │  ├─ css/style.css          # Theme + layout (sidebar/topbar)
 │  └─ js/main.js             # Active nav + mobile sidebar toggle
 └─ pages/
+	└─ manageResourcesPage/
+		├─ manage-resources-vehicle.html
+		├─ manage-resources-tools.html
+		├─ manage-resources-fuel.html
 	├─ analytics.html
 	├─ assign-worker.html
 	├─ manage-account.html
@@ -29,18 +33,19 @@ All pages use Bootstrap and Bootstrap Icons via CDN — no other frameworks.
 
 1. Place this folder under `c:/xampp/htdocs/` as `megacessweb` (already set up).
 2. Start Apache in XAMPP.
-3. Open: `http://localhost/megacessweb/`.
+3. Open: `http://localhost/`.
 
-The sidebar links use absolute paths (`/megacessweb/...`) so navigation works from any page.
+The sidebar links use absolute paths (`/...`) so navigation works from any page.
 
 ## Customize
 
 - Update colors, spacing, and layout in `assets/css/style.css`.
 - Add your page content inside each file's `<div class="container-fluid p-4">` section.
 - Sidebar links live in `partials/sidebar.html`. Edit once and all pages update.
-- If you rename the project folder, update the link paths (search for `/megacessweb/`).
+- If you rename the project folder, update the link paths (search for `/`).
 
 ## Notes
 
 - This is a starting point to plug in your real UI and logic. No build step required.
 - Tested with Bootstrap 5.3 via CDN.
+

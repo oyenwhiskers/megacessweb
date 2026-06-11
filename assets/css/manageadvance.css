@@ -1,0 +1,606 @@
+/* =======================================
+Manage Advance Styles
+========================================== */
+.body, html {
+    margin: 0;
+    width: 100%;
+    background:#d2f5d7;
+}
+
+.sidebar {
+  position: fixed;     
+  top: 0;
+  left: 0;
+  width: 260px;         
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f8f9fa; 
+  z-index: 100;        
+}
+
+/* Adjust content to avoid sidebar overlap */
+.content {
+  margin-left: 250px;   
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: calc(100% - 250px);
+}
+
+.advance-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #a3a3a3 !important;
+}
+
+.type-of-employee-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #f0f0f0;
+  padding: 4px;
+  border-radius: 30px;
+  width: 220px;   
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.type-of-employee-btn input[type="radio"] {
+  display: none;
+}
+
+.type-of-employee-btn label {
+  position: relative;
+  z-index: 2;
+  width: 50%;
+  text-align: center;
+  padding: 10px 0;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+  color: #495057;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 26px;
+}
+
+.type-of-employee-btn .selection-bg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background: #0d6832;          
+  border-radius: 26px;
+  z-index: 1;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.type-of-employee-btn label:hover {
+  color: #212529;
+}
+
+/* When STAFF is selected → move slider right */
+#staffTab:checked ~ .selection-bg {
+  transform: translateX(calc(100% + 4px));
+}
+
+/* Active label should turn white */
+#workerTab:checked + label {
+  color: white;
+  font-weight: 700;
+}
+#staffTab:checked + label {
+  color: white;
+  font-weight: 700;
+}
+
+/* =======================================
+Modal Button Styles
+========================================== */
+/* When STAFF is selected → move slider right */
+#modalStaffBtn:checked ~ .selection-bg {
+  transform: translateX(calc(100% + 4px));
+}
+
+/* Active label should turn white */
+#modalWorkerBtn:checked + label {
+  color: white;
+  font-weight: 700;
+}
+#modalStaffBtn:checked + label {
+  color: white;
+  font-weight: 700;
+}
+
+.addAdvanceBtn {
+    background-color: #0d6832;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.addAdvanceBtn:hover {
+    background-color: #095022;
+    color: white;
+}
+
+/* =======================================
+Modal Styles
+========================================== */
+.modal-dialog {
+    max-width: 1100px;
+}
+
+.modal-content {
+    background: #e6f7ec;
+    border: none;
+}
+
+.modal-header {
+    border: none;
+    background-color: #0d6832;
+    color: white;
+}
+
+.modal-list-of-group-section {
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border-radius: 15px;
+}
+
+/* Custom Scrollbar */
+.modal-list-of-group-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-list-of-group-section::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.modal-list-of-group-section::-webkit-scrollbar-thumb {
+    background: #0d6832;
+    border-radius: 10px;
+}
+
+.modal-list-of-group-section::-webkit-scrollbar-thumb:hover {
+    background: #095022;
+}
+
+.modal-list-of-employee {
+    background-color: #ffffff;
+    border-radius: 15px;
+}
+
+.filter-section {
+    background-color: #fff;
+}
+
+.filter-btn {
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 1px solid #11634b;
+    
+}
+
+.add-advance-btn {
+  background: #11634b;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.add-advance-btn:hover {
+  background: #0a5528;
+}
+
+/* =======================================
+Employee List Item Styles (for dynamically injected cards)
+======================================= */
+.list-group {
+  background-color: #ffffff;
+}
+.employee-list-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.employee-list-item:hover {
+  background-color: #f8f9fa;
+  border: 1px solid #0d6832;
+}
+
+.employee-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.employee-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  background-color: #6c757d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.employee-avatar-placeholder i {
+  font-size: 2rem;
+  color: white;
+}
+
+.employee-info {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-detail {
+  color: #6c757d;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =======================================
+View Advance Details Page Styles
+========================================== */
+
+/* Advance pagination buttons */
+#advancePagination .btn {
+  min-width: 38px !important;
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.375rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.25rem !important;
+}
+
+#advancePagination .btn-outline-success {
+  color: #0d6832 !important;
+  border-color: #0d6832 !important;
+  background-color: transparent !important;
+}
+
+#advancePagination .btn-outline-success:hover {
+  background-color: #0d6832 !important;
+  border-color: #0d6832 !important;
+  color: white !important;
+}
+
+#advancePagination .btn-success {
+  background-color: #0d6832 !important;
+  border-color: #0d6832 !important;
+  color: white !important;
+}
+
+#advancePagination .btn-success:hover {
+  background-color: #095022 !important;
+  border-color: #095022 !important;
+  color: white !important;
+}
+
+#advancePagination .btn:disabled {
+  opacity: 0.65 !important;
+  cursor: not-allowed !important;
+}
+
+/* Green pagination active state */
+.pagination .page-item.active .page-link {
+  background-color: #0d6832;
+  border-color: #0d6832;
+  color: white;
+}
+.pagination .page-item.active .page-link:hover {
+  background-color: #095022;
+  border-color: #095022;
+}
+.pagination .page-link {
+  color: #0d6832;
+}
+.pagination .page-link:hover {
+  color: #095022;
+}
+
+/* Enhanced shadows for depth */
+.details-card-body {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+}
+
+.details-card-header {
+  background-color: #0d6832 !important;
+  color: white !important;
+  border: none;
+}
+
+/* =======================================
+Filter Button Styles
+========================================== */
+.filter-btn {
+  transition: all 0.2s ease;
+  border-radius: 10px;
+  border: 1px solid #11634b;
+
+}
+
+.filter-btn.active {
+  background-color: #0d6832 !important;
+  color: white !important;
+  border-color: #0d6832 !important;
+}
+
+.filter-btn.active:hover {
+  background-color: #095022 !important;
+  border-color: #095022 !important;
+}
+
+/* Individual advance record cards */
+#advanceRecordsList .card {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+.modal-list-of-employee,
+.modal-list-of-group-section {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* =======================================
+   Mobile Responsive Styles
+========================================== */
+
+@media (max-width: 991.98px) {
+  /* Allow scrolling on mobile */
+  body, html {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .app {
+    min-height: 100vh;
+    height: auto;
+  }
+
+  /* Adjust content when sidebar is hidden on mobile */
+  .content {
+    margin-left: 0;
+    width: 100%;
+    overflow-y: visible;
+    height: auto;
+  }
+
+  /* Reduce padding on mobile */
+  .container-fluid {
+    padding: 1rem !important;
+  }
+
+  /* Employee selection responsive */
+  .employee-selection {
+    width: 100%;
+  }
+
+  .type-of-employee-btn {
+    width: 100%;
+  }
+
+  /* Add advance button wrapper full width on mobile */
+  .add-advance-btn-wrapper {
+    width: 100%;
+  }
+
+  .add-advance-btn-wrapper .addAdvanceBtn {
+    width: 100%;
+  }
+
+  /* Advance cards - adjust layout */
+  .advance-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .advance-card .d-flex.align-items-center {
+    flex-direction: column;
+    align-items: flex-start !important;
+    width: 100%;
+  }
+
+  .advance-card .d-flex.gap-4 {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+
+  .advance-card .border-start {
+    display: none;
+  }
+
+  .advance-card .d-flex.align-items-center.gap-3:last-child {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .advance-card .view-advance-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Medium mobile adjustments */
+  .type-of-employee-btn {
+    width: 100%;
+  }
+
+  /* Filter buttons wrap */
+  .filter-section {
+    flex-wrap: wrap;
+  }
+
+  .filter-section .filter-btn {
+    flex: 1 1 45%;
+    min-width: 100px;
+  }
+
+  /* Pagination wrapper */
+  #advancePaginationWrapper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* Extra small devices */
+  .topbar {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .topbar .page-title {
+    font-size: 1rem !important;
+  }
+
+  /* Employee selection smaller */
+  .type-of-employee-btn {
+    width: 100%;
+    font-size: 0.875rem;
+  }
+
+  .select-employee-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Add button smaller */
+  .addAdvanceBtn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem;
+    width: 100%;
+  }
+
+  /* Filter buttons full width */
+  .filter-section .filter-btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* Advance card compact */
+  .advance-card {
+    padding: 1rem !important;
+  }
+
+  .advance-card .fw-bold {
+    font-size: 1rem;
+  }
+
+  .advance-card .text-sm,
+  .advance-card .text-muted {
+    font-size: 0.75rem;
+  }
+
+  /* Avatar smaller */
+  .advance-card img,
+  .advance-card .rounded-circle {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  /* Pagination buttons smaller */
+  #advancePaginationWrapper .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Modal adjustments */
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  /* Search input */
+  .form-label {
+    font-size: 0.875rem;
+  }
+
+  /* View Advance Details - Back button */
+  #backBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Details container */
+  .details-container-fluid {
+    padding: 1rem !important;
+  }
+
+  /* Person summary card - stack stats */
+  .details-card-body .row.g-3 > div {
+    text-align: center;
+  }
+
+  .details-card-body .fs-4 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Advance records list */
+  #advanceRecordsList .card {
+    font-size: 0.875rem;
+  }
+
+  #advanceRecordsList .card-body {
+    padding: 0.75rem;
+  }
+
+  /* Details card header */
+  .details-card-header {
+    padding: 0.75rem !important;
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.5rem;
+  }
+
+  .details-card-header h5 {
+    font-size: 1rem;
+  }
+
+  /* Pagination in details */
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}

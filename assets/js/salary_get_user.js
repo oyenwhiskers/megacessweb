@@ -1,0 +1,220 @@
+$(document).ready(function () {
+  const USER_SALARY_API_URL = `${API_URL}/users`;
+  const token = getToken();
+
+  if (!token) {
+    console.error("Token not found. Please ensure user is authenticated.");
+    Swal.fire({
+      icon: "error",
+      title: "Authentication Required!",
+      text: "Please login first before proceeding.",
+      confirmButtonText: "Log in now."
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "/pages/log-in.html"
+      }
+    });
+    return;
+  }
+
+  const headers = {
+    "Authorization": "Bearer " + token,
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  };
+
+  let currentPage = 1;
+  let lastPage = 1;
+
+  function fetchUsers(page = 1) {
+    // Only fetch if Staff section is visible
+    if ($('#staffList').hasClass('d-none')) return;
+
+    const roleId = $("input[name='staffFilter']:checked").attr("id") || "filterAll";
+    const roleMap = { filterManager: "manager", filterChecker: "checker", filterAdmin: "admin", filterMandor: "mandor" };
+    const role = roleMap[roleId] || "";
+
+    const searchInput = $("#searchStaff").val().trim();
+
+    const params = {
+      per_page: 15,
+      page: page,
+      ...(role ? { role } : {}),
+      ...(searchInput ? { search: searchInput } : {})
+    };
+
+    // Show skeleton loaders
+    const skeletonHtml = Array(6).fill(0).map(() => `
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex gap-3 align-items-center">
+            <div class="skeleton skeleton-circle" style="width: 64px; height: 64px;"></div>
+            <div class="flex-grow-1">
+              <div class="skeleton skeleton-text" style="width: 60%; height: 20px; margin-bottom: 8px;"></div>
+              <div class="skeleton skeleton-text" style="width: 40%; height: 16px; margin-bottom: 4px;"></div>
+              <div class="skeleton skeleton-text" style="width: 50%; height: 16px;"></div>
+            </div>
+            <div class="skeleton skeleton-button" style="width: 40px; height: 32px;"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    $("#staffList .row").html(skeletonHtml);
+
+    $.ajax({
+      url: USER_SALARY_API_URL,
+      method: "GET",
+      headers: headers,
+      data: params,
+      success: function (response) {
+        if (response && response.success && Array.isArray(response.data)) {
+          renderStaff(response.data);
+          currentPage = response.meta.current_page;
+          lastPage = response.meta.last_page;
+          renderPagination();
+        } else {
+          $("#staffList .row").html('<div class="col-12 text-center text-muted">No users found</div>');
+          $("#staffPagination").remove();
+        }
+      },
+      error: function (xhr) {
+        console.error("Failed to load users:", xhr.responseText);
+        $("#staffList .row").html('<div class="col-12 text-center text-danger">Error loading users</div>');
+        $("#staffPagination").remove();
+      }
+    });
+  }
+
+  function renderStaff(users) {
+    const $row = $("#staffList .row");
+    $row.empty();
+
+    if (!users.length) {
+      $row.append('<div class="col-12 text-center text-muted">No staff found</div>');
+      return;
+    }
+
+    users.forEach(user => {
+      const id = user.id ?? "";
+      const name = user.user_nickname || user.user_fullname || "Unknown";
+      const role = user.user_role ? user.user_role.charAt(0).toUpperCase() + user.user_role.slice(1) : "Staff";
+      const img = user.user_img
+        ? (user.user_img.startsWith("http") ? user.user_img : `${STORAGE_DOMAIN}${user.user_img}`)
+        : "https://via.placeholder.com/64";
+
+      // Safely access nested base_salary property
+      let userBaseSalary = "Not set";
+      if (user.base_salary && user.base_salary.base_salary != null) {
+        userBaseSalary = user.base_salary.base_salary;
+      }
+
+      const $col = $("<div>").addClass("col-12 col-sm-6 col-md-4");
+      const $card = $(`
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex gap-3 align-items-center">
+            <img src="${img}" alt="${name}" class="rounded-circle" width="64" height="64">
+            <div class="flex-grow-1">
+              <h6 class="mb-1">${name}</h6>
+              <small class="text-muted d-block">${role}</small>
+              <small class="text-muted d-block mt-1">Base Salary: <strong>${userBaseSalary}</strong></small>
+            </div>
+            <div class="d-flex flex-column ms-auto">
+              <a href="../pages/manage-payment-rate-edit-salary-user.html?user_id=${encodeURIComponent(id)}"
+                class="btn btn-sm btn-outline-success" title="Edit base salary">
+                <i class="bi bi-pencil-fill"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      `);
+
+      $col.append($card);
+      $row.append($col);
+    });
+  }
+
+  function renderPagination() {
+    $("#staffPagination").remove();
+
+    if (lastPage <= 1) return;
+
+    const $container = $("#staffList");
+    const $pagination = $('<div id="staffPagination" class="mt-3 text-center"></div>');
+
+    // Previous button
+    const $prev = $('<button class="btn btn-sm btn-outline-success mx-1"><i class="bi bi-chevron-left"></i></button>');
+    $prev.prop("disabled", currentPage === 1);
+    $prev.on("click", () => { fetchUsers(currentPage - 1); });
+    $pagination.append($prev);
+
+    // Smart page buttons with ellipsis (max 7 buttons)
+    let pages = [];
+    if (lastPage <= 7) {
+      // Show all pages if 7 or fewer
+      pages = Array.from({ length: lastPage }, (_, i) => i + 1);
+    } else {
+      // Smart ellipsis logic
+      if (currentPage <= 4) {
+        // Near start: [1] [2] [3] [4] [5] [...] [last]
+        pages = [1, 2, 3, 4, 5, '...', lastPage];
+      } else if (currentPage >= lastPage - 3) {
+        // Near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+        pages = [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
+      } else {
+        // Middle: [1] [...] [current-1] [current] [current+1] [...] [last]
+        pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
+      }
+    }
+
+    // Render page buttons
+    pages.forEach((page) => {
+      if (page === '...') {
+        // Ellipsis (non-clickable)
+        const $ellipsis = $('<span class="btn btn-sm btn-outline-success mx-1 disabled">...</span>');
+        $pagination.append($ellipsis);
+      } else {
+        // Page button
+        const $btn = $(`<button class="btn btn-sm mx-1">${page}</button>`);
+        $btn.addClass(page === currentPage ? "btn-success" : "btn-outline-success");
+        $btn.on("click", () => { fetchUsers(page); });
+        $pagination.append($btn);
+      }
+    });
+
+    // Next button
+    const $next = $('<button class="btn btn-sm btn-outline-success mx-1"><i class="bi bi-chevron-right"></i></button>');
+    $next.prop("disabled", currentPage === lastPage);
+    $next.on("click", () => { fetchUsers(currentPage + 1); });
+    $pagination.append($next);
+
+    $container.append($pagination);
+  }
+
+  // Search + filter triggers
+  $("#searchStaff").on("input", function () {
+    const value = $(this).val().trim();
+    // Show/hide clear button
+    if (value.length > 0) {
+      $("#clearSearchStaff").show();
+    } else {
+      $("#clearSearchStaff").hide();
+    }
+    fetchUsers(1);
+  });
+
+  // Clear search button
+  $("#clearSearchStaff").on("click", function () {
+    $("#searchStaff").val("");
+    $(this).hide();
+    fetchUsers(1);
+  });
+
+  $("input[name='staffFilter']").on("change", () => fetchUsers(1));
+
+  // Initial fetch
+  fetchUsers();
+
+  // Re-fetch when Staff section becomes visible
+  $('input[name="employeeType"]').on("change", () => fetchUsers(1));
+});
+

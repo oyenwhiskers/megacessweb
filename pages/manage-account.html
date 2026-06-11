@@ -6,7 +6,9 @@
   <title>MegaCess Web • Manage Account</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="/megacessweb/assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/manageaccount.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body data-page="manage-account">
   <div class="app d-flex">
@@ -18,15 +20,494 @@
         <button class="btn btn-outline-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
       </div>
       <div class="container-fluid p-4">
-        <div class="placeholder-card text-center">
-          <h2 class="h5 mb-2">Blank Page</h2>
-          <p class="mb-0 text-muted">Manage Account content will go here.</p>
+        <!-- Employee Selection and Register Button -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between align-items-start gap-3">
+              <div class="employee-selection">
+                <div class="type-of-employee-btn" role="group" aria-label="Type of Employee">
+                  <input type="radio" class="salary-select-employee" name="accountEmployeeType" id="workerTab" autocomplete="off" checked>
+                  <label class="select-employee-btn" for="workerTab"><i class="bi bi-person-fill me-2"></i>Workers</label> 
+
+                  <input type="radio" class="salary-select-employee" name="accountEmployeeType" id="staffTab" autocomplete="off">
+                  <label class="select-employee-btn" for="staffTab"><i class="bi bi-person-badge me-2"></i>Staff</label> 
+
+                  <span class="selection-bg"></span>
+                </div>
+              </div>
+              <div>
+                <button id="registerWorkerBtn" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerWorkerModal">
+                  <i class="bi bi-plus-circle me-2"></i>Register Worker
+                </button>
+                <button id="registerStaffBtn" type="button" class="btn btn-success d-none" data-bs-toggle="modal" data-bs-target="#registerStaffModal">
+                  <i class="bi bi-plus-circle me-2"></i>Register Staff
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Search Bar -->
+        <div class="row mb-2">
+          <div class="col-12">
+            <div class="search-container">
+              <label for="accountSearch" class="fw-semibold mb-2">Search name:</label>
+              <input type="text" class="form-control form-control-lg" placeholder="Search by name..." id="accountSearch">
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Filter Buttons (Initially Hidden for Staff) -->
+        <div class="row mb-2" id="roleFilterContainer" style="display: none;">
+          <div class="col-12">
+            <div class="filter-section d-flex flex-wrap p-3 gap-2">
+              <button class="btn btn-success flex-fill py-2" id="roleFilterAll" data-role="all">
+                All
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterMandor" data-role="mandor">
+                Mandor
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterManager" data-role="manager">
+                Manager
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterChecker" data-role="checker">
+                Checker
+              </button>
+              <button class="btn btn-outline-secondary flex-fill py-2" id="roleFilterAdmin" data-role="admin">
+                Admin
+              </button>
+            </div>
+          </div>
+        </div>
+        <hr>
+        
+        <!-- List Header -->
+        <div class="row mb-3">
+          <div class="d-flex justify-content-md-between align-items-center">
+            <p class="list-title fw-semibold">List of existing workers:</p>
+          </div>
+        </div>
+
+        <!-- content views -->
+        <div id="workersView" class="view">
+          <div class="text-center py-4">
+            <div class="spinner-border text-success" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading workers list...</p>
+          </div>
+        </div>
+
+        <div id="staffView" class="view d-none">
+          <div class="text-center py-4">
+            <div class="spinner-border text-success" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading staff list...</p>
+          </div>
+        </div>
+
       </div>
     </main>
   </div>
 
+  <!-- Register Worker Modal -->
+  <div class="modal fade" id="registerWorkerModal" tabindex="-1" aria-labelledby="registerWorkerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="registerWorkerModalLabel">Register Worker</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="registerWorkerForm">
+            <div class="row justify-content-center mb-4">
+              <div class="col-auto text-center">
+                <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block; position:relative;">
+                  <img id="workerProfilePreview" src="https://ui-avatars.com/api/?name=Worker&background=6c757d&color=fff&size=128&bold=true&rounded=true" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
+                  <input type="file" id="workerProfileImageInput" name="profile_image" accept="image/*" style="display:none;">
+                  <button type="button" class="btn btn-sm btn-primary mt-2" onclick="document.getElementById('workerProfileImageInput').click()">
+                    <i class="bi bi-camera"></i> Choose Photo
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">IC / Document ID:</label>
+                <input type="text" class="form-control" name="staff_doc" required placeholder="Enter IC or Document ID">
+                <div class="invalid-feedback">Please provide a valid IC or Document ID.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">No IC (Optional):</label>
+                <input type="text" class="form-control" name="staff_ic" placeholder="e.g., 900101-12-1234">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Full Name:</label>
+                <input type="text" class="form-control" name="fullname" required placeholder="Enter full name" minlength="2">
+                <div class="invalid-feedback">Please provide a valid full name (minimum 2 characters).</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Number:</label>
+                <input type="tel" class="form-control" name="phone" required placeholder="+60123456789">
+                <div class="invalid-feedback">Please provide a valid phone number.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Date Of Birth:</label>
+                <input type="date" class="form-control" name="dob" required max="">
+                <div class="invalid-feedback">Please provide a valid date of birth.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Gender:</label>
+                <select class="form-select" name="gender" required>
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+                <div class="invalid-feedback">Please select a gender.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Role:</label>
+                <select class="form-select" name="designation" required>
+                  <option value="">Select Role</option>
+                  <option value="harvester">Harvester</option>
+                  <option value="operator">Operator</option>
+                  <option value="maintenance">Maintenance</option>
+                </select>
+                <div class="invalid-feedback">Please select a role.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Bank Type:</label>
+                <input type="text" class="form-control" name="banktype" placeholder="e.g., Maybank, CIMB (optional)">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Bank Account Number:</label>
+                <input type="text" class="form-control" name="bankaccount" placeholder="Enter bank account number (optional)" pattern="[0-9\-]+">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">KWSP Number:</label>
+                <input type="text" class="form-control" name="kwsp" placeholder="Enter KWSP number (optional)" pattern="[0-9\-]+">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Start Date:</label>
+                <input type="date" class="form-control" name="staff_employment_start_date" required>
+                <div class="invalid-feedback">Please provide a valid start date.</div>
+              </div>
+            </div>
+            <div class="mt-4 text-end">
+              <button type="submit" class="btn btn-success">Create</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Staff Modal -->
+  <div class="modal fade" id="registerStaffModal" tabindex="-1" aria-labelledby="registerStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="registerStaffModalLabel">Register Staff</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="registerStaffForm">
+            <div class="row justify-content-center mb-4">
+              <div class="col-auto text-center">
+                <div style="border:2px solid #aaa; border-radius:8px; padding:10px; display:inline-block; position:relative;">
+                  <img id="staffProfilePreview" src="https://ui-avatars.com/api/?name=Staff&background=0d6efd&color=fff&size=128&bold=true&rounded=true" alt="Profile" style="width:90px; height:90px; object-fit:cover; border-radius:8px; background:#fff;">
+                  <input type="file" id="staffProfileImageInput" name="profile_image" accept="image/*" style="display:none;">
+                  <button type="button" class="btn btn-sm btn-primary mt-2" onclick="document.getElementById('staffProfileImageInput').click()">
+                    <i class="bi bi-camera"></i> Choose Photo
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">IC / Document ID:</label>
+                <input type="text" class="form-control" name="ic" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Full Name:</label>
+                <input type="text" class="form-control" name="fullname" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Nickname:</label>
+                <input type="text" class="form-control" name="nickname">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Number:</label>
+                <input type="text" class="form-control" name="phone" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Date Of Birth:</label>
+                <input type="date" class="form-control" name="dob" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Gender:</label>
+                <select class="form-select" name="gender" required>
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Role:</label>
+                <select class="form-select" name="role" required>
+                  <option value="">Select Role</option>
+                  <option value="manager">Manager</option>
+                  <option value="mandor">Mandor</option>
+                  <option value="checker">Checker</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Password:</label>
+                <input type="password" class="form-control" name="password" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Bank Type:</label>
+                <input type="text" class="form-control" name="banktype">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Bank Account Number:</label>
+                <input type="text" class="form-control" name="bankaccount">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">KWSP Number:</label>
+                <input type="text" class="form-control" name="kwsp">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Start Date:</label>
+                <input type="date" class="form-control" name="user_employment_start_date" required>
+                <div class="invalid-feedback">Please provide a valid start date.</div>
+              </div>
+            </div>
+            <div class="mt-4 text-end">
+              <button type="submit" class="btn btn-success">Create</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/megacessweb/assets/js/main.js"></script>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/staff_list.js?v=1.1"></script>
+  <script src="../assets/js/worker_list.js"></script>
+  <script src="../assets/js/register_staff.js"></script>
+  <script src="../assets/js/register_worker.js"></script>
+  <script src="../assets/js/logout.js"></script>
+
+  <script>
+    // Image preview functionality for Worker registration
+    (function() {
+      const workerImageInput = document.getElementById('workerProfileImageInput');
+      const workerImagePreview = document.getElementById('workerProfilePreview');
+      
+      if (workerImageInput && workerImagePreview) {
+        workerImageInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+              alert('Please select a valid image file.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+              alert('Image size must be less than 5MB.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              workerImagePreview.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    })();
+
+    // Image preview functionality for Staff registration
+    (function() {
+      const staffImageInput = document.getElementById('staffProfileImageInput');
+      const staffImagePreview = document.getElementById('staffProfilePreview');
+      
+      if (staffImageInput && staffImagePreview) {
+        staffImageInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+              alert('Please select a valid image file.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+              alert('Image size must be less than 5MB.');
+              e.target.value = '';
+              return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              staffImagePreview.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    })();
+  </script>
+
+  <script>
+    // Wrap in DOMContentLoaded to ensure all external scripts are loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      (function(){
+        const workerRadio = document.getElementById('workerTab');
+        const staffRadio = document.getElementById('staffTab');
+        const views = {
+          workers: document.getElementById('workersView'),
+          staff: document.getElementById('staffView')
+        };
+        const registerStaffBtn = document.getElementById('registerStaffBtn');
+        const registerWorkerBtn = document.getElementById('registerWorkerBtn');
+        const roleFilterContainer = document.getElementById('roleFilterContainer');
+        const genderFilterContainer = document.getElementById('genderFilterContainer');
+        const listTitle = document.querySelector('.list-title');
+        let currentRoleFilter = 'all';
+
+        // Helper to get current type
+        function getCurrentType() {
+          return workerRadio.checked ? 'workers' : 'staff';
+        }
+
+        function show(type){
+          // show/hide views
+          Object.keys(views).forEach(k => {
+            const el = views[k];
+            if (!el) return;
+            if (k === type) el.classList.remove('d-none');
+            else el.classList.add('d-none');
+          });
+          
+          // Update list title
+          if (listTitle) {
+            listTitle.textContent = type === 'workers' ? 'List of existing workers:' : 'List of existing staff:';
+          }
+          
+          // show/hide Register Staff button
+          if (registerStaffBtn) {
+            if (type === 'staff') registerStaffBtn.classList.remove('d-none');
+            else registerStaffBtn.classList.add('d-none');
+          }
+          // show/hide Register Worker button
+          if (registerWorkerBtn) {
+            if (type === 'workers') registerWorkerBtn.classList.remove('d-none');
+            else registerWorkerBtn.classList.add('d-none');
+          }
+          
+          // show/hide role filter container (for staff)
+          if (roleFilterContainer) {
+            if (type === 'staff') {
+              roleFilterContainer.style.display = '';
+            } else {
+              roleFilterContainer.style.display = 'none';
+            }
+          }
+          
+          // when staff view is shown, trigger staff list load
+          if (type === 'staff' && window.fetchStaffList) {
+            const searchEl = document.getElementById('accountSearch');
+            window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
+          }
+          // when workers view is shown, trigger worker list load
+          if (type === 'workers' && window.fetchWorkersList) {
+            const searchEl = document.getElementById('accountSearch');
+            window.fetchWorkersList(searchEl ? searchEl.value : '', 1);
+          }
+        }
+
+        // Role filter logic (for staff)
+        if (roleFilterContainer) {
+          roleFilterContainer.addEventListener('click', function(e) {
+            if (e.target && e.target.matches('button[data-role]')) {
+              // Set active class
+              roleFilterContainer.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+              });
+              e.target.classList.remove('btn-outline-secondary');
+              e.target.classList.add('btn-success');
+              currentRoleFilter = e.target.getAttribute('data-role');
+              // Reload staff list with new filter
+              if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+                const searchEl = document.getElementById('accountSearch');
+                window.fetchStaffList(searchEl ? searchEl.value : '', currentRoleFilter);
+              }
+            }
+          });
+        }
+
+        // Search bar logic
+        const searchInput = document.getElementById('accountSearch');
+        if (searchInput) {
+          // On input (debounced)
+          let debounceTimer = null;
+          searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+              if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+                window.fetchStaffList(searchInput.value, currentRoleFilter);
+              } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
+                window.fetchWorkersList(searchInput.value, 1);
+              }
+            }, 300);
+          });
+          // On Enter key
+          searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              if (!views.staff.classList.contains('d-none') && window.fetchStaffList) {
+                window.fetchStaffList(searchInput.value, currentRoleFilter);
+              } else if (!views.workers.classList.contains('d-none') && window.fetchWorkersList) {
+                window.fetchWorkersList(searchInput.value, 1);
+              }
+            }
+          });
+        }
+
+        // Radio button change events
+        if (workerRadio) {
+          workerRadio.addEventListener('change', function() {
+            if (this.checked) show('workers');
+          });
+        }
+        
+        if (staffRadio) {
+          staffRadio.addEventListener('change', function() {
+            if (this.checked) show('staff');
+          });
+        }
+
+        // initial state
+        show('workers');
+      })();
+    });
+  </script>
 </body>
 </html>
+
