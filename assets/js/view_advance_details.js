@@ -150,15 +150,70 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="text-muted small">Remarks</div>
                 <div>${advance.loan_remarks || '-'}</div>
               </div>
-              <div class="col-12">
+              <div class="col-12 mb-3">
                 <div class="text-muted small">Created At</div>
                 <div class="small">${formatDate(advance.created_at)}</div>
+              </div>
+              <div class="col-12 d-flex justify-content-end gap-2 border-top pt-2">
+                <button type="button" class="btn btn-sm btn-outline-primary edit-btn" data-id="${advance.loan_id}">
+                  <i class="bi bi-pencil-square me-1"></i> Edit
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${advance.loan_id}">
+                  <i class="bi bi-trash me-1"></i> Delete
+                </button>
               </div>
             </div>
           </div>
         </div>
       `;
     }).join('');
+
+    // Attach event listeners to Edit and Delete buttons
+    advanceRecordsList.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const loanId = parseInt(this.getAttribute('data-id'));
+        const advance = allAdvances.find(a => a.loan_id === loanId);
+        if (advance) {
+          document.getElementById('editLoanId').value = advance.loan_id;
+          
+          let loanDate = advance.loan_date;
+          if (loanDate && loanDate.includes('T')) {
+            loanDate = loanDate.split('T')[0];
+          } else if (loanDate) {
+            const d = new Date(loanDate);
+            if (!isNaN(d.getTime())) {
+              loanDate = d.toISOString().split('T')[0];
+            }
+          }
+          document.getElementById('editAdvanceDate').value = loanDate;
+          document.getElementById('editAdvanceAmount').value = advance.loan_amount;
+          document.getElementById('editAdvancePaidAmount').value = advance.loan_paid_amount;
+          document.getElementById('editAdvanceStatus').value = advance.loan_status;
+          document.getElementById('editAdvanceRemarks').value = advance.loan_remarks || '';
+          
+          const modal = new bootstrap.Modal(document.getElementById('editAdvanceModal'));
+          modal.show();
+        }
+      });
+    });
+
+    advanceRecordsList.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const loanId = this.getAttribute('data-id');
+        showConfirm('This advance record will be permanently deleted.', async () => {
+          try {
+            await apiFetch(`/advances/${type}/record/${loanId}`, {
+              method: 'DELETE'
+            });
+            clearApiCache('advances');
+            showSuccess('Deleted!', 'Advance record has been deleted.');
+            fetchAdvanceDetails();
+          } catch (err) {
+            showError(err.message || 'Failed to delete advance record.');
+          }
+        });
+      });
+    });
 
     // Update pagination info
     const startRecord = startIndex + 1;
@@ -258,6 +313,53 @@ document.addEventListener('DOMContentLoaded', function () {
     errorMessage.textContent = message;
     errorMessage.classList.remove('d-none');
     contentArea.classList.add('d-none');
+  }
+
+  // Handle edit form submit
+  const editAdvanceForm = document.getElementById('editAdvanceForm');
+  if (editAdvanceForm) {
+    editAdvanceForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const loanId = document.getElementById('editLoanId').value;
+      const loanDate = document.getElementById('editAdvanceDate').value;
+      const loanAmount = document.getElementById('editAdvanceAmount').value;
+      const loanPaidAmount = document.getElementById('editAdvancePaidAmount').value;
+      const loanStatus = document.getElementById('editAdvanceStatus').value;
+      const loanRemarks = document.getElementById('editAdvanceRemarks').value;
+
+      try {
+        const payload = {
+          loan_date: loanDate,
+          loan_amount: parseFloat(loanAmount),
+          loan_paid_amount: parseFloat(loanPaidAmount),
+          loan_status: loanStatus,
+          loan_remarks: loanRemarks
+        };
+
+        await apiFetch(`/advances/${type}/record/${loanId}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        });
+
+        clearApiCache('advances');
+        showSuccess('Saved!', 'Advance record has been updated.');
+        
+        // Hide modal
+        const modalEl = document.getElementById('editAdvanceModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+          modal.hide();
+        } else {
+          // If instance not initialized/found by getInstance
+          const newModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+          newModal.hide();
+        }
+
+        fetchAdvanceDetails();
+      } catch (err) {
+        showError(err.message || 'Failed to update advance record.');
+      }
+    });
   }
 
   // Initial load

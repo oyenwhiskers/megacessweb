@@ -88,8 +88,8 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
 
         try {
-            // Construct the summary URL with query parameters
-            const summaryUrl = `${SUMMARY_PAGE_URL}?month=${month}&year=${year}`;
+            // Construct the summary URL with query parameters and cache-buster
+            const summaryUrl = `${SUMMARY_PAGE_URL}?month=${month}&year=${year}&_t=${Date.now()}`;
 
             // Create iframe with the backend summary page
             summaryContent.innerHTML = `
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 class="w-100 border-0 rounded" 
                                 style="min-height: 1000px;"
                                 title="Monthly Summary"
-                                onload="this.style.height = (this.contentWindow.document.body.scrollHeight + 50) + 'px';">
+                                onload="try { this.style.height = (this.contentWindow.document.body.scrollHeight + 50) + 'px'; } catch (e) { this.style.height = '1200px'; }">
                         </iframe>
                     </div>
                 </div>

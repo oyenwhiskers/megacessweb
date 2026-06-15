@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
         hideSuggestions();
 
         const token = getAuthToken();
-        const endpoint = type === 'worker' ? `${API_URL}/staff` : `${API_URL}/users`;
+        const endpoint = type === 'worker' ? `${API_URL}/staff?per_page=10000` : `${API_URL}/users?per_page=10000`;
 
         try {
             const response = await fetch(endpoint, {
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-        const summaryUrl = `${SUMMARY_PAGE_URL}?month=${month}&year=${year}&owner_type=${ownerType}&owner_id=${ownerId}`;
+        const summaryUrl = `${SUMMARY_PAGE_URL}?month=${month}&year=${year}&owner_type=${ownerType}&owner_id=${ownerId}&_t=${Date.now()}`;
 
         summaryContent.innerHTML = `
             <div class="card shadow-sm">
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             class="w-100 border-0 rounded" 
                             style="min-height: 800px;"
                             title="Individual Summary"
-                            onload="this.style.height = (this.contentWindow.document.body.scrollHeight + 50) + 'px';">
+                            onload="try { this.style.height = (this.contentWindow.document.body.scrollHeight + 50) + 'px'; } catch (e) { this.style.height = '1200px'; }">
                     </iframe>
                 </div>
             </div>

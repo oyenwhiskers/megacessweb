@@ -1,4 +1,4 @@
-const CACHE_NAME = 'megacess-static-v4';
+const CACHE_NAME = 'megacess-static-v6';
 const ASSETS_TO_CACHE = [
     // Pages (Core)
     './index.html',
@@ -90,8 +90,13 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Fetch Event - Network First for API, Cache First for Static
+// Fetch Event - Network First, Fallback to Cache
 self.addEventListener('fetch', event => {
+    // Only handle GET requests
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
     const url = new URL(event.request.url);
 
     // 1. API Calls: Network Only (or handled by apiFetchWithCache in app logic)
@@ -100,30 +105,22 @@ self.addEventListener('fetch', event => {
         return; // Let the browser/app handle it (Network Only)
     }
 
-    // 2. Static Assets: Cache First, Fallback to Network
+    // 2. Static Assets & Pages: Network First, Fallback to Cache
     event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    return response; // Return cached hit
+        fetch(event.request)
+            .then(networkResponse => {
+                // If valid response and is http/https scheme, update the cache
+                if (networkResponse && networkResponse.status === 200 && (url.protocol === 'http:' || url.protocol === 'https:')) {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseToCache);
+                    });
                 }
-                return fetch(event.request).then(networkResponse => {
-                    // Optional: Runtime cache for other assets not in ASSETS_TO_CACHE
-                    // Check if valid response and is a static asset we missed
-                    if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-                        return networkResponse;
-                    }
-
-                    // Simple logic: if it's in assets folder, cache it for next time
-                    if (url.pathname.startsWith('/assets/')) {
-                        const responseToCache = networkResponse.clone();
-                        caches.open(CACHE_NAME).then(cache => {
-                            cache.put(event.request, responseToCache);
-                        });
-                    }
-
-                    return networkResponse;
-                });
+                return networkResponse;
+            })
+            .catch(() => {
+                // If offline / server down, serve from cache
+                return caches.match(event.request);
             })
     );
 });

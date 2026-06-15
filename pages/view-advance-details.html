@@ -84,6 +84,56 @@
     </main>
   </div>
 
+  <!-- Edit Advance Modal -->
+  <div class="modal fade" id="editAdvanceModal" tabindex="-1" aria-labelledby="editAdvanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header pb-3">
+          <h5 class="modal-title fw-bold" id="editAdvanceModalLabel">Edit Advance Record</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editAdvanceForm">
+            <input type="hidden" id="editLoanId">
+            <div class="mb-3">
+              <label for="editAdvanceDate" class="form-label fw-bold">Date:</label>
+              <input type="date" class="form-control" id="editAdvanceDate" required>
+            </div>
+            <div class="mb-3">
+              <label for="editAdvanceAmount" class="form-label fw-bold">Amount:</label>
+              <div class="input-group">
+                <span class="input-group-text">RM</span>
+                <input type="number" step="0.01" class="form-control" id="editAdvanceAmount" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="editAdvancePaidAmount" class="form-label fw-bold">Paid Amount:</label>
+              <div class="input-group">
+                <span class="input-group-text">RM</span>
+                <input type="number" step="0.01" class="form-control" id="editAdvancePaidAmount" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="editAdvanceStatus" class="form-label fw-bold">Status:</label>
+              <select class="form-select" id="editAdvanceStatus" required>
+                <option value="not_paid">Not Paid</option>
+                <option value="partially_paid">Partially Paid</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="editAdvanceRemarks" class="form-label fw-bold">Remarks:</label>
+              <textarea class="form-control" id="editAdvanceRemarks" rows="3" placeholder="Enter remarks.."></textarea>
+            </div>
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-success fw-bold px-3 py-2">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../assets/js/config.js"></script>
   <script src="../assets/js/main.js"></script>
