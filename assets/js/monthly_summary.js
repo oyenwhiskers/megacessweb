@@ -77,33 +77,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Load summary content using iframe
     function loadSummary(month, year) {
-        // Show loading state
-        summaryContent.innerHTML = `
-            <div class="text-center py-5">
-                <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="text-muted fs-5">Loading summary for ${getMonthName(month)} ${year}...</p>
-            </div>
-        `;
-
         try {
             // Construct the summary URL with query parameters and cache-buster
             const summaryUrl = `${SUMMARY_PAGE_URL}?month=${month}&year=${year}&_t=${Date.now()}`;
 
-            // Create iframe with the backend summary page
+            // Create iframe with the backend summary page and show loading spinner first
             summaryContent.innerHTML = `
-                <div class="card shadow-sm">
+                <div class="card shadow-sm position-relative">
+                    <div id="iframeSpinner" class="text-center py-5">
+                        <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted fs-5">Loading summary for ${getMonthName(month)} ${year}...</p>
+                    </div>
                     <div class="card-body p-0">
                         <iframe src="${summaryUrl}" 
-                                class="w-100 border-0 rounded" 
+                                id="summaryIframe"
+                                class="w-100 border-0 rounded d-none" 
                                 style="min-height: 1000px;"
-                                title="Monthly Summary"
-                                onload="try { this.style.height = (this.contentWindow.document.body.scrollHeight + 50) + 'px'; } catch (e) { this.style.height = '1200px'; }">
+                                title="Monthly Summary">
                         </iframe>
                     </div>
                 </div>
             `;
+
+            const iframe = document.getElementById('summaryIframe');
+            const spinner = document.getElementById('iframeSpinner');
+
+            iframe.onload = function () {
+                try {
+                    iframe.style.height = (iframe.contentWindow.document.body.scrollHeight + 50) + 'px';
+                } catch (e) {
+                    iframe.style.height = '1200px';
+                }
+                if (spinner) spinner.classList.add('d-none');
+                iframe.classList.remove('d-none');
+            };
 
             // Update UI
             updateViewLabel(month, year);

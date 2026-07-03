@@ -156,12 +156,19 @@ function showConfirm(message, callbackYes) {
 
 // ==================== DOM HELPERS ====================
 function showLoading() {
-  const overlay = document.getElementById("loadingOverlay");
-  if (overlay) {
-    overlay.classList.remove("d-none");
-  } else {
-    console.warn("showLoading: #loadingOverlay not found");
+  let overlay = document.getElementById("loadingOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "loadingOverlay";
+    overlay.className = "loading-overlay d-none";
+    overlay.innerHTML = `
+      <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    `;
+    document.body.appendChild(overlay);
   }
+  overlay.classList.remove("d-none");
 }
 
 function hideLoading() {

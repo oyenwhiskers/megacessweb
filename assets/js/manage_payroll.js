@@ -1380,6 +1380,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const selectedMonth = payslipMonth.value;
             if (!selectedMonth || selectedMonth === 'select month') return;
 
+            // Show page-level loading spinner during calculation fetch
+            window.showLoading();
+
             const tbody = document.getElementById('deductionTableBody');
             // Remove existing auto-calculated deduction rows before adding new ones
             tbody.querySelectorAll('tr[data-auto="true"]').forEach(tr => tr.remove());
@@ -1399,6 +1402,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
                 const result = await response.json();
+                
+                // Hide page-level loading spinner
+                window.hideLoading();
+
                 if (response.ok && result.success && result.data) {
                     const data = result.data;
 
@@ -1408,7 +1415,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const autoTaskIncome = parseFloat(data.task_income || 0).toFixed(2);
                         taskIncomeHintEl.textContent = `Auto-calculated from tasks: RM ${autoTaskIncome}`;
                         const taskIncomeEl = document.getElementById('taskIncomeOverride');
-                        if (taskIncomeEl && parseFloat(taskIncomeEl.value || 0) === 0) {
+                        if (taskIncomeEl) {
                             taskIncomeEl.value = autoTaskIncome;
                         }
                     }
@@ -1419,12 +1426,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         const autoOvertime = parseFloat(data.overtime_earnings.total_amount || 0).toFixed(2);
                         overtimeHintEl.textContent = `Auto-calculated from overtime: RM ${autoOvertime}`;
                         const overtimeEl = document.getElementById('overtimeIncomeOverride');
-                        if (overtimeEl && parseFloat(overtimeEl.value || 0) === 0) {
+                        if (overtimeEl) {
                             overtimeEl.value = autoOvertime;
                         }
                     }
                 }
             } catch (err) {
+                window.hideLoading();
                 console.error('Error fetching payroll preview:', err);
             }
         };
@@ -1634,9 +1642,18 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (e.target && e.target.id === 'generatePayslip') {
                 // Only open payslip modal here, using stored worker data
                 if (currentPayslipWorkerData) {
-                    fillPayslipModal(currentPayslipWorkerData);
-                    var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
-                    payslipModal.show();
+                    (async function () {
+                        try {
+                            window.showLoading();
+                            await fillPayslipModal(currentPayslipWorkerData);
+                            window.hideLoading();
+                            var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
+                            payslipModal.show();
+                        } catch (err) {
+                            window.hideLoading();
+                            console.error('Failed to fill payslip modal:', err);
+                        }
+                    })();
                 }
             } else if (e.target.closest('button[data-payslip-id]')) {
                 const btn = e.target.closest('button[data-payslip-id]');
@@ -1660,6 +1677,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (result.isConfirmed) {
                                 (async function () {
                                     try {
+                                        window.showLoading();
                                         const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
                                         if (!AUTH_TOKEN) throw new Error('No auth token');
                                         let url;
@@ -1677,6 +1695,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             }
                                         });
                                         const response = await res.json();
+                                        window.hideLoading();
                                         if (res.ok && response.success) {
                                             Swal.fire({
                                                 icon: 'success',
@@ -1711,6 +1730,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             });
                                         }
                                     } catch (err) {
+                                        window.hideLoading();
                                         Swal.fire({
                                             icon: 'error',
                                             title: 'Error',
@@ -1751,9 +1771,18 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (e.target && e.target.id === 'generatePayslip') {
             // Only open payslip modal here, using stored worker data
             if (currentPayslipWorkerData) {
-                fillPayslipModal(currentPayslipWorkerData);
-                var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
-                payslipModal.show();
+                (async function () {
+                    try {
+                        window.showLoading();
+                        await fillPayslipModal(currentPayslipWorkerData);
+                        window.hideLoading();
+                        var payslipModal = new bootstrap.Modal(document.getElementById('payslipModal'));
+                        payslipModal.show();
+                    } catch (err) {
+                        window.hideLoading();
+                        console.error('Failed to fill payslip modal:', err);
+                    }
+                })();
             }
         } else if (e.target.closest('button[data-payslip-id]')) {
             const btn = e.target.closest('button[data-payslip-id]');
@@ -1777,6 +1806,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (result.isConfirmed) {
                             (async function () {
                                 try {
+                                    window.showLoading();
                                     const AUTH_TOKEN = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || null;
                                     if (!AUTH_TOKEN) throw new Error('No auth token');
                                     let url;
@@ -1794,6 +1824,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         }
                                     });
                                     const response = await res.json();
+                                    window.hideLoading();
                                     if (res.ok && response.success) {
                                         Swal.fire({
                                             icon: 'success',
@@ -1828,6 +1859,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         });
                                     }
                                 } catch (err) {
+                                    window.hideLoading();
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Error',
@@ -1977,6 +2009,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
 
+                // Show page-level loading overlay
+                window.showLoading();
+
                 // Gather deductions as objects with deduction_type and deduction_amount
                 const deductionRows = document.querySelectorAll('#deductionTableBody tr');
                 const deductions = [];
@@ -2073,6 +2108,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Generate payslip using refactored function
                 const result = await generateStaffPayslip(currentPayslipWorkerId, payload);
 
+                // Hide page-level loading overlay
+                window.hideLoading();
+
                 if (result.success) {
                     Swal.fire({
                         icon: 'success',
@@ -2103,6 +2141,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const modal = bootstrap.Modal.getInstance(payslipModalEl);
                 modal?.hide();
             } catch (err) {
+                // Hide page-level loading overlay
+                window.hideLoading();
                 alert(`Error: ${err.message}`);
             }
         };

@@ -249,17 +249,16 @@ function renderTaskEditor(task) {
         <textarea class="form-control" id="description" rows="3" readonly>${task.description || ''}</textarea>
       </div>
 
-      <!-- <div class="mb-3">
+      <div class="mb-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <label class="form-label fw-bold mb-0">Categories & Rates</label>
-          <button class="btn btn-sm btn-success fw-semibold py-1 px-3" id="addCategoryBtn" type="button">
+          <button class="btn btn-sm btn-success fw-semibold py-1 px-3 d-none" id="addCategoryBtn" type="button">
             <i class="bi bi-plus-circle me-1"></i> Add Category
           </button>
-        </div> -->
+        </div>
         <hr>
         ${categoryHtml || '<p class="text-muted">No categories defined</p>'}
       </div>
-
       <div class="text-end">
         <button class="btn btn-success d-none" id="saveChangesBtn">Save Changes</button>
       </div>
@@ -280,10 +279,12 @@ function renderTaskEditor(task) {
     if (!isEditing) {
       $(this).text('Cancel').data('editing', true);
       $('#saveChangesBtn').removeClass('d-none');
+      $('#addCategoryBtn').removeClass('d-none');
       $editor.find('input, textarea').removeAttr('readonly').removeAttr('disabled');
     } else {
       $(this).text('Edit').data('editing', false);
       $('#saveChangesBtn').addClass('d-none');
+      $('#addCategoryBtn').addClass('d-none');
       $editor.find('input, textarea').attr('readonly', true);
       $editor.find('input[type="checkbox"], input[type="number"], input[type="text"]').attr('disabled', true);
       renderTaskEditor(task);
@@ -791,4 +792,367 @@ function appendNewCategoryBlock(c) {
   // append to the categories container used in renderTaskEditor
   $('#workSection .task-editor .card-body').find('.mb-3').last().after(block);
 }
+
+/* -------------------- Add Payment Rate Modal -------------------- */
+function ensureAddPaymentRateModalExists() {
+  if ($('#addPaymentRateModal').length) return;
+
+  const modalHtml = `
+  <div class="modal fade" id="addPaymentRateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-semibold">Add New Payment Rate</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+          <form id="createPaymentRateModalForm">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Task Name *:</label>
+              <input type="text" id="modal_task_name" class="form-control" placeholder="Insert task name.." required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Description:</label>
+              <textarea id="modal_description" class="form-control" placeholder="Insert description (optional).."></textarea>
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0 fw-bold">Payment Rate Categories</h6>
+              <button type="button" class="btn btn-sm btn-success" id="modalAddCategoryBtn">
+                <i class="bi bi-plus-circle"></i> Add Category
+              </button>
+            </div>
+
+            <div id="modalCategorySection">
+              <!-- Default Category 1 -->
+              <div class="modal-category-card card mb-3">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="modal-category-title mb-0"><strong>Category 1</strong></h6>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Category Name *:</label>
+                    <input type="text" class="form-control m-category-name" placeholder="e.g. Normal Pruning" required>
+                  </div>
+
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Rate (RM) *:</label>
+                      <input type="number" step="any" class="form-control m-category-rate" placeholder="e.g. 4.00" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Unit *:</label>
+                      <input type="text" class="form-control m-category-unit" placeholder="per palm" required>
+                    </div>
+                  </div>
+
+                  <hr>
+                  <h6 class="mb-2">Condition (optional)</h6>
+                  <div class="row">
+                    <div class="col-md-3 mb-2">
+                      <label class="form-label small">Type</label>
+                      <input type="text" class="form-control m-condition-type" placeholder="e.g. weight">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="form-label small">Min</label>
+                      <input type="number" class="form-control m-condition-min" placeholder="0">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="form-label small">Max</label>
+                      <input type="number" class="form-control m-condition-max" placeholder="30">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="form-label small">Unit</label>
+                      <input type="text" class="form-control m-condition-unit" placeholder="kg">
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-md-12">
+                      <label class="form-label small">Display Order</label>
+                      <input type="number" class="form-control m-category-order" value="0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="submitCreateRateBtn" class="btn btn-success">Create Payment Rate</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  $('body').append(modalHtml);
+
+  // Wire modal Category Add
+  $('#modalAddCategoryBtn').on('click', function () {
+    const categoryCount = $('.modal-category-card').length + 1;
+    const cardHtml = `
+      <div class="modal-category-card card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="modal-category-title mb-0"><strong>Category ${categoryCount}</strong></h6>
+            <button type="button" class="btn btn-sm btn-danger remove-modal-category-btn">
+              <i class="bi-trash"></i> Remove
+            </button>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Category Name *:</label>
+            <input type="text" class="form-control m-category-name" placeholder="e.g. Normal Pruning" required>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Rate (RM) *:</label>
+              <input type="number" step="any" class="form-control m-category-rate" placeholder="e.g. 4.00" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Unit *:</label>
+              <input type="text" class="form-control m-category-unit" placeholder="per palm" required>
+            </div>
+          </div>
+
+          <hr>
+          <h6 class="mb-2">Condition (optional)</h6>
+          <div class="row">
+            <div class="col-md-3 mb-2">
+              <label class="form-label small">Type</label>
+              <input type="text" class="form-control m-condition-type" placeholder="e.g. weight">
+            </div>
+            <div class="col-md-3 mb-2">
+              <label class="form-label small">Min</label>
+              <input type="number" class="form-control m-condition-min" placeholder="0">
+            </div>
+            <div class="col-md-3 mb-2">
+              <label class="form-label small">Max</label>
+              <input type="number" class="form-control m-condition-max" placeholder="30">
+            </div>
+            <div class="col-md-3 mb-2">
+              <label class="form-label small">Unit</label>
+              <input type="text" class="form-control m-condition-unit" placeholder="kg">
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-md-12">
+              <label class="form-label small">Display Order</label>
+              <input type="number" class="form-control m-category-order" value="${categoryCount - 1}">
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    $('#modalCategorySection').append(cardHtml);
+  });
+
+  // Wire modal Category Remove
+  $('#modalCategorySection').on('click', '.remove-modal-category-btn', function () {
+    $(this).closest('.modal-category-card').remove();
+    // Re-label
+    $('.modal-category-card').each(function (idx) {
+      $(this).find('.modal-category-title strong').text(`Category ${idx + 1}`);
+    });
+  });
+
+  // Wire Modal Submit
+  $('#submitCreateRateBtn').on('click', async function () {
+    const taskName = $('#modal_task_name').val().trim();
+    const desc = $('#modal_description').val().trim();
+
+    if (!taskName) {
+      Swal.fire({ icon: 'warning', text: 'Task Name is required.' });
+      return;
+    }
+
+    const categories = [];
+    let isValid = true;
+    const errors = [];
+
+    $('.modal-category-card').each(function (idx) {
+      const catName = $(this).find('.m-category-name').val().trim();
+      const rateVal = $(this).find('.m-category-rate').val();
+      const unitVal = $(this).find('.m-category-unit').val().trim();
+      const orderVal = parseInt($(this).find('.m-category-order').val()) || 0;
+
+      if (!catName || !rateVal || !unitVal) {
+        isValid = false;
+        errors.push(`Category ${idx + 1} is missing required fields (Name, Rate, or Unit).`);
+        return;
+      }
+
+      const type = $(this).find('.m-condition-type').val().trim();
+      const minVal = $(this).find('.m-condition-min').val();
+      const maxVal = $(this).find('.m-condition-max').val();
+      const condUnit = $(this).find('.m-condition-unit').val().trim();
+
+      const hasMinOrMax = (minVal !== "" && minVal !== null && typeof minVal !== 'undefined') ||
+        (maxVal !== "" && maxVal !== null && typeof maxVal !== 'undefined');
+
+      if (hasMinOrMax && !type) {
+        isValid = false;
+        errors.push(`Category ${idx + 1} has min/max values but no Condition Type specified.`);
+        return;
+      }
+
+      let conditions = null;
+      if (type) {
+        const c = {};
+        if (minVal !== "") {
+          const parsed = parseFloat(minVal);
+          if (!Number.isNaN(parsed)) c[`min_${type}`] = parsed;
+        }
+        if (maxVal !== "") {
+          const parsed2 = parseFloat(maxVal);
+          if (!Number.isNaN(parsed2)) c[`max_${type}`] = parsed2;
+        }
+        if (condUnit) c.unit = condUnit;
+        if (Object.keys(c).length > 0) conditions = c;
+      }
+
+      categories.push({
+        category_name: catName,
+        category_key: catName.toLowerCase().replace(/\s+/g, '_'),
+        rate: parseFloat(rateVal),
+        unit: unitVal,
+        display_order: orderVal,
+        conditions: conditions
+      });
+    });
+
+    if (categories.length === 0) {
+      isValid = false;
+      errors.push("You must define at least one category.");
+    }
+
+    if (!isValid) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        html: `<ul class="text-start">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`
+      });
+      return;
+    }
+
+    const token = getToken();
+    if (!token) return;
+
+    const bodyData = {
+      task_name: taskName,
+      description: desc,
+      categories: categories
+    };
+
+    try {
+      const res = await fetch(PAYMENT_RATES_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(bodyData)
+      });
+
+      const json = await res.json();
+
+      if (json.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Payment Rate Created!",
+          text: "The task rate and its categories have been added.",
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        // Reset form & close modal
+        $('#createPaymentRateModalForm')[0].reset();
+        $('#modalCategorySection').html(`
+          <div class="modal-category-card card mb-3">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="modal-category-title mb-0"><strong>Category 1</strong></h6>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Category Name *:</label>
+                <input type="text" class="form-control m-category-name" placeholder="e.g. Normal Pruning" required>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Rate (RM) *:</label>
+                  <input type="number" step="any" class="form-control m-category-rate" placeholder="e.g. 4.00" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Unit *:</label>
+                  <input type="text" class="form-control m-category-unit" placeholder="per palm" required>
+                </div>
+              </div>
+              <hr>
+              <h6 class="mb-2">Condition (optional)</h6>
+              <div class="row">
+                <div class="col-md-3 mb-2">
+                  <label class="form-label small">Type</label>
+                  <input type="text" class="form-control m-condition-type" placeholder="e.g. weight">
+                </div>
+                <div class="col-md-3 mb-2">
+                  <label class="form-label small">Min</label>
+                  <input type="number" class="form-control m-condition-min" placeholder="0">
+                </div>
+                <div class="col-md-3 mb-2">
+                  <label class="form-label small">Max</label>
+                  <input type="number" class="form-control m-condition-max" placeholder="30">
+                </div>
+                <div class="col-md-3 mb-2">
+                  <label class="form-label small">Unit</label>
+                  <input type="text" class="form-control m-condition-unit" placeholder="kg">
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-md-12">
+                  <label class="form-label small">Display Order</label>
+                  <input type="number" class="form-control m-category-order" value="0">
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+        
+        const modalEl = document.getElementById('addPaymentRateModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        getPaymentRates(); // Refresh Task List
+      } else {
+        Swal.fire({
+          icon: "warning",
+          title: "Failed to create",
+          text: json.message
+        });
+      }
+    } catch (err) {
+      console.error("Error creating payment rate:", err);
+      Swal.fire({ icon: 'error', text: 'An unexpected error occurred.' });
+    }
+  });
+}
+
+function openAddPaymentRateModal() {
+  ensureAddPaymentRateModalExists();
+  const modal = new bootstrap.Modal(document.getElementById('addPaymentRateModal'));
+  modal.show();
+}
+
+// Bind the Add new Payment Rate button click
+$(document).ready(function () {
+  $('body').on('click', '#openAddRateModalBtn', function () {
+    openAddPaymentRateModal();
+  });
+});
 

@@ -67,10 +67,11 @@
     // Set default date to today
     taskDate.value = new Date().toISOString().split('T')[0];
 
-    // Load locations and staff list
+    // Load locations, staff, and task types dynamically
     await Promise.all([
       fetchLocations(),
-      fetchStaff()
+      fetchStaff(),
+      fetchTaskTypes()
     ]);
 
     // Load initial tasks table
@@ -111,6 +112,33 @@
     taskType.addEventListener('change', handleTaskTypeChange);
     btnAddWorkerRow.addEventListener('click', addWorkerRow);
     directTaskForm.addEventListener('submit', handleTaskSubmission);
+  }
+
+  // Fetch Task Types dynamically from payment-rates
+  async function fetchTaskTypes() {
+    try {
+      const res = await fetch(`${API_URL}/payment-rates?_=${Date.now()}`, { headers });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        // Clear existing options (except the first placeholder)
+        filterType.innerHTML = '<option value="">All Types</option>';
+        taskType.innerHTML = '<option value="" disabled selected>Select type...</option>';
+
+        data.data.forEach(rate => {
+          const opt1 = document.createElement('option');
+          opt1.value = rate.task_type;
+          opt1.textContent = rate.task_name;
+          filterType.appendChild(opt1);
+
+          const opt2 = document.createElement('option');
+          opt2.value = rate.task_type;
+          opt2.textContent = rate.task_name;
+          taskType.appendChild(opt2);
+        });
+      }
+    } catch (e) {
+      console.error('Failed to load dynamic task types from payment-rates API', e);
+    }
   }
 
   // Show/Hide views
@@ -250,7 +278,8 @@
     const selectedLoc = allLocations.find(l => l.id == taskLocation.value);
     const locName = selectedLoc ? (selectedLoc.name || selectedLoc.location_name) : '';
     const typeLabel = taskType.options[taskType.selectedIndex].text.split(' ')[0];
-    taskName.value = `${typeLabel} at Block ${locName} (${taskDate.value})`;
+    const blockPrefix = locName.toLowerCase().startsWith('block') ? '' : 'Block ';
+    taskName.value = `${typeLabel} at ${blockPrefix}${locName} (${taskDate.value})`;
   }
 
   // Handle task type change (fetch corresponding rate categories)
@@ -262,7 +291,7 @@
 
     // Load payment rate categories for this task type
     try {
-      const res = await fetch(`${API_URL}/tasks/audits/categories?task_type=${selectedType}`, { headers });
+      const res = await fetch(`${API_URL}/tasks/audits/categories?task_type=${selectedType}&_=${Date.now()}`, { headers });
       const data = await res.json();
       if (data.success) {
         currentTaskCategories = data.data;

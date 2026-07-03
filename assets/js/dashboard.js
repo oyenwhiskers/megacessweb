@@ -54,8 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fetch dashboard data (top cards)
     fetchDashboardData(month, year);
 
-    // Fetch yield data from audited summary
-    fetchYieldData(month, year);
+
 
     // Fetch chart data (block chart)
     fetchTasksByBlocks(year, month);
@@ -65,13 +64,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const year = parseInt(document.getElementById('dashboard-year').value, 10);
         const month = parseInt(document.getElementById('dashboard-month').value, 10);
         fetchDashboardData(month, year);
-        fetchYieldData(month, year);
     });
     document.getElementById('dashboard-month').addEventListener('change', function () {
         const year = parseInt(document.getElementById('dashboard-year').value, 10);
         const month = parseInt(document.getElementById('dashboard-month').value, 10);
         fetchDashboardData(month, year);
-        fetchYieldData(month, year);
     });
 
     // Listen for chart filter changes (independent)
@@ -245,106 +242,7 @@ async function fetchDashboardData(month, year) {
     }
 }
 
-// Fetch yield data from audited summary endpoint
-async function fetchYieldData(month, year) {
-    try {
-        const token = localStorage.getItem('authToken') || localStorage.getItem('token') || sessionStorage.getItem('token');
 
-        if (!token) {
-            console.error('No authentication token found for yield data');
-            return;
-        }
-
-        // Show loading for yield card
-        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
-        if (yieldCard) showLoading(yieldCard);
-
-        let url = `${API_URL}/analytics/audited-summary?`;
-        if (year && year !== "") url += `year=${year}&`;
-        if (month && month !== "") url += `month=${month}&`;
-        url = url.replace(/&$/, "");
-
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (result.data && result.data.summary) {
-            updateYieldData(result.data.summary);
-        } else {
-            // No data, set to 0
-            updateYieldData([]);
-        }
-    } catch (error) {
-        console.error('Error fetching yield data:', error);
-        // Keep placeholder values if API fails
-    } finally {
-        // Hide loading for yield card
-        const yieldCard = document.getElementById('yield-total')?.closest('.card-body');
-        if (yieldCard) hideLoading(yieldCard);
-    }
-}
-
-// Update yield display from audited summary data
-function updateYieldData(summaryData) {
-    // Find harvesting data
-    const harvestingData = summaryData.filter(item =>
-        item.task_type && item.task_type.toLowerCase() === 'harvesting'
-    );
-
-    if (harvestingData.length > 0) {
-        // Calculate total yield from all harvesting tasks
-        let totalYield = 0;
-        let recentBlock = null;
-
-        harvestingData.forEach(item => {
-            if (item.total_value !== undefined) {
-                totalYield += parseFloat(item.total_value) || 0;
-            }
-            // Get the most recent block from any harvesting task
-            if (item.recent_block && (!recentBlock || item.recent_block.checked_at > (recentBlock.checked_at || ''))) {
-                recentBlock = item.recent_block;
-            }
-        });
-
-        // Update total yield harvested
-        const yieldTotalElement = document.getElementById('yield-total');
-        if (yieldTotalElement) {
-            yieldTotalElement.textContent = totalYield.toFixed(2);
-        }
-
-        // Update recent harvested area
-        if (recentBlock) {
-            const areaNameElement = document.getElementById('area-name');
-            const areaTotalElement = document.getElementById('area-total');
-
-            if (areaNameElement && recentBlock.location_name) {
-                areaNameElement.textContent = recentBlock.location_name;
-            }
-
-            if (areaTotalElement && recentBlock.total_value !== undefined) {
-                const unit = harvestingData.find(item => item.recent_block === recentBlock)?.unit || 'ton';
-                areaTotalElement.textContent = parseFloat(recentBlock.total_value).toFixed(2) + ' ' + unit;
-            }
-        }
-    } else {
-        // No harvesting data found
-        const yieldTotalElement = document.getElementById('yield-total');
-        if (yieldTotalElement) {
-            yieldTotalElement.textContent = '0.00';
-        }
-    }
-}
 
 function updateDashboard(data) {
     // Check if all main data is missing or zero
