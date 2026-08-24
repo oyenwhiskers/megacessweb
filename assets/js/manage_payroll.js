@@ -1367,6 +1367,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Populate month options (last 6 months)
         const payslipMonth = document.getElementById('payslipMonth');
         payslipMonth.innerHTML = '<option selected disabled>select month</option>';
+        const paymentDate = document.getElementById('paymentDate');
+        if (paymentDate) {
+            const today = new Date();
+            const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+            paymentDate.value = localToday.toISOString().slice(0, 10);
+        }
         const now = new Date();
         for (let i = 0; i < 6; i++) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -2078,6 +2084,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     deductions: deductions,
                     earnings: earnings
                 };
+
+                const paymentDate = document.getElementById('paymentDate')?.value;
+                if (paymentDate) payload.payment_date = paymentDate;
 
                 // Include manual income overrides
                 if (baseSalaryEl2) {
