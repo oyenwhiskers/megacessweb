@@ -2,7 +2,7 @@
 // ==============================================
 // Change ENV to switch between environments: 'staging' or 'production'
 
-const ENV = 'local'; // CHANGE THIS TO SWITCH ENVIRONMENTS: 'local', 'staging', 'production'
+const ENV = 'production'; // CHANGE THIS TO SWITCH ENVIRONMENTS: 'local', 'staging', 'production'
 
 // Dynamically detect local or sub-folder base path (e.g. '/megacessweb/' or '/')
 const getAppBasePath = () => {

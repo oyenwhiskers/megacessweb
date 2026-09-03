@@ -116,7 +116,7 @@ body, html {
   color: #666;
   font-weight: 600;
   font-size: 1rem;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -194,7 +194,7 @@ body, html {
   cursor: pointer;
   font-weight: 600;
   color: #495057;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 26px;
 }
 
@@ -207,7 +207,7 @@ body, html {
   background: #0d6832;          
   border-radius: 26px;
   z-index: 1;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
@@ -247,7 +247,7 @@ Filter for Staff tab in Salary Management
   text-align: center;
   padding: 10px 0;
   font-weight: 500;
-  transition: all 0.25s ease-in-out;
+  transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out, transform 0.25s ease-in-out;
 }
 
 .btn-check:checked + .filter-btn {
@@ -427,7 +427,7 @@ Search bar styling
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   padding: 0.375rem 0.75rem;
-  transition: all 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 .search-clear-btn:hover {

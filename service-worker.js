@@ -1,4 +1,4 @@
-const CACHE_NAME = 'megacess-static-v6';
+const CACHE_NAME = 'megacess-static-v8';
 const ASSETS_TO_CACHE = [
     // Pages (Core)
     './index.html',
@@ -90,7 +90,9 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Fetch Event - Network First, Fallback to Cache
+// Fetch Event
+// - Static assets (CSS/JS/images/fonts): CACHE FIRST -> instant loads, refresh in background
+// - HTML pages: Network First, Fallback to Cache (so content stays fresh)
 self.addEventListener('fetch', event => {
     // Only handle GET requests
     if (event.request.method !== 'GET') {
@@ -100,16 +102,39 @@ self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
     // 1. API Calls: Network Only (or handled by apiFetchWithCache in app logic)
-    // We don't want the SW to cache API calls deeply because we have precise control in utils.js
     if (url.pathname.includes('/api/') || url.hostname.includes('ngrok-free.app')) {
-        return; // Let the browser/app handle it (Network Only)
+        return;
     }
 
-    // 2. Static Assets & Pages: Network First, Fallback to Cache
+    const isStaticAsset =
+        url.pathname.match(/\.(css|js|mjs|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot)$/i) ||
+        url.hostname.includes('cdn.jsdelivr.net');
+
+    // 2. Static Assets & CDN libs: Cache First (stale-while-revalidate)
+    if (isStaticAsset && (url.protocol === 'http:' || url.protocol === 'https:')) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(cache =>
+                cache.match(event.request).then(cached => {
+                    const networkFetch = fetch(event.request)
+                        .then(networkResponse => {
+                            if (networkResponse && networkResponse.status === 200) {
+                                cache.put(event.request, networkResponse.clone());
+                            }
+                            return networkResponse;
+                        })
+                        .catch(() => cached);
+                    // Serve cache immediately if we have it; update in background
+                    return cached || networkFetch;
+                })
+            )
+        );
+        return;
+    }
+
+    // 3. HTML Pages: Network First, Fallback to Cache
     event.respondWith(
         fetch(event.request)
             .then(networkResponse => {
-                // If valid response and is http/https scheme, update the cache
                 if (networkResponse && networkResponse.status === 200 && (url.protocol === 'http:' || url.protocol === 'https:')) {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then(cache => {
@@ -118,9 +143,6 @@ self.addEventListener('fetch', event => {
                 }
                 return networkResponse;
             })
-            .catch(() => {
-                // If offline / server down, serve from cache
-                return caches.match(event.request);
-            })
+            .catch(() => caches.match(event.request))
     );
 });

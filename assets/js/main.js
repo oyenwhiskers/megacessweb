@@ -76,10 +76,13 @@
       return;
     }
     var basePath = typeof APP_BASE_PATH !== 'undefined' ? APP_BASE_PATH : '/';
-    fetch(basePath + 'partials/sidebar.html', { cache: 'no-store' })
-      .then(function (r) { return r.text(); })
-      .then(function (html) {
-        root.innerHTML = html;
+    // Cache sidebar HTML in sessionStorage to avoid re-fetching on every page load
+    var cacheKey = 'sidebarHTML_' + basePath;
+    var cachedSidebar = null;
+    try { cachedSidebar = sessionStorage.getItem(cacheKey); } catch (e) {}
+
+    function applySidebar(html) {
+      root.innerHTML = html;
         // Rewrite sidebar links to match actual base path
         root.querySelectorAll('a[href]').forEach(function(a) {
           var href = a.getAttribute('href');
@@ -130,12 +133,33 @@
           var loginLink = root.querySelector('a[data-page="login"]');
           if (loginLink) loginLink.style.display = 'none';
         }
-      })
-      .catch(function (e) {
-        console.warn('Sidebar load failed', e);
-        initActiveNav();
-        initSidebarToggle();
-      });
+    }
+
+    if (cachedSidebar) {
+      // Instant render from cache, then refresh silently in background
+      applySidebar(cachedSidebar);
+      fetch(basePath + 'partials/sidebar.html')
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+          if (html && html !== cachedSidebar) {
+            try { sessionStorage.setItem(cacheKey, html); } catch (e) {}
+            applySidebar(html);
+          }
+        })
+        .catch(function () {});
+    } else {
+      fetch(basePath + 'partials/sidebar.html')
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+          try { sessionStorage.setItem(cacheKey, html); } catch (e) {}
+          applySidebar(html);
+        })
+        .catch(function (e) {
+          console.warn('Sidebar load failed', e);
+          initActiveNav();
+          initSidebarToggle();
+        });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', loadSidebar);

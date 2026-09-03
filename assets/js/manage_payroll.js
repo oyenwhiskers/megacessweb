@@ -1459,6 +1459,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (taskIncomeOverrideEl) taskIncomeOverrideEl.value = '0.00';
         const overtimeIncomeOverrideEl = document.getElementById('overtimeIncomeOverride');
         if (overtimeIncomeOverrideEl) overtimeIncomeOverrideEl.value = '0.00';
+
+        // Clear days worked & received-by fields
+        const daysWorkedClearEl = document.getElementById('daysWorked');
+        if (daysWorkedClearEl) daysWorkedClearEl.value = '';
+        const receivedByNameClearEl = document.getElementById('receivedByName');
+        if (receivedByNameClearEl) receivedByNameClearEl.value = '';
         const taskIncomeHintEl = document.getElementById('taskIncomeHint');
         if (taskIncomeHintEl) taskIncomeHintEl.textContent = '';
         const overtimeIncomeHintEl = document.getElementById('overtimeIncomeHint');
@@ -2088,6 +2094,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const paymentDate = document.getElementById('paymentDate')?.value;
                 if (paymentDate) payload.payment_date = paymentDate;
 
+                // Days worked & received-by name (displayed on payslip)
+                const daysWorkedEl = document.getElementById('daysWorked');
+                const receivedByNameEl = document.getElementById('receivedByName');
+                const daysWorkedVal = (daysWorkedEl?.value || '').trim();
+                const receivedByNameVal = (receivedByNameEl?.value || '').trim();
+                if (daysWorkedVal !== '') payload.days_worked = daysWorkedVal;
+                if (receivedByNameVal !== '') payload.received_by_name = receivedByNameVal;
+
                 // Include manual income overrides
                 if (baseSalaryEl2) {
                     const bsVal = parseFloat(baseSalaryEl2.value || '0');
@@ -2224,6 +2238,11 @@ document.addEventListener('DOMContentLoaded', function () {
             deductionRows = `<tr><td colspan='2' class='text-center text-muted'>-</td></tr>`;
         }
         // HTML layout
+        // Salary period info (Month/Week/Daily + Days worked) if available from API
+        const salaryPeriod = data.salary_period || data.payslip_period || '';
+        const daysWorked = data.days_worked !== undefined && data.days_worked !== null ? data.days_worked : '';
+        const totalWorkDays = data.total_work_days !== undefined && data.total_work_days !== null ? data.total_work_days : '';
+
         modalBody.innerHTML = `
       <div class="container-fluid">
         <div class="text-center mb-2">
@@ -2237,6 +2256,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="mb-2"><b>Bank Acc. Number:</b> ${data.staff?.staff_bank_number || ''}</div>
         <div class="mb-2"><b>KWSP Number:</b> ${data.staff?.staff_kwsp_number || ''}</div>
         <div class="fw-bold text-success mt-3 mb-2">Salary Amount</div>
+        ${salaryPeriod ? `<div class="mb-2"><b>Salary:</b> ${salaryPeriod} (Days worked: ${daysWorked !== '' ? daysWorked : '____'}${totalWorkDays !== '' ? ' / ' + totalWorkDays + ' Days' : ' Days'})</div>` : ''}
         <div class="table-responsive">
           <table class="table table-bordered align-middle mb-0">
             <thead>
@@ -2269,13 +2289,22 @@ document.addEventListener('DOMContentLoaded', function () {
           </table>
         </div>
         <div class="row mt-4">
-          <div class="col-6 text-center">
-            <div class="mb-5">Approved By:</div>
-            <div style="border-bottom:1px solid #333; width:80%; margin:0 auto;"></div>
+          <div class="col-6">
+            <div class="mb-4 fw-bold">Prepared By:</div>
+            <div style="border-bottom:1px solid #333; width:80%;"></div>
+            <div class="mt-2" style="font-size:0.9rem;">
+              <div>Name: ${data.prepared_by_name || 'Charlie Chong'}</div>
+              <div>Position: ${data.prepared_by_position || 'Administrative Officer'}</div>
+              <div class="mt-1">Catatan/Remarks:</div>
+              <div style="min-height:2.5rem; border-bottom:1px solid #333; width:80%;">${data.prepared_by_remarks || ''}</div>
+            </div>
           </div>
-          <div class="col-6 text-center">
-            <div class="mb-5">Received By:</div>
-            <div style="border-bottom:1px solid #333; width:80%; margin:0 auto;"></div>
+          <div class="col-6">
+            <div class="mb-4 fw-bold">Received By:</div>
+            <div style="border-bottom:1px solid #333; width:80%;"></div>
+            <div class="mt-2" style="font-size:0.9rem;">
+              <div>Name: ${data.staff?.staff_fullname || data.staff?.user_fullname || ''}</div>
+            </div>
           </div>
         </div>
       </div>

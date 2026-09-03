@@ -129,7 +129,7 @@ body{
 
 /* Payroll Page Styles */
 .worker-card {
-  transition: all 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
   border: 1px solid #e1efe7 !important;
 }
 
@@ -160,7 +160,7 @@ body{
 .btn.rounded-pill {
   border-radius: 25px !important;
   font-weight: 500;
-  transition: all 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 .btn-success.rounded-pill {
@@ -190,7 +190,7 @@ body{
   border: none;
   border-radius: 8px;
   font-weight: 500;
-  transition: all 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background 0.2s ease-in-out;
 }
 
 .payroll-action .btn:hover {
@@ -235,7 +235,7 @@ body{
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .info-card:hover {

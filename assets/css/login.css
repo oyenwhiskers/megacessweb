@@ -186,8 +186,17 @@ body::before {
   inset: 0;
   z-index: 0;
   background: linear-gradient(180deg, rgba(10,50,30,0.08), rgba(6,20,10,0.08)), url('../img/Megacess Background.png') center/cover no-repeat;
-  filter: blur(6px) brightness(0.98);
+  /* Pre-blur via overlay instead of filter:blur() — much cheaper to render */
   opacity: 0.92;
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: rgba(255,255,255,0.35);
   pointer-events: none;
 }
 
